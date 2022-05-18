@@ -72,7 +72,6 @@ function hive.init()
 
     if hive.router_mgr then
         import("agent/gm_agent.lua")
-        import("devops/qlog_helper_mgr.lua")
     end
     --graylog
     logger.setup_graylog()
