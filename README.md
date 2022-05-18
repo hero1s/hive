@@ -1,7 +1,6 @@
 # hive
 基于cpp 17 && lua 5.4 实现的分布式游戏服务器框架
 
-* 语言：c++ 、 lua(规范的面向对象风格)
 * 框架(hive)+逻辑(server)
 * 支持跨平台开发(windows,linux,mac)
 * oop模式的lua开发,支持lua热更新
@@ -16,6 +15,7 @@
 ## 数据库
   - mysql,mongodb,redis,etcd,influxdb
   - 自实现的分布式cache服务,支持分布式读写分离,容灾,扩容
+  - 基于nocos配置文件的更新及服务发现
   
 ## 网络协议
   - 支持tcp,udp,kcp,websocket协议
