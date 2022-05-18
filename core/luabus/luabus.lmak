@@ -1,0 +1,49 @@
+--工程名字
+PROJECT_NAME = "luabus"
+
+--目标名字
+TARGET_NAME = "luabus"
+
+----工程类型: static/dynamic/exe
+PROJECT_TYPE = "dynamic"
+
+--需要的FLAGS
+FLAGS = {
+	"Wno-unused-variable",
+	"Wno-unused-parameter",
+	"Wno-unused-but-set-parameter",
+    "Wno-unused-function",
+    "Wno-unused-result",
+    "Wno-sign-compare",
+}
+
+--需要的include目录
+INCLUDES = {
+	"../luna/src",
+	"../../extend/lua/lua",
+	"../../extend/utility"
+}
+---子目录路径
+
+--自动搜索子目录
+AUTO_SUB_DIR = true
+
+--WINDOWS需要定义的选项
+WINDOWS_DEFINES = {
+	"LUA_BUILD_AS_DLL"
+}
+
+--需要连接的库文件
+LIBS = {
+	"lua",
+	"luna"
+}
+
+--依赖项目
+DEPS = {
+	"luna",
+	"lualog"
+}
+
+--分组定义
+GROUP = "core"

@@ -1,0 +1,10 @@
+--lmake
+
+--工程名
+SOLUTION = "hive"
+
+--lmake目录
+LMAKE_DIR = "tools/lmake"
+
+--mimalloc
+USE_MIMALLOC = true

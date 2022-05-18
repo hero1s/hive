@@ -1,0 +1,58 @@
+--工程名字
+PROJECT_NAME = "hive"
+
+--目标名字
+TARGET_NAME = "hive"
+
+----工程类型: static/dynamic/exe
+PROJECT_TYPE = "exe"
+
+--需要的FLAGS
+FLAGS = {
+	"fpermissive",
+	"Wno-unused-variable",
+	"Wno-unused-parameter",
+	"Wno-unused-but-set-parameter",
+	"Wno-unused-function",
+    "Wno-unused-result",
+	"Wno-sign-compare",
+}
+
+--需要定义的选项
+DEFINES = {
+	"FMT_HEADER_ONLY","USE_PROFILE"
+}
+
+--需要的include目录
+INCLUDES = {
+	"../../extend/lua/lua",
+	"../../extend/fmt/include",
+	"../../extend/luakit/include",
+	"../../extend/lualog/lualog",
+	"../../extend/utility",
+}
+
+---子目录路径
+
+--自动搜索子目录
+AUTO_SUB_DIR = true
+
+--需要连接的库文件
+LIBS = {
+	"lua",
+	"plugins"
+}
+
+--LINUX需要连接的库文件
+--gcc9.1前filesystem需要链接stdc++fs
+LINUX_LIBS = {
+	"stdc++fs"
+}
+
+--依赖项目
+DEPS = {
+	"luabus"
+}
+
+--分组定义
+GROUP = "core"

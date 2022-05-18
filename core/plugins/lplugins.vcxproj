@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Develop|x64">
+      <Configuration>Develop</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\laoi\aoi.hpp"/>
+    <ClInclude Include="src\laoi\math.hpp"/>
+    <ClInclude Include="src\lprofile\profile.h"/>
+    <ClInclude Include="src\ltimer\croncpp.h"/>
+    <ClInclude Include="src\ltimer\ltimer.h"/>
+    <ClInclude Include="src\luazset\zset.hpp"/>
+    <ClInclude Include="src\protobuf\pb.h"/>
+    <ClInclude Include="src\random\random.hpp"/>
+    <ClInclude Include="src\tools\helper.h"/>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\bson\bson.c"/>
+    <ClCompile Include="src\export.cpp"/>
+    <ClCompile Include="src\laoi\laoi.cpp"/>
+    <ClCompile Include="src\lcrab\lua-crab.c"/>
+    <ClCompile Include="src\lprofile\profile.cpp"/>
+    <ClCompile Include="src\ltimer\ltimer.cpp"/>
+    <ClCompile Include="src\luazset\lua_zset.cpp"/>
+    <ClCompile Include="src\mongo\lua-mongo.c"/>
+    <ClCompile Include="src\protobuf\pb.c"/>
+    <ClCompile Include="src\random\lua_random.cpp"/>
+    <ClCompile Include="src\tools\helper.cpp"/>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{63DC9087-C660-611B-DF3F-CB1A1257247A}</ProjectGuid>
+    <RootNamespace>plugins</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>plugins</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Develop|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Develop|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>11.0.50727.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">
+    <TargetName>plugins</TargetName>
+    <OutDir>$(SolutionDir)temp\bin\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)temp\$(ProjectName)\$(Platform)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\extend\lua\lua;..\..\extend\luakit\include;..\..\extend\utility;$(SolutionDir)extend\mimalloc\mimalloc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader></PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>Default</CompileAs>
+      <ForcedIncludeFiles>..\..\mimalloc-ex.h</ForcedIncludeFiles>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Lib>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
+    </Lib>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>copy /y $(TargetPath) $(SolutionDir)library\$(Platform)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

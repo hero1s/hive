@@ -1,0 +1,58 @@
+--工程名字
+PROJECT_NAME = "mimalloc"
+
+--目标名字
+TARGET_NAME = "mimalloc"
+
+----工程类型: static/dynamic/exe
+PROJECT_TYPE = "dynamic"
+
+--需要的FLAGS
+FLAGS = {
+	"Wno-sign-compare",
+    "Wno-unused-variable",
+    "Wno-unused-parameter",
+    "Wno-unused-but-set-parameter"
+}
+
+--需要的include目录
+INCLUDES = {
+	"mimalloc/include"
+}
+
+--目标文件前缀
+LIB_PREFIX = 1
+
+--MIMALLOC_DIR
+MIMALLOC_DIR = nil
+
+--需要定义的选项
+DEFINES = {
+	"MI_SHARED_LIB", "MI_SHARED_LIB_EXPORT", "MI_MALLOC_OVERRIDE", "NDEBUG"
+}
+
+--源文件路径
+SRC_DIR = "mimalloc/src"
+
+--需要排除的源文件,目录基于$(SRC_DIR)
+EXCLUDE_FILE={
+	"page-queue.c", "static.c", "alloc-override.c", "alloc-override-osx.c", "region.c"
+}
+
+--WINDOWS需要连接的库文件
+WINDOWS_LIBS = {
+	"mimalloc-redirect.lib"
+}
+
+--WINDOWS需要附加link库目录
+WINDOWS_LIBRARY_DIR = {
+	"mimalloc/bin"
+}
+
+--WINDOWS预编译命令
+WINDOWS_PREBUILDS = {
+    { "copy /y", "mimalloc/bin/mimalloc-redirect.dll $(SolutionDir)bin" }
+}
+
+--分组定义
+GROUP = "share"

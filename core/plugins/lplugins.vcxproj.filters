@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="src\laoi\aoi.hpp">
+      <Filter>laoi</Filter>
+    </ClInclude>
+    <ClInclude Include="src\laoi\math.hpp">
+      <Filter>laoi</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lprofile\profile.h">
+      <Filter>lprofile</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ltimer\croncpp.h">
+      <Filter>ltimer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ltimer\ltimer.h">
+      <Filter>ltimer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\luazset\zset.hpp">
+      <Filter>luazset</Filter>
+    </ClInclude>
+    <ClInclude Include="src\protobuf\pb.h">
+      <Filter>protobuf</Filter>
+    </ClInclude>
+    <ClInclude Include="src\random\random.hpp">
+      <Filter>random</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tools\helper.h">
+      <Filter>tools</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\bson\bson.c">
+      <Filter>bson</Filter>
+    </ClCompile>
+    <ClCompile Include="src\export.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\laoi\laoi.cpp">
+      <Filter>laoi</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lcrab\lua-crab.c">
+      <Filter>lcrab</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lprofile\profile.cpp">
+      <Filter>lprofile</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ltimer\ltimer.cpp">
+      <Filter>ltimer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\luazset\lua_zset.cpp">
+      <Filter>luazset</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mongo\lua-mongo.c">
+      <Filter>mongo</Filter>
+    </ClCompile>
+    <ClCompile Include="src\protobuf\pb.c">
+      <Filter>protobuf</Filter>
+    </ClCompile>
+    <ClCompile Include="src\random\lua_random.cpp">
+      <Filter>random</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tools\helper.cpp">
+      <Filter>tools</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="bson">
+      <UniqueIdentifier>{0B6879B1-86BF-B2B1-EC65-D2460E4ECCD4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="laoi">
+      <UniqueIdentifier>{DC8FEA7C-8450-92D3-4C20-3A6D15D99A08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lcrab">
+      <UniqueIdentifier>{801D02A4-8781-DC43-F7D7-623523C1E8A1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lprofile">
+      <UniqueIdentifier>{8E8841F6-C7F8-DE1A-13D6-267C73A59A6B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ltimer">
+      <UniqueIdentifier>{2DE9C09F-02F5-DF2B-524C-FFBEBC8DE5EE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="luazset">
+      <UniqueIdentifier>{9845CAE6-3ACF-8C94-B89A-AA1BDADCA014}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="mongo">
+      <UniqueIdentifier>{1ED75A5D-1E2C-0BB0-5F41-0077765AF687}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="protobuf">
+      <UniqueIdentifier>{606EAF84-6C65-7991-6354-199B45953EE2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="random">
+      <UniqueIdentifier>{7DDF32E1-7A6A-C5CE-04A8-ECBF782CA509}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{25D902C2-4283-AB8C-FBAC-54DFA101AD31}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tools">
+      <UniqueIdentifier>{4A931512-CE65-BDC9-CA68-08ADF92D8783}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

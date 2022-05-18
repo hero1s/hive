@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="src\exception\stack_back_trace.h">
+      <Filter>exception</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hive.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\exception\exception.cpp">
+      <Filter>exception</Filter>
+    </ClCompile>
+    <ClCompile Include="src\exception\stack_back_trace.cpp">
+      <Filter>exception</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hive.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="exception">
+      <UniqueIdentifier>{42552B1F-133F-9F8E-B406-D4F306EA9FD1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="inc">
+      <UniqueIdentifier>{CF9F3FDE-7326-F1D8-E642-05F0E07A3695}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{25D902C2-4283-AB8C-FBAC-54DFA101AD31}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

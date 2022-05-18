@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="src\base64.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\des56.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\guid.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lcrypt.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lz4.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\md5.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\sha1.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\sha2.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\xxtea.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\base64.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\des56.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\guid.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lcrypt.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lz4.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\md5.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sha1.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sha2.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\xxtea.c">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="inc">
+      <UniqueIdentifier>{CF9F3FDE-7326-F1D8-E642-05F0E07A3695}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{25D902C2-4283-AB8C-FBAC-54DFA101AD31}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,35 @@
+--工程名字
+PROJECT_NAME = "lua"
+
+--目标名字
+TARGET_NAME = "lua"
+
+----工程类型: static/dynamic/exe
+PROJECT_TYPE = "exe"
+
+--需要的include目录
+INCLUDES = {
+	"./lua"
+}
+
+--需要定义的选项
+DEFINES = {
+	"MAKE_LUA"
+}
+
+--源文件路径
+SRC_DIR = "lua"
+
+--目标文件，可以在这里定义，如果没有定义，share.mak会自动生成
+OBJS = {
+	"onelua.c"
+}
+
+--依赖项目
+DEPS = {
+	"lualib"
+}
+
+--分组定义
+GROUP = "lua"
+

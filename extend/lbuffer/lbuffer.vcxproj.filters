@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="src\buffer.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\bufpool.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\bufqueue.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lbuffer.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\serialize.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shmpool.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\buffer.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\bufpool.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\bufqueue.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lbuffer.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\serialize.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shmpool.c">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="inc">
+      <UniqueIdentifier>{CF9F3FDE-7326-F1D8-E642-05F0E07A3695}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{25D902C2-4283-AB8C-FBAC-54DFA101AD31}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
