@@ -69,7 +69,7 @@
   
 ## ![img.png](doc/img.png)
 
-## 有bug或好的建议请@ QQ:8242117 Toney
+## 有bug或好的建议请@ QQ群:543833695 Toney
 
 ## todo list 
   - c++ gateway服务
