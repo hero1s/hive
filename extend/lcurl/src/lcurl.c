@@ -213,9 +213,9 @@ static int lcurl_set_headers(lua_State* L) {
 
 static int lcurl_call_request(lua_State* L, lcurl_request_t* request) {
     if (lua_gettop(L) > 1) {
-        size_t length;
-        const char* post = lua_tolstring(L, 2, &length);
-        if (length > 0) {
+        if (lua_type(L, 2) == LUA_TSTRING) {
+            size_t length;
+            const char* post = lua_tolstring(L, 2, &length);
             curl_easy_setopt(request->curl, CURLOPT_POSTFIELDS, post);
             curl_easy_setopt(request->curl, CURLOPT_POSTFIELDSIZE, length);
         }
@@ -290,7 +290,7 @@ static int lcurl_create_request(lua_State* L) {
     size_t timeout_ms = LUA_CURL_TIMEOUT_MS;
     const char* url = lua_tostring(L, 1);
     if (lua_gettop(L) > 1) {
-        timeout_ms = lua_tointeger(L, 2);
+        timeout_ms = luaL_optinteger(L, 2, LUA_CURL_TIMEOUT_MS);
     }
     CURL* handle = curl_easy_init();
     if (!handle) {
@@ -350,7 +350,8 @@ static int lcurl_url_encode(lua_State* L) {
             return 1;
         }
     }
-    return 0;
+    lua_pushstring(L, "");
+    return 1;
 }
 
 static const luaL_Reg lcurl_funs[] = {

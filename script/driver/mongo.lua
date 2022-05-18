@@ -17,7 +17,6 @@ local sformat       = string.format
 local sgmatch       = string.gmatch
 local lmd5          = lcrypt.md5
 local lsha1         = lcrypt.sha1
-local lhex_encode   = lcrypt.hex_encode
 local lrandomkey    = lcrypt.randomkey
 local lb64encode    = lcrypt.b64_encode
 local lb64decode    = lcrypt.b64_decode
@@ -147,7 +146,7 @@ function MongoDB:auth(username, password)
         return false, "Server returned an invalid nonce."
     end
     local without_proof      = "c=biws,r=" .. rnonce
-    local pbkdf2_key         = lhex_encode(lmd5(sformat("%s:mongo:%s", username, password)))
+    local pbkdf2_key         = lmd5(sformat("%s:mongo:%s", username, password), true)
     local salted_pass        = salt_password(pbkdf2_key, lb64decode(salt), iterations)
     local client_key         = lhmac_sha1(salted_pass, "Client Key")
     local stored_key         = lsha1(client_key)

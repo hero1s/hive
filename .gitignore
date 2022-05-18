@@ -3,7 +3,6 @@
 *.dll
 *.log
 *.exe
-bin/hive
 *.txt
 *.dump
 *.dmp
@@ -69,3 +68,6 @@ bin/hive
 temp
 *.pdb
 
+bin/luac
+bin/lua
+bin/hive

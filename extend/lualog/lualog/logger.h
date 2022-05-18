@@ -298,7 +298,7 @@ namespace logger {
     class log_rollingfile : public log_file_base {
     public:
         log_rollingfile(std::shared_ptr<log_service> logservice, int pid, std::filesystem::path& log_path, const std::string& service, const std::string& feature, size_t max_line = 10000)
-            : log_file_base(logservice, max_line, pid), feature_(feature), service_(service), log_path_(log_path){
+            : log_file_base(logservice, max_line, pid), feature_(feature), log_path_(log_path){
             if (feature != service) {
                 log_path_.append(feature);
             }
@@ -323,7 +323,6 @@ namespace logger {
         }
 
         std::string             feature_;
-        std::string             service_;
         std::filesystem::path   log_path_;
         rolling_evaler          rolling_evaler_;
     }; // class log_rollingfile

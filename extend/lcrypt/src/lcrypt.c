@@ -59,25 +59,29 @@ static int lhashkey(lua_State *L)
     return 1;
 }
 
-static int ltohex(lua_State *L)
+static int tohex(lua_State *L, const unsigned char* text, size_t sz)
 {
     static char hex[] = "0123456789abcdef";
-    size_t sz = 0;
-    const unsigned char * text = (const unsigned char *)luaL_checklstring(L, 1, &sz);
     char tmp[SMALL_CHUNK];
     char *buffer = tmp;
     if (sz > SMALL_CHUNK/2)
     {
         buffer = (char *)lua_newuserdata(L, sz * 2);
     }
-    int i;
-    for (i=0;i<sz;i++)
+    for (int i=0;i<sz;i++)
     {
         buffer[i*2] = hex[text[i] >> 4];
         buffer[i*2+1] = hex[text[i] & 0xf];
     }
     lua_pushlstring(L, buffer, sz * 2);
     return 1;
+}
+
+static int ltohex(lua_State *L)
+{
+    size_t sz = 0;
+    const unsigned char * text = (const unsigned char *)luaL_checklstring(L, 1, &sz);
+    return tohex(L, text, sz);
 }
 
 #define HEX(v,c) { char tmp = (char) c; if (tmp >= '0' && tmp <= '9') { v = tmp-'0'; } else { v = tmp - 'a' + 10; } }
@@ -164,6 +168,10 @@ static int lmd5(lua_State* L)
     const char* message = luaL_checklstring(L, 1, &data_len);
     char output[HASHSIZE];
     md5(message, data_len, output);
+    if (lua_gettop(L) > 1)
+    {
+        return tohex(L, output, HASHSIZE);
+    }
     lua_pushlstring(L, output, HASHSIZE);
     return 1;
 }
@@ -505,21 +513,21 @@ static int lguid_source(lua_State* L) {
 }
 
 static int lxor_byte(lua_State *L) {
-	size_t len1,len2;
-	const char *s1 = luaL_checklstring(L,1,&len1);
-	const char *s2 = luaL_checklstring(L,2,&len2);
-	if (len2 == 0) {
-		return luaL_error(L, "Can't xor empty string");
-	}
-	luaL_Buffer b;
-	char * buffer = luaL_buffinitsize(L, &b, len1);
-	int i;
-	for (i=0;i<len1;i++) {
-		buffer[i] = s1[i] ^ s2[i % len2];
-	}
-	luaL_addsize(&b, len1);
-	luaL_pushresult(&b);
-	return 1;
+    size_t len1,len2;
+    const char *s1 = luaL_checklstring(L,1,&len1);
+    const char *s2 = luaL_checklstring(L,2,&len2);
+    if (len2 == 0) {
+        return luaL_error(L, "Can't xor empty string");
+    }
+    luaL_Buffer b;
+    char * buffer = luaL_buffinitsize(L, &b, len1);
+    int i;
+    for (i=0;i<len1;i++) {
+        buffer[i] = s1[i] ^ s2[i % len2];
+    }
+    luaL_addsize(&b, len1);
+    luaL_pushresult(&b);
+    return 1;
 }
 
 static const luaL_Reg lcrypt_funcs[] = {

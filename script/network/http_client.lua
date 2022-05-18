@@ -1,23 +1,24 @@
 --httpClient.lua
-local lcurl      = require("lcurl")
-local ljson      = require("lcjson")
+local lcurl             = require("lcurl")
+local ljson             = require("lcjson")
 
-local pairs      = pairs
-local log_err    = logger.err
-local tunpack    = table.unpack
-local tconcat    = table.concat
-local sformat    = string.format
-local lquery     = lcurl.query
-local luencode   = lcurl.url_encode
-local lcrequest  = lcurl.create_request
-local jencode    = ljson.encode
+local pairs             = pairs
+local log_err           = logger.err
+local tunpack           = table.unpack
+local tconcat           = table.concat
+local sformat           = string.format
+local lquery            = lcurl.query
+local luencode          = lcurl.url_encode
+local lcrequest         = lcurl.create_request
+local jencode           = ljson.encode
 
-local NetwkTime  = enum("NetwkTime")
-local thread_mgr = hive.get("thread_mgr")
-local update_mgr = hive.get("update_mgr")
+local thread_mgr        = hive.get("thread_mgr")
+local update_mgr        = hive.get("update_mgr")
 
-local HttpClient = singleton()
-local prop       = property(HttpClient)
+local HTTP_CALL_TIMEOUT = hive.enum("NetwkTime", "HTTP_CALL_TIMEOUT")
+
+local HttpClient        = singleton()
+local prop              = property(HttpClient)
 prop:reader("contexts", {})
 
 function HttpClient:__init()
@@ -54,7 +55,7 @@ function HttpClient:on_frame()
     --清除超时请求
     local now_ms = hive.now_ms
     for handle, context in pairs(self.contexts) do
-        if now_ms - context.time > NetwkTime.HTTP_CALL_TIMEOUT then
+        if now_ms >= context.time then
             self.contexts[handle] = nil
         end
     end
@@ -87,8 +88,8 @@ function HttpClient:format_headers(request, headers)
 end
 
 --构建请求
-function HttpClient:build_request(url, session_id, headers, method, ...)
-    local request, curl_handle = lcrequest(url)
+function HttpClient:build_request(url, timeout, session_id, headers, method, ...)
+    local request, curl_handle = lcrequest(url, timeout)
     if not request then
         log_err("[HttpClient][build_request] failed : %s", curl_handle)
         return
@@ -102,7 +103,7 @@ function HttpClient:build_request(url, session_id, headers, method, ...)
     self.contexts[curl_handle] = {
         request    = request,
         session_id = session_id,
-        time       = hive.now_ms,
+        time       = hive.now_ms + timeout,
     }
     return true
 end
@@ -115,10 +116,11 @@ function HttpClient:call_get(url, querys, headers, datas, timeout)
         datas                   = jencode(datas)
         headers["Content-Type"] = "application/json"
     end
-    if not self:build_request(fmt_url, session_id, headers, "call_get", datas) then
+    local to = timeout or HTTP_CALL_TIMEOUT
+    if not self:build_request(fmt_url, to, session_id, headers, "call_get", datas) then
         return false
     end
-    return thread_mgr:yield(session_id, url, timeout or NetwkTime.HTTP_CALL_TIMEOUT)
+    return thread_mgr:yield(session_id, url, to)
 end
 
 --post接口
@@ -133,11 +135,12 @@ function HttpClient:call_post(url, datas, headers, querys, timeout)
         datas                   = jencode(datas)
         headers["Content-Type"] = "application/json"
     end
+    local to         = timeout or HTTP_CALL_TIMEOUT
     local session_id = thread_mgr:build_session_id()
-    if not self:build_request(url, session_id, headers, "call_post", datas) then
+    if not self:build_request(url, to, session_id, headers, "call_post", datas or "") then
         return false
     end
-    return thread_mgr:yield(session_id, url, timeout or NetwkTime.HTTP_CALL_TIMEOUT)
+    return thread_mgr:yield(session_id, url, to)
 end
 
 --put接口
@@ -152,21 +155,23 @@ function HttpClient:call_put(url, datas, headers, querys, timeout)
         datas                   = jencode(datas)
         headers["Content-Type"] = "application/json"
     end
+    local to         = timeout or HTTP_CALL_TIMEOUT
     local session_id = thread_mgr:build_session_id()
-    if not self:build_request(url, session_id, headers, "call_put", datas) then
+    if not self:build_request(url, to, session_id, headers, "call_put", datas or "") then
         return false
     end
-    return thread_mgr:yield(session_id, url, timeout or NetwkTime.HTTP_CALL_TIMEOUT)
+    return thread_mgr:yield(session_id, url, to)
 end
 
 --del接口
 function HttpClient:call_del(url, querys, headers, timeout)
+    local to         = timeout or HTTP_CALL_TIMEOUT
     local fmt_url    = self:format_url(url, querys)
     local session_id = thread_mgr:build_session_id()
-    if not self:build_request(fmt_url, session_id, headers, "call_del") then
+    if not self:build_request(fmt_url, to, session_id, headers, "call_del") then
         return false
     end
-    return thread_mgr:yield(session_id, url, timeout or NetwkTime.HTTP_CALL_TIMEOUT)
+    return thread_mgr:yield(session_id, url, to)
 end
 
 hive.http_client = HttpClient()
