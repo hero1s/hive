@@ -15,7 +15,7 @@
 ## 数据库
   - mysql,mongodb,redis,etcd,influxdb
   - 自实现的分布式cache服务,支持分布式读写分离,容灾,扩容
-  - 基于nocos配置文件的更新及服务发现
+  - 基于nacos配置文件的更新及服务发现
   
 ## 网络协议
   - 支持tcp,udp,kcp,websocket协议
@@ -70,3 +70,10 @@
 ## ![img.png](doc/img.png)
 
 ## 有bug或好的建议请@ QQ:8242117 Toney
+
+## todo list 
+  - c++ gateway服务
+  - 分级路由组网,支持百万pcu
+  - 现有部分特殊服务的固定hash,改进成切片模式,无缝扩容,容灾
+  - nacos服务注册与发现及配置更新
+  - 完善文档及工具链
