@@ -50,6 +50,8 @@
   - [core] ：框架c++代码
   - [extend] ：扩展库c++工程
   - [script] ：框架lua代码
+  - [doc] : 使用文档说明
+  - [deploy] : 服务相关的配置表
   - [server] ：框架服务
     - [admin] : 后台管理及自动生成的GM页面
     - [cache] : 游戏数据缓存服务目前仅支持mongo
