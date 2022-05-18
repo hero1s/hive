@@ -1,12 +1,47 @@
 # hive
-基于c++,lua 实现的分布式游戏服务器框架
+基于cpp 17 && lua 5.4 实现的分布式游戏服务器框架
 
-* 语言：c++ 、 lua
+* 语言：c++ 、 lua(规范的面向对象风格)
 * 框架(hive)+逻辑(server)
 * 支持跨平台开发(windows,linux,mac)
-* 支持热更新
+* oop模式的lua开发,支持lua热更新
 * protobuf协议
     - pbc修改了浮点数自动转整数的逻辑
+* 支持星型组网及多级组网自动路由,router热备,独立子网,服务动态扩容及热备
+* 基于tcp协议及lua协程实现同步代码异步rpc
+* 基于行为树的机器人/单元测试一体化
+* GM命令快速验证
+* 路由协议支持有序及无序模式,支持服务的动态扩容容灾及hash扩容
+
+## 数据库
+  - mysql,mongodb,redis,etcd,influxdb
+  - 自实现的分布式cache服务,支持分布式读写分离,容灾,扩容
+  
+## 网络协议
+  - 支持tcp,udp,kcp,websocket协议
+  - 支持http client,http server及ssl模式
+  - 客户端协议支持protobuf,json
+
+## 工具
+  - lmake 根据配置自动生成跨平台的makefile文件及vs.sln工程文件及一键编译
+  - excel2lua 表格配置xls导出lua读写及热更
+  - encrypt lua加密
+
+## 日志
+  - 分级文件日志
+  - graylog日志系统
+  - zipkin opentrace 分布式链路追踪
+  - 飞书,钉钉,企业微信消息及错误日志推送
+
+## 服务监控
+  - Influxdb + granfana 性能监控及分析(协议,消息,rpc,cpu,内存,协程,服务等)
+  - monitor监控服务
+  - 自带自适应的GM web页面
+  - 自带函数性能分析prof
+
+## 性能
+  - rpc单服务性能在4.5w次/s左右,这是计算完整的从发起到接收结果.涉及到服务的拆分,部署按这个性能去做评估
+  - mongodb的性能集群模式远超mysql,单机测试插入5-8w/s
 
 ## 目录简介
 
@@ -27,6 +62,7 @@
     - [encrypt] : lua源码加密
     - [lmake] : 自动生成makefile 及 vs工程
     - [excel2lua] : 转表工具
-  - [proto]: proto协议
+  - [proto] : proto协议
   - create_lmake.bat 用于生成所有c++工程
   
+## ![img.png](img.png)
