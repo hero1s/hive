@@ -1,5 +1,5 @@
 # hive
-基于cpp 17 && lua 5.4 实现的分布式游戏服务器框架
+Distributed game server framework based on CPP 17 && LUA 5.4
 
 * 框架(hive)+逻辑(server)
 * 支持跨平台开发(windows,linux,mac)
@@ -42,30 +42,9 @@
 ## 性能
   - rpc单服务性能在4.5w次/s左右,这是计算完整的从发起到接收结果.涉及到服务的拆分,部署按这个性能去做评估
   - mongodb的性能集群模式远超mysql,单机测试插入5-8w/s
-
-## 目录简介
-
-- [hive] ：hive框架
-  - [bin] ：框架可执行文件
-  - [core] ：框架c++代码
-  - [extend] ：扩展库c++工程
-  - [script] ：框架lua代码
-  - [doc] : 使用文档说明
-  - [deploy] : 服务相关的配置表
-  - [server] ：框架服务
-    - [admin] : 后台管理及自动生成的GM页面
-    - [cache] : 游戏数据缓存服务目前仅支持mongo
-    - [monitor] : 监控服务及实时日志页面查看
-    - [online] : 玩家在线服用于消息转发
-    - [proxy] : http 请求代理服
-    - [qtest] : 测试代码样例
-    - [router] : 消息路由服,负责消息及rpc转发.目前单层星型,后续支持多层子网模式
-  - [tools] ：框架工具
-    - [encrypt] : lua源码加密
-    - [lmake] : 自动生成makefile 及 vs工程
-    - [excel2lua] : 转表工具
-  - [proto] : proto协议
-  - create_lmake.bat 用于生成所有c++工程
+  
+## Documents
+[在线文档](https://github.com/hero1s/hive/wiki)
   
 ## ![img.png](doc/img.png)
 
@@ -76,4 +55,5 @@
   - 分级路由组网,支持百万pcu
   - 现有部分特殊服务的固定hash,改进成切片模式,无缝扩容,容灾
   - nacos服务注册与发现及配置更新
-  - 完善文档及工具链
+  - 完善文档及工具链,编写demo
+  - 优化性能
