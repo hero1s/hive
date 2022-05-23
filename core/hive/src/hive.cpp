@@ -134,7 +134,6 @@ void hive_app::setup(int argc, const char* argv[]) {
     srand((unsigned)time(nullptr));
     //初始化日志
     m_logger = std::make_shared<log_service>();
-    m_logger->start();
     //加载配置
     if (load(argc, argv)) {
         run();
@@ -202,13 +201,14 @@ void hive_app::init_logger() {
     auto rolltype = (logger::rolling_type)std::stoi(get_environ_def("HIVE_LOG_ROLL", "1"));
     m_logger->option(logpath, service, index, rolltype, maxline);
     m_logger->add_dest(service);
-    if ((std::stoi(get_environ_def("HIVE_DAEMON", "0")) && strcmp(get_platform(),"windows") != 0)) {
-        //hive_daemon();
-        m_logger->daemon(true);
-    }
+    m_logger->start();
 }
 
 void hive_app::run() {
+	if ((std::stoi(get_environ_def("HIVE_DAEMON", "0")) && strcmp(get_platform(), "windows") != 0)) {
+		hive_daemon();
+		m_logger->daemon(true);
+	}
     init_logger();
     luakit::kit_state lua;
     lua.set("platform", get_platform());

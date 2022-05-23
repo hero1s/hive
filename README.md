@@ -14,7 +14,7 @@
 
 ## 数据库
   - mysql,mongodb,redis,etcd,influxdb
-  - 自实现的分布式cache服务,支持分布式读写分离,容灾,扩容
+  - 自实现的分布式cache服务,支持分布式读写权限控制,容灾,扩容
   - 基于nacos配置文件的更新及服务发现
   
 ## 网络协议
