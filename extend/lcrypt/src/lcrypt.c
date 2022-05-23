@@ -168,7 +168,7 @@ static int lmd5(lua_State* L)
     const char* message = luaL_checklstring(L, 1, &data_len);
     char output[HASHSIZE];
     md5(message, data_len, output);
-    if (lua_gettop(L) > 1)
+    if (luaL_optinteger(L, 2, 0))
     {
         return tohex(L, output, HASHSIZE);
     }
