@@ -64,7 +64,7 @@ local function isoweek1monday(year)
     return week1monday
 end
 
-local isdst                     = os.date("*t", hive.now).isdst
+datetime_ext = _ENV.datetime_ext or {}
 
 datetime_ext.SECONDS_ONE_DAY    = 86400
 datetime_ext.SECONDS_ONE_HOUR   = 3600
@@ -192,7 +192,7 @@ function datetime_ext.make_time(tm)
         hour  = tm.hour,
         min   = tm.min,
         sec   = tm.sec,
-        isdst = isdst
+        isdst = os.date("*t", hive.now).isdst
     }
     return os.time(tm)
 end

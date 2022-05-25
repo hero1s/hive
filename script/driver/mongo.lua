@@ -146,7 +146,7 @@ function MongoDB:auth(username, password)
         return false, "Server returned an invalid nonce."
     end
     local without_proof      = "c=biws,r=" .. rnonce
-    local pbkdf2_key         = lmd5(sformat("%s:mongo:%s", username, password), true)
+    local pbkdf2_key         = lmd5(sformat("%s:mongo:%s", username, password), 1)
     local salted_pass        = salt_password(pbkdf2_key, lb64decode(salt), iterations)
     local client_key         = lhmac_sha1(salted_pass, "Client Key")
     local stored_key         = lsha1(client_key)

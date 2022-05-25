@@ -1,18 +1,19 @@
 --statis_mgr.lua
 import("kernel/object/linux.lua")
-local InfluxDB     = import("driver/influx.lua")
-local log_info     = logger.info
-local env_get      = environ.get
-local env_addr     = environ.addr
-local env_status   = environ.status
+local InfluxDB = import("driver/influx.lua")
 
-local event_mgr    = hive.get("event_mgr")
-local update_mgr   = hive.get("update_mgr")
-local thread_mgr   = hive.get("thread_mgr")
-local linux_statis = hive.get("linux_statis")
+local qget          = hive.get
+local env_get       = environ.get
+local env_addr      = environ.addr
+local env_status    = environ.status
 
-local StatisMgr    = singleton()
-local prop         = property(StatisMgr)
+local event_mgr     = qget("event_mgr")
+local update_mgr    = qget("update_mgr")
+local thread_mgr    = qget("thread_mgr")
+local linux_statis  = qget("linux_statis")
+
+local StatisMgr = singleton()
+local prop = property(StatisMgr)
 prop:reader("influx", nil)              --influx
 prop:reader("statis", {})               --statis
 prop:reader("statis_status", false)     --统计开关
@@ -21,11 +22,11 @@ function StatisMgr:__init()
     if statis_status then
         self.statis_status = statis_status
         --初始化参数
-        local org          = env_get("HIVE_INFLUX_ORG")
-        local token        = env_get("HIVE_INFLUX_TOKEN")
-        local bucket       = env_get("HIVE_INFLUX_BUCKET")
-        local ip, port     = env_addr("HIVE_INFLUX_ADDR")
-        self.influx        = InfluxDB(ip, port, org, bucket, token)
+        local org = env_get("HIVE_INFLUX_ORG")
+        local token = env_get("HIVE_INFLUX_TOKEN")
+        local bucket = env_get("HIVE_INFLUX_BUCKET")
+        local ip, port = env_addr("HIVE_INFLUX_ADDR")
+        self.influx = InfluxDB(ip, port, org, bucket, token)
         --事件监听
         event_mgr:add_listener(self, "on_rpc_send")
         event_mgr:add_listener(self, "on_rpc_recv")
@@ -53,11 +54,11 @@ end
 function StatisMgr:write(measurement, name, type, fields)
     local measure = self.statis[measurement]
     if not measure then
-        measure                  = {
-            tags       = {
-                name    = name,
-                type    = type,
-                index   = hive.index,
+        measure = {
+            tags = {
+                name = name,
+                type = type,
+                index = hive.index,
                 service = hive.service
             },
             field_list = {}
@@ -108,13 +109,13 @@ function StatisMgr:on_conn_update(conn_type, conn_count)
 end
 
 -- 统计性能
-function StatisMgr:on_perfeval(eval_data, now_ms)
+function StatisMgr:on_perfeval(eval_data, clock_ms)
     if self.statis_status then
-        local tital_time = now_ms - eval_data.begin_time
-        local fields     = {
+        local tital_time = clock_ms - eval_data.begin_time
+        local fields = {
             tital_time = tital_time,
             yield_time = eval_data.yield_time,
-            eval_time  = tital_time - eval_data.yield_time
+            eval_time = tital_time - eval_data.yield_time
         }
         self:write("perfeval", eval_data.eval_name, nil, fields)
     end
@@ -124,24 +125,26 @@ end
 function StatisMgr:on_minute(now)
     if self.statis_status then
         local fields = {
-            all_mem  = self:_calc_mem_use(),
-            lua_mem  = self:_calc_lua_mem(),
+            all_mem = self:_calc_mem_use(),
+            lua_mem = self:_calc_lua_mem(),
             cpu_rate = self:_calc_cpu_rate(),
         }
         self:write("system", nil, nil, fields)
         --self:flush()
-        log_info("[StatisMgr][on_minute] all_mem:[%s m],lua_mem:[%s m],cpu_rate:[%s]",fields["all_mem"],fields["lua_mem"],fields["cpu_rate"])
     end
 end
 
 -- 计算lua内存信息(KB)
 function StatisMgr:_calc_lua_mem()
-    return collectgarbage("count")/1024
+    return collectgarbage("count")
 end
 
 -- 计算内存信息(KB)
 function StatisMgr:_calc_mem_use()
-    return hive.mem_usage()
+    if hive.platform == "linux" then
+        return linux_statis:calc_memory()
+    end
+    return 5000
 end
 
 -- 计算cpu使用率

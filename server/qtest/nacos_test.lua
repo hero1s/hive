@@ -1,16 +1,13 @@
 -- nacos_test.lua
 import("driver/nacos.lua")
-local lcrypt        = require("lcrypt")
+local lcrypt      = require("lcrypt")
 
-local lhex_encode   = lcrypt.hex_encode
-local lrandomkey    = lcrypt.randomkey
-
-local qget          = hive.get
-local log_debug     = logger.debug
-
-local nacos         = qget("nacos")
-local timer_mgr     = qget("timer_mgr")
-local thread_mgr    = qget("thread_mgr")
+local lhex_encode = lcrypt.hex_encode
+local lrandomkey  = lcrypt.randomkey
+local log_debug   = logger.debug
+local nacos       = hive.get("nacos")
+local timer_mgr   = hive.get("timer_mgr")
+local thread_mgr  = hive.get("thread_mgr")
 
 thread_mgr:fork(function()
     local cres = nacos:create_namespace("1234567", "hive", "test create_namespace")

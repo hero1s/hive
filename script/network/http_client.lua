@@ -1,24 +1,25 @@
 --httpClient.lua
-local lcurl             = require("lcurl")
-local ljson             = require("lcjson")
+local lcurl = require("lcurl")
+local ljson = require("lcjson")
 
-local pairs             = pairs
-local log_err           = logger.err
-local tunpack           = table.unpack
-local tconcat           = table.concat
-local sformat           = string.format
-local lquery            = lcurl.query
-local luencode          = lcurl.url_encode
-local lcrequest         = lcurl.create_request
-local jencode           = ljson.encode
+local pairs         = pairs
+local qget          = hive.get
+local log_err       = logger.err
+local tunpack       = table.unpack
+local tconcat       = table.concat
+local sformat       = string.format
+local lquery        = lcurl.query
+local luencode      = lcurl.url_encode
+local lcrequest     = lcurl.create_request
+local jencode       = ljson.encode
 
-local thread_mgr        = hive.get("thread_mgr")
-local update_mgr        = hive.get("update_mgr")
+local thread_mgr        = qget("thread_mgr")
+local update_mgr        = qget("update_mgr")
 
 local HTTP_CALL_TIMEOUT = hive.enum("NetwkTime", "HTTP_CALL_TIMEOUT")
 
-local HttpClient        = singleton()
-local prop              = property(HttpClient)
+local HttpClient = singleton()
+local prop = property(HttpClient)
 prop:reader("contexts", {})
 
 function HttpClient:__init()
@@ -39,10 +40,10 @@ function HttpClient:on_frame()
         --查询请求结果
         local context = self.contexts[curl_handle]
         if context then
-            local request      = context.request
-            local session_id   = context.session_id
+            local request = context.request
+            local session_id = context.session_id
             local content, err = request:get_respond()
-            local info         = request:get_info()
+            local info = request:get_info()
             if result == 0 then
                 thread_mgr:response(session_id, true, info.code, content)
             else
@@ -53,9 +54,9 @@ function HttpClient:on_frame()
         curl_handle, result = lquery()
     end
     --清除超时请求
-    local now_ms = hive.now_ms
+    local clock_ms = hive.clock_ms
     for handle, context in pairs(self.contexts) do
-        if now_ms >= context.time then
+        if clock_ms >= context.time then
             self.contexts[handle] = nil
         end
     end
@@ -101,19 +102,19 @@ function HttpClient:build_request(url, timeout, session_id, headers, method, ...
         return false
     end
     self.contexts[curl_handle] = {
-        request    = request,
+        request = request,
         session_id = session_id,
-        time       = hive.now_ms + timeout,
+        time = hive.clock_ms + timeout,
     }
     return true
 end
 
 --get接口
 function HttpClient:call_get(url, querys, headers, datas, timeout)
-    local fmt_url    = self:format_url(url, querys)
+    local fmt_url = self:format_url(url, querys)
     local session_id = thread_mgr:build_session_id()
     if type(datas) == "table" then
-        datas                   = jencode(datas)
+        datas = jencode(datas)
         headers["Content-Type"] = "application/json"
     end
     local to = timeout or HTTP_CALL_TIMEOUT
@@ -126,16 +127,16 @@ end
 --post接口
 function HttpClient:call_post(url, datas, headers, querys, timeout)
     if not headers then
-        headers = { ["Content-Type"] = "text/plain" }
+        headers = {["Content-Type"] = "text/plain" }
     end
     if querys then
         url = self:format_url(url, querys)
     end
     if type(datas) == "table" then
-        datas                   = jencode(datas)
+        datas = jencode(datas)
         headers["Content-Type"] = "application/json"
     end
-    local to         = timeout or HTTP_CALL_TIMEOUT
+    local to = timeout or HTTP_CALL_TIMEOUT
     local session_id = thread_mgr:build_session_id()
     if not self:build_request(url, to, session_id, headers, "call_post", datas or "") then
         return false
@@ -146,16 +147,16 @@ end
 --put接口
 function HttpClient:call_put(url, datas, headers, querys, timeout)
     if not headers then
-        headers = { ["Content-Type"] = "text/plain" }
+        headers = {["Content-Type"] = "text/plain" }
     end
     if querys then
         url = self:format_url(url, querys)
     end
     if type(datas) == "table" then
-        datas                   = jencode(datas)
+        datas = jencode(datas)
         headers["Content-Type"] = "application/json"
     end
-    local to         = timeout or HTTP_CALL_TIMEOUT
+    local to = timeout or HTTP_CALL_TIMEOUT
     local session_id = thread_mgr:build_session_id()
     if not self:build_request(url, to, session_id, headers, "call_put", datas or "") then
         return false
@@ -165,8 +166,8 @@ end
 
 --del接口
 function HttpClient:call_del(url, querys, headers, timeout)
-    local to         = timeout or HTTP_CALL_TIMEOUT
-    local fmt_url    = self:format_url(url, querys)
+    local to = timeout or HTTP_CALL_TIMEOUT
+    local fmt_url = self:format_url(url, querys)
     local session_id = thread_mgr:build_session_id()
     if not self:build_request(fmt_url, to, session_id, headers, "call_del") then
         return false

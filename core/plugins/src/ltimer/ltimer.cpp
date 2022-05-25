@@ -126,13 +126,13 @@ namespace ltimer {
 		luatimer.set_function("new", []() { return new lua_timer(); });
 		luatimer.set_function("now", []() { return now(); });
 		luatimer.set_function("now_ms", []() { return now_ms(); });
-		luatimer.set_function("steady", []() { return steady(); });
-		luatimer.set_function("steady_ms", []() { return steady_ms(); });
+		luatimer.set_function("clock", []() { return steady(); });
+		luatimer.set_function("clock_ms", []() { return steady_ms(); });
 		luatimer.set_function("sleep", [](uint64_t ms) { return sleep(ms); });
         luatimer.set_function("cron_next", cron_next);
 		luatimer.set_function("time", [](lua_State* L) {
 			luakit::kit_state kit_state(L);
-			return kit_state.as_return(now_ms(), now());
+            return kit_state.as_return(now_ms(), steady_ms());
 			});
 		return luatimer;
 	}

@@ -3,6 +3,7 @@ import("network/http_client.lua")
 local ljson         = require("lcjson")
 local lcrypt        = require("lcrypt")
 
+local qget          = hive.get
 local log_err       = logger.err
 local log_info      = logger.info
 local lmd5          = lcrypt.md5
@@ -11,8 +12,8 @@ local sformat       = string.format
 local json_decode   = ljson.decode
 local json_encode   = ljson.encode
 
-local http_client   = hive.get("http_client")
-local thread_mgr    = hive.get("thread_mgr")
+local http_client   = qget("http_client")
+local thread_mgr    = qget("thread_mgr")
 
 local WORD_SEPARATOR    = "\x02"
 local LINE_SEPARATOR    = "\x01"
@@ -104,7 +105,7 @@ function Nacos:listen_config(data_id, group, on_changed)
             if res and #res > 0 then
                 local value = self:get_config(data_id, rgroup)
                 if value then
-                    md5 = lmd5(value, true)
+                    md5 = lmd5(value, 1)
                     on_changed(data_id, rgroup, value)
                 end
             end

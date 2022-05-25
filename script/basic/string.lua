@@ -10,6 +10,8 @@ local supper   = string.upper
 local slower   = string.lower
 local sformat  = string.format
 
+string_ext = _ENV.string_ext or {}
+
 --------------------------------------------------------------------------------
 function string_ext.eval(str)
     if str == nil then

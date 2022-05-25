@@ -1,5 +1,7 @@
 -- router_mgr.lua
 local pairs             = pairs
+local qget              = hive.get
+local qenum             = hive.enum
 local log_err           = logger.err
 local log_info          = logger.info
 local mrandom           = math.random
@@ -7,18 +9,18 @@ local signal_quit       = signal.quit
 local tunpack           = table.unpack
 local sformat           = string.format
 local sid2name          = service.id2name
-local check_success     = utility.check_success
+local qsuccess          = hive.success
 local qhash_code        = hive.hash_code
 
-local timer_mgr         = hive.get("timer_mgr")
-local thread_mgr        = hive.get("thread_mgr")
-local event_mgr         = hive.get("event_mgr")
-local update_mgr        = hive.get("update_mgr")
-local config_mgr        = hive.get("config_mgr")
+local timer_mgr         = qget("timer_mgr")
+local thread_mgr        = qget("thread_mgr")
+local event_mgr         = qget("event_mgr")
+local update_mgr        = qget("update_mgr")
+local config_mgr        = qget("config_mgr")
 
-local HEARTBEAT_TIME    = hive.enum("NetwkTime", "HEARTBEAT_TIME")
-local RECONNECT_TIME    = hive.enum("NetwkTime", "RECONNECT_TIME")
-local RPC_CALL_TIMEOUT  = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
+local HEARTBEAT_TIME    = qenum("NetwkTime", "HEARTBEAT_TIME")
+local RECONNECT_TIME    = qenum("NetwkTime", "RECONNECT_TIME")
+local RPC_CALL_TIMEOUT  = qenum("NetwkTime", "RPC_CALL_TIMEOUT")
 
 local RouterMgr = singleton()
 local prop = property(RouterMgr)
@@ -154,11 +156,11 @@ function RouterMgr:collect(service_id, rpc, ...)
     local collect_res = {}
     local session_id = thread_mgr:build_session_id()
     local ok, code, target_cnt = self:forward_client(self.master, "call_broadcast", session_id, service_id, rpc, ...)
-    if ok and check_success(code) then
+    if ok and qsuccess(code) then
         while target_cnt > 0 do
             target_cnt = target_cnt - 1
             local ok_c, code_c, res = thread_mgr:yield(session_id, "collect", RPC_CALL_TIMEOUT)
-            if ok_c and check_success(code_c) then
+            if ok_c and qsuccess(code_c) then
                 collect_res[#collect_res + 1] = res
             end
         end

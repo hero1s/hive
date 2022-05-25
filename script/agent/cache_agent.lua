@@ -1,7 +1,7 @@
 -- cache_agent.lua
 
 local log_err       = logger.err
-local check_failed  = utility.check_failed
+local check_failed  = hive.failed
 
 local router_mgr    = hive.get("router_mgr")
 

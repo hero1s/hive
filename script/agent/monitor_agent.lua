@@ -7,8 +7,8 @@ local env_addr       = environ.addr
 local log_err        = logger.err
 local log_warn       = logger.warn
 local log_info       = logger.info
-local check_success  = utility.check_success
-local check_failed   = utility.check_failed
+local check_success  = hive.success
+local check_failed   = hive.failed
 
 local event_mgr      = hive.get("event_mgr")
 local timer_mgr      = hive.get("timer_mgr")

@@ -4,11 +4,11 @@ local lcrypt          = require("lcrypt")
 local log_err         = logger.err
 local log_info        = logger.info
 local ipairs          = ipairs
-local ltime           = ltimer.time
-local lcron_next      = ltimer.cron_next
 local tpack           = table.pack
 local tunpack         = table.unpack
 local new_guid        = lcrypt.guid_new
+local lclock_ms       = ltimer.clock_ms
+local lcron_next      = ltimer.cron_next
 
 --定时器精度，20ms
 local TIMER_ACCURYACY = 20
@@ -22,21 +22,21 @@ prop:reader("timers", {})
 prop:reader("last_ms", 0)
 prop:reader("escape_ms", 0)
 function TimerMgr:__init()
-    self.last_ms = ltime()
+    self.last_ms = lclock_ms()
 end
 
-function TimerMgr:trigger(handle, now_ms)
+function TimerMgr:trigger(handle, clock_ms)
     if handle.times > 0 then
         handle.times = handle.times - 1
     end
     local function timer_cb()
-        handle.params[#handle.params] = now_ms - handle.last
+        handle.params[#handle.params] = clock_ms - handle.last
         handle.cb(tunpack(handle.params))
     end
     --防止在定时器中阻塞
     thread_mgr:fork(timer_cb)
     --更新定时器数据
-    handle.last = now_ms
+    handle.last = clock_ms
     if handle.times == 0 then
         self.timers[handle.timer_id] = nil
         return
@@ -45,17 +45,17 @@ function TimerMgr:trigger(handle, now_ms)
     driver.insert(handle.timer_id, handle.period)
 end
 
-function TimerMgr:on_frame(now_ms)
+function TimerMgr:on_frame(clock_ms)
     if driver then
-        local escape_ms = now_ms - self.last_ms + self.escape_ms
+        local escape_ms = clock_ms - self.last_ms + self.escape_ms
         self.escape_ms  = escape_ms % TIMER_ACCURYACY
-        self.last_ms    = now_ms
+        self.last_ms    = clock_ms
         if escape_ms >= TIMER_ACCURYACY then
             local timers = driver.update(escape_ms // TIMER_ACCURYACY)
-            for _, timer_id in ipairs(timers) do
+            for _, timer_id in ipairs(timers or {}) do
                 local handle = self.timers[timer_id]
                 if handle then
-                    self:trigger(handle, now_ms)
+                    self:trigger(handle, clock_ms)
                 end
             end
         end
@@ -82,10 +82,10 @@ end
 
 function TimerMgr:register(interval, period, times, cb, ...)
     --生成id并注册
-    local now_ms   = ltime()
+    local reg_ms   = lclock_ms()
     local timer_id = new_guid(period, interval)
     --矫正时间误差
-    interval       = interval + (now_ms - self.last_ms)
+    interval       = interval + (reg_ms - self.last_ms)
     driver.insert(timer_id, interval // TIMER_ACCURYACY)
     --包装回调参数
     local params          = tpack(...)
@@ -93,7 +93,7 @@ function TimerMgr:register(interval, period, times, cb, ...)
     --保存信息
     self.timers[timer_id] = {
         cb       = cb,
-        last     = now_ms,
+        last     = reg_ms,
         times    = times,
         params   = params,
         timer_id = timer_id,

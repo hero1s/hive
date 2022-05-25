@@ -4,11 +4,11 @@ local ltimer = require("ltimer")
 local pairs         = pairs
 local tpack         = table.pack
 local tunpack       = table.unpack
-local ltime         = ltimer.time
 local env_status    = environ.status
-local raw_yield     = coroutine.yield
-local raw_resume    = coroutine.resume
-local raw_running   = coroutine.running
+local raw_yield     = hive.yield
+local raw_resume    = hive.resume
+local raw_running   = hive.running
+local lclock_ms     = ltimer.clock_ms
 
 local EvalSlot      = import("kernel/object/eval_slot.lua")
 local event_mgr     = hive.get("event_mgr")
@@ -19,32 +19,28 @@ prop:reader("eval_id", 0)
 prop:reader("perfeval", false)  --性能开关
 prop:reader("eval_list", {})    --协程评估表
 function PerfevalMgr:__init()
-end
-
-function PerfevalMgr:setup()
-    -- 初始化开关
     self.perfeval = env_status("HIVE_PERFEVAL")
 end
 
 function PerfevalMgr:yield()
     if self.perfeval then
-        local now_ms = ltime()
+        local clock_ms = lclock_ms()
         local yield_co = raw_running()
         local eval_cos = self.eval_list[yield_co]
         for _, eval_data in pairs(eval_cos or {}) do
-            eval_data.yield_tick = now_ms
+            eval_data.yield_tick = clock_ms
         end
     end
 end
 
 function PerfevalMgr:resume(co)
     if self.perfeval then
-        local now_ms = ltime()
+        local clock_ms = lclock_ms()
         local resume_co = co or raw_running()
         local eval_cos = self.eval_list[resume_co]
         for _, eval_data in pairs(eval_cos or {}) do
             if eval_data.yield_tick > 0 then
-                local pause_time = now_ms - eval_data.yield_tick
+                local pause_time = clock_ms - eval_data.yield_tick
                 eval_data.yield_time = eval_data.yield_time + pause_time
                 eval_data.yield_tick = 0
             end
@@ -74,7 +70,7 @@ function PerfevalMgr:start(eval_name)
         yield_time = 0,
         eval_id = eval_id,
         eval_name = eval_name,
-        begin_time = ltime(),
+        begin_time = lclock_ms(),
     }
     local eval_cos = self.eval_list[co]
     if eval_cos then
@@ -86,8 +82,8 @@ function PerfevalMgr:start(eval_name)
 end
 
 function PerfevalMgr:stop(eval_data)
-    local now_ms = ltime()
-    event_mgr:notify_listener("on_perfeval", eval_data, now_ms)
+    local clock_ms = lclock_ms()
+    event_mgr:notify_listener("on_perfeval", eval_data, clock_ms)
     self.eval_list[eval_data.co][eval_data.eval_id] = nil
 end
 

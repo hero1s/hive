@@ -1,123 +1,103 @@
 --clock_mgr.lua
-local ltimer = require("ltimer")
 
-import("kernel/thread_mgr.lua")
-import("kernel/timer_mgr.lua")
-import("kernel/clock_mgr.lua")
-local env_number     = environ.number
+local pairs         = pairs
+local odate         = os.date
+local otime         = os.time
+local qget          = hive.get
+local qenum         = hive.enum
+local log_info      = logger.info
+local log_warn      = logger.warn
+local sig_check     = signal.check
+local collectgarbage= collectgarbage
 
-local pairs          = pairs
-local log_info       = logger.info
-local log_warn       = logger.warn
-local ltime          = ltimer.time
-local sig_check      = signal.check
-local collectgarbage = collectgarbage
+local timer_mgr     = qget("timer_mgr")
+local thread_mgr    = qget("thread_mgr")
 
-local timer_mgr      = hive.get("timer_mgr")
-local clock_mgr      = hive.get("clock_mgr")
-local thread_mgr     = hive.get("thread_mgr")
+local HALF_MS       = qenum("PeriodTime", "HALF_MS")
+local SECOND_5_MS   = qenum("PeriodTime", "SECOND_5_MS")
 
-local HALF_MS        = hive.enum("PeriodTime", "HALF_MS")
-local HOUR_MS        = hive.enum("PeriodTime", "HOUR_MS")
-local FRAME_MS       = hive.enum("PeriodTime", "FRAME_MS")
-local SECOND_MS      = hive.enum("PeriodTime", "SECOND_MS")
-local MINUTE_MS      = hive.enum("PeriodTime", "MINUTE_MS")
-local SECOND_2_MS    = hive.enum("PeriodTime", "SECOND_2_MS")
-
-local UpdateMgr      = singleton()
-local prop           = property(UpdateMgr)
-prop:reader("gc_id", 0)
-prop:reader("hour_id", 0)
-prop:reader("frame_id", 0)
-prop:reader("second_id", 0)
-prop:reader("minute_id", 0)
-prop:reader("reload_id", 0)
+local UpdateMgr = singleton()
+local prop = property(UpdateMgr)
+prop:reader("last_day", 0)
+prop:reader("last_hour", 0)
+prop:reader("last_minute", 0)
 prop:reader("quit_objs", {})
 prop:reader("hour_objs", {})
 prop:reader("frame_objs", {})
 prop:reader("second_objs", {})
 prop:reader("minute_objs", {})
-function UpdateMgr:__init()
-    self.is_open_reload = env_number("HIVE_OPEN_RELOAD", 0)
-    self:setup()
-end
 
-function UpdateMgr:setup()
-    local now_ms   = ltime()
-    self.gc_id     = clock_mgr:alarm(SECOND_2_MS, now_ms)
-    self.hour_id   = clock_mgr:alarm(HOUR_MS, now_ms)
-    self.frame_id  = clock_mgr:alarm(FRAME_MS, now_ms)
-    self.second_id = clock_mgr:alarm(SECOND_MS, now_ms)
-    self.minute_id = clock_mgr:alarm(MINUTE_MS, now_ms)
-    self.reload_id = clock_mgr:alarm(SECOND_2_MS, now_ms)
+function UpdateMgr:__init()
     --注册订阅
     self:attach_quit(timer_mgr)
-    self:attach_quit(clock_mgr)
     self:attach_frame(timer_mgr)
     self:attach_second(thread_mgr)
     self:attach_minute(thread_mgr)
-    collectgarbage("generational")
+    --注册5秒定时器
+    timer_mgr:loop(SECOND_5_MS, function()
+        --执行gc
+        collectgarbage("step", 1)
+        --检查文件更新
+        hive.reload()
+    end)
 end
 
-function UpdateMgr:update(now_ms, count)
+function UpdateMgr:update(now_ms, clock_ms)
     --业务更新
     thread_mgr:fork(function()
-        local clock_ms, frame = clock_mgr:check(self.frame_id, now_ms)
-        if not clock_ms then
-            return
-        end
-        if clock_ms > HALF_MS then
-            log_warn("[hive][update] warning clock_ms(%d) too long count(%d)!", clock_ms, count)
+        local diff_ms = clock_ms - hive.clock_ms
+        if diff_ms > HALF_MS then
+            log_warn("[UpdateMgr][update] last frame exec too long(%d ms)!", diff_ms)
         end
         --帧更新
-        hive.frame = frame
+        local frame = hive.frame + 1
         for obj in pairs(self.frame_objs) do
-            obj:on_frame(now_ms, frame)
+            obj:on_frame(clock_ms, frame)
         end
+        hive.frame = frame
+        hive.now_ms = now_ms
+        hive.clock_ms = clock_ms
         --秒更新
-        if not clock_mgr:check(self.second_id, now_ms) then
+        local now = otime()
+        if now == hive.now then
             return
         end
+        hive.now = now
         for obj in pairs(self.second_objs) do
-            obj:on_second(now_ms)
-        end
-        --gc更新
-        if clock_mgr:check(self.gc_id, now_ms) then
-            collectgarbage("step", 1)
-        end
-        --热更新
-        if self.is_open_reload == 1 and clock_mgr:check(self.reload_id, now_ms) then
-            hive.reload()
+            obj:on_second(clock_ms)
         end
         --检查信号
-        if sig_check() then
-            self:quit()
-        end
+        self:sig_check()
         --分更新
-        if not clock_mgr:check(self.minute_id, now_ms) then
+        local time = odate("t", now)
+        if time.min == self.last_minute then
             return
         end
+        self.last_minute = time.min
         for obj in pairs(self.minute_objs) do
-            obj:on_minute(now_ms)
+            obj:on_minute(clock_ms)
         end
         --时更新
-        if not clock_mgr:check(self.hour_id, now_ms) then
+        if time.hour == self.last_hour then
             return
         end
+        self.last_hour = time.hour
         for obj in pairs(self.hour_objs) do
-            obj:on_hour(now_ms)
+            obj:on_hour(clock_ms, time.hour)
         end
         --gc
         collectgarbage("collect")
     end)
 end
 
-function UpdateMgr:quit()
-    for obj in pairs(self.quit_objs) do
-        obj:on_quit()
+function UpdateMgr:sig_check()
+    if sig_check() then
+        log_info("[UpdateMgr][sig_check]service quit for signal !")
+        for obj in pairs(self.quit_objs) do
+            obj:on_quit()
+        end
+        hive.run = nil
     end
-    log_info("[UpdateMgr][quit]service quit for signal !")
-    hive.run = nil
 end
 
 --添加对象到小时更新循环

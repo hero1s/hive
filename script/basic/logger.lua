@@ -20,20 +20,29 @@ logger = {}
 logfeature = {}
 
 function logger.init()
+    --配置日志信息
+    local service_name, index = hive.service_name, hive.index
+    local path = environ.get("HIVE_LOG_PATH", "./logs/")
+    local rolltype = environ.number("HIVE_LOG_ROLL", 0)
+    local maxline = environ.number("HIVE_LOG_LINE", 100000)
+    driver.option(path, service_name, index, rolltype, maxline);
+    --设置日志过滤
+    logger.filter(environ.number("HIVE_LOG_LVL",1))
+    --添加输出目标
+    driver.add_dest(service_name);
     driver.add_lvl_dest(LOG_LEVEL.ERROR)
-    logger.filter(environ.number("HIVE_LOG_LVL"))
+    --设置daemon
+    driver.daemon(environ.status("HIVE_DAEMON"))
+    --graylog
+    local logaddr = environ.get("HIVE_GRAYLOG_ADDR")
+    if logaddr then
+        --local GrayLog = import("driver/graylog.lua")
+        --logger.graydriver = GrayLog(logaddr)
+    end
 end
 
 function logger.daemon(daemon)
     driver.daemon(daemon)
-end
-
-function logger.setup_graylog()
-    local logaddr = environ.get("HIVE_GRAYLOG_ADDR")
-    if logaddr then
-        local GrayLog = import("driver/graylog.lua")
-        logger.graydriver = GrayLog(logaddr)
-    end
 end
 
 function logger.feature(name)
@@ -46,11 +55,11 @@ function logger.feature(name)
     end
 end
 
-function logger.setup_notifier(notifier)
-    logger.notifier = notifier
+function logger.set_webhook(webhook)
+    logger.webhook = webhook
 end
 
-function logger.setup_monitor(monitor)
+function logger.set_monitor(monitor)
     logger.monitor = monitor
 end
 
@@ -78,9 +87,9 @@ local function logger_output(feature, lvl, lvl_name, fmt, log_conf, ...)
     else
         content = sformat(fmt, ...)
     end
-    local notifier = logger.notifier
-    if notify and notifier then
-        notifier:notify(lvl_name, content)
+    local webhook = logger.webhook
+    if notify and webhook then
+        webhook:notify(lvl_name, content)
     end
     local monitor = logger.monitor
     if monitor then
@@ -94,12 +103,13 @@ local function logger_output(feature, lvl, lvl_name, fmt, log_conf, ...)
 end
 
 local LOG_LEVEL_OPTIONS = {
-    [LOG_LEVEL.INFO]    = { "info",  { driver.info,  false, false, false, true } },
-    [LOG_LEVEL.WARN]    = { "warn",  { driver.warn,  true,  false, false, true } },
-    [LOG_LEVEL.DUMP]    = { "dump",  { driver.dump,  true,  false, true,  true } },
-    [LOG_LEVEL.DEBUG]   = { "debug", { driver.debug, true,  false, false, false} },
-    [LOG_LEVEL.ERROR]   = { "err",   { driver.error, true,  true,  false, true } },
-    [LOG_LEVEL.FATAL]   = { "fatal", { driver.fatal, true,  true,  false, true } }
+                                     --lvl_func,     extend, notify, swline, graylog
+    [LOG_LEVEL.INFO]    = { "info",  { driver.info,  false,  false,  false,  true } },
+    [LOG_LEVEL.WARN]    = { "warn",  { driver.warn,  true,   false,  true,   true } },
+    [LOG_LEVEL.DUMP]    = { "dump",  { driver.dump,  true,   false,  true,   true } },
+    [LOG_LEVEL.DEBUG]   = { "debug", { driver.debug, true,   false,  false,  false} },
+    [LOG_LEVEL.ERROR]   = { "err",   { driver.error, true,   true,   true,   true } },
+    [LOG_LEVEL.FATAL]   = { "fatal", { driver.fatal, true,   true,   true,   true } }
 }
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl_name, log_conf = tunpack(conf)

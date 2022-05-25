@@ -38,7 +38,7 @@ function ThreadMgr:lock(key, to)
         queue = QueueFIFO()
         self.syncqueue_map[key] = queue
     end
-    queue.ttl = hive.now_ms
+    queue.ttl = hive.clock_ms
     local head = queue:head()
     if not head then
         local lock = SyncLock(self, key, to)
@@ -105,31 +105,31 @@ function ThreadMgr:resume(co, ...)
 end
 
 function ThreadMgr:yield(session_id, title, ms_to, ...)
-    local context = {co = co_running(), title = title, to = hive.now_ms + ms_to}
+    local context = {co = co_running(), title = title, to = hive.clock_ms + ms_to}
     self.coroutine_map[session_id] = context
     return co_yield(...)
 end
 
-function ThreadMgr:on_minute(now_ms)
+function ThreadMgr:on_minute(clock_ms)
     for key, queue in pairs(self.syncqueue_map) do
-        if queue:empty() and now_ms - queue.ttl > MINUTE_10_MS then
+        if queue:empty() and clock_ms - queue.ttl > MINUTE_10_MS then
             self.syncqueue_map[key] = nil
         end
     end
 end
 
-function ThreadMgr:on_second(now_ms)
+function ThreadMgr:on_second(clock_ms)
     --处理锁超时
     for _, queue in pairs(self.syncqueue_map) do
         local head = queue:head()
-        if head and head.timeout <= now_ms then
+        if head and head.timeout <= clock_ms then
             head:unlock()
         end
     end
     --检查协程超时
     local timeout_coroutines = {}
     for session_id, context in pairs(self.coroutine_map) do
-        if context.to <= now_ms then
+        if context.to <= clock_ms then
             timeout_coroutines[#timeout_coroutines + 1] = session_id
         end
     end

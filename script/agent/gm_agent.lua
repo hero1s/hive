@@ -2,7 +2,7 @@
 
 local tunpack       = table.unpack
 local log_info      = logger.info
-local check_success = utility.check_success
+local check_success = hive.success
 
 local router_mgr    = hive.get("router_mgr")
 local event_mgr     = hive.get("event_mgr")

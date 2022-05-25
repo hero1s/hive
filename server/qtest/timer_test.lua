@@ -12,9 +12,9 @@ local now = ltimer.now()
 local now_ms = ltimer.now_ms()
 log_info("time: now:%s, now_ms:%s", now, now_ms)
 
-local steady = ltimer.steady()
-local steady_ms = ltimer.steady_ms()
-log_info("time: steady:%s, steady_ms:%s", steady, steady_ms)
+local clock = ltimer.clock()
+local clock_ms = ltimer.clock_ms()
+log_info("time: steady:%s, steady_ms:%s", clock, clock_ms)
 
 local timer_mgr = hive.get("timer_mgr")
 local thread_mgr = hive.get("thread_mgr")

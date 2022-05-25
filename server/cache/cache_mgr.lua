@@ -5,7 +5,7 @@ local WheelMap     = import("container/wheel_map.lua")
 local log_err      = logger.err
 local log_info     = logger.info
 local tunpack      = table.unpack
-local check_failed = utility.check_failed
+local check_failed = hive.failed
 
 local KernCode     = enum("KernCode")
 local CacheCode    = enum("CacheCode")

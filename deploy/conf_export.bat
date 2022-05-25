@@ -1,6 +1,9 @@
 @echo off
 set PATH=%PATH%;..\bin\lib
-..\bin\hive.exe ..\tools\excel2lua\excel2lua.conf --input=. --output=../server/config
+set LUA_CPATH=!/lib/?.dll;;
+set LUA_PATH=!/../tools/excel2lua/?.lua;!/../script/?.lua;;
+
+..\bin\hive.exe --entry=main_convertor --input=. --output=../server/config
 
 move ..\server\config\database_cfg.lua ..\bin\svrconf\template
 move ..\server\config\router_cfg.lua ..\bin\svrconf\template

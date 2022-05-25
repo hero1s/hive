@@ -9,7 +9,7 @@ local lextension = lstdfs.extension
 local lcurdir    = lstdfs.current_path
 local sformat    = string.format
 local oexec      = os.execute
-local hgetenv    = hive.getenv
+local hgetenv    = os.getenv
 
 -- 加密lua
 local function encrypt(lua_dir, encrypt_dir)

@@ -13,7 +13,10 @@
 #include <psapi.h>  
 #include <direct.h>
 #include <process.h>
-#define setenv(k,v,o) _putenv_s(k, v);
+int setenv(const char* k, const char* v, int o) {
+	if (!o && getenv(k)) return 0;
+	return _putenv_s(k, v);
+}
 #else
 #include <fcntl.h>
 #include <unistd.h>
@@ -41,22 +44,21 @@ static const char* get_platform() {
 #endif
 }
 
-static int hive_daemon() {
+static void daemon() {
 #if defined(__linux) || defined(__APPLE__)
-    pid_t pid = fork();
-    if (pid != 0)
-        exit(0);
-    setsid();
-    umask(0);
-    int null = open("/dev/null", O_RDWR);
-    if (null != -1) {
-        dup2(null, STDIN_FILENO);
-        dup2(null, STDOUT_FILENO);
-        dup2(null, STDERR_FILENO);
-        close(null);
-    }
+	pid_t pid = fork();
+	if (pid != 0)
+		exit(0);
+	setsid();
+	umask(0);
+	int null = open("/dev/null", O_RDWR);
+	if (null != -1) {
+		dup2(null, STDIN_FILENO);
+		dup2(null, STDOUT_FILENO);
+		dup2(null, STDERR_FILENO);
+		close(null);
+	}
 #endif
-    return 0;
 }
 
 static void check_input(luakit::kit_state& lua) {
@@ -125,6 +127,14 @@ float get_memory_usage(int pid)
 #endif
 }
 
+static int lset_env(lua_State* L) {
+	const char* key = lua_tostring(L, 1);
+	const char* value = lua_tostring(L, 2);
+	int overwrite = luaL_optinteger(L, 3, 1);
+	setenv(key, value, overwrite);
+	return 0;
+}
+
 void hive_app::set_signal(uint32_t n) {
     uint32_t mask = 1 << n;
     m_signal |= mask;
@@ -149,73 +159,57 @@ void hive_app::exception_handler(std::string msg, std::string& err) {
 	exit(1);
 }
 
-const char* hive_app::get_environ(std::string k) {
-	auto iter = m_environs.find(k);
-	if (iter == m_environs.end()) return nullptr;
-	return iter->second.c_str();
-}
-
 bool hive_app::load(int argc, const char* argv[]) {
     bool bRet = true;
-    luakit::kit_state lua;
-    lua.set("platform", get_platform());
-    //定义函数
-
-    //设置默认参数
-    set_environ("HIVE_SERVICE", "hive");
-    set_environ("HIVE_INDEX", "1");
-    set_environ("HIVE_HOST_IP", "127.0.0.1");
-    //加载LUA配置
-	lua.set_function("set_env", [&](std::string k, std::string v) {
-		m_environs[k] = v;
-	});
-	lua.set_function("set_osenv", [&](std::string k, std::string v) {
-		m_environs[k] = v;
-		setenv(k.c_str(), v.c_str(), 1);
-	});
-
-	lua.run_file(argv[1], [&](std::string err) {
-		std::cout << err << std::endl;
-		bRet = false;
-		return;
-	});
-    //将启动参数转换成环境变量
-    for (int i = 2; i < argc; ++i) {
-        std::string argvi = argv[i];
-        auto pos = argvi.find("=");
-        if (pos != std::string::npos) {
-            auto evalue = argvi.substr(pos + 1);
-            auto ekey = fmt::format("HIVE_{}", argvi.substr(2, pos - 2));
-            std::transform(ekey.begin(), ekey.end(), ekey.begin(), [](auto c) { return std::toupper(c); });
-            set_environ(ekey, evalue);
-        }
-    }
+	//将启动参数转负责覆盖环境变量
+	const char* lua_conf = nullptr;
+	if (argc > 1) {
+		std::string argvi = argv[1];
+		if (argvi.find("=") == std::string::npos) {
+			lua_conf = argv[1];
+		}
+	}
+	if (lua_conf) {
+		//加载LUA配置
+		luakit::kit_state lua;
+		lua.set("platform", get_platform());
+		lua.set_function("set_env", lset_env);
+		lua.run_file(lua_conf, [&](std::string err) {
+			std::cout << "load lua config err: " << err << std::endl;
+			bRet = false;
+			});
+		lua.close();
+	}
+	//将启动参数转负责覆盖环境变量
+	for (int i = 1; i < argc; ++i) {
+		std::string argvi = argv[i];
+		auto pos = argvi.find("=");
+		if (pos != std::string::npos) {
+			auto evalue = argvi.substr(pos + 1);
+			auto ekey = fmt::format("HIVE_{}", argvi.substr(2, pos - 2));
+			std::transform(ekey.begin(), ekey.end(), ekey.begin(), [](auto c) { return std::toupper(c); });
+			setenv(ekey.c_str(), evalue.c_str(), 1);
+			continue;
+		}
+	}
+	//设置默认参数
+	setenv("HIVE_SANDBOX", "sandbox", 1);
+	setenv("HIVE_SERVICE", "hive", 0);
+	setenv("HIVE_INDEX", "1", 0);
+	setenv("HIVE_HOST_IP", "127.0.0.1", 0);
     return bRet;
 }
 
-void hive_app::init_logger() {
-    std::string index = get_environ("HIVE_INDEX");
-    std::string service = get_environ("HIVE_SERVICE");
-    auto logpath = get_environ_def("HIVE_LOG_PATH", "./logs/");
-    auto maxline = std::stoi(get_environ_def("HIVE_LOG_LINE", "100000"));
-    auto rolltype = (logger::rolling_type)std::stoi(get_environ_def("HIVE_LOG_ROLL", "1"));
-    m_logger->option(logpath, service, index, rolltype, maxline);
-    m_logger->add_dest(service);
-    m_logger->start();
-}
-
 void hive_app::run() {
-	if ((std::stoi(get_environ_def("HIVE_DAEMON", "0")) && strcmp(get_platform(), "windows") != 0)) {
-		hive_daemon();
-		m_logger->daemon(true);
+	if ((std::stoi(get_environ_def("HIVE_DAEMON", "0")))) {
+		daemon();
 	}
-    init_logger();
+	m_logger->start();
     luakit::kit_state lua;
     lua.set("platform", get_platform());
     open_custom_libs(lua.L());//添加扩展库
     auto hive = lua.new_table("hive");
     hive.set("pid", ::getpid());
-    hive.set("environs", m_environs);
     hive.set("platform", get_platform());
     hive.set_function("hash_code", hash_code);
     hive.set_function("get_signal", [&]() { return m_signal; });
@@ -224,19 +218,17 @@ void hive_app::run() {
     hive.set_function("ignore_signal", [](int n) { signal(n, SIG_IGN); });
     hive.set_function("default_signal", [](int n) { signal(n, SIG_DFL); });
     hive.set_function("register_signal", [](int n) { signal(n, on_signal); });
-    hive.set_function("getenv", [&](std::string k) { return get_environ(k); });
-    hive.set_function("setenv", [&](std::string k, std::string v) { m_environs[k] = v; });
     hive.set_function("mem_usage", []() { return get_memory_usage(::getpid()); });
 
-	lua.run_script(fmt::format("require '{}'", get_environ_def("HIVE_SANDBOX","sandbox")), [&](std::string err) {
+	lua.run_script(fmt::format("require '{}'", getenv("HIVE_SANDBOX")), [&](std::string err) {
 		exception_handler("load sandbox err: ", err);
 		});
-	lua.run_script(fmt::format("require '{}'", get_environ("HIVE_ENTRY")), [&](std::string err) {
+	lua.run_script(fmt::format("require '{}'", getenv("HIVE_ENTRY")), [&](std::string err) {
 		exception_handler("load entry err: ", err);
 		});
 	while (hive.get_function("run")) {
         hive.call([&](std::string err) {
-			exception_handler("hive run err: ", err);
+			LOG_FATAL(m_logger) << "hive run err: " << err;
 			});
 		check_input(lua);
 	}

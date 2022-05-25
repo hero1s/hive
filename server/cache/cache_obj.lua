@@ -3,8 +3,8 @@
 local lcrypt = require("lcrypt")
 local log_err       = logger.err
 local new_guid      = lcrypt.guid_new
-local check_failed  = utility.check_failed
-local check_success = utility.check_success
+local check_failed  = hive.failed
+local check_success = hive.success
 
 local KernCode      = enum("KernCode")
 local CacheCode     = enum("CacheCode")

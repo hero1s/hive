@@ -2,6 +2,8 @@ local strbyte       = string.byte
 local strsub        = string.sub
 local strlen        = string.len
 
+io_ext = _ENV.io_ext or {}
+
 --
 -- Write content to a new file.
 --
