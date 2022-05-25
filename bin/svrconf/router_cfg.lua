@@ -1,10 +1,12 @@
--- 路由服务配置信息,全局配置,所有服务都需要读取
--- 路由服最好是分开独立机器部署,规划好后配置不再变更
--- 每个机器配置一行即可,配置了N个服务,则启动index 1-N
-return
+--router_cfg.lua
+--luacheck: ignore 631
 
-{
-    --主机id        路由服IP             起始端口      进程数(index 1 - count)
-    { host_id = 1, host = "127.0.0.1", port = 9001, count = 2 },
-
+--导出配置内容
+return {
+    {
+        host_id = 1, --[[ ip地址 ]]
+        host = '127.0.0.1', --[[ ip地址 ]]
+        count = 2, --[[ host路由部署数量 ]]
+        port = 9001, --[[ 端口 ]]
+    },
 }

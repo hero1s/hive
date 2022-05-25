@@ -8,6 +8,6 @@ set LUA_PATH=!/../tools/excel2lua/?.lua;!/../script/?.lua;;
 move ..\server\config\database_cfg.lua ..\bin\svrconf\template
 move ..\server\config\router_cfg.lua ..\bin\svrconf\template
 move ..\server\config\service_cfg.lua ..\bin\svrconf\template
-rd .\logs /s /q
+
 pause
 
