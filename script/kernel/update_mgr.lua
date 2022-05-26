@@ -32,12 +32,19 @@ function UpdateMgr:__init()
     self:attach_second(thread_mgr)
     self:attach_minute(thread_mgr)
     --注册5秒定时器
+    self.open_reload = environ.number("HIVE_OPEN_RELOAD", 0)
     timer_mgr:loop(SECOND_5_MS, function()
-        --执行gc
-        collectgarbage("step", 1)
-        --检查文件更新
-        hive.reload()
+        self:on_second_5s()
     end)
+end
+
+function UpdateMgr:on_second_5s()
+    --执行gc
+    collectgarbage("step", 5)
+    --检查文件更新
+    if self.open_reload == 1 then
+        hive.reload()
+    end
 end
 
 function UpdateMgr:update(now_ms, clock_ms)
