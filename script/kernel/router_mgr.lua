@@ -1,7 +1,5 @@
 -- router_mgr.lua
 local pairs             = pairs
-local qget              = hive.get
-local qenum             = hive.enum
 local log_err           = logger.err
 local log_info          = logger.info
 local mrandom           = math.random
@@ -12,15 +10,15 @@ local sid2name          = service.id2name
 local qsuccess          = hive.success
 local qhash_code        = hive.hash_code
 
-local timer_mgr         = qget("timer_mgr")
-local thread_mgr        = qget("thread_mgr")
-local event_mgr         = qget("event_mgr")
-local update_mgr        = qget("update_mgr")
-local config_mgr        = qget("config_mgr")
+local timer_mgr         = hive.get("timer_mgr")
+local thread_mgr        = hive.get("thread_mgr")
+local event_mgr         = hive.get("event_mgr")
+local update_mgr        = hive.get("update_mgr")
+local config_mgr        = hive.get("config_mgr")
 
-local HEARTBEAT_TIME    = qenum("NetwkTime", "HEARTBEAT_TIME")
-local RECONNECT_TIME    = qenum("NetwkTime", "RECONNECT_TIME")
-local RPC_CALL_TIMEOUT  = qenum("NetwkTime", "RPC_CALL_TIMEOUT")
+local HEARTBEAT_TIME    = hive.enum("NetwkTime", "HEARTBEAT_TIME")
+local RECONNECT_TIME    = hive.enum("NetwkTime", "RECONNECT_TIME")
+local RPC_CALL_TIMEOUT  = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 
 local RouterMgr = singleton()
 local prop = property(RouterMgr)

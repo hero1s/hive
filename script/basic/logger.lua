@@ -33,16 +33,18 @@ function logger.init()
     driver.add_lvl_dest(LOG_LEVEL.ERROR)
     --设置daemon
     driver.daemon(environ.status("HIVE_DAEMON"))
-    --graylog
-    local logaddr = environ.get("HIVE_GRAYLOG_ADDR")
-    if logaddr then
-        --local GrayLog = import("driver/graylog.lua")
-        --logger.graydriver = GrayLog(logaddr)
-    end
 end
 
 function logger.daemon(daemon)
     driver.daemon(daemon)
+end
+
+function logger.setup_graylog()
+    local logaddr = environ.get("HIVE_GRAYLOG_ADDR")
+    if logaddr then
+        local GrayLog = import("driver/graylog.lua")
+        logger.graydriver = GrayLog(logaddr)
+    end
 end
 
 function logger.feature(name)

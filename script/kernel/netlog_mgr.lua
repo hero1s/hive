@@ -1,20 +1,18 @@
 -- netlog_mgr.lua
 local odate         = os.date
-local qget          = hive.get
-local qenum         = hive.enum
 local log_debug     = logger.debug
 local set_monitor   = logger.set_monitor
 local sfind         = string.find
 local sformat       = string.format
 local ssplit        = string_ext.split
 
-local event_mgr     = qget("event_mgr")
-local timer_mgr     = qget("timer_mgr")
-local thread_mgr    = qget("thread_mgr")
+local event_mgr     = hive.get("event_mgr")
+local timer_mgr     = hive.get("timer_mgr")
+local thread_mgr    = hive.get("thread_mgr")
 
-local SUCCESS       = qenum("KernCode", "SUCCESS")
-local SECOND_MS     = qenum("PeriodTime", "SECOND_MS")
-local SECOND_5_S    = qenum("PeriodTime", "SECOND_5_S")
+local SUCCESS       = hive.enum("KernCode", "SUCCESS")
+local SECOND_MS     = hive.enum("PeriodTime", "SECOND_MS")
+local SECOND_5_S    = hive.enum("PeriodTime", "SECOND_5_S")
 
 local PULL_CNT_MAX  = 10
 

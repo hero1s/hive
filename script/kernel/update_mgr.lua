@@ -3,18 +3,16 @@
 local pairs         = pairs
 local odate         = os.date
 local otime         = os.time
-local qget          = hive.get
-local qenum         = hive.enum
 local log_info      = logger.info
 local log_warn      = logger.warn
 local sig_check     = signal.check
 local collectgarbage= collectgarbage
 
-local timer_mgr     = qget("timer_mgr")
-local thread_mgr    = qget("thread_mgr")
+local timer_mgr     = hive.get("timer_mgr")
+local thread_mgr    = hive.get("thread_mgr")
 
-local HALF_MS       = qenum("PeriodTime", "HALF_MS")
-local SECOND_5_MS   = qenum("PeriodTime", "SECOND_5_MS")
+local HALF_MS       = hive.enum("PeriodTime", "HALF_MS")
+local SECOND_5_MS   = hive.enum("PeriodTime", "SECOND_5_MS")
 
 local UpdateMgr = singleton()
 local prop = property(UpdateMgr)

@@ -2,15 +2,14 @@
 import("kernel/object/linux.lua")
 local InfluxDB = import("driver/influx.lua")
 
-local qget          = hive.get
 local env_get       = environ.get
 local env_addr      = environ.addr
 local env_status    = environ.status
 
-local event_mgr     = qget("event_mgr")
-local update_mgr    = qget("update_mgr")
-local thread_mgr    = qget("thread_mgr")
-local linux_statis  = qget("linux_statis")
+local event_mgr     = hive.get("event_mgr")
+local update_mgr    = hive.get("update_mgr")
+local thread_mgr    = hive.get("thread_mgr")
+local linux_statis  = hive.get("linux_statis")
 
 local StatisMgr = singleton()
 local prop = property(StatisMgr)

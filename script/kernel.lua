@@ -56,7 +56,11 @@ function hive.init()
             import("agent/monitor_agent.lua")
             import("kernel/netlog_mgr.lua")
         end
+        --graylog
+        logger.setup_graylog()
         import("devops/devops_mgr.lua")
+        --todo 移入entry中,防止污染框架
+        import("devops/qlog_helper_mgr.lua")
     end
 end
 

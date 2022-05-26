@@ -4,24 +4,22 @@ local lcrypt        = require("lcrypt")
 local log_err           = logger.err
 local log_info          = logger.info
 local log_warn          = logger.warn
-local qget              = hive.get
-local qenum             = hive.enum
 local qxpcall           = hive.xpcall
 local env_status        = environ.status
 local env_number        = environ.number
 local signalquit        = signal.quit
 
-local event_mgr         =  qget("event_mgr")
-local thread_mgr        =  qget("thread_mgr")
-local protobuf_mgr      =  qget("protobuf_mgr")
-local perfeval_mgr      =  qget("perfeval_mgr")
+local event_mgr         =  hive.get("event_mgr")
+local thread_mgr        =  hive.get("thread_mgr")
+local protobuf_mgr      =  hive.get("protobuf_mgr")
+local perfeval_mgr      =  hive.get("perfeval_mgr")
 
-local FLAG_REQ          = qenum("FlagMask", "REQ")
-local FLAG_RES          = qenum("FlagMask", "RES")
-local FLAG_ZIP          = qenum("FlagMask", "ZIP")
-local FLAG_ENCRYPT      = qenum("FlagMask", "ENCRYPT")
-local NETWORK_TIMEOUT   = qenum("NetwkTime", "NETWORK_TIMEOUT")
-local RPC_CALL_TIMEOUT  = qenum("NetwkTime", "RPC_CALL_TIMEOUT")
+local FLAG_REQ          = hive.enum("FlagMask", "REQ")
+local FLAG_RES          = hive.enum("FlagMask", "RES")
+local FLAG_ZIP          = hive.enum("FlagMask", "ZIP")
+local FLAG_ENCRYPT      = hive.enum("FlagMask", "ENCRYPT")
+local NETWORK_TIMEOUT   = hive.enum("NetwkTime", "NETWORK_TIMEOUT")
+local RPC_CALL_TIMEOUT  = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 
 local out_press         = env_status("HIVE_OUT_PRESS")
 local out_encrypt       = env_status("HIVE_OUT_ENCRYPT")
@@ -111,7 +109,7 @@ function NetServer:write(session, cmd_id, data, session_id, flag)
         event_mgr:notify_listener("on_proto_send", cmd_id, send_len)
         return true
     end
-    log_err("[NetServer][write] call_pack failed! code:%s", send_len)
+    --log_err("[NetServer][write] call_pack failed! code:%s", send_len)
     return false
 end
 
@@ -133,11 +131,13 @@ end
 
 -- 发送数据
 function NetServer:send_pack(session, cmd_id, data, session_id)
+    logger.log_client_msg(session,cmd_id,data,session_id)
     return self:write(session, cmd_id, data, session_id, FLAG_REQ)
 end
 
 -- 回调数据
 function NetServer:callback_pack(session, cmd_id, data, session_id)
+    logger.log_client_msg(session,cmd_id,data,session_id)
     return self:write(session, cmd_id, data, session_id, FLAG_RES)
 end
 
