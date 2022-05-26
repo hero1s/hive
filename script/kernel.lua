@@ -59,8 +59,6 @@ function hive.init()
         --graylog
         logger.setup_graylog()
         import("devops/devops_mgr.lua")
-        --todo 移入entry中,防止污染框架
-        import("devops/qlog_helper_mgr.lua")
     end
 end
 
