@@ -36,6 +36,8 @@ function UpdateMgr:__init()
     timer_mgr:loop(SECOND_5_MS, function()
         self:on_second_5s()
     end)
+    --开启分代gc
+    collectgarbage("generational")
 end
 
 function UpdateMgr:on_second_5s()

@@ -91,18 +91,22 @@ function hive.failed(code)
     return code ~= SUCCESS
 end
 
---获取utc时间戳
+---获取utc时间戳
 local utc_diff_time = nil
 function hive.utc_time(time)
     if not time or time <= 0 then
         time = hive.now
     end
     if not utc_diff_time then
-        local nowt    = odate("*t", time)
-        local utct    = odate("!*t", time)
-        utc_diff_time = (nowt.hour - utct.hour) * HOUR_S
+        local nowt = odate("*t", time)
+        local utct = odate("!*t", time)
+        local diff_hour = nowt.hour - utct.hour
+        if diff_hour < 0 then
+            diff_hour = diff_hour + 24
+        end
+        utc_diff_time = diff_hour * HOUR_S
     end
-    return time - utc_diff_time
+    return time + utc_diff_time
 end
 
 --获取一个类型的时间版本号
@@ -111,14 +115,15 @@ function hive.edition(period, time, offset)
     if not time or time <= 0 then
         time = hive.now
     end
-    local t = odate("*t", time - (offset or 0))
+    time = time - (offset or 0)
+    local t = odate("*t", time)
     if period == "hour" then
         edition = time // HOUR_S
     elseif period == "day" then
         edition = time // DAY_S
     elseif period == "week" then
-        --19700101是星期四，周日为每周第一天
-        edition = ((time // DAY_S) + 4) // 7
+        --19700101是星期四，周日为每周第一天(游戏内周一为每周的第一天)
+        edition = ((time // DAY_S) + 3) // 7
     elseif period == "month" then
         edition = t.year * 100 + t.month
     elseif period == "year" then
