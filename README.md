@@ -52,7 +52,7 @@ Distributed game server framework based on CPP 17 && LUA 5.4
   
 ## ![img.png](doc/img.png)
 
-## 有bug或好的建议请@ QQ群:196027848 Toney
+## 有bug或好的建议请@ QQ群:543833695 Toney
 
 ## Friend Open Source
   - quanta: https://github.com/xiyoo0812/quanta
