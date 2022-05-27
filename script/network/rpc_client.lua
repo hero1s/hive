@@ -2,8 +2,8 @@
 local tunpack      = table.unpack
 local tpack        = table.pack
 local log_err      = logger.err
-local qxpcall      = hive.xpcall
-local qhash_code   = hive.hash_code
+local hxpcall      = hive.xpcall
+local hhash_code   = hive.hash_code
 
 local event_mgr    = hive.get("event_mgr")
 local socket_mgr   = hive.get("socket_mgr")
@@ -77,7 +77,7 @@ function RpcClient:connect()
     end
     socket.on_call         = function(recv_len, session_id, rpc_flag, source, rpc, ...)
         event_mgr:notify_listener("on_rpc_recv", rpc, recv_len)
-        qxpcall(self.on_socket_rpc, "on_socket_rpc: %s", self, socket, session_id, rpc_flag, source, rpc, ...)
+        hxpcall(self.on_socket_rpc, "on_socket_rpc: %s", self, socket, session_id, rpc_flag, source, rpc, ...)
     end
     socket.call_rpc        = function(session_id, rpc_flag, rpc, ...)
         local send_len = socket.call(session_id, rpc_flag, hive.id, rpc, ...)
@@ -97,7 +97,7 @@ function RpcClient:connect()
         end
     end
     socket.call_hash       = function(session_id, service_id, hash_key, rpc, ...)
-        local hash_value = qhash_code(hash_key)
+        local hash_value = hhash_code(hash_key)
         local send_len   = socket.forward_hash(session_id, FlagMask.REQ, hive.id, service_id, hash_value, rpc, ...)
         return self:on_call_router(rpc, send_len, ...)
     end
@@ -122,7 +122,7 @@ function RpcClient:connect()
     end
     socket.on_connect      = function(res)
         if res == "ok" then
-            qxpcall(self.on_socket_connect, "on_socket_connect: %s", self, socket, res)
+            hxpcall(self.on_socket_connect, "on_socket_connect: %s", self, socket, res)
         else
             self:on_socket_error(socket.token, res)
         end

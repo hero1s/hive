@@ -1,6 +1,6 @@
 local lcrypt            = require("lcrypt")
 local log_err           = logger.err
-local qxpcall           = hive.xpcall
+local hxpcall           = hive.xpcall
 local env_status        = environ.status
 
 local event_mgr         = hive.get("event_mgr")
@@ -63,7 +63,7 @@ function NetClient:connect(block)
     end
     socket.on_call_pack = function(recv_len, cmd_id, flag, session_id, data)
         event_mgr:notify_listener("on_proto_recv", cmd_id, recv_len)
-        qxpcall(self.on_socket_rpc, "on_socket_rpc: %s", self, socket, cmd_id, flag, session_id, data)
+        hxpcall(self.on_socket_rpc, "on_socket_rpc: %s", self, socket, cmd_id, flag, session_id, data)
     end
     socket.on_error = function(token, err)
         thread_mgr:fork(function()

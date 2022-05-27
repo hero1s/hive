@@ -1,5 +1,5 @@
 -- wheel_map.lua
-local qhash_code = hive.hash_code
+local hhash_code = hive.hash_code
 
 local WheelMap   = class()
 local prop       = property(WheelMap)
@@ -17,7 +17,7 @@ end
 
 -- 设置指定key的值
 function WheelMap:set(key, value)
-    local wheel_no = qhash_code(key, self.wheel_cnt)
+    local wheel_no = hhash_code(key, self.wheel_cnt)
     local host_map = self.host_maps[wheel_no]
     if not host_map[key] and value then
         self.count = self.count + 1
@@ -32,7 +32,7 @@ function WheelMap:get(key)
     if not key then
         return nil
     end
-    local wheel_no = qhash_code(key, self.wheel_cnt)
+    local wheel_no = hhash_code(key, self.wheel_cnt)
     local host_map = self.host_maps[wheel_no]
     return host_map[key]
 end

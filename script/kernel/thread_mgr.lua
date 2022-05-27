@@ -7,7 +7,7 @@ local co_yield      = coroutine.yield
 local co_create     = coroutine.create
 local co_resume     = coroutine.resume
 local co_running    = coroutine.running
-local qxpcall       = hive.xpcall
+local hxpcall       = hive.xpcall
 local log_err       = logger.err
 
 local QueueFIFO     = import("container/queue_fifo.lua")
@@ -74,13 +74,13 @@ function ThreadMgr:co_create(f)
     local co = pool:pop()
     if co == nil then
         co = co_create(function(...)
-            qxpcall(f, "[ThreadMgr][co_create] fork error: %s", ...)
+            hxpcall(f, "[ThreadMgr][co_create] fork error: %s", ...)
             while true do
                 f = nil
                 pool:push(co)
                 f = co_yield()
                 if type(f) == "function" then
-                    qxpcall(f, "[ThreadMgr][co_create] fork error: %s", co_yield())
+                    hxpcall(f, "[ThreadMgr][co_create] fork error: %s", co_yield())
                 end
             end
         end)

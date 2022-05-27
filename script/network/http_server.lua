@@ -5,6 +5,7 @@ local Socket      = import("driver/socket.lua")
 
 local type        = type
 local log_err     = logger.err
+local log_warn    = logger.warn
 local log_info    = logger.info
 local log_debug   = logger.debug
 local json_encode = ljson.encode
@@ -67,7 +68,7 @@ function HttpServer:on_socket_recv(socket, token)
     end
     local buf = socket:get_recvbuf()
     if #buf == 0 or not request:append(buf) then
-        log_err("[HttpServer][on_socket_recv] http request append failed, close client(token:%s)!", token)
+        log_warn("[HttpServer][on_socket_recv] http request append failed, close client(token:%s)!", token)
         self:response(socket, 400, request, "this http request parse error!")
         return
     end
@@ -76,7 +77,7 @@ function HttpServer:on_socket_recv(socket, token)
     local state              = request:state()
     local HTTP_REQUEST_ERROR = 2
     if state == HTTP_REQUEST_ERROR then
-        log_err("[HttpServer][on_socket_recv] http request process failed, close client(token:%s)!", token)
+        log_warn("[HttpServer][on_socket_recv] http request process failed, close client(token:%s)!", token)
         self:response(socket, 400, request, "this http request parse error!")
         return
     end

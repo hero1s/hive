@@ -4,7 +4,7 @@ local lcrypt        = require("lcrypt")
 local log_err           = logger.err
 local log_info          = logger.info
 local log_warn          = logger.warn
-local qxpcall           = hive.xpcall
+local hxpcall           = hive.xpcall
 local env_status        = environ.status
 local env_number        = environ.number
 local signalquit        = signal.quit
@@ -64,7 +64,7 @@ function NetServer:setup(ip, port, induce)
     log_info("[NetServer][setup] start listen at: %s:%d type=%d", ip, real_port, listen_proto_type)
     -- 安装回调
     self.listener.on_accept = function(session)
-        qxpcall(self.on_socket_accept, "on_socket_accept: %s", self, session)
+        hxpcall(self.on_socket_accept, "on_socket_accept: %s", self, session)
     end
 end
 
@@ -82,11 +82,11 @@ function NetServer:on_socket_accept(session)
         session.fc_packet = session.fc_packet + 1
         session.fc_bytes  = session.fc_bytes  + recv_len
         event_mgr:notify_listener("on_proto_recv", cmd_id, recv_len)
-        qxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, cmd_id, flag, session_id, data)
+        hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, cmd_id, flag, session_id, data)
     end
     -- 绑定网络错误回调（断开）
     session.on_error = function(token, err)
-        qxpcall(self.on_socket_error, "on_socket_error: %s", self, token, err)
+        hxpcall(self.on_socket_error, "on_socket_error: %s", self, token, err)
     end
     --初始化序号
     session.serial = 0

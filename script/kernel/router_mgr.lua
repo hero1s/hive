@@ -8,7 +8,7 @@ local tunpack           = table.unpack
 local sformat           = string.format
 local sid2name          = service.id2name
 local qsuccess          = hive.success
-local qhash_code        = hive.hash_code
+local hhash_code        = hive.hash_code
 
 local timer_mgr         = hive.get("timer_mgr")
 local thread_mgr        = hive.get("thread_mgr")
@@ -136,7 +136,7 @@ end
 function RouterMgr:hash_router(hash_key)
     local count = #self.candidates
     if count > 0 then
-        local index = qhash_code(hash_key, count)
+        local index = hhash_code(hash_key, count)
         return self.candidates[index]
     end
 end
