@@ -5,7 +5,6 @@ Distributed game server framework based on CPP 17 && LUA 5.4
 * 支持跨平台开发(windows,linux,mac)
 * oop模式的lua开发,支持lua热更新
 * protobuf协议
-    - pbc修改了浮点数自动转整数的逻辑
 * 支持星型组网及多级组网自动路由,router热备,独立子网,服务动态扩容及热备
 * 基于tcp协议及lua协程实现同步代码异步rpc
 * 基于行为树的机器人/单元测试一体化
@@ -13,7 +12,7 @@ Distributed game server framework based on CPP 17 && LUA 5.4
 * 路由协议支持有序及无序模式,支持服务的动态扩容/容灾/hash扩容
 
 ## 数据库
-  - mysql,mongodb,redis,etcd,influxdb
+  - mysql,clickhouse,mongodb,redis,etcd,influxdb
   - 自实现的分布式cache服务,支持分布式读写权限控制,容灾,扩容
   - 基于nacos配置文件的更新及服务发现
   
@@ -49,10 +48,15 @@ Distributed game server framework based on CPP 17 && LUA 5.4
   - [入门](https://github.com/hero1s/hive/wiki/%E5%85%A5%E9%97%A8)
   - [对比skynet](https://github.com/hero1s/hive/wiki/%E5%AF%B9%E6%AF%94skynet%E5%B7%AE%E5%BC%82)
   - [服务器代码规范](https://github.com/hero1s/hive/wiki/%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%BB%A3%E7%A0%81%E8%A7%84%E8%8C%83)
+  - [基础服务](https://github.com/hero1s/hive/wiki/%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1)
   
 ## ![img.png](doc/img.png)
 
 ## 有bug或好的建议请@ QQ群:196027848 Toney
+
+## Friend Open Source
+  - quanta: https://github.com/xiyoo0812/quanta
+  - moon: https://github.com/sniper00/moon
 
 ## todo list 
   - c++ gateway服务
