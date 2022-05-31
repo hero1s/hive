@@ -40,8 +40,8 @@ function RpcClient:on_call_router(rpc, send_len, ...)
 end
 
 --检测存活
-function RpcClient:check_lost(now)
-    if now - self.alive_time > NetwkTime.ROUTER_TIMEOUT / 1000 then
+function RpcClient:check_lost(clock_ms)
+    if clock_ms - self.alive_time > NetwkTime.ROUTER_TIMEOUT then
         self:close()
         return true
     end
@@ -145,7 +145,7 @@ end
 
 --rpc事件
 function RpcClient:on_socket_rpc(socket, session_id, rpc_flag, source, rpc, ...)
-    self.alive_time = hive.now
+    self.alive_time = hive.clock_ms
     if rpc == "on_heartbeat" then
         return self:on_heartbeat(...)
     end
@@ -178,7 +178,7 @@ function RpcClient:on_socket_connect(socket)
     --log_info("[RpcClient][on_socket_connect] connect to %s:%s success!", self.ip, self.port)
     thread_mgr:fork(function()
         self.alive      = true
-        self.alive_time = hive.now
+        self.alive_time = hive.clock_ms
         self.holder:on_socket_connect(self)
         self:heartbeat(true)
     end)

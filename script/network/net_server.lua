@@ -208,7 +208,7 @@ function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
         return
     end
     command_times[cmd_id] = clock_ms
-    session.alive_time = hive.now
+    session.alive_time = hive.clock_ms
     -- 解码
     local body, cmd_name = self:decode(cmd_id, data, flag)
     if not body then

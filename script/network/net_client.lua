@@ -120,7 +120,7 @@ function NetClient:decode(cmd_id, data, flag)
 end
 
 function NetClient:on_socket_rpc(socket, cmd_id, flag, session_id, data)
-    self.alive_time = hive.now
+    self.alive_time = hive.clock_ms
     local body, cmd_name = self:decode(cmd_id, data, flag)
     if not body  then
         log_err("[NetClient][on_socket_rpc] decode failed! cmd_id:%s，data:%s", cmd_id, data)
@@ -201,7 +201,7 @@ end
 -- 连接成回调
 function NetClient:on_socket_connect(socket)
     self.alive = true
-    self.alive_time = hive.now
+    self.alive_time = hive.clock_ms
     self.holder:on_socket_connect(self)
 end
 

@@ -388,18 +388,18 @@ function RedisDB:on_hour()
 end
 
 function RedisDB:on_second()
-    local now = hive.now
+    local clock_ms = hive.clock_ms
     local command_sock = self.command_sock
     local subscribe_sock = self.subscribe_sock
     if command_sock:is_alive() then
-        if (now - command_sock:get_alive_time() >= NT_TIMEOUT) and (not self.command_sessions:empty()) then
+        if (clock_ms - command_sock:get_alive_time() >= NT_TIMEOUT) and (not self.command_sessions:empty()) then
             command_sock:close()
         end
     else
         self:login(command_sock, "query")
     end
     if subscribe_sock:is_alive() then
-        if (now - subscribe_sock:get_alive_time() >= NT_TIMEOUT) and (not self.subscribe_sessions:empty()) then
+        if (clock_ms - subscribe_sock:get_alive_time() >= NT_TIMEOUT) and (not self.subscribe_sessions:empty()) then
             subscribe_sock:close()
         end
     else

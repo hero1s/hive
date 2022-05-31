@@ -100,7 +100,7 @@ end
 
 --更新
 function RouterMgr:on_frame()
-    local now_tick = hive.now
+    local now_tick = hive.clock_ms
     for _, node in pairs(self.routers) do
         local client = node.client
         if not client:is_alive() then

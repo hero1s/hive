@@ -11,6 +11,7 @@ end
 --初始化
 function DevopsMgr:setup()
     self:file_pid_oper(true)
+    self:attach_service()
     -- 退出通知
     update_mgr:attach_quit(self)
 end
@@ -19,13 +20,21 @@ function DevopsMgr:on_quit()
     self:file_pid_oper(false)
 end
 
+--挂载附加服务
+function DevopsMgr:attach_service()
+    local service = environ.get("HIVE_ATTACH_SERVICE")
+    if service then
+        import(service)
+    end
+end
+
 --写入pid文件
 function DevopsMgr:file_pid_oper(is_create)
     if hive.platform == "windows" then
         return
     end
     local lstdfs   = require("lstdfs")
-    local filename = sformat("./pid/%s_%s.txt", env_get("HIVE_SERVICE"),hive.index)
+    local filename = sformat("./pid/%s_%s.txt", env_get("HIVE_SERVICE"), hive.index)
     if is_create then
         local is_dir = lstdfs.is_directory("./pid")
         if is_dir ~= true then

@@ -76,7 +76,7 @@ function Socket:connect(ip, port)
             self:on_socket_error(session.token, res)
         end
         self.alive = success
-        self.alive_time = hive.now
+        self.alive_time = hive.clock_ms
         thread_mgr:response(block_id, success, res)
     end
     session.on_call_text = function(recv_len, data)
@@ -101,7 +101,7 @@ end
 
 function Socket:on_socket_recv(session, data)
     self.recvbuf = self.recvbuf .. data
-    self.alive_time = hive.now
+    self.alive_time = hive.clock_ms
     self.host:on_socket_recv(self, self.token)
 end
 

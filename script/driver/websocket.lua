@@ -87,7 +87,7 @@ end
 function WebSocket:on_socket_recv(session, data)
     local token = session.token
     if self.alive then
-        self.alive_time = hive.now
+        self.alive_time = hive.clock_ms
         self.recvbuf = self.recvbuf .. data
         while true do
             local frame = self:recv_frame()

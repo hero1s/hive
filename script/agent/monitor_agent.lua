@@ -40,15 +40,15 @@ function MonitorAgent:__init()
 end
 
 function MonitorAgent:on_timer()
-    local now    = hive.now
+    local clock_ms    = hive.clock_ms
     local client = self.client
     if not client:is_alive() then
-        if now >= self.next_connect_time then
-            self.next_connect_time = now + RECONNECT_TIME
+        if clock_ms >= self.next_connect_time then
+            self.next_connect_time = clock_ms + RECONNECT_TIME
             client:connect()
         end
     else
-        if not client:check_lost(now) then
+        if not client:check_lost(clock_ms) then
             client:heartbeat()
         end
     end
@@ -57,7 +57,7 @@ end
 -- 连接关闭回调
 function MonitorAgent:on_socket_error(client, token, err)
     -- 设置重连时间
-    self.next_connect_time = hive.now
+    self.next_connect_time = hive.clock_ms
 end
 
 -- 连接成回调

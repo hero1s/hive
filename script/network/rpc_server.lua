@@ -50,7 +50,7 @@ end
 
 --rpc事件
 function RpcServer:on_socket_rpc(client, rpc, session_id, rpc_flag, source, ...)
-    client.alive_time = hive.now
+    client.alive_time = hive.clock_ms
     if session_id == 0 or rpc_flag == FlagMask.REQ then
         local function dispatch_rpc_message(...)
             local _<close> = perfeval_mgr:eval(rpc)
