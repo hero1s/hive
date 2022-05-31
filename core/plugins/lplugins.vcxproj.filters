@@ -33,9 +33,6 @@
     <ClCompile Include="src\bson\bson.c">
       <Filter>bson</Filter>
     </ClCompile>
-    <ClCompile Include="src\export.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\laoi\laoi.cpp">
       <Filter>laoi</Filter>
     </ClCompile>
@@ -91,9 +88,6 @@
     </Filter>
     <Filter Include="random">
       <UniqueIdentifier>{7DDF32E1-7A6A-C5CE-04A8-ECBF782CA509}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src">
-      <UniqueIdentifier>{25D902C2-4283-AB8C-FBAC-54DFA101AD31}</UniqueIdentifier>
     </Filter>
     <Filter Include="tools">
       <UniqueIdentifier>{4A931512-CE65-BDC9-CA68-08ADF92D8783}</UniqueIdentifier>

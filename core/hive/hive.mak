@@ -35,12 +35,10 @@ STDCPP = -std=c++17
 MYCFLAGS += -I../../extend/lua/lua
 MYCFLAGS += -I../../extend/fmt/include
 MYCFLAGS += -I../../extend/luakit/include
-MYCFLAGS += -I../../extend/lualog/lualog
 MYCFLAGS += -I../../extend/utility
 
 #需要定义的选项
 MYCFLAGS += -DFMT_HEADER_ONLY
-MYCFLAGS += -DUSE_PROFILE
 
 #LDFLAGS
 LDFLAGS =
@@ -96,6 +94,11 @@ OBJS += $(patsubst $(SRC_DIR)/exception/%.c, $(INT_DIR)/exception/%.o, $(filter-
 OBJS += $(patsubst $(SRC_DIR)/exception/%.m, $(INT_DIR)/exception/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/exception/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/exception/%.cc, $(INT_DIR)/exception/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/exception/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/exception/%.cpp, $(INT_DIR)/exception/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/exception/*.cpp)))
+#子目录
+OBJS += $(patsubst $(SRC_DIR)/lualog/%.c, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/lualog/%.m, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/lualog/%.cc, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/lualog/%.cpp, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.cpp)))
 #根目录
 OBJS += $(patsubst $(SRC_DIR)/%.c, $(INT_DIR)/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/%.m, $(INT_DIR)/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/*.m)))
@@ -127,6 +130,7 @@ pre_build:
 	mkdir -p $(INT_DIR)
 	mkdir -p $(TARGET_DIR)
 	mkdir -p $(INT_DIR)/exception
+	mkdir -p $(INT_DIR)/lualog
 
 #后编译
 post_build:

@@ -115,11 +115,6 @@ OBJS += $(patsubst $(SRC_DIR)/luazset/%.m, $(INT_DIR)/luazset/%.o, $(filter-out 
 OBJS += $(patsubst $(SRC_DIR)/luazset/%.cc, $(INT_DIR)/luazset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/luazset/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/luazset/%.cpp, $(INT_DIR)/luazset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/luazset/*.cpp)))
 #子目录
-OBJS += $(patsubst $(SRC_DIR)/lutf8/%.c, $(INT_DIR)/lutf8/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lutf8/*.c)))
-OBJS += $(patsubst $(SRC_DIR)/lutf8/%.m, $(INT_DIR)/lutf8/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lutf8/*.m)))
-OBJS += $(patsubst $(SRC_DIR)/lutf8/%.cc, $(INT_DIR)/lutf8/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lutf8/*.cc)))
-OBJS += $(patsubst $(SRC_DIR)/lutf8/%.cpp, $(INT_DIR)/lutf8/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lutf8/*.cpp)))
-#子目录
 OBJS += $(patsubst $(SRC_DIR)/mongo/%.c, $(INT_DIR)/mongo/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/mongo/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/mongo/%.m, $(INT_DIR)/mongo/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/mongo/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/mongo/%.cc, $(INT_DIR)/mongo/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/mongo/*.cc)))
@@ -176,7 +171,6 @@ pre_build:
 	mkdir -p $(INT_DIR)/lprofile
 	mkdir -p $(INT_DIR)/ltimer
 	mkdir -p $(INT_DIR)/luazset
-	mkdir -p $(INT_DIR)/lutf8
 	mkdir -p $(INT_DIR)/mongo
 	mkdir -p $(INT_DIR)/protobuf
 	mkdir -p $(INT_DIR)/random

@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <map>
 
-#include "logger.h"
+#include "lualog/logger.h"
 
 using namespace logger;
 class hive_app final

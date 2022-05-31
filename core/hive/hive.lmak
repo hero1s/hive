@@ -20,7 +20,7 @@ FLAGS = {
 
 --需要定义的选项
 DEFINES = {
-	"FMT_HEADER_ONLY","USE_PROFILE"
+	"FMT_HEADER_ONLY"
 }
 
 --需要的include目录
@@ -28,7 +28,6 @@ INCLUDES = {
 	"../../extend/lua/lua",
 	"../../extend/fmt/include",
 	"../../extend/luakit/include",
-	"../../extend/lualog/lualog",
 	"../../extend/utility",
 }
 

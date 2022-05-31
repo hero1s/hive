@@ -19,7 +19,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\bson\bson.c"/>
-    <ClCompile Include="src\export.cpp"/>
     <ClCompile Include="src\laoi\laoi.cpp"/>
     <ClCompile Include="src\lcrab\lua-crab.c"/>
     <ClCompile Include="src\lprofile\profile.cpp"/>
