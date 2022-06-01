@@ -278,14 +278,16 @@ namespace MiniExcel {
             c->type = "blank";
             return;
         }
+        c->type = "error";
+        if (!v->GetText()) { return; }
+        c->value = v->GetText();
+
         if ((!t || !strcmp(t, "n")) && v)
         {
             if (!s)
             {
-                c->type = "error";
                 return;
-            }
-            c->value = v->GetText();
+            }         
             int idx = atoi(s);
             std::map<int, int>::iterator iter = _formIds.find(idx);
             if (iter == _formIds.end())
@@ -322,23 +324,19 @@ namespace MiniExcel {
         }
         if (t && !strcmp(t, "inlineStr"))
         {
-            c->type = "string";
-            c->value = v->GetText();
+            c->type = "string";            
             return;
         }
         if (t && !strcmp(t, "str"))
         {
-            c->type = "string";
-            c->value = v->GetText();
+            c->type = "string";            
             return;
         }
         if (t && !strcmp(t, "b"))
         {
-            c->type = "bool";
-            c->value = v->GetText();
+            c->type = "bool";            
             return;
-        }
-        c->type = "error";
+        }        
     }
 
     void ExcelFile::readSheet(Sheet& sh)

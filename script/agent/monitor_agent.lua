@@ -19,6 +19,7 @@ local RPC_FAILED     = hive.enum("KernCode", "RPC_FAILED")
 local SECOND_MS      = hive.enum("PeriodTime", "SECOND_MS")
 local RECONNECT_TIME = hive.enum("NetwkTime", "RECONNECT_TIME")
 local HEARTBEAT_TIME = hive.enum("NetwkTime", "HEARTBEAT_TIME")
+local ServiceStatus  = enum("ServiceStatus")
 
 local MonitorAgent   = singleton()
 local prop           = property(MonitorAgent)
@@ -37,11 +38,12 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "on_hive_quit")
     event_mgr:add_listener(self, "on_remote_message")
     event_mgr:add_listener(self, "on_reload")
+    event_mgr:add_listener(self, "stop_service")
 end
 
 function MonitorAgent:on_timer()
-    local clock_ms    = hive.clock_ms
-    local client = self.client
+    local clock_ms = hive.clock_ms
+    local client   = self.client
     if not client:is_alive() then
         if clock_ms >= self.next_connect_time then
             self.next_connect_time = clock_ms + RECONNECT_TIME
@@ -115,7 +117,13 @@ function MonitorAgent:on_reload()
     hive.protobuf_mgr:reload()
     config_mgr:reload()
 
-    event_mgr:notify_trigger("reload_config", self)
+    event_mgr:notify_trigger("reload_config")
+end
+
+function MonitorAgent:stop_service(force)
+    hive.service_status = (force == 1) and ServiceStatus.STOP or ServiceStatus.WAIT_STOP
+    log_err("[MonitorAgent][on_stop_service] will stop service,service_status:%s,:%s,%s", hive.service_status, hive.service, hive.index)
+    event_mgr:notify_trigger("stop_service")
 end
 
 hive.monitor = MonitorAgent()

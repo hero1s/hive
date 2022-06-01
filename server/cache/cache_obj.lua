@@ -1,6 +1,6 @@
 -- cache_obj.lua
 -- cache的实体类
-local lcrypt = require("lcrypt")
+local lcrypt        = require("lcrypt")
 local log_err       = logger.err
 local new_guid      = lcrypt.guid_new
 local check_failed  = hive.failed
@@ -14,8 +14,8 @@ local mongo_mgr     = hive.get("mongo_mgr")
 
 local CacheRow      = import("cache/cache_row.lua")
 
-local CacheObj = class()
-local prop = property(CacheObj)
+local CacheObj      = class()
+local prop          = property(CacheObj)
 prop:accessor("uuid", 0)                -- uuid
 prop:accessor("flush", false)           -- flush status
 prop:accessor("holding", true)          -- holding status
@@ -38,33 +38,33 @@ prop:accessor("records", {})            -- records
 prop:accessor("dirty_records", {})      -- dirty records
 
 function CacheObj:__init(cache_conf, primary_value)
-    self.uuid           = new_guid()
-    self.primary_value  = primary_value
-    self.cache_rows     = cache_conf.rows
-    self.db_name        = cache_conf.cache_db
-    self.cache_total    = cache_conf.cache_total
-    self.cache_table    = cache_conf.cache_table
-    self.cache_key      = cache_conf.cache_key
-    self.expire_time    = cache_conf.expire_time
-    self.store_time     = cache_conf.store_time
-    self.store_count    = cache_conf.store_count
-    self.flush_time     = cache_conf.flush_time
+    self.uuid          = new_guid()
+    self.primary_value = primary_value
+    self.cache_rows    = cache_conf.rows
+    self.db_name       = cache_conf.cache_db
+    self.cache_total   = cache_conf.cache_total
+    self.cache_table   = cache_conf.cache_table
+    self.cache_key     = cache_conf.cache_key
+    self.expire_time   = cache_conf.expire_time * 1000
+    self.store_time    = cache_conf.store_time * 1000
+    self.store_count   = cache_conf.store_count
+    self.flush_time    = cache_conf.flush_time * 1000
 end
 
 function CacheObj:load()
-    self.active_tick = hive.now
-    self.update_time = hive.now
+    self.active_tick = hive.clock_ms
+    self.update_time = hive.clock_ms
     if self.cache_total then
         --合并加载模式
-        local query = { [self.cache_key] = self.primary_value }
-        local code, res = mongo_mgr:find_one(self.db_name, self.cache_table, query, {_id = 0})
+        local query     = { [self.cache_key] = self.primary_value }
+        local code, res = mongo_mgr:find_one(self.db_name, self.cache_table, query, { _id = 0 })
         if check_failed(code) then
             log_err("[CacheObj][load] failed: cache_table=%s,res=%s", self.cache_table, res)
             return code
         end
         for _, row_conf in pairs(self.cache_rows) do
-            local tab_name = row_conf.cache_table
-            local record = CacheRow(row_conf, self.primary_value, self.cache_table, res[tab_name])
+            local tab_name         = row_conf.cache_table
+            local record           = CacheRow(row_conf, self.primary_value, self.cache_table, res[tab_name])
             self.records[tab_name] = record
         end
         self.holding = false
@@ -72,10 +72,10 @@ function CacheObj:load()
     else
         --分散加载模式
         for _, row_conf in pairs(self.cache_rows) do
-            local tab_name = row_conf.cache_table
-            local record = CacheRow(row_conf, self.primary_value)
+            local tab_name         = row_conf.cache_table
+            local record           = CacheRow(row_conf, self.primary_value)
             self.records[tab_name] = record
-            local code = record:load(self.db_name)
+            local code             = record:load(self.db_name)
             if check_failed(code) then
                 log_err("[CacheObj][load] load row failed: tab_name=%s", tab_name)
                 return code
@@ -87,8 +87,8 @@ function CacheObj:load()
 end
 
 function CacheObj:active()
-    self.flush = false
-    self.active_tick = hive.now
+    self.flush       = false
+    self.active_tick = hive.clock_ms
 end
 
 function CacheObj:pack()
@@ -125,10 +125,10 @@ function CacheObj:check_store(now)
 end
 
 function CacheObj:save()
-    self.active_tick = hive.now
+    self.active_tick = hive.clock_ms
     if next(self.dirty_records) then
         self.update_count = 0
-        self.update_time = hive.now
+        self.update_time  = hive.clock_ms
         for record in pairs(self.dirty_records) do
             if check_success(record:save()) then
                 self.dirty_records[record] = nil
@@ -147,10 +147,10 @@ function CacheObj:update(tab_name, tab_data, flush)
         log_err("[CacheObj][update] cannot find record! cache:%s, table:%s", self.cache_table, tab_name)
         return CacheCode.CACHE_KEY_IS_NOT_EXIST
     end
-    self.flush = false
-    self.active_tick = hive.now
+    self.flush        = false
+    self.active_tick  = hive.clock_ms
     self.update_count = self.update_count + 1
-    local code = record:update(tab_data, flush)
+    local code        = record:update(tab_data, flush)
     if record:is_dirty() then
         self.dirty_records[record] = true
     end
@@ -163,10 +163,10 @@ function CacheObj:update_key(tab_name, table_kvs, flush)
         log_err("[CacheObj][update_key] cannot find record! cache:%s, table:%s", self.cache_table, tab_name)
         return CacheCode.CACHE_KEY_IS_NOT_EXIST
     end
-    self.flush = false
-    self.active_tick = hive.now
+    self.flush        = false
+    self.active_tick  = hive.clock_ms
     self.update_count = self.update_count + 1
-    local code = record:update_key(table_kvs, flush)
+    local code        = record:update_key(table_kvs, flush)
     if record:is_dirty() then
         self.dirty_records[record] = true
     end

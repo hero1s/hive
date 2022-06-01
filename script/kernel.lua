@@ -1,18 +1,19 @@
 --kernel.lua
 import("basic/basic.lua")
-local ltimer = require("ltimer")
+local ltimer        = require("ltimer")
 
 local socket_mgr    = nil
 local update_mgr    = nil
 local ltime         = ltimer.time
 
-local HiveMode    = enum("HiveMode")
+local HiveMode      = enum("HiveMode")
+local ServiceStatus = enum("ServiceStatus")
 
 --初始化网络
 local function init_network()
-    local lbus = require("luabus")
-    local max_conn = environ.number("HIVE_MAX_CONN", 64)
-    socket_mgr = lbus.create_socket_mgr(max_conn)
+    local lbus      = require("luabus")
+    local max_conn  = environ.number("HIVE_MAX_CONN", 64)
+    socket_mgr      = lbus.create_socket_mgr(max_conn)
     hive.socket_mgr = socket_mgr
 end
 
@@ -21,6 +22,7 @@ local function init_router()
     import("kernel/router_mgr.lua")
     import("driver/webhook.lua")
     import("agent/gm_agent.lua")
+    import("agent/http_agent.lua")
 end
 
 --初始化loop
@@ -64,12 +66,13 @@ end
 
 --启动
 function hive.startup(entry)
-    hive.now = 0
-    hive.frame = 0
-    hive.yield = coroutine.yield
-    hive.resume = coroutine.resume
-    hive.running = coroutine.running
+    hive.now                   = 0
+    hive.frame                 = 0
+    hive.yield                 = coroutine.yield
+    hive.resume                = coroutine.resume
+    hive.running               = coroutine.running
     hive.now_ms, hive.clock_ms = ltime()
+    hive.service_status        = ServiceStatus.RUN
     --初始化随机种子
     math.randomseed(hive.now_ms)
     --初始化hive

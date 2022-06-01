@@ -127,6 +127,10 @@
                         {
                             "text" : "业务相关",
                             nodes : [],
+                        },
+                        {
+                            "text" : "运维相关",
+                            nodes : [],
                         }
                     ],
                 },
@@ -143,9 +147,9 @@
                 dataType: "json",
                 contentType: "utf-8",
                 success: function (res) {
-                    var nodes = [[],[],[],[]];
+                    var nodes = [[],[],[],[],[]];
                     that.cmdlist = res;
-                    var cmd_names = [[],[],[],[]];
+                    var cmd_names = [[],[],[],[],[]];
                     for (var cmd_name in res) {
                         var cmd_data = res[cmd_name];
                         if(cmd_data) {
@@ -159,6 +163,9 @@
                                     break;
                                 case 3 :
                                     cmd_names[3].push(cmd_name);
+                                    break;
+                                case 4 :
+                                    cmd_names[4].push(cmd_name);
                                     break;
                                 default :
                                     cmd_names[1].push(cmd_name);

@@ -153,6 +153,8 @@ function AdminMgr:dispatch_command(cmd_args, gm_type, service)
         return self:exec_system_cmd(service, tunpack(cmd_args))
     elseif gm_type == GMType.SERVICE then
         return self:exec_service_cmd(service, tunpack(cmd_args))
+    elseif gm_type == GMType.DEV_OPS then
+        return self:exec_global_cmd(service, tunpack(cmd_args))
     end
     return self:exec_player_cmd(tunpack(cmd_args))
 end
