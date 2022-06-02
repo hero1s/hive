@@ -617,7 +617,7 @@ function MysqlDB:__init(conf)
     self.sessions = QueueFIFO()
     self.sock = Socket(self)
     --update
-    update_mgr:attach_hour(self)
+    update_mgr:attach_minute(self)
     update_mgr:attach_second(self)
 end
 
@@ -632,7 +632,7 @@ function MysqlDB:close()
     end
 end
 
-function MysqlDB:on_hour()
+function MysqlDB:on_minute()
     self:ping()
 end
 

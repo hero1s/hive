@@ -1,18 +1,19 @@
 --socket.lua
-local ssub          = string.sub
-local sfind         = string.find
-local log_err       = logger.err
-local log_info      = logger.info
-local hxpcall       = hive.xpcall
+local ssub            = string.sub
+local sfind           = string.find
+local log_err         = logger.err
+local log_info        = logger.info
+local hxpcall         = hive.xpcall
 
-local socket_mgr        = hive.get("socket_mgr")
-local thread_mgr        = hive.get("thread_mgr")
+local socket_mgr      = hive.get("socket_mgr")
+local thread_mgr      = hive.get("thread_mgr")
 
-local CONNECT_TIMEOUT   = hive.enum("NetwkTime", "CONNECT_TIMEOUT")
-local NETWORK_TIMEOUT   = hive.enum("NetwkTime", "NETWORK_TIMEOUT")
+local CONNECT_TIMEOUT = hive.enum("NetwkTime", "CONNECT_TIMEOUT")
+local NETWORK_TIMEOUT = hive.enum("NetwkTime", "NETWORK_TIMEOUT")
+local SOCKET_TIMEOUT  = hive.enum("NetwkTime", "SOCKET_TIMEOUT")
 
-local Socket = class()
-local prop = property(Socket)
+local Socket          = class()
+local prop            = property(Socket)
 prop:reader("ip", nil)
 prop:reader("host", nil)
 prop:reader("token", nil)
@@ -34,9 +35,9 @@ end
 function Socket:close()
     if self.session then
         self.session.close()
-        self.alive = false
+        self.alive   = false
         self.session = nil
-        self.token = nil
+        self.token   = nil
     end
 end
 
@@ -45,7 +46,7 @@ function Socket:listen(ip, port)
         return true
     end
     local proto_type = 2
-    self.listener = socket_mgr.listen(ip, port, proto_type)
+    self.listener    = socket_mgr.listen(ip, port, proto_type)
     if not self.listener then
         log_err("[Socket][listen] failed to listen: %s:%d type=%d", ip, port, proto_type)
         return false
@@ -62,34 +63,35 @@ function Socket:connect(ip, port)
     if self.session then
         return true
     end
-    local proto_type = 2
+    local proto_type    = 2
     local session, cerr = socket_mgr.connect(ip, port, CONNECT_TIMEOUT, proto_type)
     if not session then
         log_err("[Socket][connect] failed to connect: %s:%d type=%d, err=%s", ip, port, proto_type, cerr)
         return false, cerr
     end
     --设置阻塞id
-    local block_id = thread_mgr:build_session_id()
-    session.on_connect = function(res)
+    local block_id       = thread_mgr:build_session_id()
+    session.on_connect   = function(res)
         local success = res == "ok"
         if not success then
             self:on_socket_error(session.token, res)
         end
-        self.alive = success
+        self.alive      = success
         self.alive_time = hive.clock_ms
+        session.set_timeout(SOCKET_TIMEOUT)
         thread_mgr:response(block_id, success, res)
     end
     session.on_call_text = function(recv_len, data)
         hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, data)
     end
-    session.on_error = function(token, err)
+    session.on_error     = function(token, err)
         thread_mgr:fork(function()
             self:on_socket_error(token, err)
         end)
     end
-    self.session = session
-    self.token = session.token
-    self.ip, self.port = ip, port
+    self.session         = session
+    self.token           = session.token
+    self.ip, self.port   = ip, port
     --阻塞模式挂起
     return thread_mgr:yield(block_id, "connect", CONNECT_TIMEOUT)
 end
@@ -100,7 +102,7 @@ function Socket:on_socket_accept(session)
 end
 
 function Socket:on_socket_recv(session, data)
-    self.recvbuf = self.recvbuf .. data
+    self.recvbuf    = self.recvbuf .. data
     self.alive_time = hive.clock_ms
     self.host:on_socket_recv(self, self.token)
 end
@@ -108,7 +110,7 @@ end
 function Socket:on_socket_error(token, err)
     if self.session then
         self.session = nil
-        self.alive = false
+        self.alive   = false
         log_info("[Socket][on_socket_error] err: %s - %s!", err, token)
         self.host:on_socket_error(self, token, err)
         self.token = nil
@@ -120,15 +122,15 @@ function Socket:accept(session, ip, port)
     session.on_call_text = function(recv_len, data)
         hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, data)
     end
-    session.on_error = function(token, err)
+    session.on_error     = function(token, err)
         thread_mgr:fork(function()
             self:on_socket_error(token, err)
         end)
     end
-    self.alive = true
-    self.session = session
-    self.token = session.token
-    self.ip, self.port = ip, port
+    self.alive           = true
+    self.session         = session
+    self.token           = session.token
+    self.ip, self.port   = ip, port
     self.host:on_socket_accept(self, self.token)
 end
 
@@ -140,7 +142,7 @@ function Socket:peek(len, offset)
 end
 
 function Socket:peek_data(split_char, offset)
-    offset = offset or 0
+    offset     = offset or 0
     local i, j = sfind(self.recvbuf, split_char, offset + 1)
     if i then
         return ssub(self.recvbuf, offset + 1, i - 1), j - offset

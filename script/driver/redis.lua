@@ -326,7 +326,7 @@ function RedisDB:__init(conf)
     self.subscribe_sessions = QueueFIFO()
     self.subscribe_context = { name = "subcribe_monitor" }
     --update
-    update_mgr:attach_hour(self)
+    update_mgr:attach_minute(self)
     update_mgr:attach_second(self)
     --setup
     self:setup()
@@ -383,7 +383,7 @@ function RedisDB:login(socket, title)
     return true
 end
 
-function RedisDB:on_hour()
+function RedisDB:on_minute()
     self:ping()
 end
 

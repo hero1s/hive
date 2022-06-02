@@ -76,7 +76,7 @@ function UpdateMgr:update(now_ms, clock_ms)
         --检查信号
         self:sig_check()
         --分更新
-        local time = odate("t", now)
+        local time = odate("*t", now)
         if time.min == self.last_minute then
             return
         end

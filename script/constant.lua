@@ -44,6 +44,7 @@ NetwkTime.HTTP_CALL_TIMEOUT       = 5000      --HTTP调用超时时间
 NetwkTime.DB_CALL_TIMEOUT         = 5000      --DB调用超时时间
 NetwkTime.ROUTER_TIMEOUT          = 10000     --router连接超时时间
 NetwkTime.NETWORK_TIMEOUT         = 35000     --其他网络连接超时时间
+NetwkTime.SOCKET_TIMEOUT          = 90000     --其他网络连接超时时间
 NetwkTime.RECONNECT_TIME          = 5000      --RPC连接重连时间
 NetwkTime.HEARTBEAT_TIME          = 2000      --RPC连接心跳时间
 

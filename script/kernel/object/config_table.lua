@@ -35,7 +35,7 @@ function ConfigTable:setup(name, ...)
         end
         if not self:check_index(records) then
             log_err("[ConfigTable][setup] check_index error")
-            return
+            --return
         end
         for _, row in pairs(records) do
             --log_debug("[ConfigTable][setup] set table %s cfg:%s", file_name, row)
