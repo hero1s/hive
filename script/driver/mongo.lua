@@ -59,6 +59,7 @@ function MongoDB:__init(conf)
     self.db_cmd = conf.db .. "." .. "$cmd"
     self.sock   = Socket(self)
     --attach_second
+    update_mgr:attach_minute(self)
     update_mgr:attach_second(self)
 end
 
@@ -69,6 +70,12 @@ end
 function MongoDB:close()
     if self.sock then
         self.sock:close()
+    end
+end
+
+function MongoDB:on_minute()
+    if not self:ping() then
+        self:close()
     end
 end
 
@@ -272,6 +279,11 @@ function MongoDB:runCommand(cmd, cmd_v, ...)
     end
     local succ, doc = self:_query(self.db_cmd, bson_cmd)
     return self:mongo_result(succ, doc)
+end
+
+function MongoDB:ping()
+    local ok, _ = self:runCommand("ping", 1)
+    return ok
 end
 
 function MongoDB:drop_collection(collection)

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "lua_stack.h"
 
 namespace luakit {
@@ -38,7 +38,6 @@ namespace luakit {
         return func(lua_to_native<arg_types>(L, integers + 1)...);
     }
     
-    //辅助调用C++全局函数(std::function)
     template<size_t... integers, typename return_type, typename... arg_types>
     inline return_type call_helper(lua_State* L, std::function<return_type(lua_State*, arg_types...)> func, std::index_sequence<integers...>&&) {
         return func(L, lua_to_native<arg_types>(L, integers + 1)...);
@@ -53,19 +52,18 @@ namespace luakit {
     }
 
     template<size_t... integers, typename return_type, typename class_type, typename... arg_types>
-    inline return_type call_helper(lua_State* L, class_type* obj, return_type(class_type::* func)(lua_State*, arg_types...), std::index_sequence<integers...>&&) {
-        return (obj->*func)(L, lua_to_native<arg_types>(L, integers + 1)...);
-    }
-
-    //辅助调用C++类const函数
-    template<size_t... integers, typename return_type, typename class_type, typename... arg_types>
     inline return_type call_helper(lua_State* L, class_type* obj, return_type(class_type::* func)(arg_types...) const, std::index_sequence<integers...>&&) {
         return (obj->*func)(lua_to_native<arg_types>(L, integers + 1)...);
     }
 
+    template<size_t... integers, typename return_type, typename class_type, typename... arg_types>
+    inline return_type call_helper(lua_State* L, class_type* obj, return_type(class_type::* func)(lua_State*, arg_types...), std::index_sequence<integers...>&&) {
+        return (obj->*func)(L, lua_to_native<arg_types>(L, integers + 1)...);
+    }
+
     //adapter global function
     //-------------------------------------------------------------------------------
-    //适配有返回值的C++全局函数（C++只能返回一个值）
+    //适配有返回值的C++全局函数
     template <typename return_type, typename... arg_types>
     inline global_function lua_adapter(return_type(*func)(arg_types...)) {
         return [=](lua_State* L) {
@@ -83,6 +81,12 @@ namespace luakit {
     }
 
     //适配特殊lua的CAPI编写的全局函数
+    template <typename... arg_types>
+    inline global_function lua_adapter(int (*func)(lua_State*, arg_types...)) {
+        return [=](lua_State* L) {
+            return call_helper(L, func, std::make_index_sequence<sizeof...(arg_types)>());
+        };
+    }
     template <typename return_type, typename... arg_types>
     inline global_function lua_adapter(return_type(*func)(lua_State*, arg_types...)) {
         return [=](lua_State* L) {
@@ -90,28 +94,34 @@ namespace luakit {
         };
     }
 
-    //适配有返回值std::function全局函数（C++只能返回一个值）
+    //适配有返回值std::function全局函数
     template <typename return_type, typename... arg_types>
     inline global_function lua_adapter(std::function<return_type(arg_types...)> func) {
         return [=](lua_State* L) {
             return native_to_lua(L, call_helper(L, func, std::make_index_sequence<sizeof...(arg_types)>()));
         };
     }
-
-    //适配有返回值std::function全局函数（C++只能返回一个值）
-    template <typename return_type, typename... arg_types>
-    inline global_function lua_adapter(std::function<return_type(lua_State*, arg_types...)> func) {
-        return [=](lua_State* L) {
-            return native_to_lua(L, call_helper(L, func, std::make_index_sequence<sizeof...(arg_types)>()));
-        };
-    }
-
+    
     //适配无返回值std::function全局函数
     template <typename... arg_types>
     inline global_function lua_adapter(std::function<void(arg_types...)> func) {
         return [=](lua_State* L) {
             call_helper(L, func, std::make_index_sequence<sizeof...(arg_types)>());
             return 0;
+        };
+    }
+
+    //适配特殊lua的CAPI编写std::function全局函数
+    template <typename... arg_types>
+    inline global_function lua_adapter(std::function<int(lua_State*, arg_types...)> func) {
+        return [=](lua_State* L) {
+            return call_helper(L, func, std::make_index_sequence<sizeof...(arg_types)>());
+        };
+    }
+    template <typename return_type, typename... arg_types>
+    inline global_function lua_adapter(std::function<return_type(lua_State*, arg_types...)> func) {
+        return [=](lua_State* L) {
+            return native_to_lua(L, call_helper(L, func, std::make_index_sequence<sizeof...(arg_types)>()));
         };
     }
 
@@ -129,23 +139,13 @@ namespace luakit {
 
     //object function
     //-------------------------------------------------------------------------------
-    //适配有返回值的C++类函数（C++只能返回一个值）
+    //适配有返回值的C++类函数/const类函数
     template <typename return_type, typename T, typename... arg_types>
     inline object_function lua_adapter(return_type(T::* func)(arg_types...)) {
         return [=](void* obj, lua_State* L) {
             return native_to_lua(L, call_helper(L, (T*)obj, func, std::make_index_sequence<sizeof...(arg_types)>()));
         };
     }
-
-    //适配有返回值的C++类函数（C++只能返回一个值）
-    template <typename return_type, typename T, typename... arg_types>
-    inline object_function lua_adapter(return_type(T::* func)(lua_State*, arg_types...)) {
-        return [=](void* obj, lua_State* L) {
-            return native_to_lua(L, call_helper(L, (T*)obj, func, std::make_index_sequence<sizeof...(arg_types)>()));
-        };
-    }
-
-    //适配有返回值的C++类const函数（C++只能返回一个值）
     template <typename return_type, typename T, typename... arg_types>
     inline object_function lua_adapter(return_type(T::* func)(arg_types...) const) {
         return [=](void* obj, lua_State* L) {
@@ -153,7 +153,7 @@ namespace luakit {
         };
     }
 
-    //适配无返回值的C++类函数
+    //适配无返回值的C++类函数/const类函数
     template <typename T, typename... arg_types>
     inline object_function lua_adapter(void(T::* func)(arg_types...)) {
         return [=](void* obj, lua_State* L) {
@@ -161,8 +161,6 @@ namespace luakit {
             return 0;
         };
     }
-
-    //适配无返回值的C++类const函数
     template <typename T, typename... arg_types>
     inline object_function lua_adapter(void(T::* func)(arg_types...) const) {
         return [=](void* obj, lua_State* L) {
@@ -171,14 +169,26 @@ namespace luakit {
         };
     }
 
-    //适配使用lua的CAPI编写的类函数
+    //适配特殊lua的CAPI编写的C++类函数
+    template <typename return_type, typename T, typename... arg_types>
+    inline object_function lua_adapter(return_type(T::* func)(lua_State*, arg_types...)) {
+        return [=](void* obj, lua_State* L) {
+            return native_to_lua(L, call_helper(L, (T*)obj, func, std::make_index_sequence<sizeof...(arg_types)>()));
+        };
+    }
+    template <typename T, typename... arg_types>
+    inline object_function lua_adapter(int(T::* func)(lua_State*, arg_types...)) {
+        return [=](void* obj, lua_State* L) {
+            return call_helper(L, (T*)obj, func, std::make_index_sequence<sizeof...(arg_types)>());
+        };
+    }
     template <typename T>
     inline object_function lua_adapter(int(T::* func)(lua_State* L)) {
         return [=](void* obj, lua_State* L) {
-            T* this_ptr = (T*)obj;
-            return (this_ptr->*func)(L);
+            return (((T*)obj)->*func)(L);
         };
     }
+
 
     //push function
     //-------------------------------------------------------------------------------
@@ -217,7 +227,7 @@ namespace luakit {
 
     inline bool get_table_function(lua_State* L, const char* table, const char* function) {
         lua_getglobal(L, table);
-        if (lua_istable(L, -1)) return false;
+        if (!lua_istable(L, -1)) return false;
         lua_getfield(L, -1, function);
         lua_remove(L, -2);
         return lua_isfunction(L, -1);

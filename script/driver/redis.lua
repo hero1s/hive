@@ -1,23 +1,23 @@
 --redis.lua
-local Socket        = import("driver/socket.lua")
-local QueueFIFO     = import("container/queue_fifo.lua")
+local Socket     = import("driver/socket.lua")
+local QueueFIFO  = import("container/queue_fifo.lua")
 
-local tonumber      = tonumber
-local log_err       = logger.err
-local log_info      = logger.info
-local ssub          = string.sub
-local sgsub         = string.gsub
-local supper        = string.upper
-local sformat       = string.format
-local tpack         = table.pack
+local tonumber   = tonumber
+local log_err    = logger.err
+local log_info   = logger.info
+local ssub       = string.sub
+local sgsub      = string.gsub
+local supper     = string.upper
+local sformat    = string.format
+local tpack      = table.pack
 
-local event_mgr     = hive.get("event_mgr")
-local update_mgr    = hive.get("update_mgr")
-local thread_mgr    = hive.get("thread_mgr")
+local event_mgr  = hive.get("event_mgr")
+local update_mgr = hive.get("update_mgr")
+local thread_mgr = hive.get("thread_mgr")
 
-local LineTitle     = "\r\n"
-local DB_TIMEOUT    = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
-local NT_TIMEOUT    = hive.enum("NetwkTime", "NETWORK_TIMEOUT")
+local LineTitle  = "\r\n"
+local DB_TIMEOUT = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
+local NT_TIMEOUT = hive.enum("NetwkTime", "NETWORK_TIMEOUT")
 
 local function _async_call(context, quote)
     local session_id = thread_mgr:build_session_id()
@@ -25,11 +25,11 @@ local function _async_call(context, quote)
         context.commit_id = session_id
     end
     context.session_id = session_id
-    local fquote = sformat("%s:%s", context.name, quote)
+    local fquote       = sformat("%s:%s", context.name, quote)
     return thread_mgr:yield(session_id, fquote, DB_TIMEOUT)
 end
 
-local _redis_resp_parser = {
+local _redis_resp_parser      = {
     ["+"] = function(context, body)
         --simple string
         return true, body
@@ -72,23 +72,23 @@ local _redis_resp_parser = {
 }
 
 local _redis_subscribe_replys = {
-    message = function(self, channel, data)
+    message      = function(self, channel, data)
         log_info("[RedisDB][_redis_subscribe_replys] subscribe message channel(%s) data: %s", channel, data)
         event_mgr:notify_trigger("on_redis_subscribe", channel, data)
     end,
-    pmessage = function(self, channel, data, date2)
+    pmessage     = function(self, channel, data, date2)
         log_info("[RedisDB][_redis_subscribe_replys] psubscribe pmessage channel(%s) data: %s, data2: %s", channel, data, date2)
         event_mgr:notify_trigger("on_redis_psubscribe", channel, data, date2)
     end,
-    subscribe = function(self, channel, status)
+    subscribe    = function(self, channel, status)
         log_info("[RedisDB][_redis_subscribe_replys] subscribe redis channel(%s) status: %s", channel, status)
         self.subscribes[channel] = true
     end,
-    psubscribe = function(self, channel, status)
+    psubscribe   = function(self, channel, status)
         log_info("[RedisDB][_redis_subscribe_replys] psubscribe redis channel(%s) status: %s", channel, status)
         self.psubscribes[channel] = true
     end,
-    unsubscribe = function(self, channel, status)
+    unsubscribe  = function(self, channel, status)
         log_info("[RedisDB][_redis_subscribe_replys] unsubscribe redis channel(%s) status: %s", channel, status)
         self.subscribes[channel] = nil
     end,
@@ -166,143 +166,143 @@ local function _toboolean(value)
 end
 
 local subscribe_commands = {
-    subscribe       = { cmd = "SUBSCRIBE"   },  -- >= 2.0
-    unsubscribe     = { cmd = "UNSUBSCRIBE" },  -- >= 2.0
-    psubscribe      = { cmd = "PSUBSCRIBE"  },  -- >= 2.0
-    punsubscribe    = { cmd = "PUNSUBSCRIBE"},  -- >= 2.0
+    subscribe    = { cmd = "SUBSCRIBE" }, -- >= 2.0
+    unsubscribe  = { cmd = "UNSUBSCRIBE" }, -- >= 2.0
+    psubscribe   = { cmd = "PSUBSCRIBE" }, -- >= 2.0
+    punsubscribe = { cmd = "PUNSUBSCRIBE" }, -- >= 2.0
 }
 
-local redis_commands = {
-    del         = { cmd = "DEL"     },
-    set         = { cmd = "SET"     },
-    type        = { cmd = "TYPE"    },
-    rename      = { cmd = "RENAME"  },
-    ttl         = { cmd = "TTL"     },
-    dbsize      = { cmd = "DBSIZE"  },
-    pttl        = { cmd = "PTTL"    },      -- >= 2.6
-    setex       = { cmd = "SETEX"   },      -- >= 2.0
-    psetex      = { cmd = "PSETEX"  },      -- >= 2.6
-    get         = { cmd = "GET"     },
-    mget        = { cmd = "MGET"    },
-    getset      = { cmd = "GETSET"  },
-    incr        = { cmd = "INCR"    },
-    incrby      = { cmd = "INCRBY"  },
-    decr        = { cmd = "DECR"    },
-    decrby      = { cmd = "DECRBY"  },
-    append      = { cmd = "APPEND"  },      -- >= 2.0
-    substr      = { cmd = "SUBSTR"  },      -- >= 2.0
-    strlen      = { cmd = "STRLEN"  },      -- >= 2.2
-    setrange    = { cmd = "SETRANGE"},      -- >= 2.2
-    getrange    = { cmd = "GETRANGE"},      -- >= 2.2
-    setbit      = { cmd = "SETBIT"  },      -- >= 2.2
-    getbit      = { cmd = "GETBIT"  },      -- >= 2.2
-    bitop       = { cmd = "BITOP"   },      -- >= 2.6
-    bitcount    = { cmd = "BITCOUNT"},      -- >= 2.6
-    rpush       = { cmd = "RPUSH"   },
-    lpush       = { cmd = "LPUSH"   },
-    llen        = { cmd = "LLEN"    },
-    lrange      = { cmd = "LRANGE"  },
-    ltrim       = { cmd = "LTRIM"   },
-    lindex      = { cmd = "LINDEX"  },
-    lset        = { cmd = "LSET"    },
-    lrem        = { cmd = "LREM"    },
-    lpop        = { cmd = "LPOP"    },
-    rpop        = { cmd = "RPOP"    },
-    blpop       = { cmd = "BLPOP"   },      -- >= 2.0
-    brpop       = { cmd = "BRPOP"   },      -- >= 2.0
-    rpushx      = { cmd = "RPUSHX"  },      -- >= 2.2
-    lpushx      = { cmd = "LPUSHX"  },      -- >= 2.2
-    linsert     = { cmd = "LINSERT" },      -- >= 2.2
-    sadd        = { cmd = "SADD"    },
-    srem        = { cmd = "SREM"    },
-    spop        = { cmd = "SPOP"    },
-    scard       = { cmd = "SCARD"   },
-    sinter      = { cmd = "SINTER"  },
-    sunion      = { cmd = "SUNION"  },
-    sdiff       = { cmd = "SDIFF"   },
-    zadd        = { cmd = "ZADD"    },
-    zrem        = { cmd = "ZREM"    },
-    zcount      = { cmd = "ZCOUNT"  },
-    zcard       = { cmd = "ZCARD"   },
-    zscore      = { cmd = "ZSCORE"  },
-    zrank       = { cmd = "ZRANK"   },      -- >= 2.0
-    zrevrank    = { cmd = "ZREVRANK"},      -- >= 2.0
-    hget        = { cmd = "HGET"    },      -- >= 2.0
-    hincrby     = { cmd = "HINCRBY" },      -- >= 2.0
-    hdel        = { cmd = "HDEL"    },      -- >= 2.0
-    hlen        = { cmd = "HLEN"    },      -- >= 2.0
-    hkeys       = { cmd = "HKEYS"   },      -- >= 2.0
-    hvals       = { cmd = "HVALS"   },      -- >= 2.0
-    echo        = { cmd = "ECHO"    },
-    select      = { cmd = "SELECT"  },
-    multi       = { cmd = "MULTI"   },      -- >= 2.0
-    exec        = { cmd = "EXEC"    },      -- >= 2.0
-    discard     = { cmd = "DISCARD" },      -- >= 2.0
-    watch       = { cmd = "WATCH"   },      -- >= 2.2
-    unwatch     = { cmd = "UNWATCH" },      -- >= 2.2
-    eval        = { cmd = "EVAL"    },      -- >= 2.6
-    evalsha     = { cmd = "EVALSHA" },      -- >= 2.6
-    script      = { cmd = "SCRIPT"  },      -- >= 2.6
-    time        = { cmd = "TIME"    },      -- >= 2.6
-    client      = { cmd = "CLIENT"  },      -- >= 2.4
-    slaveof     = { cmd = "SLAVEOF" },
-    save        = { cmd = "SAVE"    },
-    bgsave      = { cmd = "BGSAVE"  },
-    lastsave    = { cmd = "LASTSAVE"},
-    flushdb     = { cmd = "FLUSHDB" },
-    flushall    = { cmd = "FLUSHALL"},
-    monitor     = { cmd = "MONITOR" },
-    hmset       = { cmd = "HMSET"   },      -- >= 2.0
-    hmget       = { cmd = "HMGET"   },      -- >= 2.0
-    hscan       = { cmd = "HSCAN"   },      -- >= 2.8
-    sort        = { cmd = "SORT"    },
-    scan        = { cmd = "SCAN"    },      -- >= 2.8
-    mset        = { cmd = "MSET"    },
-    sscan       = { cmd = "SSCAN"   },      -- >= 2.8
-    publish     = { cmd = "PUBLISH"     },  -- >= 2.0
-    sinterstore = { cmd = "SINTERSTORE" },
-    sunionstore = { cmd = "SUNIONSTORE" },
-    sdiffstore  = { cmd = "SDIFFSTORE"  },
-    smembers    = { cmd = "SMEMBERS"    },
-    srandmember = { cmd = "SRANDMEMBER" },
-    rpoplpush   = { cmd = "RPOPLPUSH"   },
-    randomkey   = { cmd = "RANDOMKEY"   },
-    brpoplpush  = { cmd = "BRPOPLPUSH"  },  -- >= 2.2
-    bgrewriteaof= { cmd = "BGREWRITEAOF"},
-    zscan       = { cmd = "ZSCAN"       },  -- >= 2.8
-    zrange      = { cmd = "ZRANGE",     },
-    zrevrange   = { cmd = "ZREVRANGE"   },
-    zrangebyscore   = { cmd = "ZRANGEBYSCORE"       },
-    zrevrangebyscore= { cmd = "ZREVRANGEBYSCORE"    },  -- >= 2.2
-    zunionstore     = { cmd = "ZUNIONSTORE"         },  -- >= 2.0
-    zinterstore     = { cmd = "ZINTERSTORE"         },  -- >= 2.0
-    zremrangebyscore= { cmd = "ZREMRANGEBYSCORE"    },
-    zremrangebyrank = { cmd = "ZREMRANGEBYRANK"     },  -- >= 2.0
-    zincrby         = { cmd = "ZINCRBY",        convertor = tonumber    },
-    incrbyfloat     = { cmd = "INCRBYFLOAT",    convertor = tonumber    },
-    hincrbyfloat    = { cmd = "HINCRBYFLOAT",   convertor = tonumber    },  -- >= 2.6
-    setnx           = { cmd = "SETNX",          convertor = _toboolean  },
-    exists          = { cmd = "EXISTS",         convertor = _toboolean  },
-    renamenx        = { cmd = "RENAMENX",       convertor = _toboolean  },
-    expire          = { cmd = "EXPIRE",         convertor = _toboolean  },
-    pexpire         = { cmd = "PEXPIRE",        convertor = _toboolean  },  -- >= 2.6
-    expireat        = { cmd = "EXPIREAT",       convertor = _toboolean  },
-    pexpireat       = { cmd = "PEXPIREAT",      convertor = _toboolean  },  -- >= 2.6
-    move            = { cmd = "MOVE",           convertor = _toboolean  },
-    persist         = { cmd = "PERSIST",        convertor = _toboolean  },  -- >= 2.2
-    smove           = { cmd = "SMOVE",          convertor = _toboolean  },
-    sismember       = { cmd = "SISMEMBER",      convertor = _toboolean  },
-    hset            = { cmd = "HSET",           convertor = _toboolean  },  -- >= 2.0
-    hsetnx          = { cmd = "HSETNX",         convertor = _toboolean  },  -- >= 2.0
-    hexists         = { cmd = "HEXISTS",        convertor = _toboolean  },  -- >= 2.0
-    msetnx          = { cmd = "MSETNX",         convertor = _toboolean  },
-    hgetall         = { cmd = "HGETALL",        convertor = _tomap      },  -- >= 2.0
-    config          = { cmd = "CONFIG",         convertor = _tomap      },  -- >= 2.0
-    keys            = { cmd = "KEYS",           convertor = _tokeys     },
+local redis_commands     = {
+    del              = { cmd = "DEL" },
+    set              = { cmd = "SET" },
+    type             = { cmd = "TYPE" },
+    rename           = { cmd = "RENAME" },
+    ttl              = { cmd = "TTL" },
+    dbsize           = { cmd = "DBSIZE" },
+    pttl             = { cmd = "PTTL" }, -- >= 2.6
+    setex            = { cmd = "SETEX" }, -- >= 2.0
+    psetex           = { cmd = "PSETEX" }, -- >= 2.6
+    get              = { cmd = "GET" },
+    mget             = { cmd = "MGET" },
+    getset           = { cmd = "GETSET" },
+    incr             = { cmd = "INCR" },
+    incrby           = { cmd = "INCRBY" },
+    decr             = { cmd = "DECR" },
+    decrby           = { cmd = "DECRBY" },
+    append           = { cmd = "APPEND" }, -- >= 2.0
+    substr           = { cmd = "SUBSTR" }, -- >= 2.0
+    strlen           = { cmd = "STRLEN" }, -- >= 2.2
+    setrange         = { cmd = "SETRANGE" }, -- >= 2.2
+    getrange         = { cmd = "GETRANGE" }, -- >= 2.2
+    setbit           = { cmd = "SETBIT" }, -- >= 2.2
+    getbit           = { cmd = "GETBIT" }, -- >= 2.2
+    bitop            = { cmd = "BITOP" }, -- >= 2.6
+    bitcount         = { cmd = "BITCOUNT" }, -- >= 2.6
+    rpush            = { cmd = "RPUSH" },
+    lpush            = { cmd = "LPUSH" },
+    llen             = { cmd = "LLEN" },
+    lrange           = { cmd = "LRANGE" },
+    ltrim            = { cmd = "LTRIM" },
+    lindex           = { cmd = "LINDEX" },
+    lset             = { cmd = "LSET" },
+    lrem             = { cmd = "LREM" },
+    lpop             = { cmd = "LPOP" },
+    rpop             = { cmd = "RPOP" },
+    blpop            = { cmd = "BLPOP" }, -- >= 2.0
+    brpop            = { cmd = "BRPOP" }, -- >= 2.0
+    rpushx           = { cmd = "RPUSHX" }, -- >= 2.2
+    lpushx           = { cmd = "LPUSHX" }, -- >= 2.2
+    linsert          = { cmd = "LINSERT" }, -- >= 2.2
+    sadd             = { cmd = "SADD" },
+    srem             = { cmd = "SREM" },
+    spop             = { cmd = "SPOP" },
+    scard            = { cmd = "SCARD" },
+    sinter           = { cmd = "SINTER" },
+    sunion           = { cmd = "SUNION" },
+    sdiff            = { cmd = "SDIFF" },
+    zadd             = { cmd = "ZADD" },
+    zrem             = { cmd = "ZREM" },
+    zcount           = { cmd = "ZCOUNT" },
+    zcard            = { cmd = "ZCARD" },
+    zscore           = { cmd = "ZSCORE" },
+    zrank            = { cmd = "ZRANK" }, -- >= 2.0
+    zrevrank         = { cmd = "ZREVRANK" }, -- >= 2.0
+    hget             = { cmd = "HGET" }, -- >= 2.0
+    hincrby          = { cmd = "HINCRBY" }, -- >= 2.0
+    hdel             = { cmd = "HDEL" }, -- >= 2.0
+    hlen             = { cmd = "HLEN" }, -- >= 2.0
+    hkeys            = { cmd = "HKEYS" }, -- >= 2.0
+    hvals            = { cmd = "HVALS" }, -- >= 2.0
+    echo             = { cmd = "ECHO" },
+    select           = { cmd = "SELECT" },
+    multi            = { cmd = "MULTI" }, -- >= 2.0
+    exec             = { cmd = "EXEC" }, -- >= 2.0
+    discard          = { cmd = "DISCARD" }, -- >= 2.0
+    watch            = { cmd = "WATCH" }, -- >= 2.2
+    unwatch          = { cmd = "UNWATCH" }, -- >= 2.2
+    eval             = { cmd = "EVAL" }, -- >= 2.6
+    evalsha          = { cmd = "EVALSHA" }, -- >= 2.6
+    script           = { cmd = "SCRIPT" }, -- >= 2.6
+    time             = { cmd = "TIME" }, -- >= 2.6
+    client           = { cmd = "CLIENT" }, -- >= 2.4
+    slaveof          = { cmd = "SLAVEOF" },
+    save             = { cmd = "SAVE" },
+    bgsave           = { cmd = "BGSAVE" },
+    lastsave         = { cmd = "LASTSAVE" },
+    flushdb          = { cmd = "FLUSHDB" },
+    flushall         = { cmd = "FLUSHALL" },
+    monitor          = { cmd = "MONITOR" },
+    hmset            = { cmd = "HMSET" }, -- >= 2.0
+    hmget            = { cmd = "HMGET" }, -- >= 2.0
+    hscan            = { cmd = "HSCAN" }, -- >= 2.8
+    sort             = { cmd = "SORT" },
+    scan             = { cmd = "SCAN" }, -- >= 2.8
+    mset             = { cmd = "MSET" },
+    sscan            = { cmd = "SSCAN" }, -- >= 2.8
+    publish          = { cmd = "PUBLISH" }, -- >= 2.0
+    sinterstore      = { cmd = "SINTERSTORE" },
+    sunionstore      = { cmd = "SUNIONSTORE" },
+    sdiffstore       = { cmd = "SDIFFSTORE" },
+    smembers         = { cmd = "SMEMBERS" },
+    srandmember      = { cmd = "SRANDMEMBER" },
+    rpoplpush        = { cmd = "RPOPLPUSH" },
+    randomkey        = { cmd = "RANDOMKEY" },
+    brpoplpush       = { cmd = "BRPOPLPUSH" }, -- >= 2.2
+    bgrewriteaof     = { cmd = "BGREWRITEAOF" },
+    zscan            = { cmd = "ZSCAN" }, -- >= 2.8
+    zrange           = { cmd = "ZRANGE", },
+    zrevrange        = { cmd = "ZREVRANGE" },
+    zrangebyscore    = { cmd = "ZRANGEBYSCORE" },
+    zrevrangebyscore = { cmd = "ZREVRANGEBYSCORE" }, -- >= 2.2
+    zunionstore      = { cmd = "ZUNIONSTORE" }, -- >= 2.0
+    zinterstore      = { cmd = "ZINTERSTORE" }, -- >= 2.0
+    zremrangebyscore = { cmd = "ZREMRANGEBYSCORE" },
+    zremrangebyrank  = { cmd = "ZREMRANGEBYRANK" }, -- >= 2.0
+    zincrby          = { cmd = "ZINCRBY", convertor = tonumber },
+    incrbyfloat      = { cmd = "INCRBYFLOAT", convertor = tonumber },
+    hincrbyfloat     = { cmd = "HINCRBYFLOAT", convertor = tonumber }, -- >= 2.6
+    setnx            = { cmd = "SETNX", convertor = _toboolean },
+    exists           = { cmd = "EXISTS", convertor = _toboolean },
+    renamenx         = { cmd = "RENAMENX", convertor = _toboolean },
+    expire           = { cmd = "EXPIRE", convertor = _toboolean },
+    pexpire          = { cmd = "PEXPIRE", convertor = _toboolean }, -- >= 2.6
+    expireat         = { cmd = "EXPIREAT", convertor = _toboolean },
+    pexpireat        = { cmd = "PEXPIREAT", convertor = _toboolean }, -- >= 2.6
+    move             = { cmd = "MOVE", convertor = _toboolean },
+    persist          = { cmd = "PERSIST", convertor = _toboolean }, -- >= 2.2
+    smove            = { cmd = "SMOVE", convertor = _toboolean },
+    sismember        = { cmd = "SISMEMBER", convertor = _toboolean },
+    hset             = { cmd = "HSET", convertor = _toboolean }, -- >= 2.0
+    hsetnx           = { cmd = "HSETNX", convertor = _toboolean }, -- >= 2.0
+    hexists          = { cmd = "HEXISTS", convertor = _toboolean }, -- >= 2.0
+    msetnx           = { cmd = "MSETNX", convertor = _toboolean },
+    hgetall          = { cmd = "HGETALL", convertor = _tomap }, -- >= 2.0
+    config           = { cmd = "CONFIG", convertor = _tomap }, -- >= 2.0
+    keys             = { cmd = "KEYS", convertor = _tokeys },
 }
 
-local RedisDB = class()
-local prop = property(RedisDB)
+local RedisDB            = class()
+local prop               = property(RedisDB)
 prop:reader("ip", nil)          --redis地址
 prop:reader("index", 0)         --db index
 prop:reader("port", 6379)       --redis端口
@@ -316,15 +316,15 @@ prop:reader("subscribe_sessions", nil)  --subscribe_sessions
 prop:reader("subscribe_context", nil)  --subscribe_sessions
 
 function RedisDB:__init(conf)
-    self.ip = conf.host
-    self.port = conf.port
-    self.index = conf.index
-    self.passwd = conf.passwd
-    self.command_sock = Socket(self)
-    self.subscribe_sock = Socket(self)
-    self.command_sessions = QueueFIFO()
+    self.ip                 = conf.host
+    self.port               = conf.port
+    self.index              = conf.index
+    self.passwd             = conf.passwd
+    self.command_sock       = Socket(self)
+    self.subscribe_sock     = Socket(self)
+    self.command_sessions   = QueueFIFO()
     self.subscribe_sessions = QueueFIFO()
-    self.subscribe_context = { name = "subcribe_monitor" }
+    self.subscribe_context  = { name = "subcribe_monitor" }
     --update
     update_mgr:attach_minute(self)
     update_mgr:attach_second(self)
@@ -384,12 +384,14 @@ function RedisDB:login(socket, title)
 end
 
 function RedisDB:on_minute()
-    self:ping()
+    if not self:ping() then
+        self:close()
+    end
 end
 
 function RedisDB:on_second()
-    local clock_ms = hive.clock_ms
-    local command_sock = self.command_sock
+    local clock_ms       = hive.clock_ms
+    local command_sock   = self.command_sock
     local subscribe_sock = self.subscribe_sock
     if command_sock:is_alive() then
         if (clock_ms - command_sock:get_alive_time() >= NT_TIMEOUT) and (not self.command_sessions:empty()) then
@@ -439,9 +441,9 @@ function RedisDB:on_socket_recv(sock, token)
         if context and cur_sessions then
             thread_mgr:fork(function()
                 local ok, res, cb_session_id = true, line, nil
-                local session_id = context.session_id
-                local prefix, body = ssub(line, 1, 1), ssub(line, 2)
-                local prefix_func = _redis_resp_parser[prefix]
+                local session_id             = context.session_id
+                local prefix, body           = ssub(line, 1, 1), ssub(line, 2)
+                local prefix_func            = _redis_resp_parser[prefix]
                 if prefix_func then
                     ok, res, cb_session_id = prefix_func(context, body)
                 end
@@ -464,7 +466,7 @@ end
 function RedisDB:on_suncribe_reply(res)
     if type(res) == "table" then
         local ttype, channel, data, data2 = res[1], res[2], res[3], res[4]
-        local reply_func = _redis_subscribe_replys[ttype]
+        local reply_func                  = _redis_subscribe_replys[ttype]
         if reply_func then
             reply_func(self, channel, data, data2)
         end
@@ -473,7 +475,7 @@ end
 
 function RedisDB:find_context(sock)
     local cur_sessions = (sock == self.command_sock) and self.command_sessions or self.subscribe_sessions
-    local context = cur_sessions:head()
+    local context      = cur_sessions:head()
     if context then
         return context, cur_sessions
     end
@@ -490,10 +492,10 @@ function RedisDB:commit(sock, param, ...)
     if not sock:send(packet) then
         return false, "send request failed"
     end
-    local context = { name = param.cmd }
+    local context      = { name = param.cmd }
     local cur_sessions = (sock == self.command_sock) and self.command_sessions or self.subscribe_sessions
     cur_sessions:push(context)
-    local ok, res = _async_call(context, "redis commit")
+    local ok, res   = _async_call(context, "redis commit")
     local convertor = param.convertor
     if ok and convertor then
         return ok, convertor(res)
@@ -509,8 +511,9 @@ function RedisDB:execute(cmd, ...)
 end
 
 function RedisDB:ping()
-    self:commit(self.command_sock, { cmd = "PING" })
-    self:commit(self.subscribe_sock, { cmd = "PING" })
+    local ok1, _ = self:commit(self.command_sock, { cmd = "PING" })
+    local ok2, _ = self:commit(self.subscribe_sock, { cmd = "PING" })
+    return ok1 and ok2
 end
 
 function RedisDB:auth(socket)

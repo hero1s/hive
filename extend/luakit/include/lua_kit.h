@@ -48,11 +48,30 @@ namespace luakit {
         }
 
         bool call(const char* function, exception_handler handler = nullptr) {
-            return call(function, handler, std::tie());
+            return call_global_function(m_L, function, handler, std::tie());
         }
 
         bool call(exception_handler handler = nullptr) {
             return lua_call_function(m_L, handler, std::tie());
+        }
+
+        template <typename... ret_types, typename... arg_types>
+        bool table_call(const char* table, const char* function, exception_handler handler, std::tuple<ret_types&...>&& rets, arg_types... args) {
+            return call_table_function(m_L, table, function, handler, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
+        }
+
+        bool table_call(const char* table, const char* function, exception_handler handler = nullptr) {
+            return call_table_function(m_L, table, function, handler, std::tie());
+        }
+
+        template <typename T, typename... ret_types, typename... arg_types>
+        bool object_call(T* obj, const char* function, exception_handler handler, std::tuple<ret_types&...>&& rets, arg_types... args) {
+            return call_object_function<T>(m_L, obj, function, handler, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
+        }
+
+        template <typename T>
+        bool object_call(T* obj, const char* function, exception_handler handler = nullptr) {
+            return call_object_function<T>(function, obj, handler, std::tie());
         }
         
         bool run_file(const std::string& filename, exception_handler handler = nullptr) {
@@ -112,6 +131,11 @@ namespace luakit {
         template<typename T, typename... arg_types>
         void new_class(arg_types... args) {
             lua_wrap_class<T>(m_L, std::forward<arg_types>(args)...);
+        }
+
+        template <typename T>
+        int push(T v) {
+            return native_to_lua(m_L, v);
         }
 
         template <typename T>
