@@ -1,7 +1,6 @@
 --monitor_mgr.lua
 import("network/http_client.lua")
 local ljson       = require("lcjson")
-local lbuffer     = require("lbuffer")
 local log_page    = nil
 local RpcServer   = import("network/rpc_server.lua")
 local HttpServer  = import("network/http_server.lua")
@@ -15,7 +14,6 @@ local log_debug   = logger.debug
 local log_err     = logger.err
 local readfile    = io_ext.readfile
 local sformat     = string.format
-local lserialize  = lbuffer.serialize
 
 local PeriodTime  = enum("PeriodTime")
 
@@ -103,7 +101,7 @@ end
 
 -- status查询
 function MonitorMgr:on_monitor_status(url, querys, headers)
-    return lserialize(self.monitor_nodes, 1)
+    return self.monitor_nodes
 end
 
 --call

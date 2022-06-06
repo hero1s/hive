@@ -76,11 +76,6 @@ function GMAgent:on_service_ready(id, service_name)
     self:report_command()
 end
 
-function GMAgent:on_inject(code_string)
-    local func = load(code_string)
-    func()
-end
-
 hive.gm_agent = GMAgent()
 
 return GMAgent

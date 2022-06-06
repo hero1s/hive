@@ -1,18 +1,18 @@
 ﻿---devops_gm_mgr.lua
-local lcrypt       = require("lcrypt")
-local sdump        = string.dump
-local log_err      = logger.err
-local log_warn     = logger.warn
-local log_debug    = logger.debug
+local lcrypt      = require("lcrypt")
+local sdump       = string.dump
+local log_err     = logger.err
+local log_warn    = logger.warn
+local log_debug   = logger.debug
 
-local event_mgr    = hive.get("event_mgr")
-local router_mgr   = hive.get("router_mgr")
-local gm_agent     = hive.get("gm_agent")
-local monitor_mgr  = hive.get("monitor_mgr")
+local event_mgr   = hive.get("event_mgr")
+local router_mgr  = hive.get("router_mgr")
+local gm_agent    = hive.get("gm_agent")
+local monitor_mgr = hive.get("monitor_mgr")
 
-local GMType       = enum("GMType")
+local GMType      = enum("GMType")
 
-local DevopsGmMgr  = singleton()
+local DevopsGmMgr = singleton()
 
 function DevopsGmMgr:__init()
     --注册GM指令
@@ -25,6 +25,7 @@ function DevopsGmMgr:register()
         { gm_type = GMType.DEV_OPS, name = "gm_hotfix", desc = "热更新", args = "" },
         { gm_type = GMType.DEV_OPS, name = "gm_inject", desc = "代码注入", args = "svr_name|string file_name|string base64_code|string" },
         { gm_type = GMType.DEV_OPS, name = "gm_stop_service", desc = "停服", args = "force|integer" },
+        { gm_type = GMType.DEV_OPS, name = "gm_hive_quit", desc = "关闭服务器", args = "reason|integer" },
     }
     for _, v in ipairs(cmd_list) do
         event_mgr:add_listener(self, v.name)
@@ -70,7 +71,12 @@ end
 
 function DevopsGmMgr:gm_stop_service(force)
     log_warn("[DevopsGmMgr][gm_stop_service]")
-    monitor_mgr:broadcast("stop_service",0,force)
+    monitor_mgr:broadcast("on_stop_service", 0, force)
+    return { code = 0 }
+end
+
+function DevopsGmMgr:gm_hive_quit(reason)
+    monitor_mgr:broadcast("on_hive_quit", 0, reason)
     return { code = 0 }
 end
 

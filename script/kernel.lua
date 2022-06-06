@@ -54,8 +54,8 @@ function hive.init()
         --加载协议
         import("kernel/protobuf_mgr.lua")
         --加载monotor
+        import("agent/monitor_agent.lua")
         if not environ.get("HIVE_MONITOR_HOST") then
-            import("agent/monitor_agent.lua")
             import("kernel/netlog_mgr.lua")
         end
         --graylog

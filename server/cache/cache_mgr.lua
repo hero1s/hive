@@ -74,7 +74,7 @@ function CacheMgr:setup()
 end
 
 function CacheMgr:evt_stop_service()
-    log_err("[CacheMgr][stop_service] enter flush mode,wait stop service:%s", hive.index)
+    log_err("[CacheMgr][evt_stop_service] enter flush mode,wait stop service:%s", hive.index)
     self.flush = true
 end
 
