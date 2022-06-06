@@ -41,7 +41,7 @@ function CacheMgr:__init()
     event_mgr:add_listener(self, "rpc_cache_delete")
     event_mgr:add_listener(self, "rpc_cache_flush")
     -- 订阅停服事件
-    event_mgr:add_trigger(self, "stop_service")
+    event_mgr:add_trigger(self, "evt_stop_service")
     --定时器
     timer_mgr:loop(PeriodTime.SECOND_MS, function(ms)
         self:on_timer_update(ms)
@@ -73,7 +73,7 @@ function CacheMgr:setup()
     self.dirty_map = WheelMap(10)
 end
 
-function CacheMgr:stop_service()
+function CacheMgr:evt_stop_service()
     log_err("[CacheMgr][stop_service] enter flush mode,wait stop service:%s", hive.index)
     self.flush = true
 end

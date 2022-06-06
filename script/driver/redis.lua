@@ -384,8 +384,10 @@ function RedisDB:login(socket, title)
 end
 
 function RedisDB:on_minute()
-    if not self:ping() then
-        self:close()
+    if self.command_sock:is_alive() and self.subscribe_sock:is_alive() then
+        if not self:ping() then
+            self:close()
+        end
     end
 end
 

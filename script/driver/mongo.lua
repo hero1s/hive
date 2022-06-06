@@ -74,7 +74,7 @@ function MongoDB:close()
 end
 
 function MongoDB:on_minute()
-    if not self:ping() then
+    if self.sock:is_alive() and not self:ping() then
         self:close()
     end
 end

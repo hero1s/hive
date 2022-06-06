@@ -123,7 +123,7 @@ end
 function MonitorAgent:stop_service(force)
     hive.service_status = (force == 1) and ServiceStatus.STOP or ServiceStatus.WAIT_STOP
     log_err("[MonitorAgent][on_stop_service] will stop service,service_status:%s,:%s,%s", hive.service_status, hive.service, hive.index)
-    event_mgr:notify_trigger("stop_service")
+    event_mgr:notify_trigger("evt_stop_service",hive.service_status)
 end
 
 hive.monitor = MonitorAgent()
