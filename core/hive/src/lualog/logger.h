@@ -177,17 +177,15 @@ namespace logger {
             condv_.notify_all();
         }
 
-        void timed_getv(std::vector<std::shared_ptr<log_message>>& vec_msg, int number, int time) {
+        void timed_getv(std::list<std::shared_ptr<log_message>>& list_msg, int time) {
             if (messages_.empty()) {
                 std::unique_lock<std::mutex> lock(mutex_);
                 condv_.wait_for(lock, std::chrono::milliseconds(time));
             }
-            while (!messages_.empty() && number > 0) {
-                auto logmsg = messages_.front();
-                vec_msg.push_back(logmsg);
-                number--;
-                std::unique_lock<spin_mutex> lock(spin_);
-                messages_.pop_front();
+            std::unique_lock<spin_mutex> lock(spin_);
+            if (!messages_.empty())
+            {
+                messages_.swap(list_msg);
             }
         }
 
@@ -447,9 +445,10 @@ namespace logger {
     private:
         void run() {
             bool loop = true;
-            while (loop) {
-                std::vector<std::shared_ptr<log_message>> logmsgs;
-                logmsgque_->timed_getv(logmsgs, log_getv_, log_period_);
+            std::list<std::shared_ptr<log_message>> logmsgs;
+            while (loop) {                
+                logmsgs.clear();
+                logmsgque_->timed_getv(logmsgs, log_period_);
                 for (auto logmsg : logmsgs) {
                     if (logmsg == stop_msg_) {
                         loop = false;
@@ -470,13 +469,13 @@ namespace logger {
                         def_dest_->write(logmsg);
                     }
                     message_pool_->release(logmsg);
-                }
+                }                
                 flush();
             }
         }
 
         bool log_daemon_ = false, ignore_postfix_ = true;
-        int  log_pid_ = 0, log_getv_ = 50, log_period_ = 10, max_line_ = 100000;
+        int  log_pid_ = 0, log_period_ = 10, max_line_ = 100000;
         spin_mutex              mutex_;
         std::thread             thread_;
         rolling_type            rolling_type_;
