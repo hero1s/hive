@@ -143,7 +143,7 @@ void hive_app::set_signal(uint32_t n) {
 void hive_app::setup(int argc, const char* argv[]) {
     srand((unsigned)time(nullptr));
     //初始化日志
-    m_logger = std::make_shared<log_service>();
+    m_logger = new log_service();
     //加载配置
     if (load(argc, argv)) {
         run();
@@ -214,7 +214,7 @@ void hive_app::run() {
     hive.set_function("hash_code", hash_code);
     hive.set_function("get_signal", [&]() { return m_signal; });
     hive.set_function("set_signal", [&](int n) { set_signal(n); });
-    hive.set_function("get_logger", [&]() { return m_logger.get(); });
+    hive.set_function("get_logger", [&]() { return m_logger; });
     hive.set_function("ignore_signal", [](int n) { signal(n, SIG_IGN); });
     hive.set_function("default_signal", [](int n) { signal(n, SIG_DFL); });
     hive.set_function("register_signal", [](int n) { signal(n, on_signal); });
@@ -232,6 +232,8 @@ void hive_app::run() {
 			});
 		check_input(lua);
 	}
-	lua.close();
 	m_logger->stop();
+	lua.close();
+	m_logger = nullptr;
+	//todo 这里m_logger已经在lua中gc了 后续优化 todo
 }
