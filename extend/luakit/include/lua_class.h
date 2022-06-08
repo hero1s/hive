@@ -160,20 +160,24 @@ namespace luakit {
 
     template <typename T, typename... arg_types>
     void lua_wrap_class(lua_State* L, arg_types... args) {
-        //创建类元表以及基础元方法
         lua_guard g(L);
-        luaL_Reg meta[] = {
-            {"__gc", &lua_class_gc<T>},
-            {"__index", &lua_class_index<T>},
-            {"__newindex", &lua_class_newindex<T>},
-            {NULL, NULL}
-        };
         const char* meta_name = lua_get_meta_name<T>();
-        luaL_newmetatable(L, meta_name);
-        luaL_setfuncs(L, meta, 0);
-        //注册类成员
-        static_assert(sizeof...(args) % 2 == 0, "You must have an even number of arguments for a key, value ... list.");
-        lua_wrap_member(L, std::forward<arg_types>(args)...);
+        luaL_getmetatable(L, meta_name);
+        if (lua_isnil(L, -1)) {
+            //创建类元表以及基础元方法
+            luaL_Reg meta[] = {
+                {"__gc", &lua_class_gc<T>},
+                {"__index", &lua_class_index<T>},
+                {"__newindex", &lua_class_newindex<T>},
+                {NULL, NULL}
+            };
+            lua_pop(L, 1);
+            luaL_newmetatable(L, meta_name);
+            luaL_setfuncs(L, meta, 0);
+            //注册类成员
+            static_assert(sizeof...(args) % 2 == 0, "You must have an even number of arguments for a key, value ... list.");
+            lua_wrap_member(L, std::forward<arg_types>(args)...);
+        }
     }
 
 }
