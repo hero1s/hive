@@ -228,7 +228,7 @@ function table_ext.spairs(t, cmp)
         end
     else
         sortfunc = function(a, b)
-            return a[1] > b[1]
+            return a[1] < b[1]
         end
     end
     tsort(sort_keys, sortfunc)

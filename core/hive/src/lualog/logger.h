@@ -234,7 +234,7 @@ namespace logger {
             }
             catch (const std::exception& e)
             {
-                std::cout << "change chinese fail:" << e.what();
+                std::cout << "change chinese fail:" << e.what() << std::endl;
             }
 #endif // WIN32
             auto colors = level_colors<log_level>()();

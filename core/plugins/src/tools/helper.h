@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include "lua_kit.h"
 
 namespace tools
 {
@@ -15,6 +16,7 @@ namespace tools
         static size_t GetAllHostIPs(std::vector<uint32_t>& oIPs);
         static uint32_t IPToValue(const std::string& strIP);
         static std::string ValueToIP(uint32_t ulAddr);
+        static void serialize(lua_State* L, std::string& buf, int index, int depth, int line);
     private:
 
     };

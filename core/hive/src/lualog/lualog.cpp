@@ -1,5 +1,3 @@
-#define LUA_LIB
-
 #include "logger.h"
 #include "lua_kit.h"
 
