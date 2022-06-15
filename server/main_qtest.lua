@@ -26,5 +26,6 @@ hive.startup(function() --初始化test
     --import("qtest/jps_test.lua")
     --import("qtest/zset_test.lua")
     --import("qtest/prof_test.lua")
-    import("qtest/lrandom_test.lua")
+    --import("qtest/lrandom_test.lua")
+    import("qtest/nacos_test.lua")
 end)

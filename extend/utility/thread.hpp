@@ -17,7 +17,6 @@ namespace utility
         thread(new std::thread(std::bind(&Thread::begin_run,this)))
         {
         }
-        //Thread 类总是被继承，虚析构会安全。
         virtual ~Thread(){}
         void start(){
             std::unique_lock<std::mutex> lock(mutex);

@@ -1,13 +1,16 @@
 -- nacos_test.lua
 import("driver/nacos.lua")
-local lcrypt      = require("lcrypt")
+local lcrypt        = require("lcrypt")
 
-local lhex_encode = lcrypt.hex_encode
-local lrandomkey  = lcrypt.randomkey
-local log_debug   = logger.debug
-local nacos       = hive.get("nacos")
-local timer_mgr   = hive.get("timer_mgr")
-local thread_mgr  = hive.get("thread_mgr")
+local lhex_encode   = lcrypt.hex_encode
+local lrandomkey    = lcrypt.randomkey
+
+local qget          = hive.get
+local log_debug     = logger.debug
+
+local nacos         = qget("nacos")
+local timer_mgr     = qget("timer_mgr")
+local thread_mgr    = qget("thread_mgr")
 
 thread_mgr:fork(function()
     local cres = nacos:create_namespace("1234567", "hive", "test create_namespace")
@@ -15,7 +18,6 @@ thread_mgr:fork(function()
     local nss = nacos:query_namespaces()
     log_debug("query_namespaces: %s", nss)
 
-    --[[
     local mres = nacos:modify_namespace("1234567", "hive", "test create_namespace2")
     log_debug("modify_namespace: %s", mres)
     local nss3 = nacos:query_namespaces()
@@ -25,7 +27,6 @@ thread_mgr:fork(function()
     log_debug("del_namespace: %s", dres)
     local nss4 = nacos:query_namespaces()
     log_debug("query_namespaces4: %s", nss4)
-    ]]
     nacos:set_namespace("1234567")
 
     local value = lhex_encode(lrandomkey())

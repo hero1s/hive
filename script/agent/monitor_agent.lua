@@ -61,11 +61,12 @@ end
 function MonitorAgent:on_socket_error(client, token, err)
     -- 设置重连时间
     self.next_connect_time = hive.clock_ms
+    log_err("[MonitorAgent][on_socket_error] connect monitor fail!:[%s:%s]", self.client.ip, self.client.port)
 end
 
 -- 连接成回调
 function MonitorAgent:on_socket_connect(client)
-    log_info("[MonitorAgent][on_socket_connect]: connect monitor success!")
+    log_info("[MonitorAgent][on_socket_connect]: connect monitor success!:[%s:%s]",self.client.ip, self.client.port)
 end
 
 -- 请求服务
@@ -129,7 +130,7 @@ end
 function MonitorAgent:on_stop_service(force)
     hive.service_status = (force == 1) and ServiceStatus.STOP or ServiceStatus.WAIT_STOP
     log_err("[MonitorAgent][on_stop_service] will stop service,service_status:%s,:%s,%s", hive.service_status, hive.service, hive.index)
-    event_mgr:notify_trigger("evt_stop_service",hive.service_status)
+    event_mgr:notify_trigger("evt_stop_service", hive.service_status)
 end
 
 hive.monitor = MonitorAgent()

@@ -100,10 +100,28 @@ struct io_buffer
 
     bool empty() { return m_data_end <= m_data_begin; }
 
+    BYTE* data()
+    {
+        return m_data_begin;
+    }
+
     size_t data_len() 
     {
         return (size_t)(m_data_end - m_data_begin);
     }
+
+	inline bool read(uint32_t bytes, void* out_buffer) {
+		if (data_len() < bytes) return false;
+		memcpy(out_buffer, m_data_begin, bytes);
+		pop_data(bytes);
+		return true;
+	}
+
+	template<typename T>
+	inline bool Read(T& t) { return read(sizeof(T), &t); }
+
+    template<typename T>
+    inline bool Write(const T& t) { return push_data(&t, sizeof(T)); }
 
 private:
     void alloc_buffer(size_t align_size)
