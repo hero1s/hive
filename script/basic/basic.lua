@@ -2,6 +2,7 @@
 import("basic/math.lua")
 import("basic/table.lua")
 import("basic/string.lua")
+import("basic/serialize.lua")
 import("basic/logger.lua")
 import("basic/io.lua")
 import("basic/datetime.lua")

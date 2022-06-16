@@ -147,8 +147,7 @@ function CacheObj:update(tab_name, tab_data, flush)
         log_err("[CacheObj][update] cannot find record! cache:%s, table:%s", self.cache_table, tab_name)
         return CacheCode.CACHE_KEY_IS_NOT_EXIST
     end
-    self.flush        = false
-    self.active_tick  = hive.clock_ms
+    self:active()
     self.update_count = self.update_count + 1
     local code        = record:update(tab_data, flush)
     if record:is_dirty() then
@@ -163,8 +162,7 @@ function CacheObj:update_key(tab_name, table_kvs, flush)
         log_err("[CacheObj][update_key] cannot find record! cache:%s, table:%s", self.cache_table, tab_name)
         return CacheCode.CACHE_KEY_IS_NOT_EXIST
     end
-    self.flush        = false
-    self.active_tick  = hive.clock_ms
+    self:active()
     self.update_count = self.update_count + 1
     local code        = record:update_key(table_kvs, flush)
     if record:is_dirty() then

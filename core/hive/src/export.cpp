@@ -20,7 +20,8 @@ extern "C"
         REGISTER_CUSTOM_LIBRARY("mongo", luaopen_mongo);
         REGISTER_CUSTOM_LIBRARY("ltimer", luaopen_ltimer);
         REGISTER_CUSTOM_LIBRARY("lprof", luaopen_lprof);
-        
+        REGISTER_CUSTOM_LIBRARY("lbuffer", luaopen_lbuffer);
+
         //custom
         REGISTER_CUSTOM_LIBRARY("lhelper", luaopen_lhelper);
         REGISTER_CUSTOM_LIBRARY("lzset", luaopen_lzset);        

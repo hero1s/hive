@@ -209,96 +209,6 @@ namespace tools
         return std::string(strTemp);
     }
 
-
-#define MAX_DEPTH  16
-
-#define SERIALIZE_VALUE(buf, val) buf.append(val, strlen(val))
-#define SERIALIZE_QUOTE(buf, val, l, r)\
-SERIALIZE_VALUE(buf, l); \
-SERIALIZE_VALUE(buf, val); \
-SERIALIZE_VALUE(buf, r);
-#define SERIALIZE_UDATA(buf, val) SERIALIZE_QUOTE(buf, val ? val : "userdata(null)", "'", "'")
-#define SERIALIZE_CRCN(buf, cnt, line) {\
-    if(line > 0) {\
-        buf.append("\n", 1);\
-        for(int i = 0; i < cnt - 1; ++i) {\
-            buf.append("\t", 1);\
-        }\
-    }\
-}
-
-	void serialize_table(lua_State* L, std::string& buf, int index, int depth, int line) {
-		if (index < 0) {
-			index = lua_gettop(L) + index + 1;
-		}
-		int size = 0;
-		lua_pushnil(L);
-		SERIALIZE_VALUE(buf, "{");
-		SERIALIZE_CRCN(buf, depth, line);
-		while (lua_next(L, index) != 0) {
-			if (size++ > 0) {
-				SERIALIZE_VALUE(buf, ",");
-				SERIALIZE_CRCN(buf, depth, line);
-			}
-			if (lua_isnumber(L, -2)) {
-				lua_pushnil(L);
-				lua_copy(L, -3, -1);
-				SERIALIZE_QUOTE(buf, lua_tostring(L, -1), "[", "]=");
-				lua_pop(L, 1);
-			}
-			else if (lua_type(L, -2) == LUA_TSTRING) {
-				SERIALIZE_VALUE(buf, lua_tostring(L, -2));
-				SERIALIZE_VALUE(buf, "=");
-			}
-			else {
-                CHelper::serialize(L, buf, -2, depth, line);
-			}
-            CHelper::serialize(L, buf, -1, depth, line);
-			lua_pop(L, 1);
-		}
-		SERIALIZE_CRCN(buf, depth - 1, line);
-		SERIALIZE_VALUE(buf, "}");
-	}
-
-	void CHelper::serialize(lua_State* L, std::string& buf, int index, int depth, int line) {
-		if (depth > MAX_DEPTH) {
-			luaL_error(L, "serialize can't pack too depth table");
-		}
-		int type = lua_type(L, index);
-		switch (type) {
-		case LUA_TNIL:
-			SERIALIZE_VALUE(buf, "nil");
-			break;
-		case LUA_TBOOLEAN:
-			SERIALIZE_VALUE(buf, lua_toboolean(L, index) ? "true" : "false");
-			break;
-		case LUA_TSTRING:
-			SERIALIZE_QUOTE(buf, lua_tostring(L, index), "'", "'");
-			break;
-		case LUA_TNUMBER:
-			SERIALIZE_VALUE(buf, lua_tostring(L, index));
-			break;
-		case LUA_TTABLE:
-			serialize_table(L, buf, index, depth + 1, line);
-			break;
-		case LUA_TUSERDATA:
-		case LUA_TLIGHTUSERDATA:
-			SERIALIZE_UDATA(buf, lua_tostring(L, index));
-			break;
-		default:
-			SERIALIZE_QUOTE(buf, lua_typename(L, type), "'unsupport(", ")'");
-			break;
-		}
-	}
-
-	int lserialize(lua_State* L) {
-		static std::string binary;
-        binary.clear();// 线程不安全,多线程导出序列化对象
-		CHelper::serialize(L, binary, 1, 1, luaL_optinteger(L, 2, 0));
-		lua_pushlstring(L, binary.c_str(), binary.length());
-		return 1;
-	}
-
     luakit::lua_table open_lhelper(lua_State* L) {
         luakit::kit_state lua(L);
         auto helper = lua.new_table();
@@ -306,12 +216,10 @@ SERIALIZE_VALUE(buf, r);
         helper.set_function("get_net_ip", []() { return CHelper::GetNetIP(); });
         helper.set_function("ip_to_value", [](std::string ip) { return CHelper::IPToValue(ip); });
         helper.set_function("value_to_ip", [](uint32_t addr) { return CHelper::ValueToIP(addr); });
-        helper.set_function("serialize", lserialize);
-
+        
         return helper;
     }
 }
-
 
 extern "C"
 {

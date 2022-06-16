@@ -29,7 +29,7 @@ prop:reader("cache_enable", true)     -- 缓存开关
 prop:reader("cache_confs", {})        -- cache_confs
 prop:reader("cache_lists", {})        -- cache_lists
 prop:reader("dirty_map", nil)         -- dirty objects
-prop:reader("flush", false)            -- 立即存盘
+prop:reader("flush", false)           -- 立即存盘
 
 function CacheMgr:__init()
     --初始化cache
@@ -179,7 +179,7 @@ end
 --更新缓存
 function CacheMgr:rpc_cache_update(hive_id, req_data)
     local cache_name, primary_key, table_name, table_data, flush = tunpack(req_data)
-    local code, cache_obj                                        = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.WRITE)
+    local code, cache_obj                                        = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.BOTH)
     if SUCCESS ~= code then
         log_err("[CacheMgr][rpc_cache_update] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return code
@@ -194,7 +194,7 @@ end
 --更新缓存kv
 function CacheMgr:rpc_cache_update_key(hive_id, req_data)
     local cache_name, primary_key, table_name, table_kvs, flush = tunpack(req_data)
-    local code, cache_obj                                       = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.WRITE)
+    local code, cache_obj                                       = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.BOTH)
     if SUCCESS ~= code then
         log_err("[CacheMgr][rpc_cache_update_key] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return code

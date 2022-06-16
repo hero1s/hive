@@ -7,6 +7,30 @@
     <ClInclude Include="src\laoi\math.hpp">
       <Filter>laoi</Filter>
     </ClInclude>
+    <ClInclude Include="src\lbuffer\buffer.h">
+      <Filter>lbuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lbuffer\bufpool.h">
+      <Filter>lbuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lbuffer\bufqueue.h">
+      <Filter>lbuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lbuffer\lbuffer.h">
+      <Filter>lbuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lbuffer\serializer.h">
+      <Filter>lbuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lbuffer\shm.h">
+      <Filter>lbuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lbuffer\shmpool.h">
+      <Filter>lbuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lbuffer\slice.h">
+      <Filter>lbuffer</Filter>
+    </ClInclude>
     <ClInclude Include="src\lprofile\profile.h">
       <Filter>lprofile</Filter>
     </ClInclude>
@@ -35,6 +59,9 @@
     </ClCompile>
     <ClCompile Include="src\laoi\laoi.cpp">
       <Filter>laoi</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lbuffer\lbuffer.cpp">
+      <Filter>lbuffer</Filter>
     </ClCompile>
     <ClCompile Include="src\lcrab\lua-crab.c">
       <Filter>lcrab</Filter>
@@ -67,6 +94,9 @@
     </Filter>
     <Filter Include="laoi">
       <UniqueIdentifier>{DC8FEA7C-8450-92D3-4C20-3A6D15D99A08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lbuffer">
+      <UniqueIdentifier>{177A2178-1E93-A220-C618-9BAE709912F2}</UniqueIdentifier>
     </Filter>
     <Filter Include="lcrab">
       <UniqueIdentifier>{801D02A4-8781-DC43-F7D7-623523C1E8A1}</UniqueIdentifier>

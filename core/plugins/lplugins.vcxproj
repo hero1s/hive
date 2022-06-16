@@ -9,6 +9,14 @@
   <ItemGroup>
     <ClInclude Include="src\laoi\aoi.hpp"/>
     <ClInclude Include="src\laoi\math.hpp"/>
+    <ClInclude Include="src\lbuffer\buffer.h"/>
+    <ClInclude Include="src\lbuffer\bufpool.h"/>
+    <ClInclude Include="src\lbuffer\bufqueue.h"/>
+    <ClInclude Include="src\lbuffer\lbuffer.h"/>
+    <ClInclude Include="src\lbuffer\serializer.h"/>
+    <ClInclude Include="src\lbuffer\shm.h"/>
+    <ClInclude Include="src\lbuffer\shmpool.h"/>
+    <ClInclude Include="src\lbuffer\slice.h"/>
     <ClInclude Include="src\lprofile\profile.h"/>
     <ClInclude Include="src\ltimer\croncpp.h"/>
     <ClInclude Include="src\ltimer\ltimer.h"/>
@@ -20,6 +28,7 @@
   <ItemGroup>
     <ClCompile Include="src\bson\bson.c"/>
     <ClCompile Include="src\laoi\laoi.cpp"/>
+    <ClCompile Include="src\lbuffer\lbuffer.cpp"/>
     <ClCompile Include="src\lcrab\lua-crab.c"/>
     <ClCompile Include="src\lprofile\profile.cpp"/>
     <ClCompile Include="src\ltimer\ltimer.cpp"/>
