@@ -127,6 +127,18 @@ float get_memory_usage(int pid)
 #endif
 }
 
+int get_cpu_core_num()
+{
+#ifdef WIN32
+	SYSTEM_INFO info;
+	GetSystemInfo(&info);
+	return info.dwNumberOfProcessors;
+#else
+	return get_nprocs();
+#endif
+}
+
+
 static int lset_env(lua_State* L) {
 	const char* key = lua_tostring(L, 1);
 	const char* value = lua_tostring(L, 2);
@@ -206,11 +218,14 @@ void hive_app::run() {
 	}
 	m_logger->start();
     luakit::kit_state lua;
-    lua.set("platform", get_platform());
+    lua.set("platform", get_platform());	
+
     open_custom_libs(lua.L());//添加扩展库
     auto hive = lua.new_table("hive");
     hive.set("pid", ::getpid());
     hive.set("platform", get_platform());
+	hive.set("cpu_core_num", get_cpu_core_num());
+
     hive.set_function("hash_code", hash_code);
     hive.set_function("get_signal", [&]() { return m_signal; });
     hive.set_function("set_signal", [&](int n) { set_signal(n); });
@@ -219,7 +234,7 @@ void hive_app::run() {
     hive.set_function("default_signal", [](int n) { signal(n, SIG_DFL); });
     hive.set_function("register_signal", [](int n) { signal(n, on_signal); });
     hive.set_function("mem_usage", []() { return get_memory_usage(::getpid()); });
-
+	
 	lua.run_script(fmt::format("require '{}'", getenv("HIVE_SANDBOX")), [&](std::string err) {
 		exception_handler("load sandbox err: ", err);
 		});

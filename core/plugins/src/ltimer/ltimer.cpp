@@ -27,7 +27,7 @@ namespace ltimer {
 
     protected:
         void shift();
-        void add_node(timer_node& node);
+        void add_node(timer_node&& node);
         void execute(integer_vector& timers);
         void move_list(uint32_t level, uint32_t idx);
 
@@ -37,10 +37,10 @@ namespace ltimer {
         timer_list t[4][TIME_LEVEL];
     };
 
-    void lua_timer::add_node(timer_node& node) {
+    void lua_timer::add_node(timer_node&& node) {
         size_t expire = node.expire;
         if ((expire | TIME_NEAR_MASK) == (time | TIME_NEAR_MASK)) {
-            near[expire & TIME_NEAR_MASK].push_back(node);
+            near[expire & TIME_NEAR_MASK].emplace_back(node);
             return;
         }
         uint32_t i;
@@ -51,18 +51,18 @@ namespace ltimer {
             }
             mask <<= TIME_LEVEL_SHIFT;
         }
-        t[i][((expire >> (TIME_NEAR_SHIFT + i * TIME_LEVEL_SHIFT)) & TIME_LEVEL_MASK)].push_back(node);
+        t[i][((expire >> (TIME_NEAR_SHIFT + i * TIME_LEVEL_SHIFT)) & TIME_LEVEL_MASK)].emplace_back(node);
     }
 
     void lua_timer::insert(uint64_t timer_id, size_t escape) {
         timer_node node{ time + escape, timer_id };
-        add_node(node);
+        add_node(std::move(node));
     }
 
     void lua_timer::move_list(uint32_t level, uint32_t idx) {
         timer_list& list = t[level][idx];
-        for (auto node : t[level][idx]) {
-            add_node(node);
+        for (auto node : list) {
+            add_node(std::move(node));
         }
         list.clear();
     }
@@ -91,7 +91,7 @@ namespace ltimer {
     void lua_timer::execute(integer_vector& timers) {
         uint32_t idx = time & TIME_NEAR_MASK;
         for (auto node : near[idx]) {
-            timers.push_back(node.timer_id);
+            timers.emplace_back(node.timer_id);
         }
         near[idx].clear();
     }
