@@ -31,8 +31,44 @@
     <ClInclude Include="src\lbuffer\slice.h">
       <Filter>lbuffer</Filter>
     </ClInclude>
+    <ClInclude Include="src\lcjson\fpconv.h">
+      <Filter>lcjson</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lcjson\strbuf.h">
+      <Filter>lcjson</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lcrypt\base64.h">
+      <Filter>lcrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lcrypt\des56.h">
+      <Filter>lcrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lcrypt\guid.h">
+      <Filter>lcrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lcrypt\lcrypt.h">
+      <Filter>lcrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lcrypt\lz4.h">
+      <Filter>lcrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lcrypt\md5.h">
+      <Filter>lcrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lcrypt\sha1.h">
+      <Filter>lcrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lcrypt\sha2.h">
+      <Filter>lcrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lcrypt\xxtea.h">
+      <Filter>lcrypt</Filter>
+    </ClInclude>
     <ClInclude Include="src\lhttp\http.h">
       <Filter>lhttp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lkcp\ikcp.h">
+      <Filter>lkcp</Filter>
     </ClInclude>
     <ClInclude Include="src\lprofile\profile.h">
       <Filter>lprofile</Filter>
@@ -66,14 +102,56 @@
     <ClCompile Include="src\lbuffer\lbuffer.cpp">
       <Filter>lbuffer</Filter>
     </ClCompile>
+    <ClCompile Include="src\lcjson\fpconv.c">
+      <Filter>lcjson</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lcjson\lua_cjson.c">
+      <Filter>lcjson</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lcjson\strbuf.c">
+      <Filter>lcjson</Filter>
+    </ClCompile>
     <ClCompile Include="src\lcrab\lua-crab.c">
       <Filter>lcrab</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lcrypt\base64.c">
+      <Filter>lcrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lcrypt\des56.c">
+      <Filter>lcrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lcrypt\guid.c">
+      <Filter>lcrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lcrypt\lcrypt.c">
+      <Filter>lcrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lcrypt\lz4.c">
+      <Filter>lcrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lcrypt\md5.c">
+      <Filter>lcrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lcrypt\sha1.c">
+      <Filter>lcrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lcrypt\sha2.c">
+      <Filter>lcrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lcrypt\xxtea.c">
+      <Filter>lcrypt</Filter>
     </ClCompile>
     <ClCompile Include="src\lhttp\http.c">
       <Filter>lhttp</Filter>
     </ClCompile>
     <ClCompile Include="src\lhttp\lhttp.c">
       <Filter>lhttp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lkcp\ikcp.c">
+      <Filter>lkcp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lkcp\lkcp.c">
+      <Filter>lkcp</Filter>
     </ClCompile>
     <ClCompile Include="src\lprofile\profile.cpp">
       <Filter>lprofile</Filter>
@@ -110,11 +188,20 @@
     <Filter Include="lbuffer">
       <UniqueIdentifier>{177A2178-1E93-A220-C618-9BAE709912F2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="lcjson">
+      <UniqueIdentifier>{4ADCD1E9-BF66-35F8-4508-99A5FA07D9D9}</UniqueIdentifier>
+    </Filter>
     <Filter Include="lcrab">
       <UniqueIdentifier>{801D02A4-8781-DC43-F7D7-623523C1E8A1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="lcrypt">
+      <UniqueIdentifier>{6779B38A-0EC6-088E-3974-E2A164AE1520}</UniqueIdentifier>
+    </Filter>
     <Filter Include="lhttp">
       <UniqueIdentifier>{11E2E293-CF1A-0E75-B860-D3F9B4ED0407}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lkcp">
+      <UniqueIdentifier>{CADB1650-91D5-CEAE-233B-F22F72E5E0BE}</UniqueIdentifier>
     </Filter>
     <Filter Include="lprofile">
       <UniqueIdentifier>{8E8841F6-C7F8-DE1A-13D6-267C73A59A6B}</UniqueIdentifier>

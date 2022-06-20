@@ -79,15 +79,15 @@ void sha512_init(sha512_ctx *ctx);
 void sha512_update(sha512_ctx *ctx, const uint8_t *message, uint32_t len);
 void sha512_final(sha512_ctx *ctx, uint8_t *digest);
 
-LCRYPT_API void sha224(const uint8_t* message, uint32_t len, uint8_t* digest);
-LCRYPT_API void sha256(const uint8_t* message, uint32_t len, uint8_t* digest);
-LCRYPT_API void sha384(const uint8_t* message, uint32_t len, uint8_t* digest);
-LCRYPT_API void sha512(const uint8_t *message, uint32_t len, uint8_t *digest);
+void sha224(const uint8_t* message, uint32_t len, uint8_t* digest);
+void sha256(const uint8_t* message, uint32_t len, uint8_t* digest);
+void sha384(const uint8_t* message, uint32_t len, uint8_t* digest);
+void sha512(const uint8_t *message, uint32_t len, uint8_t *digest);
 
-LCRYPT_API void hmac_sha224(const uint8_t* key, uint32_t key_len, const uint8_t* text, uint32_t text_len, uint8_t* digest);
-LCRYPT_API void hmac_sha256(const uint8_t* key, uint32_t key_len, const uint8_t* text, uint32_t text_len, uint8_t* digest);
-LCRYPT_API void hmac_sha384(const uint8_t* key, uint32_t key_len, const uint8_t* text, uint32_t text_len, uint8_t* digest);
-LCRYPT_API void hmac_sha512(const uint8_t* key, uint32_t key_len, const uint8_t* text, uint32_t text_len, uint8_t* digest);
+void hmac_sha224(const uint8_t* key, uint32_t key_len, const uint8_t* text, uint32_t text_len, uint8_t* digest);
+void hmac_sha256(const uint8_t* key, uint32_t key_len, const uint8_t* text, uint32_t text_len, uint8_t* digest);
+void hmac_sha384(const uint8_t* key, uint32_t key_len, const uint8_t* text, uint32_t text_len, uint8_t* digest);
+void hmac_sha512(const uint8_t* key, uint32_t key_len, const uint8_t* text, uint32_t text_len, uint8_t* digest);
 
 #endif /* !SHA2_H */
 

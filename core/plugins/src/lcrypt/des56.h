@@ -71,8 +71,8 @@ typedef struct keysched {
 	} KS[16];
 } keysched;
 
-LCRYPT_API void fsetkey(char key[8], keysched *ks);
+void fsetkey(char key[8], keysched *ks);
 
-LCRYPT_API void fencrypt(char block[8], int decrypt, keysched *ks);
+void fencrypt(char block[8], int decrypt, keysched *ks);
 
 #endif /*DES56_H*/

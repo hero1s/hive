@@ -37,8 +37,8 @@ void SHA1_Update(SHA1_CTX *context, const void *p, size_t len);
 
 void SHA1_Final(uint8_t digest[SHA1_DIGEST_SIZE], SHA1_CTX *context);
 
-LCRYPT_API void sha1(const uint8_t* message, uint32_t len, uint8_t* digest);
+void sha1(const uint8_t* message, uint32_t len, uint8_t* digest);
 
-LCRYPT_API void hmac_sha1(const uint8_t* key, uint32_t key_len, const uint8_t* text, uint32_t text_len, uint8_t* digest);
+void hmac_sha1(const uint8_t* key, uint32_t key_len, const uint8_t* text, uint32_t text_len, uint8_t* digest);
 
 #endif // SHA_H_

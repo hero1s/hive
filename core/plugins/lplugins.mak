@@ -100,15 +100,30 @@ OBJS += $(patsubst $(SRC_DIR)/lbuffer/%.m, $(INT_DIR)/lbuffer/%.o, $(filter-out 
 OBJS += $(patsubst $(SRC_DIR)/lbuffer/%.cc, $(INT_DIR)/lbuffer/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lbuffer/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/lbuffer/%.cpp, $(INT_DIR)/lbuffer/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lbuffer/*.cpp)))
 #子目录
+OBJS += $(patsubst $(SRC_DIR)/lcjson/%.c, $(INT_DIR)/lcjson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcjson/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/lcjson/%.m, $(INT_DIR)/lcjson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcjson/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/lcjson/%.cc, $(INT_DIR)/lcjson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcjson/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/lcjson/%.cpp, $(INT_DIR)/lcjson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcjson/*.cpp)))
+#子目录
 OBJS += $(patsubst $(SRC_DIR)/lcrab/%.c, $(INT_DIR)/lcrab/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrab/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lcrab/%.m, $(INT_DIR)/lcrab/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrab/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/lcrab/%.cc, $(INT_DIR)/lcrab/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrab/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/lcrab/%.cpp, $(INT_DIR)/lcrab/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrab/*.cpp)))
 #子目录
+OBJS += $(patsubst $(SRC_DIR)/lcrypt/%.c, $(INT_DIR)/lcrypt/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrypt/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/lcrypt/%.m, $(INT_DIR)/lcrypt/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrypt/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/lcrypt/%.cc, $(INT_DIR)/lcrypt/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrypt/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/lcrypt/%.cpp, $(INT_DIR)/lcrypt/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrypt/*.cpp)))
+#子目录
 OBJS += $(patsubst $(SRC_DIR)/lhttp/%.c, $(INT_DIR)/lhttp/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lhttp/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lhttp/%.m, $(INT_DIR)/lhttp/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lhttp/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/lhttp/%.cc, $(INT_DIR)/lhttp/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lhttp/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/lhttp/%.cpp, $(INT_DIR)/lhttp/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lhttp/*.cpp)))
+#子目录
+OBJS += $(patsubst $(SRC_DIR)/lkcp/%.c, $(INT_DIR)/lkcp/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lkcp/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/lkcp/%.m, $(INT_DIR)/lkcp/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lkcp/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/lkcp/%.cc, $(INT_DIR)/lkcp/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lkcp/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/lkcp/%.cpp, $(INT_DIR)/lkcp/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lkcp/*.cpp)))
 #子目录
 OBJS += $(patsubst $(SRC_DIR)/lprofile/%.c, $(INT_DIR)/lprofile/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lprofile/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lprofile/%.m, $(INT_DIR)/lprofile/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lprofile/*.m)))
@@ -183,8 +198,11 @@ pre_build:
 	mkdir -p $(INT_DIR)/bson
 	mkdir -p $(INT_DIR)/laoi
 	mkdir -p $(INT_DIR)/lbuffer
+	mkdir -p $(INT_DIR)/lcjson
 	mkdir -p $(INT_DIR)/lcrab
+	mkdir -p $(INT_DIR)/lcrypt
 	mkdir -p $(INT_DIR)/lhttp
+	mkdir -p $(INT_DIR)/lkcp
 	mkdir -p $(INT_DIR)/lprofile
 	mkdir -p $(INT_DIR)/lstdfs
 	mkdir -p $(INT_DIR)/ltimer

@@ -33,7 +33,7 @@ extern "C" {
 #define MAX_SNUM    ((1 << SNUM_BITS) - 1)  //8912 - 1
 #define MAX_TIME    ((1 << TIME_BITS) - 1)
 
-LCRYPT_API size_t new_guid(size_t group, size_t index);
+size_t new_guid(size_t group, size_t index);
 
 #ifdef __cplusplus
 }

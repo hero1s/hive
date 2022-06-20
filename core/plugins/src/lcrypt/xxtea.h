@@ -34,7 +34,7 @@ extern "C" {
  *
  * Caller is responsible for freeing the returned buffer.
  */
-LCRYPT_API void * xxtea_encrypt(const void * data, size_t len, const void * key, size_t * out_len);
+void * xxtea_encrypt(const void * data, size_t len, const void * key, size_t * out_len);
 
 /**
  * Function: xxtea_decrypt
@@ -46,7 +46,7 @@ LCRYPT_API void * xxtea_encrypt(const void * data, size_t len, const void * key,
  *
  * Caller is responsible for freeing the returned buffer.
  */
-LCRYPT_API void * xxtea_decrypt(const void * data, size_t len, const void * key, size_t * out_len);
+void * xxtea_decrypt(const void * data, size_t len, const void * key, size_t * out_len);
 
 #ifdef __cplusplus
 }

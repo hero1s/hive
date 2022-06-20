@@ -566,7 +566,7 @@ static const luaL_Reg lcrypt_funcs[] = {
     { NULL, NULL },
 };
 
-LCRYPT_API int luaopen_lcrypt(lua_State* L) {
+LUAMOD_API int luaopen_lcrypt(lua_State* L) {
     luaL_checkversion(L);
     luaL_newlib(L, lcrypt_funcs);
     return 1;

@@ -52,7 +52,7 @@ extern "C" {
 #define LZ4_VERSION_MINOR    7    /* for new (non-breaking) interface capabilities */
 #define LZ4_VERSION_RELEASE  1    /* for tweaks, bug-fixes, or development */
 #define LZ4_VERSION_NUMBER (LZ4_VERSION_MAJOR *100*100 + LZ4_VERSION_MINOR *100 + LZ4_VERSION_RELEASE)
-LCRYPT_API int LZ4_versionNumber (void);
+int LZ4_versionNumber (void);
 
 /**************************************
 *  Tuning parameter
@@ -71,8 +71,8 @@ LCRYPT_API int LZ4_versionNumber (void);
 *  Simple Functions
 **************************************/
 
-LCRYPT_API int LZ4_compress_default(const char* source, char* dest, int sourceSize, int maxDestSize);
-LCRYPT_API int LZ4_decompress_safe (const char* source, char* dest, int compressedSize, int maxDecompressedSize);
+int LZ4_compress_default(const char* source, char* dest, int sourceSize, int maxDestSize);
+int LZ4_decompress_safe (const char* source, char* dest, int compressedSize, int maxDecompressedSize);
 
 /*
 LZ4_compress_default() :
@@ -116,7 +116,7 @@ LZ4_compressBound() :
         return : maximum output size in a "worst case" scenario
               or 0, if input size is too large ( > LZ4_MAX_INPUT_SIZE)
 */
-LCRYPT_API int LZ4_compressBound(int inputSize);
+int LZ4_compressBound(int inputSize);
 
 /*
 LZ4_compress_fast() :
@@ -126,7 +126,7 @@ LZ4_compress_fast() :
     An acceleration value of "1" is the same as regular LZ4_compress_default()
     Values <= 0 will be replaced by ACCELERATION_DEFAULT (see lz4.c), which is 1.
 */
-LCRYPT_API int LZ4_compress_fast (const char* source, char* dest, int sourceSize, int maxDestSize, int acceleration);
+int LZ4_compress_fast (const char* source, char* dest, int sourceSize, int maxDestSize, int acceleration);
 
 
 /*
@@ -136,8 +136,8 @@ LZ4_compress_fast_extState() :
     and allocate it on 8-bytes boundaries (using malloc() typically).
     Then, provide it as 'void* state' to compression function.
 */
-LCRYPT_API int LZ4_sizeofState(void);
-LCRYPT_API int LZ4_compress_fast_extState (void* state, const char* source, char* dest, int inputSize, int maxDestSize, int acceleration);
+int LZ4_sizeofState(void);
+int LZ4_compress_fast_extState (void* state, const char* source, char* dest, int inputSize, int maxDestSize, int acceleration);
 
 
 /*
@@ -151,7 +151,7 @@ LZ4_compress_destSize() :
         return : Nb bytes written into 'dest' (necessarily <= targetDestSize)
               or 0 if compression fails
 */
-LCRYPT_API int LZ4_compress_destSize (const char* source, char* dest, int* sourceSizePtr, int targetDestSize);
+int LZ4_compress_destSize (const char* source, char* dest, int* sourceSizePtr, int targetDestSize);
 
 
 /*
@@ -165,7 +165,7 @@ LZ4_decompress_fast() :
            However, it does not provide any protection against intentionally modified data stream (malicious input).
            Use this function in trusted environment only (data to decode comes from a trusted source).
 */
-LCRYPT_API int LZ4_decompress_fast (const char* source, char* dest, int originalSize);
+int LZ4_decompress_fast (const char* source, char* dest, int originalSize);
 
 /*
 LZ4_decompress_safe_partial() :
@@ -179,7 +179,7 @@ LZ4_decompress_safe_partial() :
              If the source stream is detected malformed, the function will stop decoding and return a negative result.
              This function never writes outside of output buffer, and never reads outside of input buffer. It is therefore protected against malicious data packets
 */
-LCRYPT_API int LZ4_decompress_safe_partial (const char* source, char* dest, int compressedSize, int targetOutputSize, int maxDecompressedSize);
+int LZ4_decompress_safe_partial (const char* source, char* dest, int compressedSize, int targetOutputSize, int maxDecompressedSize);
 
 
 /***********************************************
@@ -200,7 +200,7 @@ typedef struct { long long table[LZ4_STREAMSIZE_U64]; } LZ4_stream_t;
  * LZ4_resetStream
  * Use this function to init an allocated LZ4_stream_t structure
  */
-LCRYPT_API void LZ4_resetStream (LZ4_stream_t* streamPtr);
+void LZ4_resetStream (LZ4_stream_t* streamPtr);
 
 /*
  * LZ4_createStream will allocate and initialize an LZ4_stream_t structure
@@ -208,7 +208,7 @@ LCRYPT_API void LZ4_resetStream (LZ4_stream_t* streamPtr);
  * In the context of a DLL (liblz4), please use these methods rather than the static struct.
  * They are more future proof, in case of a change of LZ4_stream_t size.
  */
-LCRYPT_API LZ4_stream_t* LZ4_createStream(void);
+LZ4_stream_t* LZ4_createStream(void);
 int           LZ4_freeStream (LZ4_stream_t* streamPtr);
 
 /*
@@ -218,7 +218,7 @@ int           LZ4_freeStream (LZ4_stream_t* streamPtr);
  * Loading a size of 0 is allowed.
  * Return : dictionary size, in bytes (necessarily <= 64 KB)
  */
-LCRYPT_API int LZ4_loadDict (LZ4_stream_t* streamPtr, const char* dictionary, int dictSize);
+int LZ4_loadDict (LZ4_stream_t* streamPtr, const char* dictionary, int dictSize);
 
 /*
  * LZ4_compress_fast_continue
@@ -228,7 +228,7 @@ LCRYPT_API int LZ4_loadDict (LZ4_stream_t* streamPtr, const char* dictionary, in
  * If maxDstSize >= LZ4_compressBound(srcSize), compression is guaranteed to succeed, and runs faster.
  * If not, and if compressed data cannot fit into 'dst' buffer size, compression stops, and function returns a zero.
  */
-LCRYPT_API int LZ4_compress_fast_continue (LZ4_stream_t* streamPtr, const char* src, char* dst, int srcSize, int maxDstSize, int acceleration);
+int LZ4_compress_fast_continue (LZ4_stream_t* streamPtr, const char* src, char* dst, int srcSize, int maxDstSize, int acceleration);
 
 /*
  * LZ4_saveDict
@@ -238,7 +238,7 @@ LCRYPT_API int LZ4_compress_fast_continue (LZ4_stream_t* streamPtr, const char* 
  *        dictionary is immediately usable, you can therefore call LZ4_compress_fast_continue()
  * Return : saved dictionary size in bytes (necessarily <= dictSize), or 0 if error
  */
-LCRYPT_API int LZ4_saveDict (LZ4_stream_t* streamPtr, char* safeBuffer, int dictSize);
+int LZ4_saveDict (LZ4_stream_t* streamPtr, char* safeBuffer, int dictSize);
 
 
 /************************************************
@@ -258,8 +258,8 @@ typedef struct { unsigned long long table[LZ4_STREAMDECODESIZE_U64]; } LZ4_strea
  * LZ4_createStreamDecode will allocate and initialize an LZ4_streamDecode_t structure
  * LZ4_freeStreamDecode releases its memory.
  */
-LCRYPT_API LZ4_streamDecode_t* LZ4_createStreamDecode(void);
-LCRYPT_API int                 LZ4_freeStreamDecode (LZ4_streamDecode_t* LZ4_stream);
+LZ4_streamDecode_t* LZ4_createStreamDecode(void);
+int                 LZ4_freeStreamDecode (LZ4_streamDecode_t* LZ4_stream);
 
 /*
  * LZ4_setStreamDecode
@@ -267,7 +267,7 @@ LCRYPT_API int                 LZ4_freeStreamDecode (LZ4_streamDecode_t* LZ4_str
  * Setting a size of 0 is allowed (same effect as reset).
  * Return : 1 if OK, 0 if error
  */
-LCRYPT_API int LZ4_setStreamDecode (LZ4_streamDecode_t* LZ4_streamDecode, const char* dictionary, int dictSize);
+int LZ4_setStreamDecode (LZ4_streamDecode_t* LZ4_streamDecode, const char* dictionary, int dictSize);
 
 /*
 *_continue() :
@@ -286,8 +286,8 @@ LCRYPT_API int LZ4_setStreamDecode (LZ4_streamDecode_t* LZ4_streamDecode, const 
     Whenever these conditions are not possible, save the last 64KB of decoded data into a safe buffer,
     and indicate where it is saved using LZ4_setStreamDecode()
 */
-LCRYPT_API int LZ4_decompress_safe_continue (LZ4_streamDecode_t* LZ4_streamDecode, const char* source, char* dest, int compressedSize, int maxDecompressedSize);
-LCRYPT_API int LZ4_decompress_fast_continue (LZ4_streamDecode_t* LZ4_streamDecode, const char* source, char* dest, int originalSize);
+int LZ4_decompress_safe_continue (LZ4_streamDecode_t* LZ4_streamDecode, const char* source, char* dest, int compressedSize, int maxDecompressedSize);
+int LZ4_decompress_fast_continue (LZ4_streamDecode_t* LZ4_streamDecode, const char* source, char* dest, int originalSize);
 
 
 /*
@@ -297,8 +297,8 @@ Advanced decoding functions :
     a combination of LZ4_setStreamDecode() followed by LZ4_decompress_x_continue()
     They are stand-alone. They don't need nor update an LZ4_streamDecode_t structure.
 */
-LCRYPT_API int LZ4_decompress_safe_usingDict (const char* source, char* dest, int compressedSize, int maxDecompressedSize, const char* dictStart, int dictSize);
-LCRYPT_API int LZ4_decompress_fast_usingDict (const char* source, char* dest, int originalSize, const char* dictStart, int dictSize);
+int LZ4_decompress_safe_usingDict (const char* source, char* dest, int compressedSize, int maxDecompressedSize, const char* dictStart, int dictSize);
+int LZ4_decompress_fast_usingDict (const char* source, char* dest, int originalSize, const char* dictStart, int dictSize);
 
 
 
@@ -328,12 +328,12 @@ LCRYPT_API int LZ4_decompress_fast_usingDict (const char* source, char* dest, in
 
 /* Obsolete compression functions */
 /* These functions are planned to start generate warnings by r131 approximately */
-LCRYPT_API int LZ4_compress               (const char* source, char* dest, int sourceSize);
-LCRYPT_API int LZ4_compress_limitedOutput (const char* source, char* dest, int sourceSize, int maxOutputSize);
-LCRYPT_API int LZ4_compress_withState               (void* state, const char* source, char* dest, int inputSize);
-LCRYPT_API int LZ4_compress_limitedOutput_withState (void* state, const char* source, char* dest, int inputSize, int maxOutputSize);
-LCRYPT_API int LZ4_compress_continue                (LZ4_stream_t* LZ4_streamPtr, const char* source, char* dest, int inputSize);
-LCRYPT_API int LZ4_compress_limitedOutput_continue  (LZ4_stream_t* LZ4_streamPtr, const char* source, char* dest, int inputSize, int maxOutputSize);
+int LZ4_compress               (const char* source, char* dest, int sourceSize);
+int LZ4_compress_limitedOutput (const char* source, char* dest, int sourceSize, int maxOutputSize);
+int LZ4_compress_withState               (void* state, const char* source, char* dest, int inputSize);
+int LZ4_compress_limitedOutput_withState (void* state, const char* source, char* dest, int inputSize, int maxOutputSize);
+int LZ4_compress_continue                (LZ4_stream_t* LZ4_streamPtr, const char* source, char* dest, int inputSize);
+int LZ4_compress_limitedOutput_continue  (LZ4_stream_t* LZ4_streamPtr, const char* source, char* dest, int inputSize, int maxOutputSize);
 
 /* Obsolete decompression functions */
 /* These function names are completely deprecated and must no longer be used.
