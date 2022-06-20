@@ -17,6 +17,7 @@
     <ClInclude Include="src\lbuffer\shm.h"/>
     <ClInclude Include="src\lbuffer\shmpool.h"/>
     <ClInclude Include="src\lbuffer\slice.h"/>
+    <ClInclude Include="src\lhttp\http.h"/>
     <ClInclude Include="src\lprofile\profile.h"/>
     <ClInclude Include="src\ltimer\croncpp.h"/>
     <ClInclude Include="src\ltimer\ltimer.h"/>
@@ -30,7 +31,10 @@
     <ClCompile Include="src\laoi\laoi.cpp"/>
     <ClCompile Include="src\lbuffer\lbuffer.cpp"/>
     <ClCompile Include="src\lcrab\lua-crab.c"/>
+    <ClCompile Include="src\lhttp\http.c"/>
+    <ClCompile Include="src\lhttp\lhttp.c"/>
     <ClCompile Include="src\lprofile\profile.cpp"/>
+    <ClCompile Include="src\lstdfs\lstdfs.cpp"/>
     <ClCompile Include="src\ltimer\ltimer.cpp"/>
     <ClCompile Include="src\luazset\lua_zset.cpp"/>
     <ClCompile Include="src\mongo\lua-mongo.c"/>

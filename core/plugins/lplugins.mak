@@ -105,10 +105,20 @@ OBJS += $(patsubst $(SRC_DIR)/lcrab/%.m, $(INT_DIR)/lcrab/%.o, $(filter-out $(EX
 OBJS += $(patsubst $(SRC_DIR)/lcrab/%.cc, $(INT_DIR)/lcrab/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrab/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/lcrab/%.cpp, $(INT_DIR)/lcrab/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrab/*.cpp)))
 #子目录
+OBJS += $(patsubst $(SRC_DIR)/lhttp/%.c, $(INT_DIR)/lhttp/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lhttp/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/lhttp/%.m, $(INT_DIR)/lhttp/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lhttp/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/lhttp/%.cc, $(INT_DIR)/lhttp/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lhttp/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/lhttp/%.cpp, $(INT_DIR)/lhttp/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lhttp/*.cpp)))
+#子目录
 OBJS += $(patsubst $(SRC_DIR)/lprofile/%.c, $(INT_DIR)/lprofile/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lprofile/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lprofile/%.m, $(INT_DIR)/lprofile/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lprofile/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/lprofile/%.cc, $(INT_DIR)/lprofile/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lprofile/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/lprofile/%.cpp, $(INT_DIR)/lprofile/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lprofile/*.cpp)))
+#子目录
+OBJS += $(patsubst $(SRC_DIR)/lstdfs/%.c, $(INT_DIR)/lstdfs/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lstdfs/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/lstdfs/%.m, $(INT_DIR)/lstdfs/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lstdfs/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/lstdfs/%.cc, $(INT_DIR)/lstdfs/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lstdfs/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/lstdfs/%.cpp, $(INT_DIR)/lstdfs/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lstdfs/*.cpp)))
 #子目录
 OBJS += $(patsubst $(SRC_DIR)/ltimer/%.c, $(INT_DIR)/ltimer/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/ltimer/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/ltimer/%.m, $(INT_DIR)/ltimer/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/ltimer/*.m)))
@@ -174,7 +184,9 @@ pre_build:
 	mkdir -p $(INT_DIR)/laoi
 	mkdir -p $(INT_DIR)/lbuffer
 	mkdir -p $(INT_DIR)/lcrab
+	mkdir -p $(INT_DIR)/lhttp
 	mkdir -p $(INT_DIR)/lprofile
+	mkdir -p $(INT_DIR)/lstdfs
 	mkdir -p $(INT_DIR)/ltimer
 	mkdir -p $(INT_DIR)/luazset
 	mkdir -p $(INT_DIR)/mongo

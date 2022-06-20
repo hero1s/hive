@@ -4,6 +4,9 @@
 --当然,不在线的玩家查询结果就是nil:)
 --这里维护的在线状态仅供一般性消息中转用,登录状态判定以数据库中记录为准
 local pairs      = pairs
+local tunpack    = table.unpack
+local tpack      = table.pack
+local tremove    = table.remove
 local log_info   = logger.info
 local KernCode   = enum("KernCode")
 local SUCCESS    = KernCode.SUCCESS
@@ -116,11 +119,13 @@ function OnlineMgr:rpc_transfer_message(player_id, rpc, ...)
     if not lobby then
         return KernCode.PLAYER_NOT_EXIST, "player not online!"
     end
-    local ok, codeoe, res = router_mgr:call_target(lobby, rpc, ...)
+    local res   = tpack(router_mgr:call_target(lobby, rpc, ...))
+    local ok    = tremove(res, 1)
     if not ok then
-        return KernCode.RPC_FAILED, codeoe
+        local code = #res > 0 and res[1] or nil
+        return KernCode.RPC_FAILED, code
     end
-    return codeoe, res
+    return tunpack(res)
 end
 
 --根据玩家所在的lobby转发消息

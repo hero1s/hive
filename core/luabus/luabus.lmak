@@ -41,8 +41,7 @@ LIBS = {
 
 --依赖项目
 DEPS = {
-	"luna",
-	"lualog"
+	"luna"
 }
 
 --分组定义

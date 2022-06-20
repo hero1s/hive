@@ -35,11 +35,11 @@ function MonitorAgent:__init()
         self:on_timer()
     end)
     --注册事件
-    event_mgr:add_listener(self, "on_hive_quit")
+    event_mgr:add_listener(self, "rpc_hive_quit")
     event_mgr:add_listener(self, "on_remote_message")
-    event_mgr:add_listener(self, "on_reload")
-    event_mgr:add_listener(self, "on_inject")
-    event_mgr:add_listener(self, "on_stop_service")
+    event_mgr:add_listener(self, "rpc_reload")
+    event_mgr:add_listener(self, "rpc_inject")
+    event_mgr:add_listener(self, "rpc_stop_service")
 end
 
 function MonitorAgent:on_timer()
@@ -85,9 +85,9 @@ function MonitorAgent:service_request(api_name, data)
 end
 
 -- 处理Monitor通知退出消息
-function MonitorAgent:on_hive_quit(reason)
+function MonitorAgent:rpc_hive_quit(reason)
     -- 发个退出通知
-    event_mgr:notify_trigger("on_hive_quit", reason)
+    event_mgr:notify_trigger("evt_hive_quit", reason)
     -- 关闭会话连接
     thread_mgr:fork(function()
         thread_mgr:sleep(SECOND_MS)
@@ -113,8 +113,8 @@ function MonitorAgent:on_remote_message(data, message)
     return { code = 0, data = res }
 end
 
-function MonitorAgent:on_reload()
-    log_info("[MonitorAgent][on_reload]")
+function MonitorAgent:rpc_reload()
+    log_info("[MonitorAgent][rpc_reload]")
     hive.reload()
     hive.protobuf_mgr:reload()
     config_mgr:reload()
@@ -122,14 +122,14 @@ function MonitorAgent:on_reload()
     event_mgr:notify_trigger("reload_config")
 end
 
-function MonitorAgent:on_inject(code_string)
+function MonitorAgent:rpc_inject(code_string)
     local func = load(code_string)
     func()
 end
 
-function MonitorAgent:on_stop_service(force)
+function MonitorAgent:rpc_stop_service(force)
     hive.service_status = (force == 1) and ServiceStatus.STOP or ServiceStatus.WAIT_STOP
-    log_err("[MonitorAgent][on_stop_service] will stop service,service_status:%s,:%s,%s", hive.service_status, hive.service, hive.index)
+    log_err("[MonitorAgent][rpc_stop_service] will stop service,service_status:%s,:%s,%s", hive.service_status, hive.service, hive.index)
     event_mgr:notify_trigger("evt_stop_service", hive.service_status)
 end
 

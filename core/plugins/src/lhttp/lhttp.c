@@ -289,7 +289,7 @@ static const luaL_Reg lhttp[] = {
     { NULL, NULL }
 };
 
-LHTTP_API int luaopen_lhttp(lua_State* L) {
+LUALIB_API int luaopen_lhttp(lua_State* L) {
     luaL_newlib(L, lhttp);
     return 1;
 }

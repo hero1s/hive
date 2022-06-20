@@ -42,7 +42,7 @@ end
 -- 热更新
 function DevopsGmMgr:gm_hotfix()
     log_warn("[DevopsGmMgr][gm_hotfix]")
-    monitor_mgr:broadcast("on_reload", 0)
+    monitor_mgr:broadcast("rpc_reload", 0)
     return { code = 0 }
 end
 
@@ -58,9 +58,9 @@ function DevopsGmMgr:gm_inject(svr_name, file_name, base64_code)
 
     if func and func ~= "" then
         if svr_name == "" then
-            monitor_mgr:broadcast("on_inject", sdump(func))
+            monitor_mgr:broadcast("rpc_inject", sdump(func))
         else
-            router_mgr["send_" .. svr_name .. "_all"](router_mgr, "on_inject", sdump(func))
+            router_mgr["send_" .. svr_name .. "_all"](router_mgr, "rpc_inject", sdump(func))
         end
     else
         log_err("[DevopsGmMgr][gm_inject] error file_name:%s, decode_code:%s", file_name, decode_code)
@@ -71,12 +71,12 @@ end
 
 function DevopsGmMgr:gm_stop_service(force)
     log_warn("[DevopsGmMgr][gm_stop_service]")
-    monitor_mgr:broadcast("on_stop_service", 0, force)
+    monitor_mgr:broadcast("rpc_stop_service", 0, force)
     return { code = 0 }
 end
 
 function DevopsGmMgr:gm_hive_quit(reason)
-    monitor_mgr:broadcast("on_hive_quit", 0, reason)
+    monitor_mgr:broadcast("rpc_hive_quit", 0, reason)
     return { code = 0 }
 end
 

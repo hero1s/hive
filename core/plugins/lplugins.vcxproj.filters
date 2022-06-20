@@ -31,6 +31,9 @@
     <ClInclude Include="src\lbuffer\slice.h">
       <Filter>lbuffer</Filter>
     </ClInclude>
+    <ClInclude Include="src\lhttp\http.h">
+      <Filter>lhttp</Filter>
+    </ClInclude>
     <ClInclude Include="src\lprofile\profile.h">
       <Filter>lprofile</Filter>
     </ClInclude>
@@ -66,8 +69,17 @@
     <ClCompile Include="src\lcrab\lua-crab.c">
       <Filter>lcrab</Filter>
     </ClCompile>
+    <ClCompile Include="src\lhttp\http.c">
+      <Filter>lhttp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lhttp\lhttp.c">
+      <Filter>lhttp</Filter>
+    </ClCompile>
     <ClCompile Include="src\lprofile\profile.cpp">
       <Filter>lprofile</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lstdfs\lstdfs.cpp">
+      <Filter>lstdfs</Filter>
     </ClCompile>
     <ClCompile Include="src\ltimer\ltimer.cpp">
       <Filter>ltimer</Filter>
@@ -101,8 +113,14 @@
     <Filter Include="lcrab">
       <UniqueIdentifier>{801D02A4-8781-DC43-F7D7-623523C1E8A1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="lhttp">
+      <UniqueIdentifier>{11E2E293-CF1A-0E75-B860-D3F9B4ED0407}</UniqueIdentifier>
+    </Filter>
     <Filter Include="lprofile">
       <UniqueIdentifier>{8E8841F6-C7F8-DE1A-13D6-267C73A59A6B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lstdfs">
+      <UniqueIdentifier>{8667E717-B97C-935C-4FDF-2878AF7DAB1A}</UniqueIdentifier>
     </Filter>
     <Filter Include="ltimer">
       <UniqueIdentifier>{2DE9C09F-02F5-DF2B-524C-FFBEBC8DE5EE}</UniqueIdentifier>

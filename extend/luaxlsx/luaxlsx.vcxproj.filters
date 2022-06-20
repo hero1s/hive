@@ -12,10 +12,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\MiniExcel.cpp">
+    <ClCompile Include="src\luaxlsx.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\luaxlsx.cpp">
+    <ClCompile Include="src\MiniExcel.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\miniz.c">

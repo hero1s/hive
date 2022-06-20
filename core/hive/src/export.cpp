@@ -21,6 +21,8 @@ extern "C"
         REGISTER_CUSTOM_LIBRARY("ltimer", luaopen_ltimer);
         REGISTER_CUSTOM_LIBRARY("lprof", luaopen_lprof);
         REGISTER_CUSTOM_LIBRARY("lbuffer", luaopen_lbuffer);
+        REGISTER_CUSTOM_LIBRARY("lhttp", luaopen_lhttp);
+        REGISTER_CUSTOM_LIBRARY("lstdfs", luaopen_lstdfs);
 
         //custom
         REGISTER_CUSTOM_LIBRARY("lhelper", luaopen_lhelper);

@@ -9,16 +9,6 @@
 #include <memory.h>
 #include <string.h>
 
-#ifdef _MSC_VER
-#ifdef LHTTP_EXPORT
-#define LHTTP_API _declspec(dllexport)
-#else
-#define LHTTP_API _declspec(dllimport)
-#endif
-#else
-#define LHTTP_API extern
-#endif
-
 // enums
 //---------------------------------------------------------------------
 // token枚举
@@ -169,56 +159,56 @@ typedef struct http_request_s {
 
 //http stream
 //----------------------------------------------------------------
-LHTTP_API int http_stream_append(http_stream_t* stream, const char* buf, int len);
+int http_stream_append(http_stream_t* stream, const char* buf, int len);
 
-LHTTP_API int http_request_has_flag(http_request_t* request, int flag);
+int http_request_has_flag(http_request_t* request, int flag);
 
-LHTTP_API http_string_t http_request_method(http_request_t* request);
+http_string_t http_request_method(http_request_t* request);
 
-LHTTP_API http_string_t http_request_url(http_request_t* request);
+http_string_t http_request_url(http_request_t* request);
 
-LHTTP_API http_string_t http_request_body(http_request_t* request);
+http_string_t http_request_body(http_request_t* request);
 
-LHTTP_API int http_request_headers_iterator(http_request_t* request, http_string_t* key, http_string_t* val, int* iter);
+int http_request_headers_iterator(http_request_t* request, http_string_t* key, http_string_t* val, int* iter);
 
-LHTTP_API int http_request_querys_iterator(http_request_t* request, http_string_t* key, http_string_t* val, int* iter);
+int http_request_querys_iterator(http_request_t* request, http_string_t* key, http_string_t* val, int* iter);
 
-LHTTP_API http_string_t http_request_header(http_request_t* request, char const* key);
+http_string_t http_request_header(http_request_t* request, char const* key);
 
-LHTTP_API http_string_t http_request_query(http_request_t* request, char const* key);
+http_string_t http_request_query(http_request_t* request, char const* key);
 
-LHTTP_API http_string_t http_request_chunk(struct http_request_s* request);
+http_string_t http_request_chunk(struct http_request_s* request);
 
 //http response 接口
 //--------------------------------------------------------------------------
-LHTTP_API http_response_t* http_response_init();
+http_response_t* http_response_init();
 
-LHTTP_API void http_response_header(http_response_t* response, char const* key, char const* value);
+void http_response_header(http_response_t* response, char const* key, char const* value);
 
-LHTTP_API void http_response_status(http_response_t* response, int status);
+void http_response_status(http_response_t* response, int status);
 
-LHTTP_API void http_response_body(http_response_t* response, char const* body, int length);
+void http_response_body(http_response_t* response, char const* body, int length);
 
-LHTTP_API void http_close_response(http_response_t* response);
+void http_close_response(http_response_t* response);
 
-LHTTP_API void http_clean_response(http_response_t* response);
+void http_clean_response(http_response_t* response);
 
-LHTTP_API void http_close_request(http_request_t* request);
+void http_close_request(http_request_t* request);
 
-LHTTP_API void http_clean_request(http_request_t* request);
+void http_clean_request(http_request_t* request);
 
-LHTTP_API http_string_t http_respond_chunk(http_request_t* request, http_response_t* response);
+http_string_t http_respond_chunk(http_request_t* request, http_response_t* response);
 
-LHTTP_API http_string_t http_respond_chunk_end(http_request_t* request, http_response_t* response);
+http_string_t http_respond_chunk_end(http_request_t* request, http_response_t* response);
 
-LHTTP_API http_string_t http_respond(http_request_t* request, http_response_t* response);
+http_string_t http_respond(http_request_t* request, http_response_t* response);
 
-LHTTP_API http_string_t http_request_response(http_request_t* request, int code, char const* type, char const* message);
+http_string_t http_request_response(http_request_t* request, int code, char const* type, char const* message);
 
-LHTTP_API http_request_t* http_request_init();
+http_request_t* http_request_init();
 
-LHTTP_API void http_request_reset(http_request_t* request);
+void http_request_reset(http_request_t* request);
 
-LHTTP_API void http_process_request(http_request_t* request);
+void http_process_request(http_request_t* request);
 
 #endif // __HTTP_H__

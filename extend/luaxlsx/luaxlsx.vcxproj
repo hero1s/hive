@@ -12,8 +12,8 @@
     <ClInclude Include="src\tinyxml2.h"/>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\MiniExcel.cpp"/>
     <ClCompile Include="src\luaxlsx.cpp"/>
+    <ClCompile Include="src\MiniExcel.cpp"/>
     <ClCompile Include="src\miniz.c"/>
     <ClCompile Include="src\tinyxml2.cpp"/>
   </ItemGroup>
