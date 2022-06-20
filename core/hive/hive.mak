@@ -56,8 +56,10 @@ LIBS =
 LIBS += -lmimalloc
 MYCFLAGS += -I$(SOLUTION_DIR)extend/mimalloc/mimalloc/include -include ../../mimalloc-ex.h
 #自定义库
-LIBS += -llua
+LIBS += -lluabus
+LIBS += -lluna
 LIBS += -lplugins
+LIBS += -llua
 ifeq ($(UNAME_S), Linux)
 LIBS += -lstdc++fs
 endif

@@ -73,16 +73,12 @@ endif
 INT_DIR = $(SOLUTION_DIR)temp/$(PROJECT_NAME)
 
 #目标文件前缀，定义则.so和.a加lib前缀，否则不加
-PROJECT_PREFIX =
+PROJECT_PREFIX = lib
 
 #目标定义
+TARGET_DIR = $(SOLUTION_DIR)library
+TARGET_STATIC =  $(TARGET_DIR)/$(PROJECT_PREFIX)$(TARGET_NAME).a
 MYCFLAGS += -fPIC
-TARGET_DIR = $(SOLUTION_DIR)bin
-TARGET_DYNAMIC =  $(TARGET_DIR)/$(PROJECT_PREFIX)$(TARGET_NAME).so
-#macos系统so链接问题
-ifeq ($(UNAME_S), Darwin)
-LDFLAGS += -install_name $(PROJECT_PREFIX)$(TARGET_NAME).so
-endif
 
 #link添加.so目录
 LDFLAGS += -L$(SOLUTION_DIR)bin
@@ -106,11 +102,12 @@ $(INT_DIR)/%.o : $(SRC_DIR)/%.cc
 $(INT_DIR)/%.o : $(SRC_DIR)/%.cpp
 	$(CX) $(CXXFLAGS) -c $< -o $@
 
-$(TARGET_DYNAMIC) : $(OBJS)
-	$(CC) -o $@ -shared $(OBJS) $(LDFLAGS) $(LIBS)
+$(TARGET_STATIC) : $(OBJS)
+	ar rcs $@ $(OBJS)
+	ranlib $@
 
 #target伪目标
-target : $(TARGET_DYNAMIC)
+target : $(TARGET_STATIC)
 
 #clean伪目标
 clean :

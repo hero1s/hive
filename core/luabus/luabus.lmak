@@ -5,7 +5,7 @@ PROJECT_NAME = "luabus"
 TARGET_NAME = "luabus"
 
 ----工程类型: static/dynamic/exe
-PROJECT_TYPE = "dynamic"
+PROJECT_TYPE = "static"
 
 --需要的FLAGS
 FLAGS = {
@@ -28,10 +28,8 @@ INCLUDES = {
 --自动搜索子目录
 AUTO_SUB_DIR = true
 
---WINDOWS需要定义的选项
-WINDOWS_DEFINES = {
-	"LUA_BUILD_AS_DLL"
-}
+--目标文件前缀
+LIB_PREFIX = 1
 
 --需要连接的库文件
 LIBS = {

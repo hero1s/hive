@@ -69,7 +69,7 @@
       <SubSystem>Console</SubSystem>
       <ImportLibrary>$(SolutionDir)library\$(Platform)\$(TargetName).lib</ImportLibrary>
       <ProgramDatabaseFile>$(SolutionDir)temp\$(ProjectName)\$(Platform)\$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalDependencies>lua.lib;plugins.lib;mimalloc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>luabus.lib;luna.lib;plugins.lib;lua.lib;mimalloc.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ForceFileOutput>
       </ForceFileOutput>
     </Link>

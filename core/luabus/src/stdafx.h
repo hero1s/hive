@@ -64,6 +64,4 @@
 #include <netinet/tcp.h>
 #endif
 
-#define LUA_LIB
-
 #include <iostream>
