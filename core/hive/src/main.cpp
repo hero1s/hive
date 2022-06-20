@@ -14,8 +14,7 @@ int main(int argc, const char* argv[])
 
     if (argc < 2)
     {
-        const char* notice = R"--(hive_run program_entry.lua ...)--";
-        printf(notice);
+        std::cout << "--(hive_run program_entry.lua ...)--" << std::endl;
         return 0;
     }
 

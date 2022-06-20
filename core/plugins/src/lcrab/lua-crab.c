@@ -455,7 +455,7 @@ _len(lua_State* L) {
 --------------------------utf8¸ñÊ½²Ù×÷-------------------------------------------------------
 */
 
-int LUAMOD_API luaopen_lcrab(lua_State *L) {
+LUAMOD_API int luaopen_lcrab(lua_State *L) {
 	luaL_checkversion(L);
 
 	luaL_Reg l[] = {

@@ -223,7 +223,7 @@ namespace tools
 
 extern "C"
 {
-    int LUAMOD_API luaopen_lhelper(lua_State* L) {
+    LUAMOD_API int luaopen_lhelper(lua_State* L) {
         return tools::open_lhelper(L).push_stack();
     }
 }

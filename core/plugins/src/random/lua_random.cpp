@@ -140,7 +140,7 @@ luakit::lua_table open_lrandom(lua_State* L) {
 }
 
 extern "C" {
-    int LUAMOD_API luaopen_lrandom(lua_State* L){
+    LUAMOD_API int luaopen_lrandom(lua_State* L){
         return open_lrandom(L).push_stack();
     }
 }

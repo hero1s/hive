@@ -201,7 +201,7 @@ static int range_func(lua_State* L)
 
 static void newMetatable1(lua_State* L, const char* name, luaL_Reg* reg) {
     luaL_newmetatable(L, name);
-    luaL_setfuncs(L, reg, NULL);
+    luaL_setfuncs(L, reg, 0);
     lua_pushvalue(L, -1);
     lua_setfield(L, -2, "__index");
 }
@@ -219,7 +219,7 @@ static int miniexcel_open(lua_State* L) {
     newMetatable1(L, MINI_EXCEL_EXCELFILE, ExcelFile_functions);
 
     lua_newtable(L);
-    luaL_setfuncs(L, mini_excel_functions, NULL);
+    luaL_setfuncs(L, mini_excel_functions, 0);
 
     return 1;
 }

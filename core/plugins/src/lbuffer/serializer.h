@@ -297,7 +297,7 @@ namespace lbuffer {
 
         template<typename T>
         T value_decode(lua_State* L, slice* buff) {
-            T value;
+            T value = 0;
             if (buff->pop((uint8_t*)&value, sizeof(T)) == 0){
                 luaL_error(L, "decode can't unpack one value");
             }

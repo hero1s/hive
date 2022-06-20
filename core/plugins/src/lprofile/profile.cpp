@@ -314,7 +314,7 @@ namespace lprofile
 }
 
 extern "C" {
-    int LUAMOD_API luaopen_lprof(lua_State* L) {
+    LUAMOD_API int luaopen_lprof(lua_State* L) {
         return lprofile::open_lprof(L).push_stack();
     }
 }

@@ -170,7 +170,7 @@ static int lmd5(lua_State* L)
     md5(message, data_len, output);
     if (luaL_optinteger(L, 2, 0))
     {
-        return tohex(L, output, HASHSIZE);
+        return tohex(L, (unsigned char*)output, HASHSIZE);
     }
     lua_pushlstring(L, output, HASHSIZE);
     return 1;

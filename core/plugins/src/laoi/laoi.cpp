@@ -252,7 +252,7 @@ static int laoi_create(lua_State *L)
 }
 
 extern "C" {
-    int LUAMOD_API luaopen_laoi(lua_State* L) {
+    LUAMOD_API int luaopen_laoi(lua_State* L) {
         luaL_Reg l[] = {
             {"create",laoi_create},
             {"release",lrelease },

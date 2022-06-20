@@ -48,7 +48,7 @@ bool socket_stream::accept_socket(socket_t fd, const char ip[]) {
     m_ovl_ref++;
 #endif
 
-    strncpy(m_ip, ip, INET6_ADDRSTRLEN);
+    memcpy(m_ip, ip, INET6_ADDRSTRLEN);
 
     m_socket = fd;
     m_link_status = elink_status::link_connected;

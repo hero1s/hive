@@ -215,7 +215,7 @@ static int lcreate(lua_State* L)
 }
 
 extern "C" {
-    int LUAMOD_API luaopen_lzset(lua_State* L){
+    LUAMOD_API int luaopen_lzset(lua_State* L){
         luaL_Reg l[] = {
             {"new",lcreate},
             {"release",lrelease },

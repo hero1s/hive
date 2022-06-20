@@ -133,7 +133,8 @@ namespace lzset
             {
                 return iter->second.scores;
             }
-            return { 0 };
+            static std::vector<int64_t> tmp = { 0 };
+            return tmp;
         }
 
         const_iterator start(size_t nrank) const
@@ -194,9 +195,9 @@ namespace lzset
             return 0;
         }
     private:
+        const size_t max_count_;
         size_t score_count_ = 1;
         bool ordered_ = true;
-        const size_t max_count_;
         compare cmp_;
         std::vector<const_iterator> jump_;
         std::set<context*, compare> order_;
