@@ -20,6 +20,7 @@ MYCFLAGS += -Wno-unused-parameter
 MYCFLAGS += -Wno-unused-but-set-parameter
 MYCFLAGS += -Wno-unused-function
 MYCFLAGS += -Wno-sign-compare
+MYCFLAGS += -Wno-implicit-fallthrough
 
 #c标准库版本
 #gnu99/gnu11/gnu17

@@ -31,12 +31,6 @@ AUTO_SUB_DIR = true
 --目标文件前缀
 LIB_PREFIX = 1
 
---需要连接的库文件
-LIBS = {
-	"lua",
-	"luna"
-}
-
 --依赖项目
 DEPS = {
 	"luna"

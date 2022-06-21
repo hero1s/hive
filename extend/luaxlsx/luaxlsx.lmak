@@ -12,7 +12,8 @@ FLAGS = {
 	"Wno-sign-compare",
     "Wno-unused-variable",
     "Wno-unused-parameter",
-    "Wno-unused-but-set-parameter"
+    "Wno-unused-but-set-parameter",
+    "Wno-implicit-fallthrough"
 }
 
 --需要的include目录

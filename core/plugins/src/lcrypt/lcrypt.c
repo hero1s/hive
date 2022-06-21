@@ -454,7 +454,7 @@ static int lguid_string(lua_State* L) {
     }
     char sguid[32];
     size_t guid = new_guid(group, index);
-    snprintf(sguid, 32, "%llx", guid);
+    snprintf(sguid, 32, "%zx", guid);
     lua_pushstring(L, sguid);
     return 1;
 }
@@ -462,7 +462,7 @@ static int lguid_string(lua_State* L) {
 static int lguid_tostring(lua_State* L) {
     char sguid[32];
     size_t guid = lua_tointeger(L, 1);
-    snprintf(sguid, 32, "%llx", guid);
+    snprintf(sguid, 32, "%zx", guid);
     lua_pushstring(L, sguid);
     return 1;
 }

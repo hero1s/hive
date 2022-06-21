@@ -53,8 +53,6 @@ LIBS =
 LIBS += -lmimalloc
 MYCFLAGS += -I$(SOLUTION_DIR)extend/mimalloc/mimalloc/include -include ../../mimalloc-ex.h
 #自定义库
-LIBS += -llua
-LIBS += -lluna
 #系统库
 LIBS += -lm -ldl -lstdc++ -lpthread
 

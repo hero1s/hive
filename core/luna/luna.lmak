@@ -24,11 +24,6 @@ INCLUDES = {
 --目标文件前缀
 LIB_PREFIX = 1
 
---需要连接的库文件
-LIBS = {
-	"lua"
-}
-
 --依赖项目
 DEPS = {
 	"lualib"
