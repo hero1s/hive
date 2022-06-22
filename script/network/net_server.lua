@@ -114,16 +114,19 @@ function NetServer:write(session, cmd_id, data, session_id, flag)
 end
 
 -- 广播数据
-function NetServer:broadcast(cmd_id, data)
+function NetServer:broadcast(cmd_id, data,filter)
     local body, pflag = self:encode(cmd_id, data, FLAG_REQ)
     if not body then
         log_err("[NetServer][broadcast] encode failed! cmd_id:%s", cmd_id)
         return false
     end
     for _, session in pairs(self.sessions) do
-        local send_len = session.call_pack(cmd_id, pflag, 0, body)
-        if send_len > 0 then
-            event_mgr:notify_listener("on_proto_send", cmd_id, send_len)
+        if not filter or filter(session) then
+            session.serial = session.serial + 1
+            local send_len = session.call_pack(cmd_id, pflag, 0, body)
+            if send_len > 0 then
+                event_mgr:notify_listener("on_proto_send", cmd_id, send_len)
+            end
         end
     end
     return true

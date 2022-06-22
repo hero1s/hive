@@ -63,7 +63,7 @@ function MonitorMgr:__init()
         end)
     end
     --检测失活
-    timer_mgr:loop(PeriodTime.SECOND_10_MS, function()
+    timer_mgr:loop(PeriodTime.MINUTE_MS, function()
         self:check_lost_node()
     end)
 end

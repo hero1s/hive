@@ -93,7 +93,7 @@
     </div>
 </div>
 <footer>
-    <small>Designed and built by <a href="http://git.ids111.com/idreamsky/since_product/d1studio/CALABIYAU/SERVER/clby_server.git" target="_blank">klbq server</a></small>
+    <small>Designed and built by <a href="http://git.ids111.com/idreamsky/since_product/d1studio/CALABIYAU/SERVER/clby_server.git" target="_blank">hive</a></small>
 </footer>
 </body>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
@@ -231,7 +231,7 @@
                     var cmd_name = data.text;
                     var cmd_data = that.cmdlist[cmd_name];
                     if (cmd_data) {
-                        var msg = "<pre>命令: " + cmd_data.desc + "  参数: " + cmd_data.command + "</pre>";
+                        var msg = "<pre>功能: " + cmd_data.desc + "<br/>参数: " + cmd_data.command + "</pre>";
                         that._displayNewMsg("historyMsg", msg, "myMsg");
                         var inputMsg = document.getElementById('inputMsg');
                         inputMsg.value = cmd_name + " ";
