@@ -43,14 +43,11 @@ Distributed game server framework based on CPP 17 && LUA 5.4
   - mongodb的性能集群模式远超mysql,单机测试插入5-8w/s
   
 ## Documents
-  - [框架简介](https://github.com/hero1s/hive/wiki)
-  - [开发规范](https://github.com/hero1s/hive/wiki/Hive%E6%A1%86%E6%9E%B6%E5%BC%80%E5%8F%91%E8%A7%84%E8%8C%83)
-  - [入门](https://github.com/hero1s/hive/wiki/%E5%85%A5%E9%97%A8)
-  - [对比skynet](https://github.com/hero1s/hive/wiki/%E5%AF%B9%E6%AF%94skynet%E5%B7%AE%E5%BC%82)
-  - [服务器代码规范](https://github.com/hero1s/hive/wiki/%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%BB%A3%E7%A0%81%E8%A7%84%E8%8C%83)
-  - [基础服务](https://github.com/hero1s/hive/wiki/%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1)
+  - [在线文档](https://github.com/hero1s/hive/wiki)
   
 ## ![img.png](doc/img.png)
+
+## ![自动GM页面](doc/gm.jpg)
 
 ## 有bug或好的建议请@ QQ群:543833695 Toney
 
@@ -62,6 +59,5 @@ Distributed game server framework based on CPP 17 && LUA 5.4
   - c++ gateway服务
   - 分级路由组网,支持百万pcu
   - 现有部分特殊服务的固定hash,改进成切片模式,无缝扩容,容灾
-  - nacos服务注册与发现及配置更新
   - 完善文档及工具链,编写demo
-  - 优化性能,网络库提供多线程模式
+  - 优化性能,完善精简代码
