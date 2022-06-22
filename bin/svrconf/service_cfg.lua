@@ -120,13 +120,13 @@ return {
         name = 'cachesvr', --[[ 服务名字 ]]
         router = true, --[[ 是否启动路由 ]]
         monitor = true, --[[ 是否启动监控 ]]
-        hash = 2, --[[ 服务固定hash ]]
+        hash = 1, --[[ 服务固定hash ]]
     },
     {
         id = 52, --[[ 服务id ]]
         name = 'online', --[[ 服务名字 ]]
         router = true, --[[ 是否启动路由 ]]
         monitor = true, --[[ 是否启动监控 ]]
-        hash = 2, --[[ 服务固定hash ]]
+        hash = 1, --[[ 服务固定hash ]]
     },
 }

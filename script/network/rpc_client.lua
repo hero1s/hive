@@ -176,9 +176,9 @@ end
 --连接成功
 function RpcClient:on_socket_connect(socket)
     --log_info("[RpcClient][on_socket_connect] connect to %s:%s success!", self.ip, self.port)
+    self.alive      = true
+    self.alive_time = hive.clock_ms
     thread_mgr:fork(function()
-        self.alive      = true
-        self.alive_time = hive.clock_ms
         self.holder:on_socket_connect(self)
         self:heartbeat(true)
     end)
