@@ -13,6 +13,7 @@ inline int get_socket_error() { return WSAGetLastError(); }
 #endif
 #if defined(__linux) || defined(__APPLE__)
 #include <fcntl.h>
+#include <unistd.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>

@@ -73,20 +73,20 @@
     <ClInclude Include="src\lprofile\profile.h">
       <Filter>lprofile</Filter>
     </ClInclude>
+    <ClInclude Include="src\lrandom\random.hpp">
+      <Filter>lrandom</Filter>
+    </ClInclude>
     <ClInclude Include="src\ltimer\croncpp.h">
       <Filter>ltimer</Filter>
     </ClInclude>
     <ClInclude Include="src\ltimer\ltimer.h">
       <Filter>ltimer</Filter>
     </ClInclude>
-    <ClInclude Include="src\luazset\zset.hpp">
-      <Filter>luazset</Filter>
+    <ClInclude Include="src\lzset\zset.hpp">
+      <Filter>lzset</Filter>
     </ClInclude>
     <ClInclude Include="src\protobuf\pb.h">
       <Filter>protobuf</Filter>
-    </ClInclude>
-    <ClInclude Include="src\random\random.hpp">
-      <Filter>random</Filter>
     </ClInclude>
     <ClInclude Include="src\tools\helper.h">
       <Filter>tools</Filter>
@@ -156,23 +156,23 @@
     <ClCompile Include="src\lprofile\profile.cpp">
       <Filter>lprofile</Filter>
     </ClCompile>
+    <ClCompile Include="src\lrandom\lrandom.cpp">
+      <Filter>lrandom</Filter>
+    </ClCompile>
     <ClCompile Include="src\lstdfs\lstdfs.cpp">
       <Filter>lstdfs</Filter>
     </ClCompile>
     <ClCompile Include="src\ltimer\ltimer.cpp">
       <Filter>ltimer</Filter>
     </ClCompile>
-    <ClCompile Include="src\luazset\lua_zset.cpp">
-      <Filter>luazset</Filter>
+    <ClCompile Include="src\lzset\lzset.cpp">
+      <Filter>lzset</Filter>
     </ClCompile>
     <ClCompile Include="src\mongo\lua-mongo.c">
       <Filter>mongo</Filter>
     </ClCompile>
     <ClCompile Include="src\protobuf\pb.c">
       <Filter>protobuf</Filter>
-    </ClCompile>
-    <ClCompile Include="src\random\lua_random.cpp">
-      <Filter>random</Filter>
     </ClCompile>
     <ClCompile Include="src\tools\helper.cpp">
       <Filter>tools</Filter>
@@ -206,23 +206,23 @@
     <Filter Include="lprofile">
       <UniqueIdentifier>{8E8841F6-C7F8-DE1A-13D6-267C73A59A6B}</UniqueIdentifier>
     </Filter>
+    <Filter Include="lrandom">
+      <UniqueIdentifier>{3FF84F4B-3548-31CF-586F-ADCF4C5716CF}</UniqueIdentifier>
+    </Filter>
     <Filter Include="lstdfs">
       <UniqueIdentifier>{8667E717-B97C-935C-4FDF-2878AF7DAB1A}</UniqueIdentifier>
     </Filter>
     <Filter Include="ltimer">
       <UniqueIdentifier>{2DE9C09F-02F5-DF2B-524C-FFBEBC8DE5EE}</UniqueIdentifier>
     </Filter>
-    <Filter Include="luazset">
-      <UniqueIdentifier>{9845CAE6-3ACF-8C94-B89A-AA1BDADCA014}</UniqueIdentifier>
+    <Filter Include="lzset">
+      <UniqueIdentifier>{92721C52-59F1-B176-6453-2FAB63F219E9}</UniqueIdentifier>
     </Filter>
     <Filter Include="mongo">
       <UniqueIdentifier>{1ED75A5D-1E2C-0BB0-5F41-0077765AF687}</UniqueIdentifier>
     </Filter>
     <Filter Include="protobuf">
       <UniqueIdentifier>{606EAF84-6C65-7991-6354-199B45953EE2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="random">
-      <UniqueIdentifier>{7DDF32E1-7A6A-C5CE-04A8-ECBF782CA509}</UniqueIdentifier>
     </Filter>
     <Filter Include="tools">
       <UniqueIdentifier>{4A931512-CE65-BDC9-CA68-08ADF92D8783}</UniqueIdentifier>

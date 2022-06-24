@@ -107,7 +107,7 @@ float get_memory_usage(int pid)
 		mem = pmc.WorkingSetSize;
 	}
 	CloseHandle(process);
-	return mem / 1024.0 / 1024.0;
+	return float(mem / 1024.0 / 1024.0);
 #else
 #define VMRSS_LINE 22
 	char file_name[64] = { 0 };
@@ -123,7 +123,7 @@ float get_memory_usage(int pid)
 	fgets(line_buff, sizeof(line_buff), fd);
 	sscanf(line_buff, "%s %d", name, &vmrss);
 	fclose(fd);
-	return vmrss / 1024.0;// cnvert VmRSS from KB to MB
+	return float(vmrss / 1024.0);// cnvert VmRSS from KB to MB
 #endif
 }
 
@@ -142,8 +142,8 @@ int get_cpu_core_num()
 static int lset_env(lua_State* L) {
 	const char* key = lua_tostring(L, 1);
 	const char* value = lua_tostring(L, 2);
-	int overwrite = luaL_optinteger(L, 3, 1);
-	setenv(key, value, overwrite);
+	auto overwrite = luaL_optinteger(L, 3, 1);
+	setenv(key, value, int(overwrite));
 	return 0;
 }
 

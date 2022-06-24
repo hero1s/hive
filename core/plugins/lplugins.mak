@@ -131,6 +131,16 @@ OBJS += $(patsubst $(SRC_DIR)/lprofile/%.m, $(INT_DIR)/lprofile/%.o, $(filter-ou
 OBJS += $(patsubst $(SRC_DIR)/lprofile/%.cc, $(INT_DIR)/lprofile/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lprofile/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/lprofile/%.cpp, $(INT_DIR)/lprofile/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lprofile/*.cpp)))
 #子目录
+OBJS += $(patsubst $(SRC_DIR)/lrandom/%.c, $(INT_DIR)/lrandom/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lrandom/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/lrandom/%.m, $(INT_DIR)/lrandom/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lrandom/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/lrandom/%.cc, $(INT_DIR)/lrandom/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lrandom/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/lrandom/%.cpp, $(INT_DIR)/lrandom/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lrandom/*.cpp)))
+#子目录
+OBJS += $(patsubst $(SRC_DIR)/lsimdb/%.c, $(INT_DIR)/lsimdb/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lsimdb/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/lsimdb/%.m, $(INT_DIR)/lsimdb/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lsimdb/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/lsimdb/%.cc, $(INT_DIR)/lsimdb/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lsimdb/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/lsimdb/%.cpp, $(INT_DIR)/lsimdb/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lsimdb/*.cpp)))
+#子目录
 OBJS += $(patsubst $(SRC_DIR)/lstdfs/%.c, $(INT_DIR)/lstdfs/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lstdfs/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lstdfs/%.m, $(INT_DIR)/lstdfs/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lstdfs/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/lstdfs/%.cc, $(INT_DIR)/lstdfs/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lstdfs/*.cc)))
@@ -141,10 +151,10 @@ OBJS += $(patsubst $(SRC_DIR)/ltimer/%.m, $(INT_DIR)/ltimer/%.o, $(filter-out $(
 OBJS += $(patsubst $(SRC_DIR)/ltimer/%.cc, $(INT_DIR)/ltimer/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/ltimer/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/ltimer/%.cpp, $(INT_DIR)/ltimer/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/ltimer/*.cpp)))
 #子目录
-OBJS += $(patsubst $(SRC_DIR)/luazset/%.c, $(INT_DIR)/luazset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/luazset/*.c)))
-OBJS += $(patsubst $(SRC_DIR)/luazset/%.m, $(INT_DIR)/luazset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/luazset/*.m)))
-OBJS += $(patsubst $(SRC_DIR)/luazset/%.cc, $(INT_DIR)/luazset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/luazset/*.cc)))
-OBJS += $(patsubst $(SRC_DIR)/luazset/%.cpp, $(INT_DIR)/luazset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/luazset/*.cpp)))
+OBJS += $(patsubst $(SRC_DIR)/lzset/%.c, $(INT_DIR)/lzset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lzset/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/lzset/%.m, $(INT_DIR)/lzset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lzset/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/lzset/%.cc, $(INT_DIR)/lzset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lzset/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/lzset/%.cpp, $(INT_DIR)/lzset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lzset/*.cpp)))
 #子目录
 OBJS += $(patsubst $(SRC_DIR)/mongo/%.c, $(INT_DIR)/mongo/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/mongo/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/mongo/%.m, $(INT_DIR)/mongo/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/mongo/*.m)))
@@ -155,11 +165,6 @@ OBJS += $(patsubst $(SRC_DIR)/protobuf/%.c, $(INT_DIR)/protobuf/%.o, $(filter-ou
 OBJS += $(patsubst $(SRC_DIR)/protobuf/%.m, $(INT_DIR)/protobuf/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/protobuf/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/protobuf/%.cc, $(INT_DIR)/protobuf/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/protobuf/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/protobuf/%.cpp, $(INT_DIR)/protobuf/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/protobuf/*.cpp)))
-#子目录
-OBJS += $(patsubst $(SRC_DIR)/random/%.c, $(INT_DIR)/random/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/random/*.c)))
-OBJS += $(patsubst $(SRC_DIR)/random/%.m, $(INT_DIR)/random/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/random/*.m)))
-OBJS += $(patsubst $(SRC_DIR)/random/%.cc, $(INT_DIR)/random/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/random/*.cc)))
-OBJS += $(patsubst $(SRC_DIR)/random/%.cpp, $(INT_DIR)/random/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/random/*.cpp)))
 #子目录
 OBJS += $(patsubst $(SRC_DIR)/tools/%.c, $(INT_DIR)/tools/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/tools/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/tools/%.m, $(INT_DIR)/tools/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/tools/*.m)))
@@ -205,12 +210,13 @@ pre_build:
 	mkdir -p $(INT_DIR)/lhttp
 	mkdir -p $(INT_DIR)/lkcp
 	mkdir -p $(INT_DIR)/lprofile
+	mkdir -p $(INT_DIR)/lrandom
+	mkdir -p $(INT_DIR)/lsimdb
 	mkdir -p $(INT_DIR)/lstdfs
 	mkdir -p $(INT_DIR)/ltimer
-	mkdir -p $(INT_DIR)/luazset
+	mkdir -p $(INT_DIR)/lzset
 	mkdir -p $(INT_DIR)/mongo
 	mkdir -p $(INT_DIR)/protobuf
-	mkdir -p $(INT_DIR)/random
 	mkdir -p $(INT_DIR)/tools
 
 #后编译

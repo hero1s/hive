@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "lua_table.h"
 #include "lua_class.h"
 

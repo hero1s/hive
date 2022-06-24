@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "lua_stack.h"
 
 namespace luakit {
