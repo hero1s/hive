@@ -48,15 +48,15 @@ namespace lbuffer {
             }
             uint32_t index = m_shm_header->first_free - 1;
             shm_block& block = m_shm_header->blocks[index];
-            m_shm_header->m_first_free = block.next_free;
+            m_shm_header->first_free = block.next_free;
             return block.data;
         }
 
         void alloc(uint8_t* data) {
             std::unique_lock<std::mutex> lock(m_mutex);
             shm_block* block = (shm_block*)(data);
-            block->next_free = m_shm_header->m_first_free;
-            m_shm_header->m_first_free = block->index;
+            block->next_free = m_shm_header->first_free;
+            m_shm_header->first_free = block->index;
         }
 
     protected:

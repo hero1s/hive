@@ -167,6 +167,6 @@ namespace lbuffer {
         uint8_t* m_tail;
         uint8_t* m_end;
         uint8_t* m_data;
-        lbuffer::slice m_slice;
+        slice m_slice;
     };
 }

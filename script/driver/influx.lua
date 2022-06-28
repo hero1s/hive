@@ -1,9 +1,8 @@
 --influx.lua
 import("network/http_client.lua")
-local ljson         = require("lcjson")
 local log_err       = logger.err
 local log_info      = logger.info
-local json_decode   = ljson.decode
+local json_decode   = hive.json_decode
 local tconcat       = table.concat
 local sgsub         = string.gsub
 local sformat       = string.format

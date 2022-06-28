@@ -2,12 +2,11 @@
 import("basic/cmdline.lua")
 import("agent/online_agent.lua")
 
-local ljson        = require("lcjson")
 local lcrypt       = require("lcrypt")
 local gm_page      = nil
 local HttpServer   = import("network/http_server.lua")
 
-local jdecode      = ljson.decode
+local json_decode  = hive.json_decode
 local guid_index   = lcrypt.guid_index
 local tunpack      = table.unpack
 local env_get      = environ.get
@@ -94,14 +93,14 @@ end
 --后台GM调用，字符串格式
 function AdminMgr:on_command(url, body, headers)
     log_debug("[AdminMgr][on_command] body: %s", body)
-    local cmd_req = jdecode(body)
+    local cmd_req = json_decode(body)
     return self:exec_command(cmd_req.data)
 end
 
 --后台GM调用，table格式
 function AdminMgr:on_message(url, body, headers)
     log_debug("[AdminMgr][on_message] body: %s", body)
-    local cmd_req     = jdecode(body)
+    local cmd_req     = json_decode(body)
     local res         = self:exec_message(cmd_req.data)
     local ret_headers = { ["Access-Control-Allow-Origin"] = "*" }
     return self.http_server:build_response(200, res, ret_headers)
@@ -110,7 +109,7 @@ end
 --monitor上报
 function AdminMgr:on_monitor(url, body, headers)
     log_debug("[AdminMgr][on_monitor] body: %s", body)
-    local cmd_req               = jdecode(body)
+    local cmd_req               = json_decode(body)
     self.monitors[cmd_req.addr] = true
     return { code = 0 }
 end

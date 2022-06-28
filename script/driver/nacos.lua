@@ -1,6 +1,5 @@
 --nacos.lua
 import("network/http_client.lua")
-local ljson         = require("lcjson")
 local lcrypt        = require("lcrypt")
 
 local qget          = hive.get
@@ -9,8 +8,8 @@ local log_info      = logger.info
 local lmd5          = lcrypt.md5
 local tconcat       = table.concat
 local sformat       = string.format
-local json_decode   = ljson.decode
-local json_encode   = ljson.encode
+local json_decode   = hive.json_decode
+local json_encode   = hive.json_encode
 
 local http_client   = qget("http_client")
 local thread_mgr    = qget("thread_mgr")

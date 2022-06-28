@@ -58,7 +58,7 @@ namespace lbuffer {
         mem_pool() {}
 
         fix_block* m_first_free = nullptr;
-        std::mutex m_mutex;
         std::list<fix_block*> m_blocks;
+        std::mutex m_mutex;
     };
 }

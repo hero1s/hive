@@ -1,9 +1,8 @@
 --webhook.lua
-local ljson       = require("lcjson")
 
 local env_get     = environ.get
 local sformat     = string.format
-local json_encode = ljson.encode
+local json_encode = hive.json_encode
 
 local LIMIT_COUNT = 3    -- 周期内最大次数
 

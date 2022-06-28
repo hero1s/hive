@@ -1,11 +1,10 @@
 --monitor_mgr.lua
 import("network/http_client.lua")
-local ljson       = require("lcjson")
 local log_page    = nil
 local RpcServer   = import("network/rpc_server.lua")
 local HttpServer  = import("network/http_server.lua")
 
-local jdecode     = ljson.decode
+local json_decode = hive.json_decode
 local env_get     = environ.get
 local env_addr    = environ.addr
 local log_warn    = logger.warn
@@ -17,6 +16,7 @@ local sformat     = string.format
 
 local PeriodTime  = enum("PeriodTime")
 
+local router_mgr  = hive.get("router_mgr")
 local event_mgr   = hive.get("event_mgr")
 local thread_mgr  = hive.get("thread_mgr")
 local http_client = hive.get("http_client")
@@ -48,24 +48,33 @@ function MonitorMgr:__init()
     server:register_post("/command", "on_monitor_command", self)
     self.http_server = server
 
-    --上报自己
-    local admin_url  = env_get("HIVE_ADMIN_HTTP")
-    if admin_url then
-        local host      = env_get("HIVE_HOST_IP")
-        local purl      = sformat("%s/monitor", admin_url)
-        local http_addr = sformat("%s:%d", host, server:get_port())
-        thread_mgr:success_call(PeriodTime.SECOND_MS, function()
-            local ok, status = http_client:call_post(purl, { addr = http_addr })
-            if ok and status == 200 then
-                return true
-            end
-            return false
-        end)
-    end
     --检测失活
     timer_mgr:loop(PeriodTime.MINUTE_MS, function()
         self:check_lost_node()
     end)
+
+    router_mgr:watch_service_ready(self, "admin")
+end
+
+function MonitorMgr:register_admin()
+    --上报自己
+    local admin_url = env_get("HIVE_ADMIN_HTTP")
+    if admin_url then
+        local host      = env_get("HIVE_HOST_IP")
+        local purl      = sformat("%s/monitor", admin_url)
+        local http_addr = sformat("%s:%d", host, self.http_server:get_port())
+        thread_mgr:success_call(PeriodTime.SECOND_MS, function()
+            local ok, status, res = http_client:call_post(purl, { addr = http_addr })
+            if ok and status == 200 then
+                ok, res = json_decode(res, true)
+                if ok and res.code == 0 then
+                    return true
+                end
+            end
+            log_warn("post monitor fail:%s,%s,%s", ok, status, res)
+            return false
+        end)
+    end
 end
 
 function MonitorMgr:on_socket_accept(client)
@@ -73,7 +82,7 @@ end
 
 -- 会话信息
 function MonitorMgr:on_socket_info(client, node_info)
-    log_info("[MonitorMgr][on_socket_info] node token:%s,%s,%s", client.token, node_info.service, node_info.id)
+    log_info("[MonitorMgr][on_socket_info] node token:%s,%s,%s", client.token, node_info.service, service.id2nick(node_info.id))
     node_info.token                       = client.token
     self.monitor_nodes[client.token]      = node_info
     self.monitor_lost_nodes[node_info.id] = nil
@@ -132,7 +141,7 @@ function MonitorMgr:on_monitor_command(url, body, headers)
     log_debug("[MonitorMgr][on_monitor_command]: %s", body)
     --执行函数
     local function handler_cmd(jbody)
-        local data_req = jdecode(jbody)
+        local data_req = json_decode(jbody)
         if data_req.token then
             return self:call(data_req.token, data_req.rpc, data_req.data)
         end
@@ -145,6 +154,12 @@ function MonitorMgr:on_monitor_command(url, body, headers)
         return { code = 1, msg = res }
     end
     return res
+end
+
+-- GM服务已经ready
+function MonitorMgr:on_service_ready(id, service_name)
+    log_info("[MonitorMgr][on_service_ready]->id:%s, service_name:%s", id, service_name)
+    self:register_admin()
 end
 
 hive.monitor_mgr = MonitorMgr()

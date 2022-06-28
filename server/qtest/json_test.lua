@@ -1,10 +1,9 @@
 --json_test.lua
-local ljson       = require("lcjson")
 local lcrypt      = require("lcrypt")
 
 local new_guid    = lcrypt.guid_new
-local json_encode = ljson.encode
-local json_decode = ljson.decode
+local json_encode = hive.json_encode
+local json_decode = hive.json_decode
 
 local test        = {
     tid       = 3.1415926,

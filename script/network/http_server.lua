@@ -1,6 +1,5 @@
 --http_server.lua
 local lhttp       = require("lhttp")
-local ljson       = require("lcjson")
 local Socket      = import("driver/socket.lua")
 
 local type        = type
@@ -8,7 +7,7 @@ local log_err     = logger.err
 local log_warn    = logger.warn
 local log_info    = logger.info
 local log_debug   = logger.debug
-local json_encode = ljson.encode
+local json_encode = hive.json_encode
 local tunpack     = table.unpack
 local signalquit  = signal.quit
 local saddr       = string_ext.addr

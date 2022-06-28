@@ -1,9 +1,8 @@
 --etcd.lua
 import("network/http_client.lua")
-local ljson = require("lcjson")
 
 local sformat       = string.format
-local json_encode   = ljson.encode
+local json_encode   = hive.json_encode
 
 local http          = hive.get("http_client")
 

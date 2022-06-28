@@ -1,11 +1,10 @@
 -- http_test.lua
 import("network/http_client.lua")
-local ljson = require("lcjson")
 local ltimer = require("ltimer")
 
 local ltime         = ltimer.time
 local log_debug     = logger.debug
-local json_encode   = ljson.encode
+local json_encode   = hive.json_encode
 
 local thread_mgr    = hive.get("thread_mgr")
 local http_client   = hive.get("http_client")
