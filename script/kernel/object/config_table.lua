@@ -5,6 +5,7 @@ local ipairs          = ipairs
 local sformat         = string.format
 local tconcat         = table.concat
 local log_err         = logger.err
+local trandom_array   = table_ext.random_array
 
 local TABLE_MAX_INDEX = 4
 
@@ -22,9 +23,9 @@ end
 
 function ConfigTable:setup(name, ...)
     if self:setup_nil(name, ...) then
-        local file_name = sformat("%s_cfg", name)
+        local file_name           = sformat("%s_cfg", name)
         package.loaded[file_name] = nil
-        local records = require(file_name)
+        local records             = require(file_name)
         if records == nil then
             log_err("[ConfigTable][setup] config is not exist:%s", file_name)
             return
@@ -146,6 +147,15 @@ function ConfigTable:select(query, single)
         :: continue ::
     end
     return rows
+end
+
+-- 获取随机一项，参数{field1=val1,field2=val2,field3=val3}，与初始化index无关
+function ConfigTable:select_random(query, single)
+    local rows = self:select(query, single)
+    if #rows > 0 then
+        return trandom_array(rows)
+    end
+    return nil
 end
 
 --迭代器
