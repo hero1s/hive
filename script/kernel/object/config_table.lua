@@ -5,6 +5,7 @@ local ipairs          = ipairs
 local sformat         = string.format
 local tconcat         = table.concat
 local log_err         = logger.err
+local log_info        = logger.info
 local trandom_array   = table_ext.random_array
 
 local TABLE_MAX_INDEX = 4
@@ -16,33 +17,51 @@ prop:reader("rows", {})
 prop:reader("indexs", {})
 prop:reader("count", 0)
 prop:accessor("version", 0)
+prop:reader("load_time", 0)
 
 -- 初始化一个配置表，indexs最多支持三个
 function ConfigTable:__init()
 end
 
+function ConfigTable:set_records(file_name)
+    local records = import(file_name)
+    if records == nil then
+        log_err("[ConfigTable][set_records] config is not exist:%s", file_name)
+        return
+    end
+    if type(records) ~= "table" then
+        log_err("[ConfigTable][set_records] config is not correct:%s", file_name)
+        return
+    end
+    if not self:check_index(records) then
+        log_err("[ConfigTable][set_records] check_index error")
+        --return
+    end
+    for _, row in pairs(records) do
+        --log_debug("[ConfigTable][setup] set table %s cfg:%s", file_name, row)
+        self:upsert(row)
+    end
+    self.load_time = import_file_time(file_name)
+end
+
+function ConfigTable:name_to_filename(name)
+    return sformat("%s_cfg.lua", name)
+end
+
 function ConfigTable:setup(name, ...)
     if self:setup_nil(name, ...) then
-        local file_name           = sformat("%s_cfg", name)
-        package.loaded[file_name] = nil
-        local records             = require(file_name)
-        if records == nil then
-            log_err("[ConfigTable][setup] config is not exist:%s", file_name)
-            return
-        end
-        if type(records) ~= "table" then
-            log_err("[ConfigTable][setup] config is not correct:%s", file_name)
-            return
-        end
-        if not self:check_index(records) then
-            log_err("[ConfigTable][setup] check_index error")
-            --return
-        end
-        for _, row in pairs(records) do
-            --log_debug("[ConfigTable][setup] set table %s cfg:%s", file_name, row)
-            self:upsert(row)
-        end
+        local file_name = self:name_to_filename(name)
+        self:set_records(file_name)
     end
+end
+
+function ConfigTable:reload(name, ...)
+    local file_name = self:name_to_filename(name)
+    if import_file_time(file_name) == self.load_time then
+        return
+    end
+    log_info("[ConfigTable][reload] %s", file_name)
+    self:set_records(file_name)
 end
 
 function ConfigTable:setup_nil(name, ...)

@@ -22,127 +22,137 @@ local load_files  = {}
 local search_path = {}
 
 local function ssplit(str, token)
-	local t = {}
-	while #str > 0 do
-		local pos = str:find(token)
-		if pos then
-			t[#t + 1] = str:sub(1, pos - 1)
-			str       = str:sub(pos + 1, #str)
-		else
-			t[#t + 1] = str
-			break
-		end
-	end
-	return t
+    local t = {}
+    while #str > 0 do
+        local pos = str:find(token)
+        if pos then
+            t[#t + 1] = str:sub(1, pos - 1)
+            str       = str:sub(pos + 1, #str)
+        else
+            t[#t + 1] = str
+            break
+        end
+    end
+    return t
 end
 
 --加载lua文件搜索路径
 for _, path in ipairs(ssplit(package.path, ";")) do
-	search_path[#search_path + 1] = path:sub(1, path:find("?") - 1)
+    search_path[#search_path + 1] = path:sub(1, path:find("?") - 1)
 end
 
 local function search_load(node)
-	local load_path = node.fullpath
-	if load_path then
-		node.time = file_time(load_path)
-		return loadfile(load_path)
-	end
-	local filename = node.filename
-	for _, path_root in pairs(search_path) do
-		local fullpath = path_root .. filename
-		local file     = iopen(fullpath)
-		if file then
-			file:close()
-			node.fullpath = fullpath
-			node.time     = file_time(fullpath)
-			return loadfile(fullpath)
-		end
-	end
-	return nil, "file not exist!"
+    local load_path = node.fullpath
+    if load_path then
+        node.time = file_time(load_path)
+        return loadfile(load_path)
+    end
+    local filename = node.filename
+    for _, path_root in pairs(search_path) do
+        local fullpath = path_root .. filename
+        local file     = iopen(fullpath)
+        if file then
+            file:close()
+            node.fullpath = fullpath
+            node.time     = file_time(fullpath)
+            return loadfile(fullpath)
+        end
+    end
+    return nil, "file not exist!"
 end
 
 local function try_load(node, reload)
-	local trunk_func, err = search_load(node)
-	if not trunk_func then
-		logger.error(sformat("[sandbox][try_load] load file: %s ... [failed]\nerror : %s", node.filename, err))
-		return
-	end
-	local res = tpack(pcall(trunk_func))
-	if not res[1] then
-		logger.error(sformat("[sandbox][try_load] exec file: %s ... [failed]\nerror : %s", node.filename, res[2]))
-		return
-	end
-	if reload then
-		logger.info(sformat("[sandbox][try_load] load file: %s ... [ok]", node.filename))
-	end
-	return tunpack(res, 2)
+    local trunk_func, err = search_load(node)
+    if not trunk_func then
+        logger.error(sformat("[sandbox][try_load] load file: %s ... [failed]\nerror : %s", node.filename, err))
+        return
+    end
+    local res = tpack(pcall(trunk_func))
+    if not res[1] then
+        logger.error(sformat("[sandbox][try_load] exec file: %s ... [failed]\nerror : %s", node.filename, res[2]))
+        return
+    end
+    if reload then
+        logger.info(sformat("[sandbox][try_load] load file: %s ... [ok]", node.filename))
+    end
+    return tunpack(res, 2)
 end
 
 function import(filename)
-	local node = load_files[filename]
-	if not node then
-		node                 = { filename = filename }
-		load_files[filename] = node
-	end
-	if not node.time then
-		local res = try_load(node)
-		if res then
-			node.res = res
-		end
-	end
-	return node.res
+    local node = load_files[filename]
+    if not node then
+        node                 = { filename = filename }
+        load_files[filename] = node
+    end
+    if not node.time then
+        local res = try_load(node)
+        if res then
+            node.res = res
+        end
+    end
+    return node.res
 end
 
 --导入目录注意不能有依赖关系
 function import_dir(dir)
-	for _, path_root in pairs(search_path) do
-		local fullpath = path_root .. dir
-		if is_dir(fullpath) then
-			local dir_files  = ldir(fullpath)
-			local tmp_files = {}
-			for _, file in pairs(dir_files) do
-				local fullname = file.name
-				local fname    = lfilename(fullname)
-				if file.type ~= "directory" and lextension(fname) == ".lua" then
-					tmp_files[#tmp_files + 1] = fname
-				end
-			end
-			--排序方便对比
-			tsort(tmp_files, function(a, b)
-				return a < b
-			end)
-			for _, fname in pairs(tmp_files) do
-				local filename = dir .. "/" .. fname
-				import(filename)
-			end
-		end
-	end
+    for _, path_root in pairs(search_path) do
+        local fullpath = path_root .. dir
+        if is_dir(fullpath) then
+            local dir_files = ldir(fullpath)
+            local tmp_files = {}
+            for _, file in pairs(dir_files) do
+                local fullname = file.name
+                local fname    = lfilename(fullname)
+                if file.type ~= "directory" and lextension(fname) == ".lua" then
+                    tmp_files[#tmp_files + 1] = fname
+                end
+            end
+            --排序方便对比
+            tsort(tmp_files, function(a, b)
+                return a < b
+            end)
+            for _, fname in pairs(tmp_files) do
+                local filename = dir .. "/" .. fname
+                import(filename)
+            end
+        end
+    end
+end
+
+--加载的文件时间
+function import_file_time(filename)
+    local node = load_files[filename]
+    if not node or not node.time then
+        return 0
+    end
+    return node.time
 end
 
 function hive.reload()
-	local count = 0
-	for path, node in pairs(load_files) do
-		local filetime = file_time(node.fullpath)
-		if node.time then
-			if mabs(node.time - filetime) > 1 then
-				try_load(node, true)
-				count = count + 1
-			end
-			if count > 20 then
-				return
-			end
-		else
-			logger.error(sformat("[hive][reload] error file:%s", node.filename))
-		end
-	end
+    local count = 0
+    for path, node in pairs(load_files) do
+        local filetime = file_time(node.fullpath)
+        if node.time then
+            if mabs(node.time - filetime) > 3 then
+                try_load(node, true)
+                count = count + 1
+            end
+            if count > 20 then
+                return count
+            end
+        else
+            logger.error(sformat("[hive][reload] error file:%s", node.filename))
+        end
+    end
+    return count
 end
 
 function hive.get(name)
-	local global_obj = hive[name]
-	if not global_obj then
-		local info = dgetinfo(2, "S")
-		logger.error(sformat("[hive][get] %s not initial! source(%s:%s)", name, info.short_src, info.linedefined))
-		return
-	end
-	return global_obj
+    local global_obj = hive[name]
+    if not global_obj then
+        local info = dgetinfo(2, "S")
+        logger.error(sformat("[hive][get] %s not initial! source(%s:%s)", name, info.short_src, info.linedefined))
+        return
+    end
+    return global_obj
 end

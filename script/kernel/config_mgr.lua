@@ -52,7 +52,7 @@ end
 
 function ConfigMgr:load_table(name, ...)
     local conf_tab = self.table_list[name]
-    if self.table_list[name] then
+    if conf_tab then
         conf_tab:setup(name, ...)
     else
         conf_tab = ConfigTable()
@@ -62,11 +62,21 @@ function ConfigMgr:load_table(name, ...)
 
     if not self.table_load_info[name] then
         self.table_load_info[name] = {
-            func    = "load_table",
+            func    = "reload_table",
             params  = tpack(name, ...),
         }
     end
 
+    return conf_tab
+end
+
+function ConfigMgr:reload_table(name, ...)
+    local conf_tab = self.table_list[name]
+    if conf_tab then
+        conf_tab:reload(name, ...)
+    else
+        return self:load_table(name,...)
+    end
     return conf_tab
 end
 

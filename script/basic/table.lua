@@ -17,7 +17,7 @@ local function trandom(tab)
 end
 
 local function trandom_array(tab)
-    if #tab > 0 then
+    if tab and #tab > 0 then
         return tab[mrandom(#tab)]
     end
 end

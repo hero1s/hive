@@ -45,7 +45,10 @@ function UpdateMgr:on_second_5s()
     collectgarbage("step", 5)
     --检查文件更新
     if self.open_reload == 1 then
-        hive.reload()
+        if hive.reload() > 0 then
+            local config_mgr = hive.get("config_mgr")
+            config_mgr:reload()
+        end
     end
 end
 
