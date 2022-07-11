@@ -20,6 +20,8 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+inline void closesocket(int fd) { close(fd); }
+
 #endif
 
 
@@ -209,6 +211,21 @@ namespace tools
         return std::string(strTemp);
     }
 
+    bool CHelper::PortIsUsed(int port)
+    {
+		int fd = socket(AF_INET, SOCK_STREAM, 0);
+		struct sockaddr_in addr;
+		addr.sin_family = AF_INET;
+		addr.sin_port = htons(port);
+		inet_pton(AF_INET, "0.0.0.0", &addr.sin_addr);
+		if (bind(fd, (struct sockaddr*)(&addr), sizeof(sockaddr_in)) < 0){
+            closesocket(fd);
+			return true;
+		}
+        closesocket(fd);
+		return false;
+    }
+
     luakit::lua_table open_lhelper(lua_State* L) {
         luakit::kit_state lua(L);
         auto helper = lua.new_table();
@@ -216,7 +233,8 @@ namespace tools
         helper.set_function("get_net_ip", []() { return CHelper::GetNetIP(); });
         helper.set_function("ip_to_value", [](std::string ip) { return CHelper::IPToValue(ip); });
         helper.set_function("value_to_ip", [](uint32_t addr) { return CHelper::ValueToIP(addr); });
-        
+        helper.set_function("port_is_used", [](int port) { return CHelper::PortIsUsed(port); });
+
         return helper;
     }
 }

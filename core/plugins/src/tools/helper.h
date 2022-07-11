@@ -16,6 +16,7 @@ namespace tools
         static size_t GetAllHostIPs(std::vector<uint32_t>& oIPs);
         static uint32_t IPToValue(const std::string& strIP);
         static std::string ValueToIP(uint32_t ulAddr);
+        static bool PortIsUsed(int port);
     private:
 
     };
