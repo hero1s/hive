@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <unordered_map>
 #include <forward_list>
 #include <unordered_set>
@@ -14,19 +14,17 @@ class aoi
 public:
     enum mode
     {
-        watcher = 1, //Observer
-        marker = 1 << 1
+        watcher = 1,        //观察者(玩家)
+        marker  = 1 << 1    //被观察者(被看的东西,玩家)
     };
-
     enum event_type
     {
         event_enter = 1,
         event_leave = 2,
     };
 
-    using object_type = AoiObject;
-
-    using object_handle_type = typename object_type::handle_type;
+    using object_type = AoiObject;//对象类型
+    using object_handle_type = typename object_type::handle_type;//对象的索引类型
 
     struct aoi_event
     {
@@ -39,16 +37,16 @@ public:
             , watcher(w)
             , marker(m)
         {
-
         }
     };
 private:
     struct tile
     {
-        std::forward_list<object_type*> markers;
-        std::unordered_set<object_type*> watchers;
+        std::forward_list<object_type*> markers;    //观察者(玩家)
+        std::unordered_set<object_type*> watchers;  //被观察者(被看的东西,玩家)
     };
 public:
+    //x,y为地图偏移,为了对齐前端坐标,一般0,0即可
     aoi(int posx, int posy, int map_size, int tile_size)
         :rect_(posx, posy, map_size, map_size)
         , tile_size_(tile_size)
@@ -63,7 +61,7 @@ public:
     {
         delete[] data_;
     }
-
+    //格子坐标x
     constexpr int get_tile_x(int v) const
     {
         auto res = (v - rect_.x) / tile_size_;
@@ -73,7 +71,7 @@ public:
         }
         return res;
     }
-
+    //格子坐标y
     constexpr int get_tile_y(int v) const
     {
         auto res = (v - rect_.y) / tile_size_;
@@ -83,32 +81,28 @@ public:
         }
         return res;
     }
-
-    template<class T>
-    static constexpr const T& clamp(const T& v, const T& lo, const T& hi)
-    {
-        assert(!(hi < lo));
-        return (v < lo) ? lo : (hi < v) ? hi : v;
-    }
-
+    //构建矩形
     rect<int> make_rect(int x, int y, int w, int h) const
     {
-        auto left = (clamp(x - w / 2, rect_.left(), rect_.right()));
-        auto right = (clamp(x + w / 2, rect_.left(), rect_.right()));
-        auto bottom = (clamp(y - h / 2, rect_.bottom(), rect_.top()));
-        auto top = (clamp(y + h / 2, rect_.bottom(), rect_.top()));
+        auto left = (std::clamp(x - w / 2, rect_.left(), rect_.right()));
+        auto right = (std::clamp(x + w / 2, rect_.left(), rect_.right()));
+        auto bottom = (std::clamp(y - h / 2, rect_.bottom(), rect_.top()));
+        auto top = (std::clamp(y + h / 2, rect_.bottom(), rect_.top()));
         return rect<int>{ left, bottom, right - left, top - bottom };
     }
-
+    //构建格子坐标矩形
     rect<int> make_tile_rect(int x, int y, int w, int h) const
     {
-        auto left = get_tile_x(clamp(x - w / 2, rect_.left(), rect_.right()));
-        auto right = get_tile_x(clamp(x + w / 2, rect_.left(), rect_.right()));
-        auto bottom = get_tile_y(clamp(y - h / 2, rect_.bottom(), rect_.top()));
-        auto top = get_tile_y(clamp(y + h / 2, rect_.bottom(), rect_.top()));
+        auto left = get_tile_x(std::clamp(x - w / 2, rect_.left(), rect_.right()));
+        auto right = get_tile_x(std::clamp(x + w / 2, rect_.left(), rect_.right()));
+        auto bottom = get_tile_y(std::clamp(y - h / 2, rect_.bottom(), rect_.top()));
+        auto top = get_tile_y(std::clamp(y + h / 2, rect_.bottom(), rect_.top()));
         return rect<int>{ left, bottom, right - left, top - bottom };
     }
-
+    //插入管理对象
+    /*x,y 是 w,h矩形的中心点
+    * range_marker表示是否是范围建筑,范围建筑必须在边界就进入视野,不是范围的表示点对象.w,h表示视野范围大小
+    */
     bool insert(object_handle_type handle, int x, int y, int w, int h, int layer, int mode, bool range_marker = false)
     {
         if (!rect_.contains(x, y))
@@ -121,35 +115,31 @@ public:
         {
             int tile_x = get_tile_x(x);
             int tile_y = get_tile_y(y);
-
-            if (mode&marker)
-            {
-                if (range_marker && w > 0 && h > 0)
-                {
+            //被观察者
+            if (mode&marker){
+                if (range_marker && w > 0 && h > 0){//范围建筑
                     assert(!(mode&watcher)&&"unsupport");
                     auto tile_rect = make_tile_rect(x, y, w, h);
+                    //插入全部格子的被观察者列表
                     for_each_rect(tile_rect, [this, &res](int x, int y) {
                         insert_marker(&res.first->second, x, y);
                     });
-                }
-                else
-                {
+                }else{//插入当前格子被观察者列表
                     insert_marker(&res.first->second, tile_x, tile_y);
                 }
             }
-
-            if (mode&watcher)
-            {
+            //观察者
+            if (mode&watcher){
                 auto tile_rect = make_tile_rect(x, y, w, h);
-                auto rc = make_rect(x, y, w, h);
+                auto rc = make_rect(x, y, w, h);//构建视野
 
                 for_each_rect(tile_rect, [this, &res, &rc](int x, int y) {
                     tile& t = data_[y*count_ + x];
                     insert_watcher(t, &res.first->second);
-                    if (debug_)
-                    {
+                    if (debug_){
                         std::cout << res.first->first << " watch (" << x << "," << y << ")" << std::endl;
                     }
+                    //触发事件
                     update_watcher(t, rect<int>{-1, -1, 0, 0}, rc, &res.first->second);
                 });
             }
@@ -157,12 +147,11 @@ public:
         }
         return false;
     }
-
+    //对象事件
     void fire_event(object_handle_type handle, int eventid)
     {
         auto iter = objects_.find(handle);
-        if (iter == objects_.end())
-        {
+        if (iter == objects_.end()) {
             return;
         }
         object_type* obj = &iter->second;

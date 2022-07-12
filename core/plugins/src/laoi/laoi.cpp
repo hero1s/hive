@@ -217,14 +217,14 @@ static int laoi_create(lua_State *L)
 {
     int x = (int)luaL_checkinteger(L, 1);
     int y = (int)luaL_checkinteger(L, 2);
-    int len_of_area = (int)luaL_checkinteger(L, 3);
-    int len_of_node = (int)luaL_checkinteger(L, 4);
-    if (len_of_area%len_of_node != 0)
+    int map_size = (int)luaL_checkinteger(L, 3);
+    int tile_size = (int)luaL_checkinteger(L, 4);
+    if (map_size%tile_size != 0)
     {
         return luaL_error(L, "Need length_of_area %% length_of_node == 0.");
     }
 
-    auto* q = new aoi_space_box::aoi_type(x, y, len_of_area, len_of_node);
+    auto* q = new aoi_space_box::aoi_type(x, y, map_size, tile_size);
     aoi_space_box* ab = (aoi_space_box*)lua_newuserdata(L, sizeof(*ab));
     ab->space = q;
     if (luaL_newmetatable(L, METANAME))//mt
