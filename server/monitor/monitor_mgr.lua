@@ -98,7 +98,7 @@ end
 -- 检测失活
 function MonitorMgr:check_lost_node()
     for _, v in pairs(self.monitor_lost_nodes) do
-        log_err("[MonitorMgr][check_lost_node] lost service:%s,%s", v.service, v.id)
+        log_err("[MonitorMgr][check_lost_node] lost service:%s", service.id2nick(v.id))
     end
 end
 
@@ -158,7 +158,7 @@ end
 
 -- GM服务已经ready
 function MonitorMgr:on_service_ready(id, service_name)
-    log_info("[MonitorMgr][on_service_ready]->id:%s, service_name:%s", id, service_name)
+    log_info("[MonitorMgr][on_service_ready]->id:%s, service_name:%s", service.id2nick(id), service_name)
     self:register_admin()
 end
 

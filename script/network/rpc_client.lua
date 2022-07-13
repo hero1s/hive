@@ -193,6 +193,7 @@ function RpcClient:forward_socket(method, session_id, ...)
             end
             return true, SUCCESS
         end
+        log_err("[RpcClient][forward_socket] send failed:ip:%s,port:%s", self.ip, self.port)
         return false, "socket send failed"
     end
     return false, "socket not connected"

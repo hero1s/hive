@@ -1,21 +1,22 @@
 --clock_mgr.lua
 
-local pairs         = pairs
-local odate         = os.date
-local otime         = os.time
-local log_info      = logger.info
-local log_warn      = logger.warn
-local sig_check     = signal.check
-local collectgarbage= collectgarbage
+local pairs          = pairs
+local odate          = os.date
+local otime          = os.time
+local log_info       = logger.info
+local log_warn       = logger.warn
+local log_err        = logger.err
+local sig_check      = signal.check
+local collectgarbage = collectgarbage
 
-local timer_mgr     = hive.get("timer_mgr")
-local thread_mgr    = hive.get("thread_mgr")
+local timer_mgr      = hive.get("timer_mgr")
+local thread_mgr     = hive.get("thread_mgr")
 
-local HALF_MS       = hive.enum("PeriodTime", "HALF_MS")
-local SECOND_5_MS   = hive.enum("PeriodTime", "SECOND_5_MS")
+local HALF_MS        = hive.enum("PeriodTime", "HALF_MS")
+local SECOND_5_MS    = hive.enum("PeriodTime", "SECOND_5_MS")
 
-local UpdateMgr = singleton()
-local prop = property(UpdateMgr)
+local UpdateMgr      = singleton()
+local prop           = property(UpdateMgr)
 prop:reader("last_day", 0)
 prop:reader("last_hour", 0)
 prop:reader("last_minute", 0)
@@ -56,19 +57,19 @@ function UpdateMgr:update(now_ms, clock_ms)
     --业务更新
     thread_mgr:fork(function()
         local diff_ms = clock_ms - hive.clock_ms
-        if diff_ms > HALF_MS then
-            log_warn("[UpdateMgr][update] last frame exec too long(%d ms)!", diff_ms)
+        if diff_ms > HALF_MS and hive.frame > 1 then
+            log_err("[UpdateMgr][update] last frame exec too long(%d ms)!,service:%s", diff_ms, hive.name)
         end
         --帧更新
         local frame = hive.frame + 1
         for obj in pairs(self.frame_objs) do
             obj:on_frame(clock_ms, frame)
         end
-        hive.frame = frame
-        hive.now_ms = now_ms
+        hive.frame    = frame
+        hive.now_ms   = now_ms
         hive.clock_ms = clock_ms
         --秒更新
-        local now = otime()
+        local now     = otime()
         if now == hive.now then
             return
         end

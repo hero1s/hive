@@ -323,7 +323,7 @@ static int lcurl_create_request(lua_State* L) {
     return 2;
 }
 
-static int lcurl_destory(lua_State* L) {
+static int lcurl_destroy(lua_State* L) {
     if (lcurl.encode_curl) {
         curl_easy_cleanup(lcurl.encode_curl);
         lcurl.encode_curl = NULL;
@@ -356,7 +356,7 @@ static int lcurl_url_encode(lua_State* L) {
 
 static const luaL_Reg lcurl_funs[] = {
     { "query", lcurl_query },
-    { "destory", lcurl_destory },
+    { "destroy", lcurl_destroy },
     { "url_encode", lcurl_url_encode },
     { "create_request", lcurl_create_request },
     { NULL, NULL }

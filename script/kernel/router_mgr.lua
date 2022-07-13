@@ -1,27 +1,27 @@
 -- router_mgr.lua
-local pairs             = pairs
-local log_err           = logger.err
-local log_info          = logger.info
-local mrandom           = math.random
-local signal_quit       = signal.quit
-local tunpack           = table.unpack
-local sformat           = string.format
-local sid2name          = service.id2name
-local qsuccess          = hive.success
-local hhash_code        = hive.hash_code
+local pairs            = pairs
+local log_err          = logger.err
+local log_info         = logger.info
+local mrandom          = math.random
+local signal_quit      = signal.quit
+local tunpack          = table.unpack
+local sformat          = string.format
+local sid2name         = service.id2name
+local qsuccess         = hive.success
+local hhash_code       = hive.hash_code
 
-local timer_mgr         = hive.get("timer_mgr")
-local thread_mgr        = hive.get("thread_mgr")
-local event_mgr         = hive.get("event_mgr")
-local update_mgr        = hive.get("update_mgr")
-local config_mgr        = hive.get("config_mgr")
+local timer_mgr        = hive.get("timer_mgr")
+local thread_mgr       = hive.get("thread_mgr")
+local event_mgr        = hive.get("event_mgr")
+local update_mgr       = hive.get("update_mgr")
+local config_mgr       = hive.get("config_mgr")
 
-local HEARTBEAT_TIME    = hive.enum("NetwkTime", "HEARTBEAT_TIME")
-local RECONNECT_TIME    = hive.enum("NetwkTime", "RECONNECT_TIME")
-local RPC_CALL_TIMEOUT  = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
+local HEARTBEAT_TIME   = hive.enum("NetwkTime", "HEARTBEAT_TIME")
+local RECONNECT_TIME   = hive.enum("NetwkTime", "RECONNECT_TIME")
+local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 
-local RouterMgr = singleton()
-local prop = property(RouterMgr)
+local RouterMgr        = singleton()
+local prop             = property(RouterMgr)
 prop:accessor("master", nil)
 prop:accessor("routers", {})
 prop:accessor("candidates", {})
@@ -56,15 +56,15 @@ end
 function RouterMgr:add_router(router_conf, index)
     local router_id = service.router_id(router_conf.host_id, index)
     if not self.routers[router_id] then
-        local host = router_conf.host
+        local host              = router_conf.host
         --端口推导
-        local port = router_conf.port + (index - 1)
-        local RpcClient = import("network/rpc_client.lua")
+        local port              = router_conf.port + (index - 1)
+        local RpcClient         = import("network/rpc_client.lua")
         self.routers[router_id] = {
-            addr = host,
-            router_id = router_id,
+            addr              = host,
+            router_id         = router_id,
             next_connect_time = 0,
-            client = RpcClient(self, host, port)
+            client            = RpcClient(self, host, port)
         }
     end
 end
@@ -99,8 +99,8 @@ function RouterMgr:switch_master()
 end
 
 --更新
-function RouterMgr:on_frame()
-    local now_tick = hive.clock_ms
+function RouterMgr:on_frame(clock_ms)
+    local now_tick = clock_ms
     for _, node in pairs(self.routers) do
         local client = node.client
         if not client:is_alive() then
@@ -137,7 +137,11 @@ function RouterMgr:hash_router(hash_key)
     local count = #self.candidates
     if count > 0 then
         local index = hhash_code(hash_key, count)
-        return self.candidates[index]
+        local node  = self.candidates[index]
+        if node == nil then
+            log_err("[RouterMgr][hash_router] the hash node nil,hashkey:%s,index:%s", hash_key, index)
+        end
+        return node
     end
 end
 
@@ -151,12 +155,12 @@ end
 
 --通过router发送广播，并收集所有的结果
 function RouterMgr:collect(service_id, rpc, ...)
-    local collect_res = {}
-    local session_id = thread_mgr:build_session_id()
+    local collect_res          = {}
+    local session_id           = thread_mgr:build_session_id()
     local ok, code, target_cnt = self:forward_client(self.master, "call_broadcast", session_id, service_id, rpc, ...)
     if ok and qsuccess(code) then
         while target_cnt > 0 do
-            target_cnt = target_cnt - 1
+            target_cnt              = target_cnt - 1
             local ok_c, code_c, res = thread_mgr:yield(session_id, "collect", RPC_CALL_TIMEOUT)
             if ok_c and qsuccess(code_c) then
                 collect_res[#collect_res + 1] = res
@@ -263,10 +267,10 @@ end
 --生成针对服务的访问接口
 function RouterMgr:build_service_method(service, service_id)
     local method_list = {
-        ["call_%s_hash"] = function(obj, hash_key, rpc, ...)
+        ["call_%s_hash"]   = function(obj, hash_key, rpc, ...)
             return obj:call_hash(service_id, hash_key, rpc, ...)
         end,
-        ["send_%s_hash"] = function(obj, hash_key, rpc, ...)
+        ["send_%s_hash"]   = function(obj, hash_key, rpc, ...)
             return obj:send_hash(service_id, hash_key, rpc, ...)
         end,
         ["random_%s_hash"] = function(obj, hash_key, rpc, ...)
@@ -284,10 +288,10 @@ function RouterMgr:build_service_method(service, service_id)
         ["send_%s_random"] = function(obj, rpc, ...)
             return obj:send_random(service_id, rpc, ...)
         end,
-        ["send_%s_all"] = function(obj, rpc, ...)
+        ["send_%s_all"]    = function(obj, rpc, ...)
             return obj:broadcast(service_id, rpc, ...)
         end,
-        ["collect_%s"] = function(obj, rpc, ...)
+        ["collect_%s"]     = function(obj, rpc, ...)
             return obj:collect(service_id, rpc, ...)
         end,
     }
@@ -304,7 +308,7 @@ end
 function RouterMgr:build_service()
     local service_db = config_mgr:get_table("service")
     for _, service_conf in service_db:iterator() do
-        local service = service_conf.name
+        local service    = service_conf.name
         local service_id = service_conf.id
         self:build_service_method(service, service_id)
     end
@@ -336,7 +340,7 @@ end
 --服务器关闭
 function RouterMgr:rpc_service_close(id, router_id)
     if self.master and self.master.router_id == router_id then
-        local server_name = sid2name(id)
+        local server_name  = sid2name(id)
         local listener_set = self.close_watchers[server_name]
         for listener in pairs(listener_set or {}) do
             listener:on_service_close(id, server_name)
@@ -347,7 +351,7 @@ end
 --服务器注册
 function RouterMgr:rpc_service_ready(id, router_id)
     if self.master and self.master.router_id == router_id then
-        local server_name = sid2name(id)
+        local server_name  = sid2name(id)
         local listener_set = self.ready_watchers[server_name]
         for listener in pairs(listener_set or {}) do
             listener:on_service_ready(id, server_name, router_id)

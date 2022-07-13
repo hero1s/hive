@@ -120,7 +120,7 @@ function import_dir(dir)
 end
 
 --加载的文件时间
-function import_file_time(filename)
+function hive.import_file_time(filename)
     local node = load_files[filename]
     if not node or not node.time then
         return 0

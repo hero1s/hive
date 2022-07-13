@@ -32,10 +32,10 @@ function HttpAgent:on_service_close(id, service_name)
     end
 end
 
-function HttpAgent:get(hash_key, url, querys, headers)
+function HttpAgent:get(url, querys, headers)
     local ok, code, res
-    if hash_key and self.proxy then
-        ok, code, res = router_mgr:call_proxy_hash(hash_key, "rpc_http_get", url, querys, headers)
+    if self.proxy then
+        ok, code, res = router_mgr:call_proxy_random("rpc_http_get", url, querys, headers)
     else
         ok, code, res = http_client:call_get(url, querys, headers)
     end
@@ -45,10 +45,10 @@ function HttpAgent:get(hash_key, url, querys, headers)
     return ok, code, res
 end
 
-function HttpAgent:post(hash_key, url, post_data, headers, querys)
+function HttpAgent:post(url, post_data, headers, querys)
     local ok, code, res
-    if hash_key and self.proxy then
-        ok, code, res = router_mgr:call_proxy_hash(hash_key, "rpc_http_post", url, post_data, headers, querys)
+    if self.proxy then
+        ok, code, res = router_mgr:call_proxy_random("rpc_http_post", url, post_data, headers, querys)
     else
         ok, code, res = http_client:call_post(url, post_data, headers, querys)
     end

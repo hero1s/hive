@@ -1,17 +1,18 @@
 --cfg_table.lua
-local next            = next
-local pairs           = pairs
-local ipairs          = ipairs
-local sformat         = string.format
-local tconcat         = table.concat
-local log_err         = logger.err
-local log_info        = logger.info
-local trandom_array   = table_ext.random_array
+local next             = next
+local pairs            = pairs
+local ipairs           = ipairs
+local sformat          = string.format
+local tconcat          = table.concat
+local log_err          = logger.err
+local log_info         = logger.info
+local trandom_array    = table_ext.random_array
+local import_file_time = hive.import_file_time
 
-local TABLE_MAX_INDEX = 4
+local TABLE_MAX_INDEX  = 4
 
-local ConfigTable     = class()
-local prop            = property(ConfigTable)
+local ConfigTable      = class()
+local prop             = property(ConfigTable)
 prop:reader("name", nil)
 prop:reader("rows", {})
 prop:reader("indexs", {})

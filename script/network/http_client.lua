@@ -29,10 +29,10 @@ end
 
 function HttpClient:on_quit()
     self.contexts = {}
-    lcurl.destory()
+    lcurl.destroy()
 end
 
-function HttpClient:on_frame()
+function HttpClient:on_frame(clock_ms)
     local curl_handle, result = lquery()
     while curl_handle do
         --查询请求结果
@@ -52,7 +52,6 @@ function HttpClient:on_frame()
         curl_handle, result = lquery()
     end
     --清除超时请求
-    local clock_ms = hive.clock_ms
     for handle, context in pairs(self.contexts) do
         if clock_ms >= context.time then
             self.contexts[handle] = nil
