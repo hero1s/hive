@@ -56,8 +56,8 @@ Distributed game server framework based on CPP 17 && LUA 5.4
   - moon: https://github.com/sniper00/moon
 
 ## todo list 
+  - 目前应用于即将上线大型实时在线FPS项目,同步更新优化.多多关注,建议,star
   - c++ gateway服务
   - 分级路由组网,支持百万pcu
-  - 现有部分特殊服务的固定hash,改进成切片模式,无缝扩容,容灾
   - 完善文档及工具链,编写demo
   - 优化性能,完善精简代码

@@ -234,6 +234,12 @@ namespace lprofile
         return m_stream;
     }
 
+    std::string ProfileManager::report()
+    {
+        saveData();
+        return m_stream;
+    }
+
     void ProfileManager::startProfile(const char* node_name)
     {
         if (NULL == node_name || NULL == m_cur_node) {
@@ -306,6 +312,7 @@ namespace lprofile
         lua.new_class<ProfileManager>(
             "init", &ProfileManager::init,
             "shutdown", &ProfileManager::shutdown,
+            "report",&ProfileManager::report,
             "start", &ProfileManager::startProfile,
             "stop", &ProfileManager::stopProfile);
         luaprof.set_function("new", []() { return new ProfileManager(); });

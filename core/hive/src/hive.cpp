@@ -247,6 +247,7 @@ void hive_app::run() {
 			});
 		check_input(lua);
 	}
+	hive.get_function("exit");
 	m_logger->stop();
 	lua.close();
 	m_logger = nullptr;

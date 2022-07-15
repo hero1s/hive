@@ -86,6 +86,11 @@ LDFLAGS += -L$(SOLUTION_DIR)library
 #自动生成目标
 OBJS =
 #子目录
+OBJS += $(patsubst $(SRC_DIR)/bitarray/%.c, $(INT_DIR)/bitarray/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/bitarray/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/bitarray/%.m, $(INT_DIR)/bitarray/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/bitarray/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/bitarray/%.cc, $(INT_DIR)/bitarray/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/bitarray/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/bitarray/%.cpp, $(INT_DIR)/bitarray/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/bitarray/*.cpp)))
+#子目录
 OBJS += $(patsubst $(SRC_DIR)/bson/%.c, $(INT_DIR)/bson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/bson/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/bson/%.m, $(INT_DIR)/bson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/bson/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/bson/%.cc, $(INT_DIR)/bson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/bson/*.cc)))
@@ -201,6 +206,7 @@ clean :
 pre_build:
 	mkdir -p $(INT_DIR)
 	mkdir -p $(TARGET_DIR)
+	mkdir -p $(INT_DIR)/bitarray
 	mkdir -p $(INT_DIR)/bson
 	mkdir -p $(INT_DIR)/laoi
 	mkdir -p $(INT_DIR)/lbuffer

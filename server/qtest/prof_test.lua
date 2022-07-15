@@ -14,6 +14,9 @@ prof_manager.start("c")
 prof_manager.stop("c")
 prof_manager.stop("root")
 
+local report = prof_manager.report()
+logger.warn("prof report:\n %s",report)
+
 local info = prof_manager.shutdown()
 logger.warn("prof:\n %s", info)
 
