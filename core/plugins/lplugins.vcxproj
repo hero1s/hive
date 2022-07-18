@@ -22,7 +22,6 @@
     <ClInclude Include="src\lcjson\strbuf.h"/>
     <ClInclude Include="src\lcrypt\base64.h"/>
     <ClInclude Include="src\lcrypt\des56.h"/>
-    <ClInclude Include="src\lcrypt\guid.h"/>
     <ClInclude Include="src\lcrypt\lcrypt.h"/>
     <ClInclude Include="src\lcrypt\lz4.h"/>
     <ClInclude Include="src\lcrypt\md5.h"/>
@@ -42,6 +41,7 @@
   <ItemGroup>
     <ClCompile Include="src\bitarray\bitarray.c"/>
     <ClCompile Include="src\bson\bson.c"/>
+    <ClCompile Include="src\guid\lguid.c"/>
     <ClCompile Include="src\laoi\laoi.cpp"/>
     <ClCompile Include="src\lbuffer\lbuffer.cpp"/>
     <ClCompile Include="src\lcjson\fpconv.c"/>
@@ -50,7 +50,6 @@
     <ClCompile Include="src\lcrab\lua-crab.c"/>
     <ClCompile Include="src\lcrypt\base64.c"/>
     <ClCompile Include="src\lcrypt\des56.c"/>
-    <ClCompile Include="src\lcrypt\guid.c"/>
     <ClCompile Include="src\lcrypt\lcrypt.c"/>
     <ClCompile Include="src\lcrypt\lz4.c"/>
     <ClCompile Include="src\lcrypt\md5.c"/>

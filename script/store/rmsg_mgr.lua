@@ -1,11 +1,11 @@
 --rmsg_mgr.lua
 import("agent/mongo_agent.lua")
 local bson          = require("bson")
-local lcrypt        = require("lcrypt")
+local lguid        = require("lguid")
 local bdate         = bson.date
 local log_err       = logger.err
 local log_info      = logger.info
-local new_guid      = lcrypt.guid_new
+local new_guid      = lguid.guid_new
 local mongo_agent   = hive.get("mongo_agent")
 local check_success = hive.success
 local PeriodTime    = enum("PeriodTime")

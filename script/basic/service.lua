@@ -39,12 +39,9 @@ function service.init()
     local index       = environ.number("HIVE_INDEX", 1)
     local service_id  = service.name2sid(name)
     hive.index        = index
-    hive.group        = environ.number("HIVE_GROUP", 1)
-    hive.region       = environ.number("HIVE_REGION", 1)
     hive.id           = service.make_id(name, index)
     hive.service_name = name
     hive.service_id   = service_id
-    hive.service      = name
     hive.name         = sformat("%s_%s", name, index)
     hive.deploy       = environ.get("HIVE_DEPLOY", "develop")
 end

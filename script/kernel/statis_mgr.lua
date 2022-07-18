@@ -58,7 +58,7 @@ function StatisMgr:write(measurement, name, type, fields)
                 name = name,
                 type = type,
                 index = hive.index,
-                service = hive.service
+                service = hive.service_name
             },
             field_list = {}
         }
