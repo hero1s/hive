@@ -96,49 +96,6 @@ static int hash_code(lua_State* L) {
     return 1;
 }
 
-// get specific process physical memeory occupation size by pid (MB)
-float get_memory_usage(int pid)
-{
-#ifdef WIN32
-	uint64_t mem = 0;
-	PROCESS_MEMORY_COUNTERS pmc;
-	HANDLE process = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
-	if (GetProcessMemoryInfo(process, &pmc, sizeof(pmc))){
-		mem = pmc.WorkingSetSize;
-	}
-	CloseHandle(process);
-	return float(mem / 1024.0 / 1024.0);
-#else
-#define VMRSS_LINE 22
-	char file_name[64] = { 0 };
-	FILE* fd;
-	char line_buff[512] = { 0 };
-	sprintf(file_name, "/proc/%d/status", pid);
-	fd = fopen(file_name, "r");
-	if (nullptr == fd)return 0;
-	char name[64];
-	int vmrss = 0;
-	for (int i = 0; i < VMRSS_LINE - 1; i++)
-		fgets(line_buff, sizeof(line_buff), fd);
-	fgets(line_buff, sizeof(line_buff), fd);
-	sscanf(line_buff, "%s %d", name, &vmrss);
-	fclose(fd);
-	return float(vmrss / 1024.0);// cnvert VmRSS from KB to MB
-#endif
-}
-
-int get_cpu_core_num()
-{
-#ifdef WIN32
-	SYSTEM_INFO info;
-	GetSystemInfo(&info);
-	return info.dwNumberOfProcessors;
-#else
-	return get_nprocs();
-#endif
-}
-
-
 static int lset_env(lua_State* L) {
 	const char* key = lua_tostring(L, 1);
 	const char* value = lua_tostring(L, 2);
@@ -224,8 +181,7 @@ void hive_app::run() {
     auto hive = lua.new_table("hive");
     hive.set("pid", ::getpid());
     hive.set("platform", get_platform());
-	hive.set("cpu_core_num", get_cpu_core_num());
-
+	
     hive.set_function("hash_code", hash_code);
     hive.set_function("get_signal", [&]() { return m_signal; });
     hive.set_function("set_signal", [&](int n) { set_signal(n); });
@@ -233,8 +189,7 @@ void hive_app::run() {
     hive.set_function("ignore_signal", [](int n) { signal(n, SIG_IGN); });
     hive.set_function("default_signal", [](int n) { signal(n, SIG_DFL); });
     hive.set_function("register_signal", [](int n) { signal(n, on_signal); });
-    hive.set_function("mem_usage", []() { return get_memory_usage(::getpid()); });
-	
+    	
 	lua.run_script(fmt::format("require '{}'", getenv("HIVE_SANDBOX")), [&](std::string err) {
 		exception_handler("load sandbox err: ", err);
 		});

@@ -17,6 +17,10 @@ namespace tools
         static uint32_t IPToValue(const std::string& strIP);
         static std::string ValueToIP(uint32_t ulAddr);
         static bool PortIsUsed(int port);
+        static double MemUsePercent();
+        static double CpuUsePercent();
+        static float MemUsage(int pid);
+        static int CpuCoreNum();
     private:
 
     };

@@ -4,6 +4,7 @@ local pairs   = pairs
 local tsort   = table.sort
 local mrandom = math.random
 local tremove = table.remove
+local tinsert = table.insert
 
 local function trandom(tab)
     local keys = {}
@@ -141,6 +142,73 @@ local function tmapsort(src)
     return dst
 end
 
+local function fastremove(object, fn)
+    local n
+    for i, value in ipairs(object) do
+        if fn(value) then
+            n = i
+            break
+        end
+    end
+    if n then
+        local v
+        if #object == 1 then
+            v = tremove(object)
+        else
+            if n == #object then
+                v = tremove(object, n)
+            else
+                v         = object[n]
+                object[n] = tremove(object)
+            end
+        end
+        return true, v
+    end
+    return false
+end
+
+local function shuffle(t)
+    local n = #t
+    if n <= 0 then
+        return t
+    end
+    local tab   = {}
+    local index = 1
+    while n > 0 do
+        local tmp  = mrandom(1, n)
+        tab[index] = t[tmp]
+        tremove(t, tmp)
+        index = index + 1
+        n     = #t
+    end
+    return tab
+end
+
+local function contains(t, value)
+    for _, v in pairs(t) do
+        if (v == value) then
+            return true
+        end
+    end
+    return false
+end
+
+local function equals(a, b)
+    for k, v in pairs(a) do
+        if b[k] ~= v then
+            return false
+        end
+    end
+    for k, v in pairs(b) do
+        if a[k] ~= v then
+            return false
+        end
+    end
+    return true
+end
+
+
+
 table_ext              = _ENV.table_ext or {}
 
 table_ext.random       = trandom
@@ -157,58 +225,10 @@ table_ext.map          = tmap
 table_ext.array        = tarray
 table_ext.kvarray      = tkvarray
 table_ext.mapsort      = tmapsort
-
---- array
---- remove elm only the values satisfying the given predicate.
---- Swap to last, then remove last
---- local object = {{a=1},{a=2},{a=3},{a=4}}
---- table.fastremove(object, function (o)
----     return o.a == 2
---- end )
---- print_r(object) {{a=1},{a=4},{a=3}}
-function table_ext.fastremove(object, fn)
-    local n
-    for i, value in ipairs(object) do
-        if fn(value) then
-            n = i
-            break
-        end
-    end
-
-    if n then
-        local v
-        if #object == 1 then
-            v = tremove(object)
-        else
-            if n == #object then
-                v = tremove(object, n)
-            else
-                v         = object[n]
-                object[n] = tremove(object)
-            end
-        end
-        return true, v
-    end
-
-    return false
-end
-
-function table_ext.shuffle(t)
-    local n = #t
-    if n <= 0 then
-        return t
-    end
-    local tab   = {}
-    local index = 1
-    while n > 0 do
-        local tmp  = mrandom(1, n)
-        tab[index] = t[tmp]
-        tremove(t, tmp)
-        index = index + 1
-        n     = #t
-    end
-    return tab
-end
+table_ext.fastremove   = fastremove
+table_ext.shuffle      = shuffle
+table_ext.contains     = contains
+table_ext.equals       = equals
 
 -- 按哈希key排序
 --[[ 使用示例:
@@ -243,5 +263,33 @@ function table_ext.spairs(t, cmp)
     end, sort_keys, nil
 end
 
+--- Looks for an object within an array. Returns its index if found,
+--- or nil if the object could not be found.
+function table_ext.indexof(tbl, obj)
+    for k, v in ipairs(tbl) do
+        if v == obj then
+            return k
+        end
+    end
+end
 
+--- Looks for an object within a table. Returns the key if found,
+--- or nil if the object could not be found.
+function table_ext.findKeyByValue(tbl, obj)
+    for k, v in pairs(tbl) do
+        if v == obj then
+            return k
+        end
+    end
+end
 
+--- The difference of A and B is the set containing those elements that are in A but not in B
+function table_ext.difference(a, b)
+    local result = {}
+    for _, v in ipairs(a) do
+        if not table_ext.indexof(b, v) then
+            tinsert(result, v)
+        end
+    end
+    return result
+end

@@ -93,7 +93,7 @@ local function init_solution_env(env)
         sprojects[#sprojects + 1] = project
     end
     tsort(sprojects, project_sort)
-    local lguid = require("lguid")
+    local lguid = require("tguid")
     for i, proj in ipairs(sprojects) do
         local gname = proj.GROUP
         if not groups[gname] then
@@ -178,7 +178,7 @@ end
 
 --初始化项目环境变量
 local function init_project_env(project_dir, bmimalloc)
-    local lguid = require("lguid")
+    local lguid = require("tguid")
     return {
         WORK_DIR        = project_dir,
         GUID_NEW        = lguid.guid,
@@ -207,7 +207,7 @@ end
 --project_dir：项目目录
 --lmake_dir：项目目录相对于lmake的路径
 local function build_projfile(solution_dir, project_dir, lmake_dir, bmimalloc)
-    local lguid = require("lguid")
+    local lguid = require("tguid")
     local ltmpl = require("ltemplate.ltemplate")
     local dir_files = ldir(project_dir)
     for _, file in pairs(dir_files) do

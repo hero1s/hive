@@ -11,10 +11,10 @@ function LinuxStatis:__init()
 end
 
 function LinuxStatis:setup()
-    self.pid         = hive.pid
-    self.cpu_core    = self:calc_cpu_core()
-    self.cpu_time    = self:calc_cpu_time()
-    self.thread_time = self:calc_thread_time()
+    self.pid          = hive.pid
+    self.cpu_core     = self:calc_cpu_core()
+    self.cpu_time     = self:calc_cpu_time()
+    self.thread_time  = self:calc_thread_time()
 end
 
 --计算cpu核心数量
@@ -91,30 +91,6 @@ function LinuxStatis:calc_memory()
     end
     fstatus:close()
     return mem_res, mem_virt
-end
-
---计算主机cpu占用百分比
-function LinuxStatis:cpu_use_percent()
-    local cpu_cmd         = "top -b -n1 | fgrep Cpu | awk '{print 100-$8}'"
-    local rsfile          = io.popen(cpu_cmd)
-    if rsfile then
-        local cpu_use_percent = rsfile:read("*a")
-        rsfile:close()
-        return tonumber(cpu_use_percent)
-    end
-    return 0
-end
-
---计算主机mem占用百分比
-function LinuxStatis:mem_use_percent()
-    local mem_cmd         = "free -m | fgrep Mem | awk '{printf ($3)/$2*100}'"
-    local rsfile          = io.popen(mem_cmd)
-    if rsfile then
-        local mem_use_percent = rsfile:read("*a")
-        rsfile:close()
-        return tonumber(mem_use_percent)
-    end
-    return 0
 end
 
 hive.linux_statis = LinuxStatis()

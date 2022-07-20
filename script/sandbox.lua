@@ -134,7 +134,10 @@ function hive.reload()
         local filetime = file_time(node.fullpath)
         if node.time then
             if mabs(node.time - filetime) > 3 then
-                try_load(node, true)
+                local res = try_load(node,true)
+                if res then
+                    node.res = res
+                end
                 count = count + 1
             end
             if count > 20 then

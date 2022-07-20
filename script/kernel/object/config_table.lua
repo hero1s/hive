@@ -39,7 +39,7 @@ function ConfigTable:set_records(file_name)
         --return
     end
     for _, row in pairs(records) do
-        --log_debug("[ConfigTable][setup] set table %s cfg:%s", file_name, row)
+        --logger.debug("[ConfigTable][setup] set table %s cfg:%s", file_name, row)
         self:upsert(row)
     end
     self.load_time = import_file_time(file_name)
@@ -50,19 +50,17 @@ function ConfigTable:name_to_filename(name)
 end
 
 function ConfigTable:setup(name, ...)
+    local file_name = self:name_to_filename(name)
+    if self.load_time > 0 and import_file_time(file_name) == self.load_time then
+        return
+    end
+    if self.load_time > 0 then
+        log_info("[ConfigTable][setup] reload config %s", file_name)
+    end
     if self:setup_nil(name, ...) then
         local file_name = self:name_to_filename(name)
         self:set_records(file_name)
     end
-end
-
-function ConfigTable:reload(name, ...)
-    local file_name = self:name_to_filename(name)
-    if import_file_time(file_name) == self.load_time then
-        return
-    end
-    log_info("[ConfigTable][reload] %s", file_name)
-    self:set_records(file_name)
 end
 
 function ConfigTable:setup_nil(name, ...)

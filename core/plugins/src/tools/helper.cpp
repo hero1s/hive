@@ -1,15 +1,27 @@
 ﻿#include "helper.h"
 #include <algorithm>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <iostream>
+
 
 #ifdef WIN32
 #include <WinSock2.h>
 #include <WS2tcpip.h>
+#include <conio.h>
+#include <windows.h>
+#include <psapi.h>  
+#include <direct.h>
+#include <process.h>
 
 #pragma comment(lib, "WS2_32.lib")
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/sysinfo.h>
 #include <sys/resource.h>
 #include <sys/ioctl.h>
 #include <netdb.h>
@@ -19,6 +31,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 inline void closesocket(int fd) { close(fd); }
 
@@ -226,6 +239,154 @@ namespace tools
 		return false;
     }
 
+
+
+#ifdef WIN32
+	__int64 CompareFileTime(FILETIME time1, FILETIME time2)
+	{
+		__int64 a = time1.dwHighDateTime << 32 | time1.dwLowDateTime;
+		__int64 b = time2.dwHighDateTime << 32 | time2.dwLowDateTime;
+		return (b - a);
+	}
+#else
+	typedef struct MEMPACKED //定义一个mem occupy的结构体  
+	{
+		char name1[20];
+		unsigned long Total;
+		char name2[20];
+	}MEM_OCCUPY;
+
+	typedef struct CPUPACKED         //定义一个cpu occupy的结构体  
+	{
+		char name[20];      //定义一个char类型的数组名name有20个元素  
+		unsigned int user; //定义一个无符号的int类型的user  
+		unsigned int nice; //定义一个无符号的int类型的nice  
+		unsigned int system;//定义一个无符号的int类型的system  
+		unsigned int idle; //定义一个无符号的int类型的idle  
+		unsigned int lowait;
+		unsigned int irq;
+		unsigned int softirq;
+	}CPU_OCCUPY;
+
+	int get_cpuoccupy(CPU_OCCUPY* cpust) //对无类型get函数含有一个形参结构体类弄的指针O  
+	{
+		FILE* fd;
+		char buff[256];
+		fd = fopen("/proc/stat", "r");
+		fgets(buff, sizeof(buff), fd);
+		sscanf(buff, "%s %u %u %u %u %u %u %u", cpust->name, &cpust->user, &cpust->nice, &cpust->system, &cpust->idle, &cpust->lowait, &cpust->irq, &cpust->softirq);
+		fclose(fd);
+		return 0;
+	}
+	double cal_cpuoccupy(CPU_OCCUPY* o, CPU_OCCUPY* n)
+	{
+		unsigned long od, nd;
+		double cpu_use = 0;
+		od = (unsigned long)(o->user + o->nice + o->system + o->idle + o->lowait + o->irq + o->softirq);//第一次(用户+优先级+系统+空闲)的时间再赋给od  
+		nd = (unsigned long)(n->user + n->nice + n->system + n->idle + n->lowait + n->irq + n->softirq);//第二次(用户+优先级+系统+空闲)的时间再赋给nd  
+		auto sum = nd - od;
+		if (sum != 0) {
+			double idle = n->idle - o->idle;
+			cpu_use = 100.00 - idle / sum * 100.00;
+		}
+		return cpu_use;
+	}
+#endif
+
+    double CHelper::MemUsePercent()
+    {
+#ifdef WIN32
+		MEMORYSTATUS ms;
+		::GlobalMemoryStatus(&ms);
+		return ms.dwMemoryLoad;
+#else
+		FILE* fd;
+        MEM_OCCUPY m;
+		char buff[256];
+		fd = fopen("/proc/meminfo", "r");
+		//从fd文件中读取长度为buff的字符串再存到起始地址为buff这个空间里   
+		fgets(buff, sizeof(buff), fd);
+		sscanf(buff, "%s %lu %s\n", m.name1, &m.Total, m.name2);
+		double total = m.Total;
+		fgets(buff, sizeof(buff), fd);
+		sscanf(buff, "%s %lu %s\n", m.name1, &m.Total, m.name2);
+		auto mem_rate = (1 - m.Total / total) * 100;
+		fclose(fd);     //关闭文件fd  
+		return mem_rate;
+#endif // WIN32
+    }
+    double CHelper::CpuUsePercent()
+    {
+#ifdef WIN32
+		static FILETIME pre_idle_time;
+		static FILETIME pre_kernel_time;
+		static FILETIME pre_user_time;
+		// 空闲时间
+		FILETIME idle_time;
+		// 内核时间
+		FILETIME kernel_time;
+		// 用户时间
+		FILETIME user_time;
+		BOOL ret = GetSystemTimes(&idle_time, &kernel_time, &user_time);
+		auto idle = CompareFileTime(pre_idle_time, idle_time);
+		auto kernel = CompareFileTime(pre_kernel_time, kernel_time);
+		auto user = CompareFileTime(pre_user_time, user_time);
+        if (kernel + user <= 0) {
+            return 0;
+        }
+		float rate = 100.0*(kernel + user - idle) / (kernel + user);
+		pre_idle_time = idle_time;
+		pre_kernel_time = kernel_time;
+		pre_user_time = user_time;
+		return rate;
+#else
+        static CPU_OCCUPY last;
+        CPU_OCCUPY cur;
+        get_cpuoccupy(&cur);
+        auto cpu_use = cal_cpuoccupy(&last, &cur);
+        last = cur;
+        return cpu_use;
+#endif
+    }
+
+    float CHelper::MemUsage(int pid) {
+#ifdef WIN32
+		uint64_t mem = 0;
+		PROCESS_MEMORY_COUNTERS pmc;
+		HANDLE process = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+		if (GetProcessMemoryInfo(process, &pmc, sizeof(pmc))) {
+			mem = pmc.WorkingSetSize;
+		}
+		CloseHandle(process);
+		return float(mem / 1024.0 / 1024.0);
+#else
+#define VMRSS_LINE 22
+		char file_name[64] = { 0 };
+		FILE* fd;
+		char line_buff[512] = { 0 };
+		sprintf(file_name, "/proc/%d/status", pid);
+		fd = fopen(file_name, "r");
+		if (nullptr == fd)return 0;
+		char name[64];
+		int vmrss = 0;
+		for (int i = 0; i < VMRSS_LINE - 1; i++)
+			fgets(line_buff, sizeof(line_buff), fd);
+		fgets(line_buff, sizeof(line_buff), fd);
+		sscanf(line_buff, "%s %d", name, &vmrss);
+		fclose(fd);
+		return float(vmrss / 1024.0);// cnvert VmRSS from KB to MB
+#endif
+    }
+    int CHelper::CpuCoreNum() {
+#ifdef WIN32
+		SYSTEM_INFO info;
+		GetSystemInfo(&info);
+		return info.dwNumberOfProcessors;
+#else
+		return get_nprocs();
+#endif
+    }
+
     luakit::lua_table open_lhelper(lua_State* L) {
         luakit::kit_state lua(L);
         auto helper = lua.new_table();
@@ -234,6 +395,10 @@ namespace tools
         helper.set_function("ip_to_value", [](std::string ip) { return CHelper::IPToValue(ip); });
         helper.set_function("value_to_ip", [](uint32_t addr) { return CHelper::ValueToIP(addr); });
         helper.set_function("port_is_used", [](int port) { return CHelper::PortIsUsed(port); });
+        helper.set_function("mem_use_percent", []() { return CHelper::MemUsePercent(); });
+        helper.set_function("cpu_use_percent", []() { return CHelper::CpuUsePercent(); });
+        helper.set_function("cpu_core_num", []() { return CHelper::CpuCoreNum(); });
+        helper.set_function("mem_usage", []() { return CHelper::MemUsage(::getpid()); });
 
         return helper;
     }

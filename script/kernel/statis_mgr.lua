@@ -143,7 +143,7 @@ function StatisMgr:_calc_mem_use()
     if hive.platform == "linux" then
         return linux_statis:calc_memory()
     end
-    return hive.mem_usage()
+    return 0
 end
 
 -- 计算cpu使用率
