@@ -58,7 +58,6 @@ function ConfigTable:setup(name, ...)
         log_info("[ConfigTable][setup] reload config %s", file_name)
     end
     if self:setup_nil(name, ...) then
-        local file_name = self:name_to_filename(name)
         self:set_records(file_name)
     end
 end

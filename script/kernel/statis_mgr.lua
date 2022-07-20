@@ -1,18 +1,18 @@
 --statis_mgr.lua
 import("kernel/object/linux.lua")
-local InfluxDB = import("driver/influx.lua")
+local InfluxDB     = import("driver/influx.lua")
 
-local env_get       = environ.get
-local env_addr      = environ.addr
-local env_status    = environ.status
+local env_get      = environ.get
+local env_addr     = environ.addr
+local env_status   = environ.status
 
-local event_mgr     = hive.get("event_mgr")
-local update_mgr    = hive.get("update_mgr")
-local thread_mgr    = hive.get("thread_mgr")
-local linux_statis  = hive.get("linux_statis")
+local event_mgr    = hive.get("event_mgr")
+local update_mgr   = hive.get("update_mgr")
+local thread_mgr   = hive.get("thread_mgr")
+local linux_statis = hive.get("linux_statis")
 
-local StatisMgr = singleton()
-local prop = property(StatisMgr)
+local StatisMgr    = singleton()
+local prop         = property(StatisMgr)
 prop:reader("influx", nil)              --influx
 prop:reader("statis", {})               --statis
 prop:reader("statis_status", false)     --统计开关
@@ -21,11 +21,11 @@ function StatisMgr:__init()
     if statis_status then
         self.statis_status = statis_status
         --初始化参数
-        local org = env_get("HIVE_INFLUX_ORG")
-        local token = env_get("HIVE_INFLUX_TOKEN")
-        local bucket = env_get("HIVE_INFLUX_BUCKET")
-        local ip, port = env_addr("HIVE_INFLUX_ADDR")
-        self.influx = InfluxDB(ip, port, org, bucket, token)
+        local org          = env_get("HIVE_INFLUX_ORG")
+        local token        = env_get("HIVE_INFLUX_TOKEN")
+        local bucket       = env_get("HIVE_INFLUX_BUCKET")
+        local ip, port     = env_addr("HIVE_INFLUX_ADDR")
+        self.influx        = InfluxDB(ip, port, org, bucket, token)
         --事件监听
         event_mgr:add_listener(self, "on_rpc_send")
         event_mgr:add_listener(self, "on_rpc_recv")
@@ -45,7 +45,9 @@ end
 -- 发送给influx
 function StatisMgr:flush()
     thread_mgr:fork(function()
-        self.influx:batch(self.statis)
+        local statis = self.statis
+        self.statis  = {}
+        self.influx:batch(statis)
     end)
 end
 
@@ -53,11 +55,11 @@ end
 function StatisMgr:write(measurement, name, type, fields)
     local measure = self.statis[measurement]
     if not measure then
-        measure = {
-            tags = {
-                name = name,
-                type = type,
-                index = hive.index,
+        measure                  = {
+            tags       = {
+                name    = name,
+                type    = type,
+                index   = hive.index,
                 service = hive.service_name
             },
             field_list = {}
@@ -111,10 +113,10 @@ end
 function StatisMgr:on_perfeval(eval_data, clock_ms)
     if self.statis_status then
         local tital_time = clock_ms - eval_data.begin_time
-        local fields = {
+        local fields     = {
             tital_time = tital_time,
             yield_time = eval_data.yield_time,
-            eval_time = tital_time - eval_data.yield_time
+            eval_time  = tital_time - eval_data.yield_time
         }
         self:write("perfeval", eval_data.eval_name, nil, fields)
     end
@@ -124,12 +126,12 @@ end
 function StatisMgr:on_minute(now)
     if self.statis_status then
         local fields = {
-            all_mem = self:_calc_mem_use(),
-            lua_mem = self:_calc_lua_mem(),
+            all_mem  = self:_calc_mem_use(),
+            lua_mem  = self:_calc_lua_mem(),
             cpu_rate = self:_calc_cpu_rate(),
         }
         self:write("system", nil, nil, fields)
-        --self:flush()
+        self:flush()
     end
 end
 

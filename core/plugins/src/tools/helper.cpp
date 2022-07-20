@@ -292,13 +292,14 @@ namespace tools
 		return cpu_use;
 	}
 #endif
-
-    double CHelper::MemUsePercent()
+    //可用内存
+    void CHelper::MemAvailable(double& total, double& available)
     {
 #ifdef WIN32
 		MEMORYSTATUS ms;
 		::GlobalMemoryStatus(&ms);
-		return ms.dwMemoryLoad;
+        total = ms.dwTotalPhys/1024/1024;
+		available = ms.dwAvailPhys/1024/1024;
 #else
 		FILE* fd;
         MEM_OCCUPY m;
@@ -307,38 +308,20 @@ namespace tools
 		//从fd文件中读取长度为buff的字符串再存到起始地址为buff这个空间里   
 		fgets(buff, sizeof(buff), fd);
 		sscanf(buff, "%s %lu %s\n", m.name1, &m.Total, m.name2);
-		double total = m.Total;
+		total = m.Total/1024;
 		fgets(buff, sizeof(buff), fd);
 		sscanf(buff, "%s %lu %s\n", m.name1, &m.Total, m.name2);
-		auto mem_rate = (1 - m.Total / total) * 100;
+        double mem_free = m.Total;
+		fgets(buff, sizeof(buff), fd);
+		sscanf(buff, "%s %lu %s\n", m.name1, &m.Total, m.name2);
+		available = m.Total/1024;		
 		fclose(fd);     //关闭文件fd  
-		return mem_rate;
 #endif // WIN32
     }
     double CHelper::CpuUsePercent()
     {
 #ifdef WIN32
-		static FILETIME pre_idle_time;
-		static FILETIME pre_kernel_time;
-		static FILETIME pre_user_time;
-		// 空闲时间
-		FILETIME idle_time;
-		// 内核时间
-		FILETIME kernel_time;
-		// 用户时间
-		FILETIME user_time;
-		BOOL ret = GetSystemTimes(&idle_time, &kernel_time, &user_time);
-		auto idle = CompareFileTime(pre_idle_time, idle_time);
-		auto kernel = CompareFileTime(pre_kernel_time, kernel_time);
-		auto user = CompareFileTime(pre_user_time, user_time);
-        if (kernel + user <= 0) {
-            return 0;
-        }
-		float rate = 100.0*(kernel + user - idle) / (kernel + user);
-		pre_idle_time = idle_time;
-		pre_kernel_time = kernel_time;
-		pre_user_time = user_time;
-		return rate;
+        return 1;
 #else
         static CPU_OCCUPY last;
         CPU_OCCUPY cur;
@@ -395,7 +378,12 @@ namespace tools
         helper.set_function("ip_to_value", [](std::string ip) { return CHelper::IPToValue(ip); });
         helper.set_function("value_to_ip", [](uint32_t addr) { return CHelper::ValueToIP(addr); });
         helper.set_function("port_is_used", [](int port) { return CHelper::PortIsUsed(port); });
-        helper.set_function("mem_use_percent", []() { return CHelper::MemUsePercent(); });
+        helper.set_function("mem_available", [](lua_State* L) { 
+            luakit::kit_state kit_state(L);
+            double total = 0, available = 0; 
+            CHelper::MemAvailable(total,available); 
+            return kit_state.as_return(total, available);
+            });
         helper.set_function("cpu_use_percent", []() { return CHelper::CpuUsePercent(); });
         helper.set_function("cpu_core_num", []() { return CHelper::CpuCoreNum(); });
         helper.set_function("mem_usage", []() { return CHelper::MemUsage(::getpid()); });

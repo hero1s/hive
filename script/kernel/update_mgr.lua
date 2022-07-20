@@ -1,4 +1,6 @@
 --clock_mgr.lua
+local lhelper        = require("lhelper")
+local mem_usage      = lhelper.mem_usage
 
 local pairs          = pairs
 local odate          = os.date
@@ -20,6 +22,7 @@ local prop           = property(UpdateMgr)
 prop:reader("last_day", 0)
 prop:reader("last_hour", 0)
 prop:reader("last_minute", 0)
+prop:reader("max_mem_usage", 0)
 prop:reader("quit_objs", {})
 prop:reader("hour_objs", {})
 prop:reader("frame_objs", {})
@@ -88,6 +91,7 @@ function UpdateMgr:update(now_ms, clock_ms)
         for obj in pairs(self.minute_objs) do
             obj:on_minute(clock_ms)
         end
+        self:monitor_mem()
         --时更新
         if time.hour == self.last_hour then
             return
@@ -174,6 +178,14 @@ end
 
 function UpdateMgr:detach_quit(obj)
     self.quit_objs[obj] = nil
+end
+
+function UpdateMgr:monitor_mem()
+    local mem = mem_usage()
+    if mem > self.max_mem_usage then
+        self.max_mem_usage = mem
+        log_warn("UpdateMgr][monitor_mem] the memory grow to: %s M", self.max_mem_usage)
+    end
 end
 
 hive.update_mgr = UpdateMgr()
