@@ -99,7 +99,7 @@ end
 function NetServer:write(session, cmd_id, data, session_id, flag)
     local body, pflag = self:encode(cmd_id, data, flag)
     if not body then
-        log_err("[NetServer][write] encode failed! cmd_id:%s", cmd_id)
+        log_err("[NetServer][write] encode failed! cmd_id:%s,data:%s", cmd_id,data)
         return false
     end
     session.serial = session.serial + 1
@@ -117,7 +117,7 @@ end
 function NetServer:broadcast(cmd_id, data,filter)
     local body, pflag = self:encode(cmd_id, data, FLAG_REQ)
     if not body then
-        log_err("[NetServer][broadcast] encode failed! cmd_id:%s", cmd_id)
+        log_err("[NetServer][broadcast] encode failed! cmd_id:%s,data:%s", cmd_id,data)
         return false
     end
     for _, session in pairs(self.sessions) do
@@ -206,7 +206,7 @@ function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
     local cmd_cd_time = self:get_cmd_cd(cmd_id)
     local command_times = session.command_times
     if command_times[cmd_id] and clock_ms - command_times[cmd_id] < cmd_cd_time then
-        log_warn("[NetServer][on_socket_recv] session trigger cmd(%s) cd ctrl, will be drop.", cmd_id)
+        log_warn("[NetServer][on_socket_recv] session(%s) trigger cmd(%s) cd ctrl, will be drop.",session.token, cmd_id)
         --协议CD
         return
     end

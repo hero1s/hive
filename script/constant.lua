@@ -72,7 +72,8 @@ PeriodTime.MINUTE_30_S            = 1800      --30分钟（s）
 PeriodTime.HOUR_S                 = 3600      --1小时（s）
 PeriodTime.DAY_S                  = 86400     --1天（s）
 PeriodTime.WEEK_S                 = 604800    --1周（s）
-PeriodTime.HOUR_M                 = 60        --1小时（m
+PeriodTime.HOUR_M                 = 60        --1小时(m)
+PeriodTime.DAY_30_S               = 2592000   --30天(秒)
 
 --数据加载状态
 local DBLoading                   = enum("DBLoading", 0)

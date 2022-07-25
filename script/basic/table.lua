@@ -1,10 +1,10 @@
 --table.lua
 local type    = type
 local pairs   = pairs
+local ipairs  = ipairs
 local tsort   = table.sort
 local mrandom = math.random
 local tremove = table.remove
-local tinsert = table.insert
 
 local function trandom(tab)
     local keys = {}
@@ -207,28 +207,44 @@ local function equals(a, b)
     return true
 end
 
+local function indexof(tbl, obj)
+    for k, v in ipairs(tbl) do
+        if v == obj then
+            return k
+        end
+    end
+end
 
+local function findKeyByValue(tbl, obj)
+    for k, v in pairs(tbl) do
+        if v == obj then
+            return k
+        end
+    end
+end
 
-table_ext              = _ENV.table_ext or {}
+table_ext                   = _ENV.table_ext or {}
 
-table_ext.random       = trandom
-table_ext.random_array = trandom_array
-table_ext.indexof      = tindexof
-table_ext.is_array     = tis_array
-table_ext.size         = tsize
-table_ext.copy         = tcopy
-table_ext.deep_copy    = tdeep_copy
-table_ext.delete       = tdelete
-table_ext.join         = tjoin
-table_ext.merge        = tmerge
-table_ext.map          = tmap
-table_ext.array        = tarray
-table_ext.kvarray      = tkvarray
-table_ext.mapsort      = tmapsort
-table_ext.fastremove   = fastremove
-table_ext.shuffle      = shuffle
-table_ext.contains     = contains
-table_ext.equals       = equals
+table_ext.random            = trandom
+table_ext.random_array      = trandom_array
+table_ext.indexof           = tindexof
+table_ext.is_array          = tis_array
+table_ext.size              = tsize
+table_ext.copy              = tcopy
+table_ext.deep_copy         = tdeep_copy
+table_ext.delete            = tdelete
+table_ext.join              = tjoin
+table_ext.merge             = tmerge
+table_ext.map               = tmap
+table_ext.array             = tarray
+table_ext.kvarray           = tkvarray
+table_ext.mapsort           = tmapsort
+table_ext.fastremove        = fastremove
+table_ext.shuffle           = shuffle
+table_ext.contains          = contains
+table_ext.equals            = equals
+table_ext.indexof           = indexof
+table_ext.find_key_by_value = findKeyByValue
 
 -- 按哈希key排序
 --[[ 使用示例:
@@ -261,35 +277,4 @@ function table_ext.spairs(t, cmp)
             return ni
         end
     end, sort_keys, nil
-end
-
---- Looks for an object within an array. Returns its index if found,
---- or nil if the object could not be found.
-function table_ext.indexof(tbl, obj)
-    for k, v in ipairs(tbl) do
-        if v == obj then
-            return k
-        end
-    end
-end
-
---- Looks for an object within a table. Returns the key if found,
---- or nil if the object could not be found.
-function table_ext.findKeyByValue(tbl, obj)
-    for k, v in pairs(tbl) do
-        if v == obj then
-            return k
-        end
-    end
-end
-
---- The difference of A and B is the set containing those elements that are in A but not in B
-function table_ext.difference(a, b)
-    local result = {}
-    for _, v in ipairs(a) do
-        if not table_ext.indexof(b, v) then
-            tinsert(result, v)
-        end
-    end
-    return result
 end

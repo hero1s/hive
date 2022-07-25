@@ -85,7 +85,7 @@ function MongoDB:on_second()
             log_err("[MongoDB][on_second] connect db(%s:%s:%s) failed!", self.ip, self.port, self.name)
             return
         end
-        if self.user and self.passwd then
+        if self.user and self.passwd and self.user:len() > 1 and self.passwd:len() > 1 then
             local ok, err = self:auth(self.user, self.passwd)
             if not ok then
                 log_err("[MongoDB][on_second] auth db(%s:%s) failed! because: %s", self.ip, self.port, err)
