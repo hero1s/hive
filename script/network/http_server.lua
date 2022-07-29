@@ -1,21 +1,24 @@
 --http_server.lua
-local lhttp       = require("lhttp")
-local Socket      = import("driver/socket.lua")
+local lhttp               = require("lhttp")
+local Socket              = import("driver/socket.lua")
 
-local type        = type
-local log_err     = logger.err
-local log_warn    = logger.warn
-local log_info    = logger.info
-local log_debug   = logger.debug
-local json_encode = hive.json_encode
-local tunpack     = table.unpack
-local signalquit  = signal.quit
-local saddr       = string_ext.addr
+local HTTP_SESSION_FINISH = 1
+local HTTP_REQUEST_ERROR  = 2
 
-local thread_mgr  = hive.get("thread_mgr")
+local type                = type
+local log_err             = logger.err
+local log_warn            = logger.warn
+local log_info            = logger.info
+local log_debug           = logger.debug
+local json_encode         = hive.json_encode
+local tunpack             = table.unpack
+local signalquit          = signal.quit
+local saddr               = string_ext.addr
 
-local HttpServer  = class()
-local prop        = property(HttpServer)
+local thread_mgr          = hive.get("thread_mgr")
+
+local HttpServer          = class()
+local prop                = property(HttpServer)
 prop:reader("listener", nil)        --网络连接对象
 prop:reader("ip", nil)              --http server地址
 prop:reader("port", 8080)           --http server端口
@@ -73,11 +76,14 @@ function HttpServer:on_socket_recv(socket, token)
     end
     socket:pop(#buf)
     request:process()
-    local state              = request:state()
-    local HTTP_REQUEST_ERROR = 2
+    local state = request:state()
     if state == HTTP_REQUEST_ERROR then
         log_warn("[HttpServer][on_socket_recv] http request process failed, close client(token:%s)!", token)
         self:response(socket, 400, request, "this http request parse error!")
+        return
+    end
+    if state ~= HTTP_SESSION_FINISH then
+        log_err("[HttpServer][on_socket_recv] the state is not finish:%s,token:%s", state, token)
         return
     end
     thread_mgr:fork(function()
@@ -187,7 +193,7 @@ function HttpServer:response(socket, status, request, hresponse)
     local ttype = "text/plain"
     if type(hresponse) == "table" then
         hresponse = json_encode(hresponse)
-        ttype = "application/json"
+        ttype     = "application/json"
     end
     socket:send(request:response(status, ttype, hresponse or ""))
     socket:close()

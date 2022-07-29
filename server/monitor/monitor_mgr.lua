@@ -91,8 +91,10 @@ end
 -- 会话关闭回调
 function MonitorMgr:on_socket_error(client, token, err)
     log_warn("[MonitorMgr][on_socket_error] node name:%s, id:%s, token:%s", client.name, client.id, token)
-    self.monitor_lost_nodes[client.id] = self.monitor_nodes[token]
-    self.monitor_nodes[token]          = nil
+    if client.id then
+        self.monitor_lost_nodes[client.id] = self.monitor_nodes[token]
+        self.monitor_nodes[token]          = nil
+    end
 end
 
 -- 检测失活

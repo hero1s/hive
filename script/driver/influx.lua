@@ -1,19 +1,19 @@
 --influx.lua
 import("network/http_client.lua")
-local log_err       = logger.err
-local log_info      = logger.info
-local json_decode   = hive.json_decode
-local tconcat       = table.concat
-local sgsub         = string.gsub
-local sformat       = string.format
-local ssplit        = string_ext.split
-local serialize     = hive.serialize
+local log_err     = logger.err
+local log_info    = logger.info
+local json_decode = hive.json_decode
+local tconcat     = table.concat
+local sgsub       = string.gsub
+local sformat     = string.format
+local ssplit      = string_ext.split
+local serialize   = hive.serialize
 
-local http_client   = hive.get("http_client")
-local WEEK_S        = hive.enum("PeriodTime", "WEEK_S")
+local http_client = hive.get("http_client")
+local WEEK_S      = hive.enum("PeriodTime", "WEEK_S")
 
-local Influx = class()
-local prop = property(Influx)
+local Influx      = class()
+local prop        = property(Influx)
 prop:reader("org", nil)         --org
 prop:reader("bucket", nil)      --bucket
 prop:reader("org_addr", nil)    --org_addr
@@ -23,12 +23,12 @@ prop:reader("bucket_addr", nil) --bucket_addr
 prop:reader("common_headers", nil)
 
 function Influx:__init(ip, port, org, bucket, token)
-    self.org = org
-    self.bucket = bucket
-    self.org_addr = sformat("http://%s:%s/api/v2/orgs", ip, port)
-    self.write_addr = sformat("http://%s:%s/api/v2/write", ip, port)
-    self.query_addr = sformat("http://%s:%s/api/v2/query", ip, port)
-    self.bucket_addr = sformat("http://%s:%s/api/v2/buckets", ip, port)
+    self.org            = org
+    self.bucket         = bucket
+    self.org_addr       = sformat("http://%s:%s/api/v2/orgs", ip, port)
+    self.write_addr     = sformat("http://%s:%s/api/v2/write", ip, port)
+    self.query_addr     = sformat("http://%s:%s/api/v2/query", ip, port)
+    self.bucket_addr    = sformat("http://%s:%s/api/v2/buckets", ip, port)
     self.common_headers = { ["Authorization"] = sformat("Token %s", token), ["Content-type"] = "application/json" }
     log_info("[Influx] influx driver(%s:%s) setup success!", ip, port)
 end
@@ -79,14 +79,14 @@ end
 --influx操作接口
 --查找bucket信息
 function Influx:find_bucket(bucket_name)
-    local querys = { name = bucket_name }
+    local querys          = { name = bucket_name }
     local ok, status, res = http_client:call_get(self.bucket_addr, querys, self.common_headers)
     if not ok or status >= 300 then
         log_err("[Influx][find_bucket] failed! status: %s, err: %s", status, ok and res or status)
         return false, ok and res or status
     end
     local response = json_decode(res)
-    local buckets = response.buckets
+    local buckets  = response.buckets
     if not bucket_name then
         return true, buckets
     end
@@ -100,14 +100,14 @@ end
 
 --查找org信息
 function Influx:find_org(org_name)
-    local querys = { org = org_name }
+    local querys          = { org = org_name }
     local ok, status, res = http_client:call_get(self.org_addr, querys, self.common_headers)
     if not ok or status >= 300 then
         log_err("[Influx][find_org] failed! status: %s, err: %s", status, ok and res or status)
         return false, ok and res or status
     end
     local response = json_decode(res)
-    local orgs = response.orgs
+    local orgs     = response.orgs
     if not org_name then
         return true, orgs
     end
@@ -126,18 +126,18 @@ function Influx:create_bucket(name, expire_time, description)
         log_err("[Influx][create_bucket] org(%s) config error", self.org_name)
         return false, "org config error"
     end
-    local data = {
-        name = name,
-        orgID = cur_org.id,
-        description = description,
+    local data             = {
+        name           = name,
+        orgID          = cur_org.id,
+        description    = description,
         retentionRules = {}
     }
     data.retentionRules[1] = {
-        type = "expire",
+        type                      = "expire",
         shardGroupDurationSeconds = 0,
-        everySeconds = expire_time or WEEK_S
+        everySeconds              = expire_time or WEEK_S
     }
-    local ok, status, res = http_client:call_post(self.bucket_addr, data, self.common_headers)
+    local ok, status, res  = http_client:call_post(self.bucket_addr, data, self.common_headers)
     if not ok or status >= 300 then
         log_err("[Influx][create_bucket] failed! status: %s, err: %s", status, ok and res or status)
         return false, ok and res or status
@@ -147,7 +147,7 @@ end
 
 --delete bucket
 function Influx:delete_bucket_by_id(bucket_id)
-    local url = sformat("%s/%s", self.bucket_addr, bucket_id)
+    local url             = sformat("%s/%s", self.bucket_addr, bucket_id)
     local ok, status, res = http_client:call_del(url, {}, self.common_headers)
     if not ok or status >= 300 then
         log_err("[Influx][delete_bucket_by_id] failed! status: %s, err: %s", status, ok and res or status)
@@ -163,7 +163,7 @@ function Influx:delete_bucket(bucket_name)
         log_err("[Influx][delete_bucket] failed! bucket: %s not exist", bucket_name)
         return false, "bucket not exist"
     end
-    local url = sformat("%s/%s", self.bucket_addr, bucket.id)
+    local url             = sformat("%s/%s", self.bucket_addr, bucket.id)
     local ok, status, res = http_client:call_del(url, {}, self.common_headers)
     if not ok or status >= 300 then
         log_err("[Influx][delete_bucket] failed! status: %s, err: %s", status, ok and res or status)
@@ -174,15 +174,15 @@ end
 
 --写数据
 function Influx:write(measurement, tags, fields)
-    local prefix = self:quote_tags(measurement, tags)
-    local suffix = self:quote_fields(fields)
-    local line_protocol = sformat("%s %s", prefix, suffix)
-    local headers = {
-        ["Accept"] = "application/json",
-        ["Content-type"] = "text/plain",
+    local prefix          = self:quote_tags(measurement, tags)
+    local suffix          = self:quote_fields(fields)
+    local line_protocol   = sformat("%s %s", prefix, suffix)
+    local headers         = {
+        ["Accept"]        = "application/json",
+        ["Content-type"]  = "text/plain",
         ["Authorization"] = self.common_headers["Authorization"],
     }
-    local querys = { org = self.org, bucket = self.bucket }
+    local querys          = { org = self.org, bucket = self.bucket }
     local ok, status, res = http_client:call_post(self.write_addr, line_protocol, headers, querys)
     if not ok or status >= 300 then
         log_err("[Influx][write] failed! status: %s, err: %s", status, ok and res or status)
@@ -198,16 +198,16 @@ function Influx:batch(batch_datas)
         local prefix = self:quote_tags(measurement, datas.tags)
         for _, fields in pairs(datas.field_list) do
             local suffix = self:quote_fields(fields)
-            protocols[#protocols] = sformat("%s %s", prefix, suffix)
+            protocols[#protocols + 1] = sformat("%s %s", prefix, suffix)
         end
     end
     local line_protocol = tconcat(protocols, "\n")
-    local headers = {
-        ["Accept"] = "application/json",
-        ["Content-type"] = "text/plain",
+    local headers       = {
+        ["Accept"]        = "application/json",
+        ["Content-type"]  = "text/plain",
         ["Authorization"] = self.common_headers["Authorization"],
     }
-    local querys = { org = self.org, bucket = self.bucket }
+    local querys          = { org = self.org, bucket = self.bucket }
     local ok, status, res = http_client:call_post(self.write_addr, line_protocol, headers, querys)
     if not ok or status >= 300 then
         log_err("[Influx][batch] failed! status: %s, err: %s", status, ok and res or status)
@@ -218,12 +218,12 @@ end
 
 --查询
 function Influx:query(script)
-    local headers = {
-        ["Accept"] = "application/csv",
-        ["Content-type"] = "application/vnd.flux",
+    local headers         = {
+        ["Accept"]        = "application/csv",
+        ["Content-type"]  = "application/vnd.flux",
         ["Authorization"] = self.common_headers["Authorization"],
     }
-    local querys = { org = self.org }
+    local querys          = { org = self.org }
     local ok, status, res = http_client:call_post(self.query_addr, script, headers, querys)
     if not ok or status >= 300 then
         log_err("[Influx][query] failed! status: %s, err: %s", status, ok and res or status)
@@ -238,7 +238,7 @@ function Influx:parse_csv(value)
     if #lines < 2 then
         return
     end
-    local res = {}
+    local res    = {}
     local titles = ssplit(lines[1], ",")
     for i = 2, #lines do
         local values = ssplit(lines[i], ",")

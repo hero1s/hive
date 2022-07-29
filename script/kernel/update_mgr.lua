@@ -10,6 +10,7 @@ local log_warn       = logger.warn
 local log_err        = logger.err
 local sig_check      = signal.check
 local collectgarbage = collectgarbage
+local cut_tail       = math_ext.cut_tail
 
 local timer_mgr      = hive.get("timer_mgr")
 local thread_mgr     = hive.get("thread_mgr")
@@ -181,10 +182,11 @@ function UpdateMgr:detach_quit(obj)
 end
 
 function UpdateMgr:monitor_mem()
-    local mem = mem_usage()
+    local mem = cut_tail(mem_usage(),2)
     if mem > self.max_mem_usage then
         self.max_mem_usage = mem
-        log_warn("UpdateMgr][monitor_mem] the memory grow to: %s M", self.max_mem_usage)
+        self.lua_mem_usage = cut_tail(collectgarbage("count") / 1024,2)
+        log_warn("UpdateMgr][monitor_mem] the memory grow to: total %s M,lua_mem: %s M", self.max_mem_usage, self.lua_mem_usage)
     end
 end
 

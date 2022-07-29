@@ -300,7 +300,7 @@ static int lpb_hexchar(char ch) {
     }
     return -1;
 }
-
+// support float modify by toney
 static uint64_t lpb_tointegerx(lua_State *L, int idx, int *isint) {
     int neg = 0;
     const char *s, *os;
