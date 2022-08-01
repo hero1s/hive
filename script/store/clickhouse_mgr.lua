@@ -26,7 +26,7 @@ function ClickHouseMgr:setup()
     for _, conf in database:iterator() do
         if conf.driver == "clickhouse" then
             local clickhouse_db = MysqlDB(conf)
-            self.clickhouse_dbs[conf.db] = clickhouse_db
+            self.clickhouse_dbs[conf.name] = clickhouse_db
             if conf.default then
                 self.default_db = clickhouse_db
             end

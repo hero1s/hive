@@ -35,7 +35,7 @@ function MongoMgr:setup()
     for _, conf in database:iterator() do
         if conf.driver == "mongo" then
             local mongo_db          = MongoDB(conf)
-            self.mongo_dbs[conf.db] = mongo_db
+            self.mongo_dbs[conf.name] = mongo_db
             if conf.default then
                 self.default_db = mongo_db
             end

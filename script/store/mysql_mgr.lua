@@ -25,7 +25,7 @@ function MysqlMgr:setup()
     for _, conf in database:iterator() do
         if conf.driver == "mysql" then
             local mysql_db          = MysqlDB(conf)
-            self.mysql_dbs[conf.db] = mysql_db
+            self.mysql_dbs[conf.name] = mysql_db
             if conf.default then
                 self.default_db = mysql_db
             end

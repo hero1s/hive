@@ -55,7 +55,7 @@ function MongoDB:__init(conf)
     self.port   = conf.port
     self.user   = conf.user
     self.passwd = conf.passwd
-    self.name   = conf.db
+    self.db     = conf.db
     self.db_cmd = conf.db .. "." .. "$cmd"
     self.sock   = Socket(self)
     --attach_second
@@ -82,7 +82,7 @@ end
 function MongoDB:on_second()
     if not self.sock:is_alive() then
         if not self.sock:connect(self.ip, self.port) then
-            log_err("[MongoDB][on_second] connect db(%s:%s:%s) failed!", self.ip, self.port, self.name)
+            log_err("[MongoDB][on_second] connect db(%s:%s:%s) failed!", self.ip, self.port, self.db)
             return
         end
         if self.user and self.passwd and self.user:len() > 1 and self.passwd:len() > 1 then
@@ -92,7 +92,7 @@ function MongoDB:on_second()
                 return
             end
         end
-        log_info("[MongoDB][on_second] connect db(%s:%s:%s) success!", self.ip, self.port, self.name)
+        log_info("[MongoDB][on_second] connect db(%s:%s:%s) success!", self.ip, self.port, self.db)
     end
 end
 
@@ -344,7 +344,7 @@ function MongoDB:count(collection, selector, limit, skip)
 end
 
 function MongoDB:find_one(collection, selector, fields)
-    local full_name     = self.name .. "." .. collection
+    local full_name     = self.db .. "." .. collection
     local bson_selector = selector and bson_encode(selector)
     local bson_fields   = fields and bson_encode(fields)
     local succ, doc     = self:_query(full_name, bson_selector, bson_fields)
@@ -365,7 +365,7 @@ end
 
 function MongoDB:find(collection, selector, fields, sortor, limit)
     local query_num_once = limit or ONCE_QUERY
-    local full_name      = self.name .. "." .. collection
+    local full_name      = self.db .. "." .. collection
     local bson_fields    = fields and bson_encode(fields)
     if sortor and next(sortor) then
         selector = { ["$query"] = selector, ["$orderby"] = sort_param(sortor) }

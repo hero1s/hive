@@ -27,7 +27,7 @@ function RedisMgr:setup()
     for _, conf in database:iterator() do
         if conf.driver == "redis" then
             local redis_db          = RedisDB(conf)
-            self.redis_dbs[conf.db] = redis_db
+            self.redis_dbs[conf.name] = redis_db
             if conf.default then
                 self.default_db = redis_db
             end

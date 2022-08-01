@@ -610,7 +610,7 @@ prop:accessor("max_packet_size", 1024 * 1024) --max_packet_size,1mb
 
 function MysqlDB:__init(conf)
     self.ip       = conf.host
-    self.name     = conf.db
+    self.db       = conf.db
     self.port     = conf.port
     self.user     = conf.user
     self.passwd   = conf.passwd
@@ -641,20 +641,20 @@ end
 function MysqlDB:on_second()
     if not self.sock:is_alive() then
         if not self.sock:connect(self.ip, self.port) then
-            log_err("[MysqlDB][on_second] connect db(%s:%s:%s) failed!", self.ip, self.port, self.name)
+            log_err("[MysqlDB][on_second] connect db(%s:%s:%s) failed!", self.ip, self.port, self.db)
             return
         end
         local ok, err, ver = self:auth()
         if not ok then
-            log_err("[MysqlDB][on_second] auth db(%s:%d:%s) failed! because: %s", self.ip, self.port, self.name, err)
+            log_err("[MysqlDB][on_second] auth db(%s:%d:%s) failed! because: %s", self.ip, self.port, self.db, err)
             return
         end
-        log_info("[MysqlDB][on_second] connect db(%s:%d-%s[%s]) success!", self.ip, self.port, self.name, ver)
+        log_info("[MysqlDB][on_second] connect db(%s:%d-%s[%s]) success!", self.ip, self.port, self.db, ver)
     end
 end
 
 function MysqlDB:auth()
-    if not self.passwd or not self.user or not self.name then
+    if not self.passwd or not self.user or not self.db then
         return false, "user or password or dbname not config!"
     end
     local context = { cmd = "auth" }
@@ -710,7 +710,7 @@ function MysqlDB:auth()
         return false, token
     end
     --n byte 数据库名（可选）
-    local req                    = spack("<I4I4c1c23zs1z", client_flags, packet_size, charset, fuller, self.user, token, self.name)
+    local req                    = spack("<I4I4c1c23zs1z", client_flags, packet_size, charset, fuller, self.user, token, self.db)
     local authpacket             = self:_compose_packet(req)
     local aok, nscramble, double = self:request(authpacket, _recv_auth_resp, "mysql_auth", self.passwd)
     if double then
@@ -826,7 +826,7 @@ function MysqlDB:ping()
     local querypacket = self:_compose_packet(COM_PING)
     local ok, err     = self:request(querypacket, _recv_query_resp, "mysql_ping")
     if not ok then
-        log_err("[MysqlDB][ping] mysql ping db(%s:%d-%s) failed: %s!", self.ip, self.port, self.name, err)
+        log_err("[MysqlDB][ping] mysql ping db(%s:%d-%s) failed: %s!", self.ip, self.port, self.db, err)
     end
     return ok
 end
