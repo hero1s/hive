@@ -24,6 +24,14 @@ local setmetatable = setmetatable
 
 local mixin_tpls   = _ENV.mixin_tpls or {}
 
+local function tab_copy(src, dst)
+    local ndst = dst or {}
+    for field, value in pairs(src) do
+        ndst[field] = value
+    end
+    return ndst
+end
+
 local function invoke(class, object, method, ...)
     if class.__super then
         invoke(class.__super, object, method, ...)
@@ -60,9 +68,6 @@ local function collect(class, object, method, ...)
 end
 
 local function delegate_one(class, mixin)
-    if mixin.__super then
-        delegate_one(class, mixin.__super)
-    end
     if mixin.__delegate then
         mixin.__delegate()
     end
@@ -139,13 +144,17 @@ function mixin(super)
     local source    = info.short_src
     local mixin_tpl = mixin_tpls[source]
     if not mixin_tpl then
-        local mixino       = {
+        local mixino = {
             __props    = {},
             __methods  = {},
             __super    = super,
             __source   = source,
             __tostring = mixin_tostring,
         }
+        if super then
+            mixino.__props   = tab_copy(super.__props)
+            mixino.__methods = tab_copy(super.__methods)
+        end
         mixin_tpl          = setmetatable(mixino, mixinMT)
         mixin_tpls[source] = mixin_tpl
     end

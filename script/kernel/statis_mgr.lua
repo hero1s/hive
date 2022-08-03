@@ -25,7 +25,9 @@ function StatisMgr:__init()
         local token        = env_get("HIVE_INFLUX_TOKEN")
         local bucket       = env_get("HIVE_INFLUX_BUCKET")
         local ip, port     = env_addr("HIVE_INFLUX_ADDR")
-        self.influx        = InfluxDB(ip, port, org, bucket, token)
+        if ip and port then
+            self.influx = InfluxDB(ip, port, org, bucket, token)
+        end
         --事件监听
         event_mgr:add_listener(self, "on_rpc_send")
         event_mgr:add_listener(self, "on_rpc_recv")
@@ -47,7 +49,9 @@ function StatisMgr:flush()
     thread_mgr:fork(function()
         local statis = self.statis
         self.statis  = {}
-        self.influx:batch(statis)
+        if self.influx then
+            self.influx:batch(statis)
+        end
     end)
 end
 

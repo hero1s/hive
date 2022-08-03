@@ -16,7 +16,7 @@ local READER   = 2
 local ACCESSOR = 3
 
 local function unequal(a, b)
-    if type(a) ~= "table" then
+    if type(a) ~= "table" or type(b) ~= "table" then
         return a ~= b
     end
     for k, v in pairs(a) do

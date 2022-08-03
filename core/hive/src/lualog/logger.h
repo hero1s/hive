@@ -16,7 +16,6 @@
 #include <assert.h>
 
 #include "fmt/core.h"
-#include "fmt/color.h"
 
 #ifdef WIN32
 #include <string>
@@ -71,8 +70,8 @@ namespace logger {
     template <typename T>
     struct level_colors {};
     template <> struct level_colors<log_level> {
-        constexpr std::array<fmt::color, 7> operator()() const {
-            return { fmt::color::gray,fmt::color::white_smoke,fmt::color::green,fmt::color::yellow,fmt::color::blue,fmt::color::red,fmt::color::dark_red };
+        constexpr std::array<const char*, 7> operator()() const {
+            return { "\x1b[32m", "\x1b[37m", "\x1b[32m", "\x1b[33m", "\x1b[32m", "\x1b[31m", "\x1b[31m", };
         }
     };
 
@@ -236,9 +235,10 @@ namespace logger {
             {
                 std::cout << "change chinese fail:" << e.what() << std::endl;
             }
+			auto colors = level_colors<log_level>()();
+            std::cout << colors[(int)lvl];
 #endif // WIN32
-            auto colors = level_colors<log_level>()();
-            fmt::print(fg(colors[(int)lvl]) | fmt::emphasis::italic, "{}", msg);
+            std::cout << msg;
         }
 #ifdef WIN32
         typedef std::codecvt_byname<wchar_t, char, std::mbstate_t> F;
