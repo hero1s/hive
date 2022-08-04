@@ -36,6 +36,7 @@ function StatisMgr:__init()
         event_mgr:add_listener(self, "on_proto_send")
         event_mgr:add_listener(self, "on_conn_update")
         --定时处理
+        update_mgr:attach_second(self)
         update_mgr:attach_minute(self)
         --系统监控
         if hive.platform == "linux" then
@@ -49,7 +50,7 @@ function StatisMgr:flush()
     thread_mgr:fork(function()
         local statis = self.statis
         self.statis  = {}
-        if self.influx then
+        if self.influx and next(statis) then
             self.influx:batch(statis)
         end
     end)
@@ -70,7 +71,7 @@ function StatisMgr:write(measurement, name, type, fields)
         }
         self.statis[measurement] = measure
     end
-    measure.field_list[#measure.field_list] = fields
+    measure.field_list[#measure.field_list + 1] = fields
 end
 
 -- 统计proto协议发送(KB)
@@ -124,6 +125,10 @@ function StatisMgr:on_perfeval(eval_data, clock_ms)
         }
         self:write("perfeval", eval_data.eval_name, nil, fields)
     end
+end
+
+function StatisMgr:on_second()
+    self:flush()
 end
 
 -- 统计系统信息
