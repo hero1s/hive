@@ -476,7 +476,7 @@ static void http_parse_querys(http_request_t* request, http_token_t* tar_token) 
         http_token_dyn_push(&request->tokens, *tar_token);
         return;
     }
-    tar_token->len = cquery - target.buf - 1;
+    tar_token->len = cquery - target.buf;
     http_token_dyn_push(&request->tokens, *tar_token);
     int qpos = cquery - target.buf + 1;
     http_token_t tok = { tar_token->index + qpos, 0, HS_TOK_QUERY_KEY };
