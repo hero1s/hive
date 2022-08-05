@@ -69,7 +69,8 @@ function HttpServer:on_socket_recv(socket, token)
         self.requests[token] = request
     end
     local buf = socket:get_recvbuf()
-    if #buf == 0 or not request:append(buf) then
+    local ret_len = request:append(buf)
+    if #buf == 0 or ret_len == 0 then
         log_warn("[HttpServer][on_socket_recv] http request append failed, close client(token:%s)!", token)
         self:response(socket, 400, request, "this http request parse error!")
         return

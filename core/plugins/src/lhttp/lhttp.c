@@ -45,7 +45,8 @@ static int lrequest_append(lua_State* L) {
         lua_pushinteger(L, alen);
         return 1;
     }
-    return 0;
+    lua_pushinteger(L, 0);
+    return 1;
 }
 
 static int lrequest_state(lua_State* L) {

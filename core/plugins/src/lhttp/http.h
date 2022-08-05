@@ -107,13 +107,13 @@ typedef struct {
     int len;
     int type;
 } http_token_t;
-
+// token动态数组
 typedef struct {
     http_token_t* buf;
     int capacity;
     int size;
 } http_token_dyn_t;
-
+// 数据流
 typedef struct {
     char* buf;
     int64_t total_bytes;

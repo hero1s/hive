@@ -190,7 +190,7 @@ static int http_char_case_cmp(char const* a, char const* b, int len) {
     }
     return 1;
 }
-
+//截取字符串
 static http_string_t http_token_string(http_request_t* request, http_token_t* token) {
     return (http_string_t) {
         .buf = &request->stream.buf[token->index],
@@ -216,6 +216,12 @@ static void http_token_dyn_push(http_token_dyn_t* dyn, http_token_t a) {
     dyn->size++;
 }
 
+static void http_token_dyn_pop(http_token_dyn_t* dyn) {
+    if (dyn->size > 0){
+        dyn->size--;
+    }
+}
+
 static void http_token_dyn_init(http_token_dyn_t* dyn, int capacity) {
     dyn->buf = (http_token_t*)malloc(sizeof(http_token_t) * capacity);
     assert(dyn->buf != NULL);
@@ -239,9 +245,12 @@ int http_stream_append(http_stream_t* stream, const char* buf, int len) {
         stream->buf = (char*)realloc(stream->buf, stream->capacity);
         assert(stream->buf != NULL);
     }
-    memcpy(stream->buf + stream->length, buf, len);
-    stream->length += len;
-    return len;
+    if (stream->length + len <= stream->capacity) {
+		memcpy(stream->buf + stream->length, buf, len);
+		stream->length += len;
+		return len;
+    }//modify by toney
+    return 0;
 }
 
 static void http_stream_begin_token(http_stream_t* stream, int token_type) {
@@ -478,33 +487,43 @@ static void http_parse_querys(http_request_t* request, http_token_t* tar_token) 
     }
     tar_token->len = cquery - target.buf;
     http_token_dyn_push(&request->tokens, *tar_token);
-    int qpos = cquery - target.buf + 1;
+    int qpos = cquery - target.buf + 1;    
+    if (qpos >= target.len)return;//modify by toney
     http_token_t tok = { tar_token->index + qpos, 0, HS_TOK_QUERY_KEY };
+    int num = 0;
     for (int i = qpos; i < target.len; i++) {
         if (target.buf[i] == '&') {
-            if (tok.index != -1) {
+            if (tok.index != -1 && tok.len > 0 && tok.type != HS_TOK_QUERY_KEY) {
                 http_token_dyn_push(&request->tokens, tok);
                 tok.index = -1;
                 tok.len = 0;
+                num++;
+
+				tok.index = tar_token->index + i + 1;
+				tok.type = HS_TOK_QUERY_KEY;
             }
-            tok.index = tar_token->index + i + 1;
-            tok.type = HS_TOK_QUERY_KEY;
             continue;
         }
         else if (target.buf[i] == '=') {
-            if (tok.index != -1 && tok.type != HS_TOK_QUERY_VAL) {
+            if (tok.index != -1 && tok.len > 0 && tok.type != HS_TOK_QUERY_VAL) {
                 http_token_dyn_push(&request->tokens, tok);
                 tok.index = -1;
                 tok.len = 0;
+                num++;
+
+				tok.index = tar_token->index + i + 1;
+				tok.type = HS_TOK_QUERY_VAL;
             }
-            tok.index = tar_token->index + i + 1;
-            tok.type = HS_TOK_QUERY_VAL;
             continue;
         }
         tok.len++;
     }
-    if (tok.index != -1) {
+    if (tok.index != -1 && tok.len > 0  && tok.type != HS_TOK_QUERY_KEY) {
         http_token_dyn_push(&request->tokens, tok);
+        num++;
+    }
+    if (num > 0 && num%2 != 0) {
+        http_token_dyn_pop(&request->tokens);
     }
     return;
 }

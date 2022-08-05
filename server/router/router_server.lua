@@ -1,27 +1,27 @@
 --router_server.lua
 
-local mhuge         = math.huge
-local log_err       = logger.err
-local log_info      = logger.info
-local log_warn      = logger.warn
-local signalquit    = signal.quit
-local env_get       = environ.get
-local sidhash       = service.hash
-local sid2sid       = service.id2sid
-local sid2nick      = service.id2nick
-local sid2name      = service.id2name
-local sid2index     = service.id2index
+local mhuge        = math.huge
+local log_err      = logger.err
+local log_info     = logger.info
+local log_warn     = logger.warn
+local signalquit   = signal.quit
+local env_get      = environ.get
+local sidhash      = service.hash
+local sid2sid      = service.id2sid
+local sid2nick     = service.id2nick
+local sid2name     = service.id2name
+local sid2index    = service.id2index
 
-local FlagMask      = enum("FlagMask")
-local KernCode      = enum("KernCode")
-local RpcServer     = import("network/rpc_server.lua")
+local FlagMask     = enum("FlagMask")
+local KernCode     = enum("KernCode")
+local RpcServer    = import("network/rpc_server.lua")
 
-local event_mgr     = hive.get("event_mgr")
-local socket_mgr    = hive.get("socket_mgr")
-local config_mgr    = hive.get("config_mgr")
+local event_mgr    = hive.get("event_mgr")
+local socket_mgr   = hive.get("socket_mgr")
+local config_mgr   = hive.get("config_mgr")
 
 local RouterServer = singleton()
-local prop = property(RouterServer)
+local prop         = property(RouterServer)
 prop:accessor("rpc_server", nil)
 prop:accessor("kick_servers", {})
 prop:accessor("service_masters", {})
@@ -30,8 +30,8 @@ function RouterServer:__init()
 end
 
 function RouterServer:setup()
-    local host = env_get("HIVE_HOST_IP")
-    local router_db = config_mgr:init_table("router", "host")
+    local host        = env_get("HIVE_HOST_IP")
+    local router_db   = config_mgr:init_table("router", "host")
     local router_conf = router_db:find_one(host)
     if not router_conf then
         log_err("[RouterServer][setup] router_conf is nil host:%s", host)
@@ -39,8 +39,8 @@ function RouterServer:setup()
         return
     end
     --重定义routerid
-    hive.id = service.router_id(router_conf.host_id, hive.index)
-    hive.name = service.router_name(router_conf.host_id, hive.index)
+    hive.id         = service.router_id(router_conf.host_id, hive.index)
+    hive.name       = service.router_name(router_conf.host_id, hive.index)
     --启动server
     self.rpc_server = RpcServer()
     self.rpc_server:setup(host, router_conf.port, true)
@@ -57,11 +57,11 @@ function RouterServer:on_socket_error(server, server_token, err)
     local kick_server_id = self.kick_servers[server_token]
     if kick_server_id then
         local format = "[RouterServer][on_socket_error] kick server close! token:%s, name:%s, ip:%s"
-        log_warn(format, server_token,  server.name, server.ip)
+        log_warn(format, server_token, server.name, server.ip)
         self.kick_servers[server_token] = nil
         return
     end
-    local server_id = server.id
+    local server_id  = server.id
     local service_id = server.service_id
     if not server_id or not service_id then
         return
@@ -72,12 +72,12 @@ function RouterServer:on_socket_error(server, server_token, err)
         self.service_masters[service_id] = nil
         socket_mgr.set_master(service_id, 0)
     end
-    local router_id = hive.id
+    local router_id                    = hive.id
     local new_master, new_master_token = mhuge, nil
     for exist_token, exist_server in self.rpc_server:iterator() do
         self.rpc_server:send(exist_server, "rpc_service_close", server_id, router_id)
         if is_master and exist_server.service_id == service_id and exist_server.id < new_master then
-            new_master = exist_server.id
+            new_master       = exist_server.id
             new_master_token = exist_token
         end
     end
@@ -92,8 +92,8 @@ end
 --accept事件
 function RouterServer:on_socket_accept(server)
     --log_info("[RouterServer][on_socket_accept] new connection, token=%s", server.token)
-    server.on_forward_error = function(session_id)
-        log_err("[RouterServer][on_socket_accept] on_forward_error, session_id=%s,%s", session_id,sid2nick(server.id))
+    server.on_forward_error     = function(session_id)
+        log_err("[RouterServer][on_socket_accept] on_forward_error, session_id=%s,%s", session_id, sid2nick(server.id))
         server.call(session_id, FlagMask.RES, hive.id, "on_forward_error", false, KernCode.RPC_UNREACHABLE, "router con't find target!")
     end
     server.on_forward_broadcast = function(session_id, broadcast_num)
@@ -106,12 +106,16 @@ end
 --注册服务器
 function RouterServer:rpc_service_register(server, id)
     if not server.id then
-        local service_id = sid2sid(id)
-        local server_name = sid2nick(id)
-        local servive_name = sid2name(id)
+        local service_id    = sid2sid(id)
+        local server_name   = sid2nick(id)
+        local servive_name  = sid2name(id)
         local servive_index = sid2index(id)
-        local service_hash = sidhash(service_id)
-        local server_token = server.token
+        local service_hash  = sidhash(service_id)
+        local server_token  = server.token
+        if not servive_name or not service_hash then
+            log_err("[RouterServer][rpc_service_register] the serivice is not cfg:%s", service_id)
+            return
+        end
         --固定hash不能超过hash值
         if service_hash > 0 and servive_index > service_hash then
             self.kick_servers[server_token] = id
@@ -128,12 +132,12 @@ function RouterServer:rpc_service_register(server, id)
                 break
             end
         end
-        server.id = id
-        server.name = server_name
-        server.service_id = service_id
+        server.id           = id
+        server.name         = server_name
+        server.service_id   = service_id
         server.servive_name = servive_name
         socket_mgr.map_token(id, server_token, service_hash)
-        log_info("[RouterServer][rpc_service_register] service: %s,hash:%s", server_name,service_hash)
+        log_info("[RouterServer][rpc_service_register] service: %s,hash:%s", server_name, service_hash)
         --switch master
         local group_master = self.service_masters[service_id] or mhuge
         if id < group_master then
