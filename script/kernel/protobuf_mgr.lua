@@ -65,6 +65,10 @@ function ProtobufMgr:load_protos()
     self.allow_reload = true
 end
 
+function ProtobufMgr:verify_cmd(cmd_id)
+    return self.pb_indexs[cmd_id] ~= nil
+end
+
 function ProtobufMgr:encode(cmd_id, data)
     local proto_name = self.pb_indexs[cmd_id]
     if not proto_name then

@@ -1,214 +1,218 @@
-﻿#ifndef __HTTP_H__
-#define __HTTP_H__
+#pragma once
 
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
-#include<stdarg.h>
-#include <assert.h>
-#include <memory.h>
+#include <map>
+#include <vector>
+#include <string>
 #include <string.h>
 
-// enums
-//---------------------------------------------------------------------
-// token枚举
-enum hs_token {
-    HS_TOK_NONE, HS_TOK_METHOD, HS_TOK_TARGET, HS_TOK_VERSION,
-    HS_TOK_HEADER_KEY, HS_TOK_HEADER_VAL, HS_TOK_CHUNK_BODY, HS_TOK_BODY,
-    HS_TOK_BODY_STREAM, HS_TOK_REQ_END, HS_TOK_EOF, HS_TOK_ERROR,
-    HS_TOK_URL, HS_TOK_QUERY_KEY, HS_TOK_QUERY_VAL
-};
+#include "fmt/core.h"
+#include "lua_kit.h"
 
-// 词法分析中的状态
-enum hs_state {
-    ST, MT, MS, TR, TS, VN, RR, RN, HK, HS, HV, HR, HE,
-    ER, HN, BD, CS, CB, CE, CR, CN, CD, C1, C2, BR, HS_STATE_LEN
-};
+#ifdef _MSC_VER
+#define strcasecmp _stricmp
+#endif
 
-// 字符类型
-enum hs_char_type {
-    /*空格    LF     CR     冒号    TAB      分号     */
-    HS_SPC, HS_NL, HS_CR, HS_COLN, HS_TAB, HS_SCOLN,
-    /*0-9      A-Fa-f  g-zG-Z     符号  []{}()/\<=>?@" 其他 */
-    HS_DIGIT, HS_HEX, HS_ALPHA, HS_TCHAR, HS_VCHAR, HS_ETC, HS_CHAR_TYPE_LEN
-};
+using namespace std;
 
-// 元数据状态
-enum hs_meta_state {
-    M_WFK, M_ANY, M_MTE, M_MCL, M_CLV, M_MCK, M_SML, M_CHK, M_BIG, M_ZER, M_CSZ,
-    M_CBD, M_LST, M_STR, M_SEN, M_BDY, M_END, M_ERR
-};
+namespace lhttp {
 
-// 元数据类型
-enum hs_meta_type {
-    HS_META_NOT_CONTENT_LEN, HS_META_NOT_TRANSFER_ENC, HS_META_END_KEY,
-    HS_META_END_VALUE, HS_META_END_HEADERS, HS_META_LARGE_BODY,
-    HS_META_TYPE_LEN
-};
+    const string CRLF = "\r\n";
+    const string CRLF2 = "\r\n\r\n";
+    const string RESPONSE = "HTTP/1.1 {}\r\nDate: {}\r\n{}\r\n{}";
 
-// constants
-//-----------------------------------------------------------------
-#define HTTP_CLOSE      0
-#define HTTP_KEEP_ALIVE 1
+    #define SC_UNKNOWN 0
+    #define SC_OK 200
+    #define SC_NOCONTENT 204
+    #define SC_PARTIAL 206
+    #define SC_OBJMOVED 302
+    #define SC_BADREQUEST 400
+    #define SC_FORBIDDEN 403
+    #define SC_NOTFOUND 404
+    #define SC_BADMETHOD 405
+    #define SC_SERVERERROR 500
+    #define SC_SERVERBUSY 503
 
-// http session states
-#define HTTP_REQUEST_PARSE      0
-#define HTTP_SESSION_FINISH     1
-#define HTTP_REQUEST_ERROR      2
+    class http_request
+    {
+    public:
+        http_request() {}
 
-// http session flags
-#define HTTP_END_SESSION        0x2
-#define HTTP_AUTOMATIC          0x8
-#define HTTP_CHUNKED_RESPONSE   0x20
+        string get_header(const string key) {
+            auto it = headers.find(key); 
+            if (it != headers.end()) {
+                return it->second;
+            }
+            return "";
+        }
 
-// Application configurable
-#define HTTP_REQUEST_BUF_SIZE           1024
-#define HTTP_RESPONSE_BUF_SIZE          1024
-#define HTTP_REQUEST_TIMEOUT            20
-#define HTTP_KEEP_ALIVE_TIMEOUT         120
-#define HTTP_MAX_HEADER_COUNT           127
-#define HTTP_MAX_TOKEN_LENGTH           8192        // 8kb
-#define HTTP_MAX_REQUEST_BUF_SIZE       8388608     // 8mb
-#define HTTP_MAX_TOTAL_EST_MEM_USAGE    4294967296  // 4gb
+        string get_param(const string key) {
+            auto it = params.find(key);
+            if (it != params.end()) {
+                return it->second;
+            }
+            return "";
+        }
 
-#define HS_META_NEXT            0
-#define HS_META_NON_ZERO        0
-#define HS_META_NOT_CHUNKED     0
-#define HS_META_END_CHK_SIZE    1
-#define HS_META_END_CHUNK       2
+        luakit::reference get_params(lua_State* L) {
+            luakit::kit_state kit_state(L);
+            return kit_state.new_reference(params);
+        }
 
-// stream flags
-#define HS_SF_CONSUMED          0x1
+        luakit::reference get_headers(lua_State* L) {
+            luakit::kit_state kit_state(L);
+            return kit_state.new_reference(headers);
+        }
 
-// parser flags
-#define HS_PF_IN_CONTENT_LEN    0x1
-#define HS_PF_IN_TRANSFER_ENC   0x2
-#define HS_PF_CHUNKED           0x4
-#define HS_PF_CKEND             0x8
-#define HS_PF_REQ_END           0x10
+        bool parse(const string buf) {
+            size_t size = buf.size();
+            if (size == 0) return false;
+            size_t pos = buf.find(CRLF2);
+            if (pos == string::npos) return false;
+            string header = buf.substr(0, pos);
+            size_t offset = pos + CRLF2.length();
+            vector<string> lines;
+            split(header, CRLF, lines);
+            size_t count = lines.size();
+            if (count == 0) return false;
+            vector<string> parts;
+            split(lines[0], " ", parts);
+            if (parts.size() < 3) return false;
+            method = parts[0];
+            version = parts[2];
+            parse_url(parts[1]);
+            for (size_t i = 1; i < count; ++i) {
+                parse_header(lines[i]);
+            }
+            if (size >= offset) {
+                parse_content(buf.substr(offset));
+            }
+            return true;
+        }
 
-// 当请求正文被分块或正文太大而无法放入内存时，将设置此标志。这意味着必须使用http_request_read_chunk函数逐段读取正文。
-#define HTTP_FLG_CHUNK          0x1
+    private:
+        void split(const string& str, const string& delim, vector<string>& res) {
+            size_t cur = 0;
+            size_t step = delim.size();
+            size_t pos = str.find(delim);
+            while (pos != string::npos) {
+                res.push_back(str.substr(cur, pos - cur));
+                cur = pos + step;
+                pos = str.find(delim, cur);
+            }
+            if (str.size() > cur) {
+                res.push_back(str.substr(cur));
+            }
+        }
 
-#define HTTP_FLAG_SET(var, flag)    var |= flag
-#define HTTP_FLAG_CLEAR(var, flag)  var &= ~flag
-#define HTTP_FLAG_CHECK(var, flag)  (var & flag)
+        void parse_url(const string& str) {
+            params.clear();
+            size_t pos = str.find("?");
+            if (pos == string::npos) {
+                url = str;
+                return;
+            }
+            url = str.substr(0, pos);
+            string args = str.substr(pos + 1);
+            vector<string> parts;
+            split(args, "&", parts);
+            for (const string& part : parts) {
+                size_t pos = part.find("=");
+                if (pos != string::npos) {
+                    params.insert(make_pair(part.substr(0, pos), part.substr(pos + 1)));
+                }
+            }
+        }
 
-// structs
-//-----------------------------------------------------------------
-// 用于读取请求详细信息的字符串类型
-typedef struct http_string_s {
-    char const* buf;
-    int len;
-} http_string_t;
+        void parse_header(const string& str) {
+            size_t pos = str.find(": ");
+            if (pos != string::npos) {
+                string key = str.substr(0, pos);
+                string value = str.substr(pos + 2);
+                headers.insert(make_pair(key, value));
+                if (method == "POST" || method != "PUT") {
+                    if (!strcasecmp(key.c_str(), "Content-Length")) {
+                        content_size = atoi(value.c_str());
+                    }
+                    else if (!strcasecmp(key.c_str(), "Transfer-Encoding") && !strcasecmp(value.c_str(), "chunked")) {
+                        chunked = true;
+                    }
+                }
+            }
+        }
 
-typedef struct {
-    int index;
-    int len;
-    int type;
-} http_token_t;
-// token动态数组
-typedef struct {
-    http_token_t* buf;
-    int capacity;
-    int size;
-} http_token_dyn_t;
-// 数据流
-typedef struct {
-    char* buf;
-    int64_t total_bytes;
-    int32_t capacity;
-    int32_t length;
-    int32_t index;
-    int32_t anchor;
-    http_token_t token;
-    uint8_t flags;
-} http_stream_t;
+        void parse_content(const string& str) {
+            if (!chunked) {
+                body = str;
+                return;
+            }
+            vector<string> lines;
+            split(str, CRLF, lines);
+            for (size_t i = 0; i < lines.size(); i++) {
+                if (i % 2 != 0) {
+                    body.append(lines[i]);
+                }
+            }
+            chunk_size = body.size();
+        }
 
-//http_parser_t
-typedef struct {
-    int64_t content_length;
-    int64_t body_consumed;
-    int16_t match_index;
-    int16_t header_count;
-    int8_t state;
-    int8_t meta;
-} http_parser_t;
+    public:
+        bool chunked = false;
+        size_t chunk_size = 0;
+        size_t content_size = 0;
+        map<string, string> params;
+        map<string, string> headers;
+        string url, body, method, version;
+    };
 
-typedef struct http_header_s {
-    char const* key;
-    char const* value;
-    struct http_header_s* next;
-} http_header_t;
+    class http_response
+    {
+    public:
+        http_response() {}
 
-typedef struct http_response_s {
-    int status;
-    int content_length;
-    char const* body;
-    http_header_t* headers;
-} http_response_t;
+        void set_header(const string key, const string value) {
+            headers.insert(make_pair(key, value));
+        }
 
-typedef struct http_request_s {
-    char flags;
-    int state;
-    int timeout;
-    http_stream_t stream;
-    http_parser_t parser;
-    http_token_dyn_t tokens;
-} http_request_t;
+        string serialize() {
+            set_header("Content-Length", fmt::format("{}", content.size()));
+            return fmt::format(RESPONSE, format_status(), format_date(), format_header(), content);
+        }
 
-//http stream
-//----------------------------------------------------------------
-int http_stream_append(http_stream_t* stream, const char* buf, int len);
+    private:
+        string format_date() {
+            char date[32];
+            time_t rawtime;
+            time(&rawtime);
+            struct tm* timeinfo;
+            timeinfo = gmtime(&rawtime);
+            strftime(date, 32, "%a, %d %b %Y %T GMT", timeinfo);
+            return date;
+        }
 
-int http_request_has_flag(http_request_t* request, int flag);
+        string format_header() {
+            string str;
+            for (auto it : headers) {
+                str = fmt::format("{}{}: {}\r\n", str, it.first, it.second);
+            }
+            return str;
+        }
 
-http_string_t http_request_method(http_request_t* request);
+        string format_status() {
+            switch (status) {
+            case SC_OK:         return "200 OK";
+            case SC_NOCONTENT:  return "204 No Content";
+            case SC_PARTIAL:    return "206 Partial Content";
+            case SC_BADREQUEST: return "400 Bad Request";
+            case SC_OBJMOVED:   return "302 Moved Temporarily";
+            case SC_NOTFOUND:   return "404 Not Found";
+            case SC_BADMETHOD:  return "405 Method Not Allowed";
+            default: return "500 Internal Server Error";
+            }
+        }
 
-http_string_t http_request_url(http_request_t* request);
-
-http_string_t http_request_body(http_request_t* request);
-
-int http_request_headers_iterator(http_request_t* request, http_string_t* key, http_string_t* val, int* iter);
-
-int http_request_querys_iterator(http_request_t* request, http_string_t* key, http_string_t* val, int* iter);
-
-http_string_t http_request_header(http_request_t* request, char const* key);
-
-http_string_t http_request_query(http_request_t* request, char const* key);
-
-http_string_t http_request_chunk(struct http_request_s* request);
-
-//http response 接口
-//--------------------------------------------------------------------------
-http_response_t* http_response_init();
-
-void http_response_header(http_response_t* response, char const* key, char const* value);
-
-void http_response_status(http_response_t* response, int status);
-
-void http_response_body(http_response_t* response, char const* body, int length);
-
-void http_close_response(http_response_t* response);
-
-void http_clean_response(http_response_t* response);
-
-void http_close_request(http_request_t* request);
-
-void http_clean_request(http_request_t* request);
-
-http_string_t http_respond_chunk(http_request_t* request, http_response_t* response);
-
-http_string_t http_respond_chunk_end(http_request_t* request, http_response_t* response);
-
-http_string_t http_respond(http_request_t* request, http_response_t* response);
-
-http_string_t http_request_response(http_request_t* request, int code, char const* type, char const* message);
-
-http_request_t* http_request_init();
-
-void http_request_reset(http_request_t* request);
-
-void http_process_request(http_request_t* request);
-
-#endif // __HTTP_H__
+    public:
+        string content;
+        size_t status = 200;
+        map<string, string> headers;
+    };
+}

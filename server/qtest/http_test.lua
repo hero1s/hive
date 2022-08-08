@@ -11,12 +11,12 @@ local http_client   = hive.get("http_client")
 
 if hive.index == 1 then
     local data = {aaa = 123}
-    local on_post = function(path, body, headers)
-        log_debug("on_post: %s, %s, %s", path, body, headers)
+    local on_post = function(path, body, request)
+        log_debug("on_post: %s, %s, %s", path, body, request.get_headers())
         return data
     end
-    local on_get = function(path, query, headers)
-        log_debug("on_get: %s, %s, %s", path, query, headers)
+    local on_get = function(path, query, request)
+        log_debug("on_get: %s, %s, %s", path, query, request.get_headers())
         return data
     end
     local HttpServer = import("network/http_server.lua")

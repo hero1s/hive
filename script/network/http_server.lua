@@ -1,24 +1,22 @@
 --http_server.lua
-local lhttp               = require("lhttp")
-local Socket              = import("driver/socket.lua")
+local lhttp        = require("lhttp")
+local Socket       = import("driver/socket.lua")
 
-local HTTP_SESSION_FINISH = 1
-local HTTP_REQUEST_ERROR  = 2
+local type         = type
+local tostring     = tostring
+local log_err      = logger.err
+local log_warn     = logger.warn
+local log_info     = logger.info
+local log_debug    = logger.debug
+local json_encode  = hive.json_encode
+local tunpack      = table.unpack
+local signalquit   = signal.quit
+local saddr        = string_ext.addr
 
-local type                = type
-local log_err             = logger.err
-local log_warn            = logger.warn
-local log_info            = logger.info
-local log_debug           = logger.debug
-local json_encode         = hive.json_encode
-local tunpack             = table.unpack
-local signalquit          = signal.quit
-local saddr               = string_ext.addr
+local thread_mgr   = hive.get("thread_mgr")
 
-local thread_mgr          = hive.get("thread_mgr")
-
-local HttpServer          = class()
-local prop                = property(HttpServer)
+local HttpServer   = class()
+local prop         = property(HttpServer)
 prop:reader("listener", nil)        --网络连接对象
 prop:reader("ip", nil)              --http server地址
 prop:reader("port", 8080)           --http server端口
@@ -69,43 +67,25 @@ function HttpServer:on_socket_recv(socket, token)
         self.requests[token] = request
     end
     local buf = socket:get_recvbuf()
-    local ret_len = request:append(buf)
-    if #buf == 0 or ret_len == 0 then
+    if #buf == 0 or not request.parse(buf) then
         log_warn("[HttpServer][on_socket_recv] http request append failed, close client(token:%s)!", token)
         self:response(socket, 400, request, "this http request parse error!")
         return
     end
     socket:pop(#buf)
-    request:process()
-    local state = request:state()
-    if state == HTTP_REQUEST_ERROR then
-        log_warn("[HttpServer][on_socket_recv] http request process failed, close client(token:%s)!", token)
-        self:response(socket, 400, request, "this http request parse error!")
-        return
-    end
-    if state ~= HTTP_SESSION_FINISH then
-        log_err("[HttpServer][on_socket_recv] the state is not finish:%s,token:%s", state, token)
-        return
-    end
     thread_mgr:fork(function()
-        local url     = request:url()
-        local method  = request:method()
-        local headers = request:headers()
+        local method = request.method
         if method == "GET" then
-            local querys = request:querys()
-            return self:on_http_request(self.get_handlers, socket, request, url, querys, headers)
+            return self:on_http_request(self.get_handlers, socket, request.url, request.get_params(), request)
         end
         if method == "POST" then
-            local body = request:body()
-            return self:on_http_request(self.post_handlers, socket, request, url, body, headers)
+            return self:on_http_request(self.post_handlers, socket, request.url, request.body, request)
         end
         if method == "PUT" then
-            local body = request:body()
-            return self:on_http_request(self.put_handlers, socket, request, url, body, headers)
+            return self:on_http_request(self.put_handlers, socket, request.url, request.body, request)
         end
         if method == "DELETE" then
-            local querys = request:querys()
-            return self:on_http_request(self.del_handlers, socket, request, url, querys, headers)
+            return self:on_http_request(self.del_handlers, socket, request.url, request.get_params(), request)
         end
     end)
 end
@@ -135,21 +115,19 @@ function HttpServer:register_del(url, handler, target)
 end
 
 --生成response
-function HttpServer:build_response(status, body, headers)
-    local response = lhttp.create_response()
-    if type(body) == "table" then
-        body = json_encode(body)
-    end
-    response:set_body(body)
-    response:set_status(status)
+function HttpServer:build_response(status, content, headers)
+    local response   = lhttp.create_response()
+    response.status  = status
+    response.content = content
     for name, value in pairs(headers or {}) do
-        response:set_header(name, value)
+        response.set_header(name, value)
     end
     return response
 end
 
 --http post 回调
-function HttpServer:on_http_request(handlers, socket, request, url, ...)
+function HttpServer:on_http_request(handlers, socket, url, ...)
+    log_info("[HttpServer][on_http_request] request %s process!", url)
     local handler_info = handlers[url] or handlers["*"]
     if handler_info then
         local handler, target = tunpack(handler_info)
@@ -159,7 +137,7 @@ function HttpServer:on_http_request(handlers, socket, request, url, ...)
                 if not ok then
                     response = { code = 1, msg = response }
                 end
-                self:response(socket, 200, request, response)
+                self:response(socket, 200, response)
                 return
             end
         else
@@ -171,32 +149,40 @@ function HttpServer:on_http_request(handlers, socket, request, url, ...)
                 if not ok then
                     response = { code = 1, msg = response }
                 end
-                self:response(socket, 200, request, response)
+                self:response(socket, 200, response)
                 return
             end
         end
     end
-    log_err("[HttpServer][on_http_request] request %s hasn't process!", url)
-    self:response(socket, 404, request, "this http request hasn't process!")
+    log_warn("[HttpServer][on_http_request] request %s hasn't process!", url)
+    self:response(socket, 404, "this http request hasn't process!")
 end
 
-function HttpServer:response(socket, status, request, hresponse)
+function HttpServer:response(socket, status, response)
     local token = socket:get_token()
     if not token then
         return
     end
     self.requests[token] = nil
-    if type(hresponse) == "userdata" then
-        socket:send(hresponse:respond(request))
-        socket:close()
-        return
+    if type(response) == "table" and response.__pointer__ then
+        if response.serialize then
+            socket:send(response.serialize())
+            socket:close()
+            return
+        else
+            log_err("[HttpServer][response] the unknow table:%s", response)
+        end
     end
-    local ttype = "text/plain"
-    if type(hresponse) == "table" then
-        hresponse = json_encode(hresponse)
-        ttype     = "application/json"
+    local new_resp = lhttp.create_response()
+    if type(response) == "table" then
+        new_resp.set_header("Content-Type", "application/json")
+        new_resp.content = json_encode(response)
+    else
+        new_resp.set_header("Content-Type", "text/plain")
+        new_resp.content = (type(response) == "string") and response or tostring(response)
     end
-    socket:send(request:response(status, ttype, hresponse or ""))
+    new_resp.status = status
+    socket:send(new_resp.serialize())
     socket:close()
 end
 

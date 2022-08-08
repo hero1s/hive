@@ -144,10 +144,7 @@
     <ClCompile Include="src\lcrypt\xxtea.c">
       <Filter>lcrypt</Filter>
     </ClCompile>
-    <ClCompile Include="src\lhttp\http.c">
-      <Filter>lhttp</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lhttp\lhttp.c">
+    <ClCompile Include="src\lhttp\lhttp.cpp">
       <Filter>lhttp</Filter>
     </ClCompile>
     <ClCompile Include="src\lkcp\ikcp.c">

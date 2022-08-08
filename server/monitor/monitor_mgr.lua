@@ -105,7 +105,7 @@ function MonitorMgr:check_lost_node()
 end
 
 --gm_page
-function MonitorMgr:on_log_page(url, body, headers)
+function MonitorMgr:on_log_page(url, body, request)
     local ret_headers = { ["Access-Control-Allow-Origin"] = "*" }
     return self.http_server:build_response(200, log_page, ret_headers)
 end
@@ -139,7 +139,7 @@ function MonitorMgr:broadcast(rpc, service_id, ...)
 end
 
 -- command处理
-function MonitorMgr:on_monitor_command(url, body, headers)
+function MonitorMgr:on_monitor_command(url, body, request)
     log_debug("[MonitorMgr][on_monitor_command]: %s", body)
     --执行函数
     local function handler_cmd(jbody)
