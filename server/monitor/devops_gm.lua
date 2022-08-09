@@ -9,6 +9,7 @@ local event_mgr   = hive.get("event_mgr")
 local router_mgr  = hive.get("router_mgr")
 local gm_agent    = hive.get("gm_agent")
 local monitor_mgr = hive.get("monitor_mgr")
+local timer_mgr   = hive.get("timer_mgr")
 
 local GMType      = enum("GMType")
 
@@ -24,7 +25,7 @@ function DevopsGmMgr:register()
         { gm_type = GMType.DEV_OPS, name = "gm_set_log_level", desc = "设置日志等级", args = "svr_name|string level|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_hotfix", desc = "热更新", args = "" },
         { gm_type = GMType.DEV_OPS, name = "gm_inject", desc = "代码注入", args = "svr_name|string file_name|string base64_code|string" },
-        { gm_type = GMType.DEV_OPS, name = "gm_stop_service", desc = "停服", args = "force|integer" },
+        { gm_type = GMType.DEV_OPS, name = "gm_stop_service", desc = "停服", args = "force|integer delay|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_hive_quit", desc = "关闭服务器", args = "reason|integer" },
     }
     for _, v in ipairs(cmd_list) do
@@ -69,9 +70,12 @@ function DevopsGmMgr:gm_inject(svr_name, file_name, base64_code)
     return { code = ret }
 end
 
-function DevopsGmMgr:gm_stop_service(force)
+function DevopsGmMgr:gm_stop_service(force, delay)
     log_warn("[DevopsGmMgr][gm_stop_service]")
-    monitor_mgr:broadcast("rpc_stop_service", 0, force)
+    timer_mgr:once(delay, function()
+        log_warn("[DevopsGmMgr][gm_stop_service] exe stop service:%s", force)
+        monitor_mgr:broadcast("rpc_stop_service", 0, force)
+    end)
     return { code = 0 }
 end
 

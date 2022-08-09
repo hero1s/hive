@@ -1,22 +1,22 @@
 --http_server.lua
-local lhttp        = require("lhttp")
-local Socket       = import("driver/socket.lua")
+local lhttp       = require("lhttp")
+local Socket      = import("driver/socket.lua")
 
-local type         = type
-local tostring     = tostring
-local log_err      = logger.err
-local log_warn     = logger.warn
-local log_info     = logger.info
-local log_debug    = logger.debug
-local json_encode  = hive.json_encode
-local tunpack      = table.unpack
-local signalquit   = signal.quit
-local saddr        = string_ext.addr
+local type        = type
+local tostring    = tostring
+local log_err     = logger.err
+local log_warn    = logger.warn
+local log_info    = logger.info
+local log_debug   = logger.debug
+local json_encode = hive.json_encode
+local tunpack     = table.unpack
+local signalquit  = signal.quit
+local saddr       = string_ext.addr
 
-local thread_mgr   = hive.get("thread_mgr")
+local thread_mgr  = hive.get("thread_mgr")
 
-local HttpServer   = class()
-local prop         = property(HttpServer)
+local HttpServer  = class()
+local prop        = property(HttpServer)
 prop:reader("listener", nil)        --网络连接对象
 prop:reader("ip", nil)              --http server地址
 prop:reader("port", 8080)           --http server端口
@@ -69,7 +69,7 @@ function HttpServer:on_socket_recv(socket, token)
     local buf = socket:get_recvbuf()
     if #buf == 0 or not request.parse(buf) then
         log_warn("[HttpServer][on_socket_recv] http request append failed, close client(token:%s)!", token)
-        self:response(socket, 400, request, "this http request parse error!")
+        self:response(socket, 400, "this http request parse error!")
         return
     end
     socket:pop(#buf)
@@ -122,6 +122,7 @@ function HttpServer:build_response(status, content, headers)
     for name, value in pairs(headers or {}) do
         response.set_header(name, value)
     end
+    log_debug("[HttpServer][build_response] status:%s,content:%s,headers:%s", status, content, headers)
     return response
 end
 

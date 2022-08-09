@@ -1,18 +1,18 @@
 --websocket.lua
-local lhttp         = require("lhttp")
-local lcrypt        = require("lcrypt")
+local lhttp             = require("lhttp")
+local lcrypt            = require("lcrypt")
 
-local ssub          = string.sub
-local spack         = string.pack
-local sformat       = string.format
-local sunpack       = string.unpack
-local log_err       = logger.err
-local log_info      = logger.info
-local lsha1         = lcrypt.sha1
-local lxor_byte     = lcrypt.xor_byte
-local lb64encode    = lcrypt.b64_encode
+local ssub              = string.sub
+local spack             = string.pack
+local sformat           = string.format
+local sunpack           = string.unpack
+local log_err           = logger.err
+local log_info          = logger.info
+local lsha1             = lcrypt.sha1
+local lxor_byte         = lcrypt.xor_byte
+local lb64encode        = lcrypt.b64_encode
 
-local hxpcall       = hive.xpcall
+local hxpcall           = hive.xpcall
 
 local socket_mgr        = hive.get("socket_mgr")
 local thread_mgr        = hive.get("thread_mgr")
@@ -20,8 +20,8 @@ local thread_mgr        = hive.get("thread_mgr")
 local NETWORK_TIMEOUT   = hive.enum("NetwkTime", "NETWORK_TIMEOUT")
 local HTTP_CALL_TIMEOUT = hive.enum("NetwkTime", "HTTP_CALL_TIMEOUT")
 
-local WebSocket = class()
-local prop = property(WebSocket)
+local WebSocket         = class()
+local prop              = property(WebSocket)
 prop:reader("ip", nil)
 prop:reader("host", nil)
 prop:reader("token", nil)
@@ -45,9 +45,9 @@ function WebSocket:close()
         end
         self.session.close()
         self.context = nil
-        self.alive = false
+        self.alive   = false
         self.session = nil
-        self.token = nil
+        self.token   = nil
     end
 end
 
@@ -56,7 +56,7 @@ function WebSocket:listen(ip, port)
         return true
     end
     local proto_type = 2
-    self.listener = socket_mgr.listen(ip, port, proto_type)
+    self.listener    = socket_mgr.listen(ip, port, proto_type)
     if not self.listener then
         log_err("[WebSocket][listen] failed to listen: %s:%d type=%d", ip, port, proto_type)
         return false
@@ -77,7 +77,7 @@ end
 function WebSocket:on_socket_error(token, err)
     if self.session then
         self.session = nil
-        self.alive = false
+        self.alive   = false
         log_err("[WebSocket][on_socket_error] err: %s - %s!", err, token)
         self.host:on_socket_error(self, token, err)
         self.token = nil
@@ -88,21 +88,24 @@ function WebSocket:on_socket_recv(session, data)
     local token = session.token
     if self.alive then
         self.alive_time = hive.clock_ms
-        self.recvbuf = self.recvbuf .. data
+        self.recvbuf    = self.recvbuf .. data
         while true do
             local frame = self:recv_frame()
             if not frame then
                 break
             end
-            if frame.error and frame.opcode == 0x8 then -- close/error
+            if frame.error and frame.opcode == 0x8 then
+                -- close/error
                 self:close()
                 self.host:on_socket_error(self, token, frame.data)
             end
-            if frame.opcode == 0x9 then --Ping
+            if frame.opcode == 0x9 then
+                --Ping
                 self:send_frame(true, 0xA, data)
                 goto continue
             end
-            if frame.opcode == 0xA then --Pong
+            if frame.opcode == 0xA then
+                --Pong
                 goto continue
             end
             thread_mgr:fork(function()
@@ -119,8 +122,8 @@ function WebSocket:on_socket_recv(session, data)
         end
         return
     end
-    self.alive = true
-    self.token = token
+    self.alive   = true
+    self.token   = token
     self.session = session
     if self:on_accept_handshake(session, token, data) then
         self.host:on_socket_accept(self, token)
@@ -134,7 +137,7 @@ function WebSocket:accept(session, ip, port)
     session.on_call_text = function(recv_len, data)
         hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, data)
     end
-    session.on_error = function(token, err)
+    session.on_error     = function(token, err)
         thread_mgr:fork(function()
             self:on_socket_error(token, err)
         end)
@@ -144,50 +147,46 @@ end
 --握手协议
 function WebSocket:on_accept_handshake(session, token, data)
     local request = lhttp.create_request()
-    if not request:append(data) then
-        log_err("[WebSocket][on_accept_handshake] http request append failed, close client(token:%s)!", token)
-        return self:response(400, request, "this http request parse error!")
-    end
-    request:process()
-    local state = request:state()
-    local HTTP_REQUEST_ERROR = 2
-    if state == HTTP_REQUEST_ERROR then
+    if #data == 0 or not request.parse(data) then
         log_err("[WebSocket][on_accept_handshake] http request process failed, close client(token:%s)!", token)
-        return self:response(400, request, "this http request parse error!")
+        return self:response(400, "this http request parse error!")
     end
-    local headers = request:headers()
+    local headers = request.get_headers()
     local upgrade = headers["Upgrade"]
     if not upgrade or upgrade ~= "websocket" then
-        return self:response(400, request, "can upgrade only to websocket!")
+        return self:response(400, "can upgrade only to websocket!")
     end
     local connection = headers["Connection"]
     if not connection or connection ~= "Upgrade" then
-        return self:response(400, request, "connection must be upgrade!")
+        return self:response(400, "connection must be upgrade!")
     end
     local version = headers["Sec-WebSocket-Version"]
     if not version or version ~= "13" then
-        return self:response(400, request, "HTTP/1.1 Upgrade Required\r\nSec-WebSocket-Version: 13\r\n\r\n")
+        return self:response(400, "HTTP/1.1 Upgrade Required\r\nSec-WebSocket-Version: 13\r\n\r\n")
     end
     local key = headers["Sec-WebSocket-Key"]
     if not key then
-        return self:response(400, request, "Sec-WebSocket-Key must not be nil!")
+        return self:response(400, "Sec-WebSocket-Key must not be nil!")
     end
-    self.url = request:url()
+    self.url       = request:url()
     local protocol = headers["Sec-WebSocket-Protocol"]
     if protocol then
-        local i = protocol:find(",", 1, true)
-        protocol = "Sec-WebSocket-Protocol: " .. protocol:sub(1, i and i-1)
+        local i  = protocol:find(",", 1, true)
+        protocol = "Sec-WebSocket-Protocol: " .. protocol:sub(1, i and i - 1)
     end
-    local accept = lb64encode(lsha1(key .. "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
+    local accept   = lb64encode(lsha1(key .. "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
     local fmt_text = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\n%s\r\n"
     self:send(sformat(fmt_text, accept, protocol or ""))
     return true
 end
 
 --回执
-function WebSocket:response(status, request, response)
-    local text = request:response(status, "text/plain", response or "")
-    self:send(text)
+function WebSocket:response(status, response)
+    local resp   = lhttp.create_response()
+    resp.status  = status
+    resp.content = response
+    resp.set_header("Content-Type", "text/plain")
+    self:send(resp.serialize())
     self:close()
 end
 
@@ -222,7 +221,7 @@ end
 
 --发送帧
 function WebSocket:send_frame(fin, opcode, data)
-    local len = #data
+    local len    = #data
     local finbit = fin and 0x80 or 0
     --服务器回包不需要掩码格式化
     if len < 126 then
@@ -245,7 +244,7 @@ end
 --接收ws帧
 function WebSocket:recv_frame()
     local offset = 2
-    local data = self.recvbuf
+    local data   = self.recvbuf
     if #data < offset then
         return
     end
@@ -254,7 +253,7 @@ function WebSocket:recv_frame()
         return { error = true, data = "Reserved_bits show using undefined extensions" }
     end
     local masklen, packlen = 0, 0
-    local fmtlen = payloadlen & 0x7f
+    local fmtlen           = payloadlen & 0x7f
     if payloadlen & 0x80 ~= 0 then
         masklen = 4
     end
@@ -263,11 +262,11 @@ function WebSocket:recv_frame()
     elseif fmtlen == 127 then
         packlen = 8
     end
-    if #data < offset + packlen + masklen  then
+    if #data < offset + packlen + masklen then
         return
     end
     local data_len = fmtlen
-    local frame = {opcode = header & 0xf, final = header & 0x80 ~= 0 }
+    local frame    = { opcode = header & 0xf, final = header & 0x80 ~= 0 }
     if packlen == 2 then
         data_len = sunpack(">H", self:peek(packlen, offset))
     elseif packlen == 8 then
@@ -276,7 +275,7 @@ function WebSocket:recv_frame()
     offset = offset + packlen
     if masklen > 0 then
         frame.mask = self:peek(masklen, offset)
-        offset = offset + masklen
+        offset     = offset + masklen
     end
     if #data < offset + data_len then
         return
@@ -298,9 +297,9 @@ function WebSocket:combine_frame(frame)
     end
     while true do
         local session_id = thread_mgr:build_session_id()
-        self.context = { session_id = session_id }
+        self.context     = { session_id = session_id }
         local next_frame = thread_mgr:yield(session_id, "combine_frame", HTTP_CALL_TIMEOUT)
-        frame.data = frame.data .. next_frame.data
+        frame.data       = frame.data .. next_frame.data
         if next_frame.final then
             break
         end
