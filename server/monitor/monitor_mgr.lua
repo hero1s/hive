@@ -46,6 +46,8 @@ function MonitorMgr:__init()
     server:register_get("/", "on_log_page", self)
     server:register_get("/status", "on_monitor_status", self)
     server:register_post("/command", "on_monitor_command", self)
+    --限制内网访问
+    server:set_limit_lan(true)
     self.http_server = server
 
     --检测失活

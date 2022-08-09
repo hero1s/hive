@@ -1,6 +1,9 @@
 --http_server.lua
 local lhttp       = require("lhttp")
+local lhelper     = require("lhelper")
 local Socket      = import("driver/socket.lua")
+
+local is_lan_ip   = lhelper.is_lan_ip
 
 local type        = type
 local tostring    = tostring
@@ -26,6 +29,8 @@ prop:reader("get_handlers", {})     --get_handlers
 prop:reader("put_handlers", {})     --put_handlers
 prop:reader("del_handlers", {})     --del_handlers
 prop:reader("post_handlers", {})    --post_handlers
+prop:accessor("limit_lan", false)   --限制内网访问
+prop:accessor("limit_ips", nil)
 
 function HttpServer:__init(http_addr)
     self:setup(http_addr)
@@ -55,11 +60,26 @@ function HttpServer:on_socket_error(socket, token, err)
 end
 
 function HttpServer:on_socket_accept(socket, token)
-    log_debug("[HttpServer][on_socket_accept] client(token:%s) connected!", token)
+    local ip = socket.ip
+    log_debug("[HttpServer][on_socket_accept] client(token:%s,ip:%s) connected!", token, ip)
+    if self.limit_lan and not is_lan_ip(ip) then
+        log_err("[HttpServer][on_socket_accept] limit lan ip visit:%s", ip)
+        socket:close()
+        return
+    end
+    if self.limit_ips and self.limit_ips[ip] == nil then
+        log_err("[HttpServer][on_socket_accept] limit white ip visit:%s", ip)
+        socket:close()
+        return
+    end
     self.clients[token] = socket
 end
 
 function HttpServer:on_socket_recv(socket, token)
+    local client = self.clients[token]
+    if not client then
+        return
+    end
     local request = self.requests[token]
     if not request then
         request = lhttp.create_request()
@@ -122,7 +142,6 @@ function HttpServer:build_response(status, content, headers)
     for name, value in pairs(headers or {}) do
         response.set_header(name, value)
     end
-    log_debug("[HttpServer][build_response] status:%s,content:%s,headers:%s", status, content, headers)
     return response
 end
 

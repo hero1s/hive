@@ -377,6 +377,7 @@ namespace tools
         helper.set_function("get_net_ip", []() { return CHelper::GetNetIP(); });
         helper.set_function("ip_to_value", [](std::string ip) { return CHelper::IPToValue(ip); });
         helper.set_function("value_to_ip", [](uint32_t addr) { return CHelper::ValueToIP(addr); });
+        helper.set_function("is_lan_ip", [](std::string ip) { return CHelper::IsLanIP(CHelper::IPToValue(ip)); });
         helper.set_function("port_is_used", [](int port) { return CHelper::PortIsUsed(port); });
         helper.set_function("mem_available", [](lua_State* L) { 
             luakit::kit_state kit_state(L);
