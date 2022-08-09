@@ -62,17 +62,17 @@ end
 --28800 => 3600 * 8
 --86400 => 3600 * 24
 --25569 => 1970.1.1 0:0:0
---根据fmtCode和fmtId解析自定义格式
+--根据fmt_code和fmt_id解析自定义格式
 local function cell_value_fmt_parse(cell)
     if cell.type == "date" then
-        if cell.fmtId == 14 then
+        if cell.fmt_id == 14 then
             return 86400 * (cell.value - 25569) - 28800
         end
     elseif cell.type == "custom" then
-        if sfind(cell.fmtCode, "yy") then
+        if sfind(cell.fmt_code, "yy") then
             return 86400 * (cell.value - 25569) - 28800
         end
-        if sfind(cell.fmtCode, "mm:ss") then
+        if sfind(cell.fmt_code, "mm:ss") then
             return 86400 * cell.value
         end
     end
@@ -117,7 +117,7 @@ end
 
 --获取cell value
 local function get_sheet_value(sheet, row, col, field_type, header)
-    local cell = sheet:cell(row, col)
+    local cell = sheet.get_cell(row, col)
     if cell and cell.type ~= "blank" then
         local value                            = cell.value
         --------------------------------------兼容了文本格式的转换，后期可以去掉 modify toney 2021/7/15------------------
@@ -223,11 +223,11 @@ export %s error:%s!
 end
 
 --导出到lua table
-local function export_sheet_to_table(sheet, output, title, dim)
+local function export_sheet_to_table(sheet, output, title)
     local header     = {}
     local field_type = {}
     local field_desc = {}
-    for col = dim.firstCol, dim.lastCol do
+    for col = sheet.first_col, sheet.last_col do
         -- 读取第一行作为字段描述
         field_desc[col] = get_sheet_value(sheet, 1, col)
         -- 读取第二行服务器类型列，作为服务器筛选条件
@@ -250,7 +250,7 @@ local function export_sheet_to_table(sheet, output, title, dim)
     local records    = {}
     local search_tag = true
     -- 从第五行开始处理
-    for row = start_line, dim.lastRow do
+    for row = start_line, sheet.last_row do
         -- 搜索开始标记
         if search_tag then
             local start_tag = get_sheet_value(sheet, row, 1)
@@ -262,7 +262,7 @@ local function export_sheet_to_table(sheet, output, title, dim)
         -- 遍历每一列
         local record, record_flag = {}, {}
         local pos = 0
-        for col = 2, dim.lastCol do
+        for col = 2, sheet.last_col do
             -- 过滤掉没有配置的行
             local ftype = field_type[col]
             if ftype then
@@ -350,21 +350,20 @@ local function export_excel(input, output, recursion)
                 goto continue
             end
             --只导出sheet1
-            local sheets = workbook:sheets()
+            local sheets = workbook.sheets()
             local sheet  = sheets and sheets[1]
             if not sheet then
                 print(sformat("export excel %s open sheet %d failed!", file, 0))
                 break
             end
-            local dim        = sheet:dimension()
-            local sheet_name = sheet:name()
-            if dim.lastRow < 4 or dim.lastCol <= 0 then
+            local sheet_name = sheet.name
+            if sheet.last_row < 4 or sheet.last_col <= 0 then
                 print(sformat("export excel %s sheet %s empty!", file, sheet_name))
                 break
             end
 
             local title = slower(sheet_name)
-            local ret   = export_sheet_to_table(sheet, output, title, dim)
+            local ret   = export_sheet_to_table(sheet, output, title)
             if ret then
                 if file_names[sheet_name] then
                     print(sformat("repeated sheet_name:%s old_name:%s file_name:%s", sheet_name, file_names[sheet_name], fullname))

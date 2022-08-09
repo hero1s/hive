@@ -16,10 +16,6 @@ MYCFLAGS =
 
 #需要定义的FLAG
 MYCFLAGS += -Wno-sign-compare
-MYCFLAGS += -Wno-unused-variable
-MYCFLAGS += -Wno-unused-parameter
-MYCFLAGS += -Wno-unused-but-set-parameter
-MYCFLAGS += -Wno-implicit-fallthrough
 
 #c标准库版本
 #gnu99/gnu11/gnu17
@@ -31,6 +27,7 @@ STDCPP = -std=c++17
 
 #需要的include目录
 MYCFLAGS += -I../lua/lua
+MYCFLAGS += -I../luakit/include
 
 #需要定义的选项
 ifeq ($(UNAME_S), Linux)

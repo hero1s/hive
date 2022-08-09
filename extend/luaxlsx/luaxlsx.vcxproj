@@ -7,13 +7,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\MiniExcel.h"/>
+    <ClInclude Include="src\excel.h"/>
     <ClInclude Include="src\miniz.h"/>
     <ClInclude Include="src\tinyxml2.h"/>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\luaxlsx.cpp"/>
-    <ClCompile Include="src\MiniExcel.cpp"/>
     <ClCompile Include="src\miniz.c"/>
     <ClCompile Include="src\tinyxml2.cpp"/>
   </ItemGroup>
@@ -48,7 +47,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\lua\lua;$(SolutionDir)extend\mimalloc\mimalloc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\lua\lua;..\luakit\include;$(SolutionDir)extend\mimalloc\mimalloc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;LUA_BUILD_AS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>

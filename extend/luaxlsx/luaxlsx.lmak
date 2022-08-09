@@ -9,41 +9,38 @@ PROJECT_TYPE = "dynamic"
 
 --需要的FLAGS
 FLAGS = {
-	"Wno-sign-compare",
-    "Wno-unused-variable",
-    "Wno-unused-parameter",
-    "Wno-unused-but-set-parameter",
-    "Wno-implicit-fallthrough"
+    "Wno-sign-compare"
 }
 
 --需要的include目录
 INCLUDES = {
-	"../lua/lua"
+    "../lua/lua",
+    "../luakit/include"
 }
 
 --LINUX需要定义的选项
 LINUX_DEFINES = {
-	"_LARGEFILE64_SOURCE"
+    "_LARGEFILE64_SOURCE"
 }
 
 --DARWIN需要定义的选项
 DARWIN_DEFINES = {
-	"_LARGEFILE64_SOURCE"
+    "_LARGEFILE64_SOURCE"
 }
 
 --WINDOWS需要定义的选项
 WINDOWS_DEFINES = {
-	"LUA_BUILD_AS_DLL"
+    "LUA_BUILD_AS_DLL"
 }
 
 --需要连接的库文件
 LIBS = {
-	"lua"
+    "lua"
 }
 
 --依赖项目
 DEPS = {
-	"lualib"
+    "lualib"
 }
 
 --分组定义
