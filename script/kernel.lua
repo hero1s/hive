@@ -1,5 +1,7 @@
 --kernel.lua
 import("basic/basic.lua")
+import("basic/json.lua")
+
 local ltimer        = require("ltimer")
 local lprof         = require("lprof")
 local prof_manager  = lprof.new()
@@ -86,7 +88,7 @@ function hive.startup(entry)
 end
 
 --底层驱动
-hive.run         = function()
+hive.run      = function()
     if socket_mgr then
         socket_mgr.wait(10)
     end
@@ -94,12 +96,12 @@ hive.run         = function()
     update_mgr:update(ltime())
 end
 
-hive.exit        = function()
+hive.exit     = function()
     logger.warn("prof:\n %s", prof_manager.report())
     prof_manager.shutdown()
 end
 
 --性能打点
-hive.new_prof    = function(key)
+hive.new_prof = function(key)
     return ProfObj(prof_manager, key)
 end

@@ -46,8 +46,6 @@ function MonitorMgr:__init()
     server:register_get("/", "on_log_page", self)
     server:register_get("/status", "on_monitor_status", self)
     server:register_post("/command", "on_monitor_command", self)
-    --限制内网访问
-    server:set_limit_lan(true)
     self.http_server = server
 
     --检测失活
@@ -102,14 +100,13 @@ end
 -- 检测失活
 function MonitorMgr:check_lost_node()
     for _, v in pairs(self.monitor_lost_nodes) do
-        log_err("[MonitorMgr][check_lost_node] lost service:%s", service.id2nick(v.id))
+        log_err("[MonitorMgr][check_lost_node] lost service:%s", v)
     end
 end
 
 --gm_page
 function MonitorMgr:on_log_page(url, body, request)
-    local ret_headers = { ["Access-Control-Allow-Origin"] = "*" }
-    return self.http_server:build_response(200, log_page, ret_headers)
+    return self.http_server:build_response(200, log_page)
 end
 
 -- status查询

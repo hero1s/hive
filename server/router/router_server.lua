@@ -91,7 +91,7 @@ end
 
 --accept事件
 function RouterServer:on_socket_accept(server)
-    --log_info("[RouterServer][on_socket_accept] new connection, token=%s", server.token)
+    log_info("[RouterServer][on_socket_accept] new connection, token=%s", server.token)
     server.on_forward_error     = function(session_id)
         log_err("[RouterServer][on_socket_accept] on_forward_error, session_id=%s,%s", session_id, sid2nick(server.id))
         server.call(session_id, FlagMask.RES, hive.id, "on_forward_error", false, KernCode.RPC_UNREACHABLE, "router con't find target!")

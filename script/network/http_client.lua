@@ -2,7 +2,7 @@
 local lcurl             = require("lcurl")
 
 local pairs             = pairs
-local log_err           = logger.err
+local log_debug         = logger.debug
 local tunpack           = table.unpack
 local tconcat           = table.concat
 local sformat           = string.format
@@ -89,13 +89,13 @@ end
 function HttpClient:build_request(url, timeout, session_id, headers, method, ...)
     local request, curl_handle = lcrequest(url, timeout)
     if not request then
-        log_err("[HttpClient][build_request] failed : %s", curl_handle)
+        log_debug("[HttpClient][build_request] failed : %s", curl_handle)
         return
     end
     self:format_headers(request, headers or {})
     local ok, err = request[method](request, ...)
     if not ok then
-        log_err("[HttpClient][build_request] curl %s failed: %s!", method, err)
+        log_debug("[HttpClient][build_request] curl %s failed: %s!", method, err)
         return false
     end
     self.contexts[curl_handle] = {

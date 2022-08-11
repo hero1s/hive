@@ -3,6 +3,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <math.h>
 #include "miniz.h"
 #include "tinyxml2.h"
 #include "lua_kit.h"

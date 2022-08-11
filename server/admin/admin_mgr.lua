@@ -2,7 +2,7 @@
 import("basic/cmdline.lua")
 import("agent/online_agent.lua")
 
-local lguid       = require("lguid")
+local lguid        = require("lguid")
 local gm_page      = nil
 local HttpServer   = import("network/http_server.lua")
 
@@ -49,6 +49,16 @@ function AdminMgr:__init()
     server:register_post("/monitor", "on_monitor", self)
     server:register_post("/message", "on_message", self)
     self.http_server = server
+    --ip白名单
+    local white_ips  = environ.table("HIVE_ADMIN_LIMIT_IP")
+    local ips        = {}
+    for i, ip in ipairs(white_ips) do
+        ips[ip] = 1
+    end
+    if next(ips) then
+        self.http_server:set_limit_ips(ips)
+        log_debug("admin limit ips:%s", ips)
+    end
 end
 
 --rpc请求
@@ -82,8 +92,7 @@ end
 ----------------------------------------------------------------------
 --gm_page
 function AdminMgr:on_gm_page(url, body, request)
-    local ret_headers = { ["Access-Control-Allow-Origin"] = "*" }
-    return self.http_server:build_response(200, gm_page, ret_headers)
+    return self.http_server:build_response(200, gm_page)
 end
 
 --gm列表
@@ -95,18 +104,16 @@ end
 function AdminMgr:on_command(url, body, request)
     log_debug("[AdminMgr][on_command] body: %s", body)
     local cmd_req = json_decode(body)
-    local data = strim(cmd_req.data)
+    local data    = strim(cmd_req.data)
     return self:exec_command(data)
 end
 
 --后台GM调用，table格式
 function AdminMgr:on_message(url, body, request)
     log_debug("[AdminMgr][on_message] body: %s", body)
-    local cmd_req     = json_decode(body)
-    local data        = strim(cmd_req.data)
-    local res         = self:exec_message(data)
-    local ret_headers = { ["Access-Control-Allow-Origin"] = "*" }
-    return self.http_server:build_response(200, res, ret_headers)
+    local cmd_req = json_decode(body)
+    local data    = cmd_req.data
+    return self:exec_message(data)
 end
 
 --monitor上报

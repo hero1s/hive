@@ -1,9 +1,6 @@
 --http_server.lua
 local lhttp       = require("lhttp")
-local lhelper     = require("lhelper")
 local Socket      = import("driver/socket.lua")
-
-local is_lan_ip   = lhelper.is_lan_ip
 
 local type        = type
 local tostring    = tostring
@@ -29,7 +26,6 @@ prop:reader("get_handlers", {})     --get_handlers
 prop:reader("put_handlers", {})     --put_handlers
 prop:reader("del_handlers", {})     --del_handlers
 prop:reader("post_handlers", {})    --post_handlers
-prop:accessor("limit_lan", false)   --限制内网访问
 prop:accessor("limit_ips", nil)
 
 function HttpServer:__init(http_addr)
@@ -62,13 +58,8 @@ end
 function HttpServer:on_socket_accept(socket, token)
     local ip = socket.ip
     log_debug("[HttpServer][on_socket_accept] client(token:%s,ip:%s) connected!", token, ip)
-    if self.limit_lan and not is_lan_ip(ip) then
-        log_err("[HttpServer][on_socket_accept] limit lan ip visit:%s", ip)
-        socket:close()
-        return
-    end
     if self.limit_ips and self.limit_ips[ip] == nil then
-        log_err("[HttpServer][on_socket_accept] limit white ip visit:%s", ip)
+        log_warn("[HttpServer][on_socket_accept] limit white ip visit:%s", ip)
         socket:close()
         return
     end
@@ -136,9 +127,16 @@ end
 
 --生成response
 function HttpServer:build_response(status, content, headers)
-    local response   = lhttp.create_response()
-    response.status  = status
-    response.content = content
+    local response = lhttp.create_response()
+    response.set_header("Access-Control-Allow-Origin", "*")
+    response.set_header("connection", "close")
+    if type(content) == "table" then
+        response.set_header("Content-Type", "application/json")
+        response.content = json_encode(content)
+    else
+        response.content = (type(content) == "string") and content or tostring(content)
+    end
+    response.status = status
     for name, value in pairs(headers or {}) do
         response.set_header(name, value)
     end
@@ -194,6 +192,8 @@ function HttpServer:response(socket, status, response)
         end
     end
     local new_resp = lhttp.create_response()
+    new_resp.set_header("Access-Control-Allow-Origin", "*")
+    new_resp.set_header("connection", "close")
     if type(response) == "table" then
         new_resp.set_header("Content-Type", "application/json")
         new_resp.content = json_encode(response)

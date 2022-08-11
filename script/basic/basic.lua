@@ -23,6 +23,8 @@ local otime      = os.time
 local odate      = os.date
 local log_err    = logger.err
 local sformat    = string.format
+local tpack      = table.pack
+local tunpack    = table.unpack
 local dgetinfo   = debug.getinfo
 local dsethook   = debug.sethook
 local dtraceback = debug.traceback
@@ -35,6 +37,14 @@ function hive.xpcall(func, format, ...)
     if not ok then
         log_err(format, err)
     end
+end
+
+function hive.xpcall_ret(func, format, ...)
+    local result = tpack(xpcall(func, dtraceback, ...))
+    if not result[1] then
+        log_err(format, result[2])
+    end
+    return tunpack(result)
 end
 
 function hive.try_call(func, time, ...)
@@ -78,7 +88,7 @@ local function henum(ename, ekey)
     return eval
 end
 
-hive.enum   = henum
+hive.enum     = henum
 
 local SUCCESS = henum("KernCode", "SUCCESS")
 local DAY_S   = henum("PeriodTime", "DAY_S")
@@ -99,8 +109,8 @@ function hive.utc_time(time)
         time = hive.now
     end
     if not utc_diff_time then
-        local nowt = odate("*t", time)
-        local utct = odate("!*t", time)
+        local nowt      = odate("*t", time)
+        local utct      = odate("!*t", time)
         local diff_hour = nowt.hour - utct.hour
         if diff_hour < 0 then
             diff_hour = diff_hour + 24
@@ -116,7 +126,7 @@ function hive.edition(period, time, offset)
     if not time or time <= 0 then
         time = hive.now
     end
-    time = time - (offset or 0)
+    time    = time - (offset or 0)
     local t = odate("*t", time)
     if period == "hour" then
         edition = time // HOUR_S

@@ -27,6 +27,7 @@ function DevopsGmMgr:register()
         { gm_type = GMType.DEV_OPS, name = "gm_inject", desc = "代码注入", args = "svr_name|string file_name|string base64_code|string" },
         { gm_type = GMType.DEV_OPS, name = "gm_stop_service", desc = "停服", args = "force|integer delay|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_hive_quit", desc = "关闭服务器", args = "reason|integer" },
+        { gm_type = GMType.DEV_OPS, name = "gm_cfg_reload", desc = "配置表热更新", args = "file_name|string base64_file_content|string" },
     }
     for _, v in ipairs(cmd_list) do
         event_mgr:add_listener(self, v.name)
@@ -81,6 +82,18 @@ end
 
 function DevopsGmMgr:gm_hive_quit(reason)
     monitor_mgr:broadcast("rpc_hive_quit", 0, reason)
+    return { code = 0 }
+end
+
+function DevopsGmMgr:gm_cfg_reload(file_name, base64_file_content)
+    log_debug("[DevopsGmMgr][gm_cfg_reload] file_name:%s, file_content:%s", file_name, base64_file_content)
+    local file_content = lcrypt.b64_decode(base64_file_content)
+    log_debug("[DevopsGmMgr][gm_cfg_reload] file_name:%s, file_content:%s", file_name, file_content)
+
+    -- TODO:
+    -- 1.文件覆盖(获取文件路径,生成文件并覆盖)
+    -- 2.通知配置表更新
+
     return { code = 0 }
 end
 

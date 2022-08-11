@@ -230,11 +230,13 @@
                 if (data.tag == "gm") {
                     var cmd_name = data.text;
                     var cmd_data = that.cmdlist[cmd_name];
-                    var msg = "<pre>功能: " + cmd_data.desc + "<br/>参数: " + cmd_data.command + "</pre>";
-                    that._displayNewMsg("historyMsg", msg, "myMsg");
-                    var inputMsg = document.getElementById('inputMsg');
-                    inputMsg.value = cmd_name + " ";
-                    inputMsg.focus();
+                    if (cmd_data) {
+                        var msg = "<pre>功能: " + cmd_data.desc + "<br/>参数: " + cmd_data.command + "</pre>";
+                        that._displayNewMsg("historyMsg", msg, "myMsg");
+                        var inputMsg = document.getElementById('inputMsg');
+                        inputMsg.value = cmd_name + " ";
+                        inputMsg.focus();
+                    }
                 } else if (data.tag == "log") {
                     window.open("http://" + data.text);
                 }

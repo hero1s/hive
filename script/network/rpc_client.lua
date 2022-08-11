@@ -56,6 +56,7 @@ function RpcClient:heartbeat(initial)
             deploy     = hive.deploy,
             service    = hive.service_name,
             service_id = hive.service_id,
+            lan_ip     = hive.lan_ip,
         }
         self:send("rpc_heartbeat", node_info)
         return

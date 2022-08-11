@@ -35,6 +35,7 @@ end
 function Socket:close()
     if self.session then
         self.session.close()
+        self.host:on_socket_error(self, self.token, "active-close")
         self.alive   = false
         self.session = nil
         self.token   = nil
