@@ -179,7 +179,7 @@ namespace logger {
 		void put(std::shared_ptr<log_message> logmsg,bool notify) {
 			std::unique_lock<spin_mutex> lock(spin_);
 			write_messages_->push_back(logmsg);
-            if (notify) {
+            if (notify || write_messages_->size() > 10) {
                 condv_.notify_all();
             }
 		}
@@ -460,7 +460,7 @@ namespace logger {
 				for (auto logmsg : *logmsgs) {
 					if (logmsg == stop_msg_) {
 						loop = false;
-						continue;
+						break;
 					}
 					if (!log_daemon_) {
 						std_dest_->write(logmsg);

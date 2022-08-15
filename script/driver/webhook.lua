@@ -2,11 +2,13 @@
 
 local env_get     = environ.get
 local sformat     = string.format
+local sfind       = string.find
 local json_encode = hive.json_encode
 
 local LIMIT_COUNT = 3    -- 周期内最大次数
 
 local http_client = hive.get("http_client")
+local thread_mgr  = hive.get("thread_mgr")
 local HOUR_S      = hive.enum("PeriodTime", "HOUR_S")
 
 local Webhook     = singleton()
@@ -32,7 +34,7 @@ function Webhook:setup(url, interface)
     self.lan_ip    = hive.lan_ip
     self.url       = url
     self.interface = interface
-    if self.url:len() > 10 then
+    if sfind(self.url, "http") then
         logger.set_webhook(self)
     end
 end
@@ -41,7 +43,9 @@ end
 function Webhook:lark_log(title, context)
     local text = sformat("service:%s \n %s \n %s", hive.name, title, context)
     local body = { msg_type = "text", content = { text = text } }
-    http_client:call_post(self.url, json_encode(body))
+    thread_mgr:fork(function()
+        http_client:call_post(self.url, json_encode(body))
+    end)
 end
 
 --企业微信
@@ -50,7 +54,9 @@ end
 function Webhook:wechat_log(title, context, at_mobiles, at_members)
     local text = sformat("service:%s \n %s \n %s", hive.name, title, context)
     local body = { msgtype = "text", text = { content = text, mentioned_list = at_members, mentioned_mobile_list = at_mobiles } }
-    http_client:call_post(self.url, json_encode(body))
+    thread_mgr:fork(function()
+        http_client:call_post(self.url, json_encode(body))
+    end)
 end
 
 --钉钉
@@ -59,7 +65,9 @@ end
 function Webhook:ding_log(title, context, at_mobiles, at_all)
     local text = sformat("service:%s \n %s \n %s", hive.name, title, context)
     local body = { msgtype = "text", text = { content = text }, at = { atMobiles = at_mobiles, isAtAll = at_all } }
-    http_client:call_post(self.url, json_encode(body))
+    thread_mgr:fork(function()
+        http_client:call_post(self.url, json_encode(body))
+    end)
 end
 
 function Webhook:notify(title, context, ...)

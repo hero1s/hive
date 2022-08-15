@@ -64,7 +64,9 @@ function WebSocket:listen(ip, port)
     self.ip, self.port = ip, port
     log_info("[WebSocket][listen] start listen at: %s:%d type=%d", ip, port, proto_type)
     self.listener.on_accept = function(session)
-        hxpcall(self.on_socket_accept, "on_socket_accept: %s", self, session, ip, port)
+        thread_mgr:fork(function()
+            hxpcall(self.on_socket_accept, "on_socket_accept: %s", self, session, ip, port)
+        end)
     end
     return true
 end
@@ -135,7 +137,9 @@ function WebSocket:accept(session, ip, port)
     self.ip, self.port = ip, port
     session.set_timeout(NETWORK_TIMEOUT)
     session.on_call_text = function(recv_len, data)
-        hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, data)
+        thread_mgr:fork(function()
+            hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, data)
+        end)
     end
     session.on_error     = function(token, err)
         thread_mgr:fork(function()

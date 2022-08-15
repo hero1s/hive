@@ -1,22 +1,22 @@
-local lcrypt            = require("lcrypt")
-local log_err           = logger.err
-local hxpcall           = hive.xpcall
-local env_status        = environ.status
+local lcrypt       = require("lcrypt")
+local log_err      = logger.err
+local hxpcall      = hive.xpcall
+local env_status   = environ.status
 
-local event_mgr         = hive.get("event_mgr")
-local socket_mgr        = hive.get("socket_mgr")
-local thread_mgr        = hive.get("thread_mgr")
-local protobuf_mgr      = hive.get("protobuf_mgr")
-local perfeval_mgr      = hive.get("perfeval_mgr")
+local event_mgr    = hive.get("event_mgr")
+local socket_mgr   = hive.get("socket_mgr")
+local thread_mgr   = hive.get("thread_mgr")
+local protobuf_mgr = hive.get("protobuf_mgr")
+local perfeval_mgr = hive.get("perfeval_mgr")
 
-local FlagMask          = enum("FlagMask")
-local NetwkTime         = enum("NetwkTime")
+local FlagMask     = enum("FlagMask")
+local NetwkTime    = enum("NetwkTime")
 
-local out_press         = env_status("HIVE_OUT_PRESS")
-local out_encrypt       = env_status("HIVE_OUT_ENCRYPT")
+local out_press    = env_status("HIVE_OUT_PRESS")
+local out_encrypt  = env_status("HIVE_OUT_ENCRYPT")
 
-local NetClient = class()
-local prop = property(NetClient)
+local NetClient    = class()
+local prop         = property(NetClient)
 prop:reader("ip", nil)
 prop:reader("port", nil)
 prop:reader("alive", false)
@@ -29,8 +29,8 @@ prop:accessor("encoder", nil)       --编码函数
 
 function NetClient:__init(holder, ip, port)
     self.holder = holder
-    self.port = port
-    self.ip = ip
+    self.port   = port
+    self.ip     = ip
 end
 
 -- 发起连接
@@ -38,22 +38,22 @@ function NetClient:connect(block)
     if self.socket then
         return true
     end
-    local proto_type = 1
+    local proto_type   = 1
     local socket, cerr = socket_mgr.connect(self.ip, self.port, NetwkTime.CONNECT_TIMEOUT, proto_type)
     if not socket then
         log_err("[NetClient][connect] failed to connect: %s:%d type=%d, err=%s", self.ip, self.port, proto_type, cerr)
         return false, cerr
     end
     --设置阻塞id
-    local block_id = block and thread_mgr:build_session_id()
+    local block_id      = block and thread_mgr:build_session_id()
     -- 调用成功，开始安装回调函数
-    socket.on_connect = function(res)
+    socket.on_connect   = function(res)
         local succes = (res == "ok")
         thread_mgr:fork(function()
             if not succes then
-                self:on_socket_error(socket.token, res)
+                hxpcall(self.on_socket_error, "on_socket_error: %s", self, socket.token, res)
             else
-                self:on_socket_connect(socket)
+                hxpcall(self.on_socket_connect, "on_socket_connect: %s", self, socket)
             end
         end)
         if block_id then
@@ -62,15 +62,17 @@ function NetClient:connect(block)
         end
     end
     socket.on_call_pack = function(recv_len, cmd_id, flag, session_id, data)
-        event_mgr:notify_listener("on_proto_recv", cmd_id, recv_len)
-        hxpcall(self.on_socket_rpc, "on_socket_rpc: %s", self, socket, cmd_id, flag, session_id, data)
-    end
-    socket.on_error = function(token, err)
         thread_mgr:fork(function()
-            self:on_socket_error(token, err)
+            event_mgr:notify_listener("on_proto_recv", cmd_id, recv_len)
+            hxpcall(self.on_socket_rpc, "on_socket_rpc: %s", self, socket, cmd_id, flag, session_id, data)
         end)
     end
-    self.socket = socket
+    socket.on_error     = function(token, err)
+        thread_mgr:fork(function()
+            hxpcall(self.on_socket_error, "on_socket_error: %s", self, token, err)
+        end)
+    end
+    self.socket         = socket
     --阻塞模式挂起
     if block_id then
         return thread_mgr:yield(block_id, "connect", NetwkTime.CONNECT_TIMEOUT)
@@ -92,12 +94,12 @@ function NetClient:encode(cmd_id, data, flag)
     -- 加密处理
     if out_encrypt then
         encode_data = lcrypt.b64_encode(encode_data)
-        flag = flag | FlagMask.ENCRYPT
+        flag        = flag | FlagMask.ENCRYPT
     end
     -- 压缩处理
     if out_press then
         encode_data = lcrypt.lz4_encode(encode_data)
-        flag = flag | FlagMask.ZIP
+        flag        = flag | FlagMask.ZIP
     end
     return encode_data, flag
 end
@@ -120,9 +122,9 @@ function NetClient:decode(cmd_id, data, flag)
 end
 
 function NetClient:on_socket_rpc(socket, cmd_id, flag, session_id, data)
-    self.alive_time = hive.clock_ms
+    self.alive_time      = hive.clock_ms
     local body, cmd_name = self:decode(cmd_id, data, flag)
-    if not body  then
+    if not body then
         log_err("[NetClient][on_socket_rpc] decode failed! cmd_id:%s，data:%s", cmd_id, data)
         return
     end
@@ -149,7 +151,7 @@ end
 function NetClient:close()
     if self.socket then
         self.socket.close()
-        self.alive = false
+        self.alive  = false
         self.socket = nil
     end
 end
@@ -160,7 +162,7 @@ function NetClient:write(cmd_id, data, session_id, flag)
     end
     local body, pflag = self:encode(cmd_id, data, flag)
     if not body then
-        log_err("[NetClient][write] encode failed! cmd_id:%s,data:%s", cmd_id,data)
+        log_err("[NetClient][write] encode failed! cmd_id:%s,data:%s", cmd_id, data)
         return false
     end
     -- call lbus
@@ -193,14 +195,14 @@ end
 
 -- 等待远程调用
 function NetClient:wait_pack(cmd_id, time)
-    local session_id = thread_mgr:build_session_id()
+    local session_id       = thread_mgr:build_session_id()
     self.wait_list[cmd_id] = session_id
     return thread_mgr:yield(session_id, cmd_id, time)
 end
 
 -- 连接成回调
 function NetClient:on_socket_connect(socket)
-    self.alive = true
+    self.alive      = true
     self.alive_time = hive.clock_ms
     self.holder:on_socket_connect(self)
 end
@@ -208,8 +210,8 @@ end
 -- 连接关闭回调
 function NetClient:on_socket_error(token, err)
     if self.socket then
-        self.socket = nil
-        self.alive = false
+        self.socket    = nil
+        self.alive     = false
         self.wait_list = {}
         self.holder:on_socket_error(self, token, err)
     end

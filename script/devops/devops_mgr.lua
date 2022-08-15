@@ -1,5 +1,6 @@
 --devops_mgr.lua
 local log_err    = logger.err
+local log_info   = logger.info
 local sformat    = string.format
 local update_mgr = hive.get("update_mgr")
 local env_get    = environ.get
@@ -48,8 +49,9 @@ function DevopsMgr:file_pid_oper(is_create)
         end
         file:write(hive.pid)
         file:close()
+        log_info("[DevopsMgr][file_pid_oper] pid:%s", hive.pid)
     else
-        log_err(sformat("remove pid file %s ", filename))
+        log_info(sformat("remove pid file %s ", filename))
         lstdfs.remove(filename)
     end
 end

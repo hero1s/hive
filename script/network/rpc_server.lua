@@ -43,7 +43,9 @@ function RpcServer:setup(ip, port, induce)
     self.ip, self.port = ip, real_port
     log_info("[RpcServer][setup] now listen %s:%s success!", ip, real_port)
     self.listener.on_accept = function(client)
-        hxpcall(self.on_socket_accept, "on_socket_accept: %s", self, client)
+        thread_mgr:fork(function()
+            hxpcall(self.on_socket_accept, "on_socket_accept: %s", self, client)
+        end)
     end
     event_mgr:add_listener(self, "rpc_heartbeat")
 end
@@ -93,7 +95,9 @@ function RpcServer:on_socket_accept(client)
         hxpcall(self.on_socket_rpc, "on_socket_rpc: %s", self, client, rpc, session_id, rpc_flag, source, ...)
     end
     client.on_error = function(token, err)
-        hxpcall(self.on_socket_error, "on_socket_error: %s", self, token, err)
+        thread_mgr:fork(function()
+            hxpcall(self.on_socket_error, "on_socket_error: %s", self, token, err)
+        end)
     end
     --通知收到新client
     event_mgr:notify_listener("on_socket_accept", client)

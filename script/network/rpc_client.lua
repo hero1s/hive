@@ -2,6 +2,7 @@
 local tunpack      = table.unpack
 local tpack        = table.pack
 local log_err      = logger.err
+local log_info     = logger.info
 local hxpcall      = hive.xpcall
 local hhash_code   = hive.hash_code
 
@@ -119,14 +120,18 @@ function RpcClient:connect()
         return self:on_call_router(rpc, send_len, ...)
     end
     socket.on_error        = function(token, err)
-        self:on_socket_error(token, err)
+        thread_mgr:fork(function()
+            hxpcall(self.on_socket_error, "on_socket_error: %s", self, token, err)
+        end)
     end
     socket.on_connect      = function(res)
-        if res == "ok" then
-            hxpcall(self.on_socket_connect, "on_socket_connect: %s", self, socket, res)
-        else
-            self:on_socket_error(socket.token, res)
-        end
+        thread_mgr:fork(function()
+            if res == "ok" then
+                hxpcall(self.on_socket_connect, "on_socket_connect: %s", self, socket, res)
+            else
+                hxpcall(self.on_socket_error, "on_socket_error: %s", self, socket.token, res)
+            end
+        end)
     end
     self.socket            = socket
 end
@@ -166,7 +171,7 @@ end
 
 --错误处理
 function RpcClient:on_socket_error(token, err)
-    --log_err("[RpcClient][on_socket_error] socket %s:%s %s!", self.ip, self.port, err)
+    log_info("[RpcClient][on_socket_error] socket %s:%s %s!", self.ip, self.port, err)
     thread_mgr:fork(function()
         self.socket = nil
         self.alive  = false
@@ -176,7 +181,7 @@ end
 
 --连接成功
 function RpcClient:on_socket_connect(socket)
-    --log_info("[RpcClient][on_socket_connect] connect to %s:%s success!", self.ip, self.port)
+    log_info("[RpcClient][on_socket_connect] connect to %s:%s success!", self.ip, self.port)
     self.alive      = true
     self.alive_time = hive.clock_ms
     thread_mgr:fork(function()

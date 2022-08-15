@@ -5,6 +5,15 @@
 #include "socket_mgr.h"
 #include "socket_helper.h"
 #include "socket_stream.h"
+#include "fmt/core.h"
+
+#ifdef __linux
+static const int s_send_flag = MSG_NOSIGNAL;
+#endif
+
+#if defined(_MSC_VER) || defined(__APPLE__)
+static const int s_send_flag = 0;
+#endif
 
 #ifdef _MSC_VER
 socket_stream::socket_stream(socket_mgr* mgr, LPFN_CONNECTEX connect_func, eproto_type proto_type) :
@@ -99,7 +108,7 @@ bool socket_stream::update(int64_t now) {
         }
         default: {
             if (m_timeout > 0 && now - m_last_recv_time > m_timeout) {
-                on_error("timeout");
+                on_error(fmt::format("timeout:{}",m_timeout).c_str());
             }
             dispatch_package();
         }
@@ -290,12 +299,12 @@ int socket_stream::stream_send(const char* data, size_t data_len)
         size_t space_len;
         m_send_buffer.peek_space(&space_len);
         if (space_len == 0) {
-            on_error("send-buffer-full");
+            on_error(fmt::format("send-buffer-full:{}",m_send_buffer.data_len()).c_str());
             return 0;
         }
         size_t try_len = std::min<size_t>(space_len, data_len);
         if (!m_send_buffer.push_data(data, try_len)) {
-            on_error("send-failed");
+            on_error(fmt::format("send-buffer-failed:{}",try_len).c_str());
             return 0;
         }
         data_len -= try_len;
@@ -392,20 +401,20 @@ void socket_stream::do_send(size_t max_len, bool is_eof) {
         auto* data = m_send_buffer.peek_data(&data_len);
         if (data_len == 0) {
             if (!m_mgr->watch_send(m_socket, this, false)) {
-                on_error("watch-error");
+                on_error("do-watch-error");
                 return;
             }
             break;
         }
 
         size_t try_len = std::min<size_t>(data_len, max_len - total_send);
-        int send_len = ::send(m_socket, (char*)data, (int)try_len, 0);
+        int send_len = ::send(m_socket, (char*)data, (int)try_len, s_send_flag);
         if (send_len == SOCKET_ERROR) {
             int err = get_socket_error();
 #ifdef _MSC_VER
             if (err == WSAEWOULDBLOCK) {
                 if (!wsa_send_empty(m_socket, m_send_ovl)) {
-                    on_error("send-failed");
+                    on_error("do-send-failed");
                     return;
                 }
                 m_ovl_ref++;
@@ -420,11 +429,11 @@ void socket_stream::do_send(size_t max_len, bool is_eof) {
             if (err == EAGAIN)
                 break;
 #endif
-            on_error("send-failed");
+            on_error("do-send-failed");
             return;
         }
         if (send_len == 0) {
-            on_error("connection-lost");
+            on_error("connection-lost-send-0");
             return;
         }
         total_send += send_len;
@@ -442,7 +451,7 @@ void socket_stream::do_recv(size_t max_len, bool is_eof)
         size_t space_len = 0;
         auto* space = m_recv_buffer.peek_space(&space_len);
         if (space_len == 0) {
-            on_error("recv-buffer-full");
+            on_error(fmt::format("do-recv-buffer-full:{}",m_recv_buffer.data_len()).c_str());
             return;
         }
 
@@ -453,7 +462,7 @@ void socket_stream::do_recv(size_t max_len, bool is_eof)
 #ifdef _MSC_VER
             if (err == WSAEWOULDBLOCK) {
                 if (!wsa_recv_empty(m_socket, m_recv_ovl)) {
-                    on_error("recv-failed");
+                    on_error(fmt::format("do-recv-failed:{}",err).c_str());
                     return;
                 }
                 m_ovl_ref++;
@@ -467,11 +476,11 @@ void socket_stream::do_recv(size_t max_len, bool is_eof)
             if (err == EAGAIN)
                 break;
 #endif
-            on_error("recv-failed");
+            on_error(fmt::format("do-recv-failed:{}",err).c_str());
             return;
         }
         if (recv_len == 0) {
-            on_error("connection-lost");
+            on_error("connection-lost-recv-0");
             return;
         }
         total_recv += recv_len;
@@ -506,12 +515,12 @@ void socket_stream::dispatch_package() {
             socket_header* header = (socket_header*)data;
             // 当前包长小于headlen，关闭连接
             if (header->len < header_len) {
-                on_error("package-length-err");
+                on_error(fmt::format("package-length-err:{}/{}",header->len,header_len).c_str());
                 break;
             }
             // 当前包头标识的数据超过最大长度
             if (header->len > NET_PACKET_MAX_LEN) {
-                on_error("package-parse-large");
+                on_error(fmt::format("package-parse-large:{}",header->len).c_str());
                 break;
             }
             package_size = header->len - header_len;
@@ -520,7 +529,7 @@ void socket_stream::dispatch_package() {
             if (data_len == 0) break;
             package_size = data_len;
         } else {
-            on_error("proto-type-not-suppert!");
+            on_error(fmt::format("proto-type-not-suppert!:{}",(int)m_proto_type).c_str());
             break;
         }
 

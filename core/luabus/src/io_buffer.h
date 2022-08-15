@@ -7,7 +7,7 @@
 
 constexpr int IO_BUFFER_DEF  = 64 * 1024;             //64K
 constexpr int IO_BUFFER_MAX  = IO_BUFFER_DEF * 1024;  //64M
-constexpr int IO_BUFFER_SEND = 16 * 1024;
+constexpr int IO_BUFFER_SEND = 4 * 1024;
 
 struct io_buffer
 {

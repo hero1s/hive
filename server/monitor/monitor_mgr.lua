@@ -78,6 +78,7 @@ function MonitorMgr:register_admin()
 end
 
 function MonitorMgr:on_socket_accept(client)
+    log_info("[MonitorMgr][on_socket_accept] token:%s",client.token)
 end
 
 -- 会话信息

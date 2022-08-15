@@ -186,7 +186,9 @@ function UpdateMgr:monitor_mem()
     if mem > self.max_mem_usage then
         self.max_mem_usage = mem
         self.lua_mem_usage = cut_tail(collectgarbage("count") / 1024,2)
-        log_warn("UpdateMgr][monitor_mem] the memory grow to: total %s M,lua_mem: %s M", self.max_mem_usage, self.lua_mem_usage)
+        log_warn("UpdateMgr][monitor_mem] memory:%s M,lua_mem: %s M,threads:%s/%s", self.max_mem_usage, self.lua_mem_usage,thread_mgr:size())
+    else
+        log_info("UpdateMgr][monitor_mem] memory:%s M,lua_mem: %s M,threads:%s/%s", self.max_mem_usage, self.lua_mem_usage,thread_mgr:size())
     end
 end
 

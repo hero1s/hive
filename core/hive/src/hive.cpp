@@ -104,6 +104,13 @@ static int lset_env(lua_State* L) {
 	return 0;
 }
 
+static int ldebug(int type,int param,bool pr) {
+	if (pr) {
+		std::cout << fmt::format("{},{}", type, param) << std::endl;
+	}
+	return 0;
+}
+
 void hive_app::set_signal(uint32_t n) {
     uint32_t mask = 1 << n;
     m_signal |= mask;
@@ -181,7 +188,8 @@ void hive_app::run() {
     auto hive = lua.new_table("hive");
     hive.set("pid", ::getpid());
     hive.set("platform", get_platform());
-	
+
+	hive.set_function("debug", ldebug);
     hive.set_function("hash_code", hash_code);
     hive.set_function("get_signal", [&]() { return m_signal; });
     hive.set_function("set_signal", [&](int n) { set_signal(n); });
@@ -200,9 +208,13 @@ void hive_app::run() {
         hive.call([&](std::string err) {
 			LOG_FATAL(m_logger) << "hive run err: " << err;
 			});
-		check_input(lua);
+		//check_input(lua);
 	}
-	hive.get_function("exit");
+	if (hive.get_function("exit")) {
+		hive.call([&](std::string err) {
+			LOG_FATAL(m_logger) << "hive exit err: " << err;
+			});
+	}
 	m_logger->stop();
 	lua.close();
 	m_logger = nullptr;

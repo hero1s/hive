@@ -15,7 +15,7 @@ local sid2index   = service.id2index
 local protoaddr   = string_ext.protoaddr
 
 local Socket      = import("driver/socket.lua")
-
+local thread_mgr  = hive.get("thread_mgr")
 local update_mgr  = hive.get("update_mgr")
 local http_client = hive.get("http_client")
 
@@ -95,10 +95,12 @@ end
 function GrayLog:write(message, level, optional)
     local gelf = self:build(message, level, optional)
     if self.proto == "http" then
-        local ok, status, res = http_client:call_post(self.addr, gelf)
-        if not ok then
-            print("[GrayLog][write] post failed!:", status, res)
-        end
+        thread_mgr:fork(function()
+            local ok, status, res = http_client:call_post(self.addr, gelf)
+            if not ok then
+                print("[GrayLog][write] post failed!:", status, res)
+            end
+        end)
         return
     end
     if self.proto == "tcp" then

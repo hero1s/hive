@@ -61,7 +61,7 @@ end
 function MonitorAgent:on_socket_error(client, token, err)
     -- 设置重连时间
     self.next_connect_time = hive.clock_ms
-    log_err("[MonitorAgent][on_socket_error] connect monitor fail!:[%s:%s]", self.client.ip, self.client.port)
+    log_err("[MonitorAgent][on_socket_error] disconnect monitor fail!:[%s:%s]", self.client.ip, self.client.port)
 end
 
 -- 连接成回调

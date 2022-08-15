@@ -65,7 +65,9 @@ function NetServer:setup(ip, port, induce)
     log_info("[NetServer][setup] start listen at: %s:%d type=%d", ip, real_port, listen_proto_type)
     -- 安装回调
     self.listener.on_accept = function(session)
-        hxpcall(self.on_socket_accept, "on_socket_accept: %s", self, session)
+        thread_mgr:fork(function()
+            hxpcall(self.on_socket_accept, "on_socket_accept: %s", self, session)
+        end)
     end
 end
 
@@ -80,14 +82,18 @@ function NetServer:on_socket_accept(session)
     session.set_timeout(NETWORK_TIMEOUT)
     -- 绑定call回调
     session.on_call_pack  = function(recv_len, cmd_id, flag, session_id, data)
-        session.fc_packet = session.fc_packet + 1
-        session.fc_bytes  = session.fc_bytes + recv_len
-        event_mgr:notify_listener("on_proto_recv", cmd_id, recv_len)
-        hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, cmd_id, flag, session_id, data)
+        thread_mgr:fork(function()
+            session.fc_packet = session.fc_packet + 1
+            session.fc_bytes  = session.fc_bytes + recv_len
+            event_mgr:notify_listener("on_proto_recv", cmd_id, recv_len)
+            hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, cmd_id, flag, session_id, data)
+        end)
     end
     -- 绑定网络错误回调（断开）
     session.on_error      = function(token, err)
-        hxpcall(self.on_socket_error, "on_socket_error: %s", self, token, err)
+        thread_mgr:fork(function()
+            hxpcall(self.on_socket_error, "on_socket_error: %s", self, token, err)
+        end)
     end
     --初始化序号
     session.serial        = 0

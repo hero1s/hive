@@ -21,6 +21,7 @@ FLAGS = {
 INCLUDES = {
 	"../luna/src",
 	"../../extend/lua/lua",
+    "../../extend/fmt/include",
 	"../../extend/utility"
 }
 ---子目录路径

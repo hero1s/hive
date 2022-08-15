@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <cstdio>
 #include <stdio.h>
+#include "fmt/core.h"
 #include "lua_kit.h"
 
 namespace lprofile
@@ -68,7 +69,7 @@ namespace lprofile
         ProfileNode* new_node = new ProfileNode(node_name, this, this->m_mgr);
         new_node->m_sibling_node = m_child_node;
         m_child_node = new_node;
-        printf(" [%s] add new anazy node:[%s] \n", getNodeName(), node_name);
+        //printf(" [%s] add new anazy node:[%s] \n", getNodeName(), node_name);
         return new_node;
     }
 
@@ -162,26 +163,18 @@ namespace lprofile
             space[i] = '\t';
         }
 
-        char text[1024] = { '\0' };
-        sprintf(text, "[%u]Name:%s\tPercent:%0.3f%%\tTotalTime:%.6f(s)\tAvgTime:%.6f(s)\tMaxTime:%.6f(s)\tCount:%u\t\n",
-            layer, getNodeName(), getPercentInParent() * 100.0f, getTotalTime(), getTotalTime() / getTotalCalls(),
-            getPeakValue(), getTotalCalls());
-
-        char enum_begin[256] = { '\0' };
-        sprintf(enum_begin, "{\n");
-
-        char enum_end[256] = { '\n' };
-        sprintf(enum_end, "}\n");
+        auto text = fmt::format("[{:3}]Name:{:20}\tPercent:{:4.3f}%\tTotalTime:{:14.6f}(s)\tAvgTime:{:14.6f}(s)\tMaxTime:{:14.6f}(s)\tCount:{}\t\n",
+                layer, getNodeName(), getPercentInParent() * 100.0f, getTotalTime(), getTotalTime() / getTotalCalls(), getPeakValue(), getTotalCalls());
 
         stream.append(space).append(text);
         ProfileNode* node = getChildNode();
         if (NULL != node) {
-            stream.append(space).append(enum_begin);
+            stream.append(space).append("{\n");
             while (NULL != node) {
                 node->saveData(stream, layer + 1);
                 node = node->getSiblingNode();
             }
-            stream.append(space).append(enum_end);
+            stream.append(space).append("}\n");
         }
 
         return true;

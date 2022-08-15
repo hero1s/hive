@@ -35,10 +35,10 @@ end
 function Socket:close()
     if self.session then
         self.session.close()
-        self.host:on_socket_error(self, self.token, "active-close")
         self.alive   = false
         self.session = nil
-        self.token   = nil
+        self.host:on_socket_error(self, self.token, "active-close")
+        self.token = nil
     end
 end
 
@@ -55,7 +55,9 @@ function Socket:listen(ip, port)
     self.ip, self.port = ip, port
     log_info("[Socket][listen] start listen at: %s:%d type=%d", ip, port, proto_type)
     self.listener.on_accept = function(session)
-        hxpcall(self.on_socket_accept, "on_socket_accept: %s", self, session, ip, port)
+        thread_mgr:fork(function()
+            hxpcall(self.on_socket_accept, "on_socket_accept: %s", self, session, ip, port)
+        end)
     end
     return true
 end
@@ -75,7 +77,9 @@ function Socket:connect(ip, port)
     session.on_connect   = function(res)
         local success = res == "ok"
         if not success then
-            self:on_socket_error(session.token, res)
+            thread_mgr:fork(function()
+                hxpcall(self.on_socket_error, "on_socket_error: %s", self, session.token, res)
+            end)
         end
         self.alive      = success
         self.alive_time = hive.clock_ms
@@ -83,11 +87,13 @@ function Socket:connect(ip, port)
         thread_mgr:response(block_id, success, res)
     end
     session.on_call_text = function(recv_len, data)
-        hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, data)
+        thread_mgr:fork(function()
+            hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, data)
+        end)
     end
     session.on_error     = function(token, err)
         thread_mgr:fork(function()
-            self:on_socket_error(token, err)
+            hxpcall(self.on_socket_error, "on_socket_error: %s", self, token, err)
         end)
     end
     self.session         = session
@@ -121,7 +127,9 @@ end
 function Socket:accept(session, ip, port)
     session.set_timeout(NETWORK_TIMEOUT)
     session.on_call_text = function(recv_len, data)
-        hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, data)
+        thread_mgr:fork(function()
+            hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, data)
+        end)
     end
     session.on_error     = function(token, err)
         thread_mgr:fork(function()
