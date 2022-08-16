@@ -28,6 +28,8 @@
 #endif
 
 using namespace std::chrono;
+//c++20÷ß≥÷∫Û…æµÙ
+using days = duration<int, std::ratio<3600 * 24>>;
 
 namespace logger {
     enum class log_level {
@@ -249,8 +251,8 @@ namespace logger {
 
     class log_file_base : public log_dest {
     public:
-        log_file_base(log_service* service, size_t max_line, int pid)
-            : log_dest(service), pid_(pid), line_(0), max_line_(max_line){ }
+        log_file_base(log_service* service, size_t max_line,size_t max_days, int pid)
+            : log_dest(service), pid_(pid), line_(0), max_line_(max_line),max_days_(max_days){ }
 
         virtual ~log_file_base() {
             if (file_) {
@@ -278,7 +280,7 @@ namespace logger {
         }
 
         log_time        file_time_;
-        size_t          pid_, line_, max_line_;
+        size_t          pid_, line_, max_line_,max_days_;
         std::unique_ptr<std::ofstream> file_ = nullptr;
     }; // class log_file
 
@@ -305,8 +307,8 @@ namespace logger {
     template<class rolling_evaler>
     class log_rollingfile : public log_file_base {
     public:
-        log_rollingfile(log_service* logservice, int pid, std::filesystem::path& log_path, const std::string& service, const std::string& feature, size_t max_line = 10000)
-            : log_file_base(logservice, max_line, pid), feature_(feature), log_path_(log_path){
+        log_rollingfile(log_service* logservice, int pid, std::filesystem::path& log_path, const std::string& service, const std::string& feature, size_t max_line,size_t max_days)
+            : log_file_base(logservice, max_line,max_days, pid), feature_(feature), log_path_(log_path){
             if (feature != service) {
                 log_path_.append(feature);
             }
@@ -316,6 +318,15 @@ namespace logger {
             line_++;
             if (file_ == nullptr || rolling_evaler_.eval(this, logmsg) || line_ >= max_line_) {
                 std::filesystem::create_directories(log_path_);
+                for (auto entry : std::filesystem::recursive_directory_iterator(log_path_)) {
+                    if (!entry.is_directory()) {
+                        auto ftime = std::filesystem::last_write_time(entry.path());
+                        if (duration_cast<days>(std::filesystem::file_time_type::clock::now() - ftime).count() > max_days_) {
+                            try { std::filesystem::remove(entry.path()); }
+                            catch (...) {}
+                        }
+                    }
+                }
                 std::string file_name = new_log_file_path(logmsg);
                 create(log_path_, file_name, logmsg->get_log_time());
                 assert(file_);
@@ -341,8 +352,8 @@ namespace logger {
     class log_service {
     public:
         void daemon(bool status) { log_daemon_ = status; }
-        void option(std::string log_path, std::string service, std::string index, rolling_type type, int max_line) {
-            log_path_ = log_path, service_ = service; rolling_type_ = type; max_line_ = max_line;
+        void option(std::string log_path, std::string service, std::string index, rolling_type type, int max_line,int max_days) {
+            log_path_ = log_path, service_ = service; rolling_type_ = type; max_line_ = max_line; max_days_ = max_days;
             log_path_.append(fmt::format("{}-{}", service, index));
         }
         std::shared_ptr<log_filter> get_filter() { return log_filter_; }
@@ -353,9 +364,9 @@ namespace logger {
             if (dest_features_.find(feature) == dest_features_.end()) {
                 std::shared_ptr<log_dest> logfile = nullptr;
                 if (rolling_type_ == rolling_type::DAYLY) {
-                    logfile = std::make_shared<log_dailyrollingfile>(this, log_pid_, log_path_, service_, feature, max_line_);
+                    logfile = std::make_shared<log_dailyrollingfile>(this, log_pid_, log_path_, service_, feature, max_line_,max_days_);
                 } else {
-                    logfile = std::make_shared<log_hourlyrollingfile>(this, log_pid_, log_path_, service_, feature, max_line_);
+                    logfile = std::make_shared<log_hourlyrollingfile>(this, log_pid_, log_path_, service_, feature, max_line_,max_days_);
                 }
                 if (!def_dest_) {
                     def_dest_ = logfile;
@@ -373,11 +384,11 @@ namespace logger {
             std::transform(feature.begin(), feature.end(), feature.begin(), [](auto c) { return std::tolower(c); });
             std::unique_lock<spin_mutex> lock(mutex_);
             if (rolling_type_ == rolling_type::DAYLY) {
-                auto logfile = std::make_shared<log_dailyrollingfile>(this, log_pid_, log_path_, service_, feature, max_line_);
+                auto logfile = std::make_shared<log_dailyrollingfile>(this, log_pid_, log_path_, service_, feature, max_line_,max_days_);
                 dest_lvls_.insert(std::make_pair(log_lvl, logfile));
             }
             else {
-                auto logfile = std::make_shared<log_hourlyrollingfile>(this, log_pid_, log_path_, service_, feature, max_line_);
+                auto logfile = std::make_shared<log_hourlyrollingfile>(this, log_pid_, log_path_, service_, feature, max_line_,max_days_);
                 dest_lvls_.insert(std::make_pair(log_lvl, logfile));
             }
             return true;
@@ -483,7 +494,7 @@ namespace logger {
         }
 
         bool log_daemon_ = false, ignore_postfix_ = true;
-        int  log_pid_ = 0, max_line_ = 100000;
+        int  log_pid_ = 0, max_line_ = 100000, max_days_ = 7;
         spin_mutex              mutex_;
         std::thread             thread_;
         rolling_type            rolling_type_;

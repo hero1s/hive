@@ -1,32 +1,33 @@
 --logger.lua
 --logger功能支持
-local llog          = require("lualog")
-local lstdfs        = require("lstdfs")
+local llog      = require("lualog")
+local lstdfs    = require("lstdfs")
 
-local pcall         = pcall
-local pairs         = pairs
-local sformat       = string.format
-local dgetinfo      = debug.getinfo
-local tpack         = table.pack
-local tunpack       = table.unpack
-local fsstem        = lstdfs.stem
-local serialize     = hive.serialize
+local pcall     = pcall
+local pairs     = pairs
+local sformat   = string.format
+local dgetinfo  = debug.getinfo
+local tpack     = table.pack
+local tunpack   = table.unpack
+local fsstem    = lstdfs.stem
+local serialize = hive.serialize
 
-local LOG_LEVEL     = llog.LOG_LEVEL
-local driver        = hive.get_logger()
+local LOG_LEVEL = llog.LOG_LEVEL
+local driver    = hive.get_logger()
 
-logger = {}
-logfeature = {}
+logger          = {}
+logfeature      = {}
 
 function logger.init()
     --配置日志信息
     local service_name, index = hive.service_name, hive.index
-    local path = environ.get("HIVE_LOG_PATH", "./logs/")
-    local rolltype = environ.number("HIVE_LOG_ROLL", 0)
-    local maxline = environ.number("HIVE_LOG_LINE", 100000)
-    driver.option(path, service_name, index, rolltype, maxline);
+    local path                = environ.get("HIVE_LOG_PATH", "./logs/")
+    local rolltype            = environ.number("HIVE_LOG_ROLL", 0)
+    local maxline             = environ.number("HIVE_LOG_LINE", 100000)
+    local maxdays             = environ.number("HIVE_LOG_DAYS", 7)
+    driver.option(path, service_name, index, rolltype, maxline, maxdays);
     --设置日志过滤
-    logger.filter(environ.number("HIVE_LOG_LVL",1))
+    logger.filter(environ.number("HIVE_LOG_LVL", 1))
     --添加输出目标
     driver.add_dest(service_name);
     driver.add_lvl_dest(LOG_LEVEL.ERROR)
@@ -41,7 +42,7 @@ end
 function logger.setup_graylog()
     local logaddr = environ.get("HIVE_GRAYLOG_ADDR")
     if logaddr then
-        local GrayLog = import("driver/graylog.lua")
+        local GrayLog     = import("driver/graylog.lua")
         logger.graydriver = GrayLog(logaddr)
     end
 end
@@ -104,17 +105,17 @@ local function logger_output(feature, lvl, lvl_name, fmt, log_conf, ...)
 end
 
 local LOG_LEVEL_OPTIONS = {
-                                     --lvl_func,     extend, notify, swline, graylog
-    [LOG_LEVEL.INFO]    = { "info",  { driver.info,  false,  false,  false,  true } },
-    [LOG_LEVEL.WARN]    = { "warn",  { driver.warn,  true,   false,  true,   true } },
-    [LOG_LEVEL.DUMP]    = { "dump",  { driver.dump,  true,   false,  true,   true } },
-    [LOG_LEVEL.DEBUG]   = { "debug", { driver.debug, true,   false,  false,  false} },
-    [LOG_LEVEL.ERROR]   = { "err",   { driver.error, true,   true,   true,   true } },
-    [LOG_LEVEL.FATAL]   = { "fatal", { driver.fatal, true,   true,   true,   true } }
+    --lvl_func,     extend, notify, swline, graylog
+    [LOG_LEVEL.INFO]  = { "info", { driver.info, false, false, false, true } },
+    [LOG_LEVEL.WARN]  = { "warn", { driver.warn, true, false, true, true } },
+    [LOG_LEVEL.DUMP]  = { "dump", { driver.dump, true, false, true, true } },
+    [LOG_LEVEL.DEBUG] = { "debug", { driver.debug, true, false, false, false } },
+    [LOG_LEVEL.ERROR] = { "err", { driver.error, true, true, true, true } },
+    [LOG_LEVEL.FATAL] = { "fatal", { driver.fatal, true, true, true, true } }
 }
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl_name, log_conf = tunpack(conf)
-    logger[lvl_name] = function(fmt, ...)
+    logger[lvl_name]         = function(fmt, ...)
         local ok, res = pcall(logger_output, "", lvl, lvl_name, fmt, log_conf, ...)
         if not ok then
             local info = dgetinfo(2, "S")
@@ -127,10 +128,10 @@ end
 
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl_name, log_conf = tunpack(conf)
-    logfeature[lvl_name] = function(feature)
+    logfeature[lvl_name]     = function(feature)
         if not feature then
             local info = dgetinfo(2, "S")
-            feature = fsstem(info.short_src)
+            feature    = fsstem(info.short_src)
         end
         logger.feature(feature)
         return function(fmt, ...)
