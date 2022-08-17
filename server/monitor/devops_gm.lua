@@ -38,7 +38,17 @@ end
 -- 设置日志等级
 function DevopsGmMgr:gm_set_log_level(svr_name, level)
     log_warn("[DevopsGmMgr][gm_set_log_level] gm_set_log_level %s, %s", svr_name, level)
-    return monitor_mgr:broadcast("gm_set_log_level", 0, level)
+
+    if level < 1 or level > 6 then
+        return { code = 1, msg = "level not in ragne 1~6" }
+    end
+
+    if svr_name == "" then
+        monitor_mgr:broadcast("rpc_set_log_level", 0, level)
+    else
+        router_mgr["send_" .. svr_name .. "_all"](router_mgr, "rpc_set_log_level", level)
+    end
+    return { code = 0 }
 end
 
 -- 热更新
@@ -60,7 +70,7 @@ function DevopsGmMgr:gm_inject(svr_name, file_name, base64_code)
 
     if func and func ~= "" then
         if svr_name == "" then
-            monitor_mgr:broadcast("rpc_inject", sdump(func))
+            monitor_mgr:broadcast("rpc_inject", 0, sdump(func))
         else
             router_mgr["send_" .. svr_name .. "_all"](router_mgr, "rpc_inject", sdump(func))
         end
