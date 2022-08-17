@@ -86,7 +86,7 @@ namespace lhttp {
             if (size >= offset) {
                 parse_content(buf.substr(offset));
             }
-            return true;
+            return body.size() == content_size;
         }
 
     private:
@@ -152,12 +152,11 @@ namespace lhttp {
                     body.append(lines[i]);
                 }
             }
-            chunk_size = body.size();
+            content_size = body.size();
         }
 
     public:
         bool chunked = false;
-        size_t chunk_size = 0;
         size_t content_size = 0;
         map<string, string> params;
         map<string, string> headers;

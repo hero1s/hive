@@ -38,7 +38,8 @@ prop:reader("session_type", "default")  --会话类型
 prop:reader("session_count", 0)         --会话数量
 prop:reader("listener", nil)            --监听器
 prop:reader("command_cds", {})          --CMD定制CD
-prop:accessor("coder", nil)           --编解码对象
+prop:accessor("coder", nil)             --编解码对象
+prop:accessor("log_client_msg",nil)     --消息日志函数
 
 function NetServer:__init(session_type)
     self.session_type = session_type
@@ -107,17 +108,17 @@ function NetServer:write(session, cmd_id, data, session_id, flag)
     local body, pflag = self:encode(cmd_id, data, flag)
     if not body then
         log_err("[NetServer][write] encode failed! cmd_id:%s,data:%s", cmd_id, data)
-        return false
+        return 0
     end
     session.serial = session.serial + 1
     -- call lbus
     local send_len = session.call_pack(cmd_id, pflag, session_id or 0, body)
     if send_len > 0 then
         event_mgr:notify_listener("on_proto_send", cmd_id, send_len)
-        return true
+        return send_len
     end
     --log_err("[NetServer][write] call_pack failed! code:%s", send_len)
-    return false
+    return 0
 end
 
 -- 广播数据
@@ -141,20 +142,26 @@ end
 
 -- 发送数据
 function NetServer:send_pack(session, cmd_id, data, session_id)
-    logger.log_client_msg(session, cmd_id, data, session_id)
-    return self:write(session, cmd_id, data, session_id, FLAG_REQ)
+    local send_len = self:write(session, cmd_id, data, session_id, FLAG_REQ)
+    if send_len > 0 and self.log_client_msg then
+        self.log_client_msg(session, cmd_id, data, session_id, send_len,false)
+    end
+    return send_len > 0
 end
 
 -- 回调数据
 function NetServer:callback_pack(session, cmd_id, data, session_id)
-    logger.log_client_msg(session, cmd_id, data, session_id)
-    return self:write(session, cmd_id, data, session_id, FLAG_RES)
+    local send_len = self:write(session, cmd_id, data, session_id, FLAG_RES)
+    if send_len > 0 and self.log_client_msg then
+        self.log_client_msg(session, cmd_id, data, session_id, send_len,false)
+    end
+    return send_len > 0
 end
 
 -- 发起远程调用
 function NetServer:call_pack(session, cmd_id, data)
     local session_id = thread_mgr:build_session_id()
-    if not self:write(session, cmd_id, data, session_id, FLAG_REQ) then
+    if self:write(session, cmd_id, data, session_id, FLAG_REQ) == 0 then
         return false
     end
     return thread_mgr:yield(session_id, cmd_id, RPC_CALL_TIMEOUT)
@@ -225,6 +232,10 @@ function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
             local result   = event_mgr:notify_listener("on_session_cmd", _session, cmd, bd, session_id)
             if not result[1] then
                 log_err("[NetServer][on_socket_recv] on_session_cmd failed! cmd_id:%s", cmd_id)
+            else
+                if self.log_client_msg then
+                    self.log_client_msg(session,cmd,bd,session_id,#data,true)
+                end
             end
         end
         thread_mgr:fork(dispatch_rpc_message, session, cmd_id, body)
