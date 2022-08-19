@@ -1,19 +1,19 @@
 ﻿---devops_gm_mgr.lua
-local lcrypt      = require("lcrypt")
-local sdump       = string.dump
-local log_err     = logger.err
-local log_warn    = logger.warn
-local log_debug   = logger.debug
+local lcrypt        = require("lcrypt")
+local sdump         = string.dump
+local log_err       = logger.err
+local log_warn      = logger.warn
+local log_debug     = logger.debug
 
-local event_mgr   = hive.get("event_mgr")
-local router_mgr  = hive.get("router_mgr")
-local gm_agent    = hive.get("gm_agent")
-local monitor_mgr = hive.get("monitor_mgr")
-local timer_mgr   = hive.get("timer_mgr")
+local event_mgr     = hive.get("event_mgr")
+local router_mgr    = hive.get("router_mgr")
+local gm_agent      = hive.get("gm_agent")
+local monitor_mgr   = hive.get("monitor_mgr")
+local timer_mgr     = hive.get("timer_mgr")
 
-local GMType      = enum("GMType")
-
-local DevopsGmMgr = singleton()
+local GMType        = enum("GMType")
+local ServiceStatus = enum("ServiceStatus")
+local DevopsGmMgr   = singleton()
 
 function DevopsGmMgr:__init()
     --注册GM指令
@@ -25,7 +25,7 @@ function DevopsGmMgr:register()
         { gm_type = GMType.DEV_OPS, name = "gm_set_log_level", desc = "设置日志等级", args = "svr_name|string level|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_hotfix", desc = "代码热更新", args = "" },
         { gm_type = GMType.DEV_OPS, name = "gm_inject", desc = "代码注入", args = "svr_name|string file_name|string base64_code|string" },
-        { gm_type = GMType.DEV_OPS, name = "gm_stop_service", desc = "停服[0禁开局1强退]", args = "force|integer delay|integer" },
+        { gm_type = GMType.DEV_OPS, name = "gm_set_server_status", desc = "设置服务器状态[0运行1禁开局2强退]", args = "status|integer delay|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_hive_quit", desc = "关闭服务器[杀进程]", args = "reason|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_cfg_reload", desc = "配置表热更新", args = "file_name|string base64_file_content|string" },
     }
@@ -81,11 +81,14 @@ function DevopsGmMgr:gm_inject(svr_name, file_name, base64_code)
     return { code = ret }
 end
 
-function DevopsGmMgr:gm_stop_service(force, delay)
-    log_warn("[DevopsGmMgr][gm_stop_service]")
+function DevopsGmMgr:gm_set_server_status(status, delay)
+    log_warn("[DevopsGmMgr][gm_stop_service]:%s", status)
+    if status < ServiceStatus.RUN or status > ServiceStatus.STOP then
+        return { code = 1, msg = "status is more than" }
+    end
     timer_mgr:once(delay, function()
-        log_warn("[DevopsGmMgr][gm_stop_service] exe stop service:%s", force)
-        monitor_mgr:broadcast("rpc_stop_service", 0, force)
+        log_warn("[DevopsGmMgr][gm_stop_service] exe stop service:%s", status)
+        monitor_mgr:broadcast("rpc_set_server_status", 0, status)
     end)
     return { code = 0 }
 end

@@ -65,10 +65,7 @@ namespace lcurl {
             long code = 0;
             luakit::kit_state kit_state(L);
             curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
-            if (error[0] == '\0') {
-                return kit_state.as_return(content, code);
-            }
-            return kit_state.as_return(nullptr, code, error);
+            return kit_state.as_return(content, code, error);
         }
 
     private:
@@ -126,6 +123,13 @@ namespace lcurl {
         }
 
         int update(lua_State* L) {
+            int running_handles;
+            CURLMcode result = curl_multi_perform(curlm, &running_handles);
+            if (result != CURLM_OK && result != CURLM_CALL_MULTI_PERFORM) {
+                lua_pushboolean(L, false);
+                lua_pushstring(L, "curl_multi_perform failed");
+                return 2;
+            }
             int msgs_in_queue;
             CURLMsg* curlmsg = nullptr;
             luakit::kit_state kit_state(L);
@@ -133,16 +137,6 @@ namespace lcurl {
                 if (curlmsg->msg == CURLMSG_DONE){
                     kit_state.object_call(this, "on_respond", nullptr, tie(), curlmsg->easy_handle, curlmsg->data.result);
                     curl_multi_remove_handle(curlm, curlmsg->easy_handle);
-                }
-            }
-            while (true) {
-                int running_handles;
-                CURLMcode result = curl_multi_perform(curlm, &running_handles);
-                if (running_handles == 0) break;
-                if (result != CURLM_OK && result != CURLM_CALL_MULTI_PERFORM) {
-                    lua_pushboolean(L, false);
-                    lua_pushstring(L, "curl_multi_perform failed");
-                    return 2;
                 }
             }
             lua_pushboolean(L, true);

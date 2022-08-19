@@ -28,7 +28,7 @@ prop:reader("next_connect_time", 0)
 function MonitorAgent:__init()
     --创建连接
     local ip, port = env_addr("HIVE_MONITOR_ADDR")
-    self.client = RpcClient(self, ip, port)
+    self.client    = RpcClient(self, ip, port)
     --心跳定时器
     timer_mgr:loop(HEARTBEAT_TIME, function()
         self:on_timer()
@@ -38,7 +38,7 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "on_remote_message")
     event_mgr:add_listener(self, "rpc_reload")
     event_mgr:add_listener(self, "rpc_inject")
-    event_mgr:add_listener(self, "rpc_stop_service")
+    event_mgr:add_listener(self, "rpc_set_server_status")
     event_mgr:add_listener(self, "rpc_set_log_level")
 end
 
@@ -66,7 +66,7 @@ end
 
 -- 连接成回调
 function MonitorAgent:on_socket_connect(client)
-    log_info("[MonitorAgent][on_socket_connect]: connect monitor success!:[%s:%s]",self.client.ip, self.client.port)
+    log_info("[MonitorAgent][on_socket_connect]: connect monitor success!:[%s:%s]", self.client.ip, self.client.port)
 end
 
 -- 请求服务
@@ -127,10 +127,10 @@ function MonitorAgent:rpc_inject(code_string)
     func()
 end
 
-function MonitorAgent:rpc_stop_service(force)
-    hive.service_status = (force == 1) and ServiceStatus.STOP or ServiceStatus.WAIT_STOP
-    log_err("[MonitorAgent][rpc_stop_service] will stop service,service_status:%s,:%s,%s", hive.service_status, hive.service_name, hive.index)
-    event_mgr:notify_trigger("evt_stop_service", hive.service_status)
+function MonitorAgent:rpc_set_server_status(status)
+    hive.service_status = status
+    log_err("[MonitorAgent][rpc_set_server_status] service_status:%s,:%s,%s", hive.service_status, hive.service_name, hive.index)
+    event_mgr:notify_trigger("evt_set_server_status", hive.service_status)
 end
 
 function MonitorAgent:rpc_set_log_level(level)
