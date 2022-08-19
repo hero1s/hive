@@ -1,4 +1,4 @@
---redis_agent.lua
+--http_agent.lua
 import("network/http_client.lua")
 
 local log_info    = logger.info

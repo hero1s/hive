@@ -132,7 +132,7 @@ function StatisMgr:on_second()
 end
 
 -- 统计系统信息
-function StatisMgr:on_minute(now)
+function StatisMgr:on_minute()
     if self.statis_status then
         local fields = {
             all_mem  = self:_calc_mem_use(),

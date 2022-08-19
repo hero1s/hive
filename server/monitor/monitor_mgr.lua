@@ -106,7 +106,7 @@ function MonitorMgr:check_lost_node()
 end
 
 --gm_page
-function MonitorMgr:on_log_page(url, body, request)
+function MonitorMgr:on_log_page(url, querys, request)
     return self.http_server:build_response(200, log_page)
 end
 

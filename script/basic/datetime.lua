@@ -98,6 +98,10 @@ function datetime_ext.localtime(time)
     return os.date("*t", time)
 end
 
+function datetime_ext.time_str(timestamp)
+    return os.date("%Y/%m/%d %H:%M:%S",timestamp)
+end
+
 ---Return POSIX timestamp at today's 00:00:00
 ---@param time integer @POSIX timestamp
 function datetime_ext.dailytime(time)

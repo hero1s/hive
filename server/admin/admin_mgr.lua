@@ -59,6 +59,9 @@ function AdminMgr:__init()
         self.http_server:set_limit_ips(ips)
         log_debug("admin limit ips:%s", ips)
     end
+    --用户密码
+    self.user = environ.get("HIVE_ADMIN_USER", "admin")
+    self.pwd  = environ.get("HIVE_ADMIN_PWD", "dsybs")
 end
 
 --rpc请求
@@ -91,12 +94,18 @@ end
 --http 回调
 ----------------------------------------------------------------------
 --gm_page
-function AdminMgr:on_gm_page(url, body, request)
+function AdminMgr:on_gm_page(url, querys, request)
+    log_debug("---%s", querys)
+    local user = querys["user"]
+    local pwd  = querys["pwd"]
+    if user ~= self.user or pwd ~= self.pwd then
+        return self.http_server:build_response(404, "this http request hasn't process!")
+    end
     return self.http_server:build_response(200, gm_page)
 end
 
 --gm列表
-function AdminMgr:on_gmlist(url, body, request)
+function AdminMgr:on_gmlist(url, querys, request)
     return cmdline:get_command_defines()
 end
 
@@ -125,8 +134,8 @@ function AdminMgr:on_monitor(url, body, request)
 end
 
 --monitor拉取
-function AdminMgr:on_monitors(url, body, request)
-    log_debug("[AdminMgr][on_monitors] body: %s", body)
+function AdminMgr:on_monitors(url, querys, request)
+    log_debug("[AdminMgr][on_monitors] body: %s", querys)
     local monitors = {  }
     for addr in pairs(self.monitors) do
         monitors[#monitors + 1] = addr

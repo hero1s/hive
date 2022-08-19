@@ -146,7 +146,7 @@ function RpcClient:close()
 end
 
 --心跳回复
-function RpcClient:on_heartbeat(qid)
+function RpcClient:on_heartbeat(hid)
 end
 
 --rpc事件
