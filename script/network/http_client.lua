@@ -2,15 +2,14 @@
 local lcurl             = require("lcurl")
 
 local pairs             = pairs
-local log_debug         = logger.debug
-local tunpack           = table.unpack
+local log_err           = logger.err
 local tconcat           = table.concat
 local sformat           = string.format
-local lquery            = lcurl.query
+local hxpcall           = hive.xpcall
 local luencode          = lcurl.url_encode
-local lcrequest         = lcurl.create_request
 local json_encode       = hive.json_encode
 
+local curlm_mgr         = lcurl.curlm_mgr
 local thread_mgr        = hive.get("thread_mgr")
 local update_mgr        = hive.get("update_mgr")
 
@@ -25,37 +24,41 @@ function HttpClient:__init()
     update_mgr:attach_frame(self)
     --退出通知
     update_mgr:attach_quit(self)
+    --创建管理器
+    curlm_mgr.on_respond = function(curl_handle, result)
+        hxpcall(self.on_respond, "on_respond: %s", self, curl_handle, result)
+    end
 end
 
 function HttpClient:on_quit()
     self.contexts = {}
-    lcurl.destroy()
+    curlm_mgr.destory()
 end
 
 function HttpClient:on_frame(clock_ms)
-    local curl_handle, result = lquery()
-    while curl_handle do
-        --查询请求结果
-        local context = self.contexts[curl_handle]
-        if context then
-            local request      = context.request
-            local session_id   = context.session_id
-            local content, err = request:get_respond()
-            local info         = request:get_info()
-            if result == 0 then
-                thread_mgr:response(session_id, true, info.code, content)
-            else
-                thread_mgr:response(session_id, false, info.code, err)
+    if next(self.contexts) then
+        curlm_mgr.update()
+        --清除超时请求
+        for handle, context in pairs(self.contexts) do
+            if clock_ms >= context.time then
+                self.contexts[handle] = nil
             end
-            self.contexts[curl_handle] = nil
         end
-        curl_handle, result = lquery()
     end
-    --清除超时请求
-    for handle, context in pairs(self.contexts) do
-        if clock_ms >= context.time then
-            self.contexts[handle] = nil
+end
+
+function HttpClient:on_respond(curl_handle, result)
+    local context = self.contexts[curl_handle]
+    if context then
+        local request            = context.request
+        local session_id         = context.session_id
+        local content, code, err = request.get_respond()
+        if result == 0 then
+            thread_mgr:response(session_id, true, code, content)
+        else
+            thread_mgr:response(session_id, false, code, err)
         end
+        self.contexts[curl_handle] = nil
     end
 end
 
@@ -74,102 +77,57 @@ function HttpClient:format_url(url, query)
     return url
 end
 
---格式化headers
-function HttpClient:format_headers(request, headers)
-    if next(headers) then
-        local fmt_headers = {}
-        for key, value in pairs(headers) do
-            fmt_headers[#fmt_headers + 1] = sformat("%s:%s", key, value)
-        end
-        request:set_headers(tunpack(fmt_headers))
-    end
-end
-
 --构建请求
-function HttpClient:build_request(url, timeout, session_id, headers, method, ...)
-    local request, curl_handle = lcrequest(url, timeout)
+function HttpClient:send_request(url, timeout, querys, headers, method, datas)
+    local to                   = timeout or HTTP_CALL_TIMEOUT
+    local fmt_url              = self:format_url(url, querys)
+    local request, curl_handle = curlm_mgr.create_request(fmt_url, to)
     if not request then
-        log_debug("[HttpClient][build_request] failed : %s", curl_handle)
-        return
-    end
-    self:format_headers(request, headers or {})
-    local ok, err = request[method](request, ...)
-    if not ok then
-        log_debug("[HttpClient][build_request] curl %s failed: %s!", method, err)
+        log_err("[HttpClient][send_request] failed : %s", curl_handle)
         return false
     end
+    if not headers then
+        headers = { ["Content-Type"] = "text/plain" }
+    end
+    if type(datas) == "table" then
+        datas                   = json_encode(datas)
+        headers["Content-Type"] = "application/json"
+    end
+    for key, value in pairs(headers or {}) do
+        request.set_header(sformat("%s:%s", key, value))
+    end
+    local ok, err = request[method](datas or "")
+    if not ok then
+        log_err("[HttpClient][send_request] curl %s failed: %s!", method, err)
+        return false
+    end
+    local session_id           = thread_mgr:build_session_id()
     self.contexts[curl_handle] = {
         request    = request,
         session_id = session_id,
-        time       = hive.clock_ms + timeout,
+        time       = hive.clock_ms + to,
     }
-    return true
+    return thread_mgr:yield(session_id, url, to)
 end
 
 --get接口
 function HttpClient:call_get(url, querys, headers, datas, timeout)
-    local fmt_url    = self:format_url(url, querys)
-    local session_id = thread_mgr:build_session_id()
-    if type(datas) == "table" then
-        datas                   = json_encode(datas)
-        headers["Content-Type"] = "application/json"
-    end
-    local to = timeout or HTTP_CALL_TIMEOUT
-    if not self:build_request(fmt_url, to, session_id, headers, "call_get", datas) then
-        return false
-    end
-    return thread_mgr:yield(session_id, url, to)
+    return self:send_request(url, timeout, querys, headers, "call_get", datas)
 end
 
 --post接口
 function HttpClient:call_post(url, datas, headers, querys, timeout)
-    if not headers then
-        headers = { ["Content-Type"] = "text/plain" }
-    end
-    if querys then
-        url = self:format_url(url, querys)
-    end
-    if type(datas) == "table" then
-        datas                   = json_encode(datas)
-        headers["Content-Type"] = "application/json"
-    end
-    local to         = timeout or HTTP_CALL_TIMEOUT
-    local session_id = thread_mgr:build_session_id()
-    if not self:build_request(url, to, session_id, headers, "call_post", datas or "") then
-        return false
-    end
-    return thread_mgr:yield(session_id, url, to)
+    return self:send_request(url, timeout, querys, headers, "call_post", datas)
 end
 
 --put接口
 function HttpClient:call_put(url, datas, headers, querys, timeout)
-    if not headers then
-        headers = { ["Content-Type"] = "text/plain" }
-    end
-    if querys then
-        url = self:format_url(url, querys)
-    end
-    if type(datas) == "table" then
-        datas                   = json_encode(datas)
-        headers["Content-Type"] = "application/json"
-    end
-    local to         = timeout or HTTP_CALL_TIMEOUT
-    local session_id = thread_mgr:build_session_id()
-    if not self:build_request(url, to, session_id, headers, "call_put", datas or "") then
-        return false
-    end
-    return thread_mgr:yield(session_id, url, to)
+    return self:send_request(url, timeout, querys, headers, "call_put", datas)
 end
 
 --del接口
 function HttpClient:call_del(url, querys, headers, timeout)
-    local to         = timeout or HTTP_CALL_TIMEOUT
-    local fmt_url    = self:format_url(url, querys)
-    local session_id = thread_mgr:build_session_id()
-    if not self:build_request(fmt_url, to, session_id, headers, "call_del") then
-        return false
-    end
-    return thread_mgr:yield(session_id, url, to)
+    return self:send_request(url, timeout, querys, headers, "call_del")
 end
 
 hive.http_client = HttpClient()

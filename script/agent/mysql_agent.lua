@@ -1,5 +1,4 @@
 --mysql_agent.lua
-local mrandom     = math.random
 local sformat     = string.format
 local assert      = assert
 local readfile    = io_ext.readfile
@@ -187,7 +186,7 @@ end
 
 --发送数据库请求
 function MysqlAgent:execute(sql, db_name, hash_key)
-    return router_mgr:call_dbsvr_hash(hash_key or mrandom(10000), "mysql_execute", db_name or "default", sql)
+    return router_mgr:call_dbsvr_hash(hash_key or hive.id, "mysql_execute", db_name or "default", sql)
 end
 
 ------------------------------------------------------------------

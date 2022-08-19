@@ -128,9 +128,12 @@ end
 --monitor上报
 function AdminMgr:on_monitor(url, body, request)
     log_debug("[AdminMgr][on_monitor] body: %s", body)
-    local cmd_req               = json_decode(body)
-    self.monitors[cmd_req.addr] = true
-    return { code = 0 }
+    local ok, cmd_req = json_decode(body, true)
+    if ok then
+        self.monitors[cmd_req.addr] = true
+        return { code = 0 }
+    end
+    return { code = 1 }
 end
 
 --monitor拉取

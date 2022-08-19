@@ -28,7 +28,6 @@ prop:reader("next_connect_time", 0)
 function MonitorAgent:__init()
     --创建连接
     local ip, port = env_addr("HIVE_MONITOR_ADDR")
-    log_warn("monitor agent-----------%s,%s", ip, port)
     self.client = RpcClient(self, ip, port)
     --心跳定时器
     timer_mgr:loop(HEARTBEAT_TIME, function()

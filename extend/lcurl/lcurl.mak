@@ -15,10 +15,6 @@ all : pre_build target post_build
 MYCFLAGS =
 
 #需要定义的FLAG
-MYCFLAGS += -Wno-unused-variable
-MYCFLAGS += -Wno-unused-parameter
-MYCFLAGS += -Wno-unused-but-set-parameter
-MYCFLAGS += -Wno-unused-function
 MYCFLAGS += -Wno-sign-compare
 
 #c标准库版本
@@ -31,6 +27,7 @@ STDCPP = -std=c++17
 
 #需要的include目录
 MYCFLAGS += -I../lua/lua
+MYCFLAGS += -I../luakit/include
 
 #需要定义的选项
 

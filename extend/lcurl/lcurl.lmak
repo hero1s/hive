@@ -9,16 +9,13 @@ PROJECT_TYPE = "dynamic"
 
 --需要的FLAGS
 FLAGS = {
-	"Wno-unused-variable",
-	"Wno-unused-parameter",
-	"Wno-unused-but-set-parameter",
-    "Wno-unused-function",
-    "Wno-sign-compare",
+    "Wno-sign-compare"
 }
 
 --需要的include目录
 INCLUDES = {
-    "../lua/lua"
+    "../lua/lua",
+    "../luakit/include"
 }
 
 --WINDOWS需要include目录
@@ -48,7 +45,7 @@ WINDOWS_LIBS = {
 
 --WINDOWS需要定义的选项
 WINDOWS_DEFINES = {
-	"LUA_BUILD_AS_DLL"
+    "LUA_BUILD_AS_DLL"
 }
 
 --WINDOWS需要附加link库目录
