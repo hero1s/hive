@@ -47,6 +47,7 @@ private:
     std::shared_ptr<socket_router> m_router;
     eproto_type m_proto_type;  
     std::string m_msg_body;
+    std::string m_error_msg;
 public:
     DECLARE_LUA_CLASS(lua_socket_node);
 };

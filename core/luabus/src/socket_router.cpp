@@ -3,6 +3,7 @@
 #include <limits.h>
 #include <string.h>
 #include <algorithm>
+#include "fmt/core.h"
 #include "var_int.h"
 #include "socket_router.h"
 
@@ -63,11 +64,13 @@ size_t socket_router::format_header(BYTE* header_data, size_t data_len, router_h
     return offset;
 }
 
-bool socket_router::do_forward_target(router_header* header, char* data, size_t data_len) {
+bool socket_router::do_forward_target(router_header* header, char* data, size_t data_len, std::string& error) {
     uint64_t target_id64 = 0;
     size_t len = decode_u64(&target_id64, (BYTE*)data, data_len);
-    if (len == 0)
+    if (len == 0) {
+        error = fmt::format("router forward-target not decode");
         return false;
+    }
 
     data += len;
     data_len -= len;
@@ -77,8 +80,10 @@ bool socket_router::do_forward_target(router_header* header, char* data, size_t 
     auto& group = m_groups[group_idx];
     auto& nodes = group.nodes;
     auto it = std::lower_bound(nodes.begin(), nodes.end(), target_id, [](service_node& node, uint32_t id) { return node.id < id; });
-    if (it == nodes.end() || it->id != target_id)
+    if (it == nodes.end() || it->id != target_id) {
+        error = fmt::format("router forward-target not find,target_id:{}, group:{}", target_id, group_idx);
         return false;
+    }
     
     BYTE header_data[MAX_VARINT_SIZE * 4];
     size_t header_len = format_header(header_data, sizeof(header_data), header, msg_id::remote_call);
@@ -88,18 +93,22 @@ bool socket_router::do_forward_target(router_header* header, char* data, size_t 
     return true;
 }
 
-bool socket_router::do_forward_master(router_header* header, char* data, size_t data_len) {
+bool socket_router::do_forward_master(router_header* header, char* data, size_t data_len, std::string& error) {
     uint64_t group_idx = 0;
     size_t len = decode_u64(&group_idx, (BYTE*)data, data_len);
-    if (len == 0 || group_idx >= m_groups.size())
+    if (len == 0 || group_idx >= m_groups.size()) {
+        error = fmt::format("router forward-master not decode");
         return false;
+    }
 
     data += len;
     data_len -= len;
 
     auto token = m_groups[group_idx].master;
-    if (token == 0)
+    if (token == 0) {
+        error = fmt::format("router forward-master token=0");
         return false;
+    }
 
     BYTE header_data[MAX_VARINT_SIZE * 4];
     size_t header_len = format_header(header_data, sizeof(header_data), header, msg_id::remote_call);
@@ -109,11 +118,13 @@ bool socket_router::do_forward_master(router_header* header, char* data, size_t 
     return true;
 }
 
-bool socket_router::do_forward_random(router_header* header, char* data, size_t data_len) {
+bool socket_router::do_forward_random(router_header* header, char* data, size_t data_len, std::string& error) {
     uint64_t group_idx = 0;
     size_t len = decode_u64(&group_idx, (BYTE*)data, data_len);
-    if (len == 0 || group_idx >= m_groups.size())
+    if (len == 0 || group_idx >= m_groups.size()) {
+        error = fmt::format("router forward-random not decode");
         return false;
+    }
 
     data += len;
     data_len -= len;
@@ -121,8 +132,10 @@ bool socket_router::do_forward_random(router_header* header, char* data, size_t 
     auto& group = m_groups[group_idx];
     auto& nodes = group.nodes;
     int count = (int)nodes.size();
-    if (count == 0)
+    if (count == 0) {
+        error = fmt::format("router forward-random not nodes");
         return false;
+    }
 
     BYTE header_data[MAX_VARINT_SIZE * 4];
     size_t header_len = format_header(header_data, sizeof(header_data), header, msg_id::remote_call);
@@ -136,6 +149,7 @@ bool socket_router::do_forward_random(router_header* header, char* data, size_t 
             return true;
         }
     }
+    error = fmt::format("router forward-random not token");
     return false;
 }
 
@@ -164,19 +178,23 @@ bool socket_router::do_forward_broadcast(router_header* header, int source, char
     return broadcast_num > 0;
 }
 
-bool socket_router::do_forward_hash(router_header* header, char* data, size_t data_len) {
+bool socket_router::do_forward_hash(router_header* header, char* data, size_t data_len, std::string& error) {
     uint64_t group_idx = 0;
     size_t len = decode_u64(&group_idx, (BYTE*)data, data_len);
-    if (len == 0 || group_idx >= m_groups.size())
+    if (len == 0 || group_idx >= m_groups.size()) {
+        error = fmt::format("router forward-hash not decode group");
         return false;
+    }
 
     data += len;
     data_len -= len;
 
     uint64_t hash = 0;
     len = decode_u64(&hash, (BYTE*)data, data_len);
-    if (len == 0)
+    if (len == 0) {
+        error = fmt::format("router forward-hash not decode hash");
         return false;
+    }
 
     data += len;
     data_len -= len;
@@ -184,8 +202,10 @@ bool socket_router::do_forward_hash(router_header* header, char* data, size_t da
     auto& group = m_groups[group_idx];
     auto& nodes = group.nodes;
     int count = (int)nodes.size();
-    if (count == 0)
+    if (count == 0) {
+        error = fmt::format("router forward-hash not nodes");
         return false;
+    }
 
     BYTE header_data[MAX_VARINT_SIZE * 4];
     size_t header_len = format_header(header_data, sizeof(header_data), header, msg_id::remote_call);
@@ -196,5 +216,6 @@ bool socket_router::do_forward_hash(router_header* header, char* data, size_t da
         m_mgr->sendv(target.token, items, _countof(items));
         return true;
     }
+    error = fmt::format("router forward-hash not token");
     return false;
 }

@@ -277,25 +277,25 @@ void lua_socket_node::on_recv(char* data, size_t data_len) {
 
     data += len;
     data_len -= len;
-
+    m_error_msg = "";
     switch ((msg_id)msg) {
     case msg_id::remote_call:
         on_call(&header, data, data_len);
         break;
     case msg_id::forward_target:
-        if (!m_router->do_forward_target(&header, data, data_len))
+        if (!m_router->do_forward_target(&header, data, data_len,m_error_msg))
             on_forward_error(&header);
         break;
     case msg_id::forward_random:
-        if (!m_router->do_forward_random(&header, data, data_len))
+        if (!m_router->do_forward_random(&header, data, data_len,m_error_msg))
             on_forward_error(&header);
         break;
     case msg_id::forward_master:
-        if (!m_router->do_forward_master(&header, data, data_len))
+        if (!m_router->do_forward_master(&header, data, data_len,m_error_msg))
             on_forward_error(&header);
         break;
     case msg_id::forward_hash:
-        if (!m_router->do_forward_hash(&header, data, data_len))
+        if (!m_router->do_forward_hash(&header, data, data_len,m_error_msg))
             on_forward_error(&header);
         break;
     case msg_id::forward_broadcast: {
@@ -318,7 +318,8 @@ void lua_socket_node::on_forward_error(router_header* header) {
             return;
 
         lua_pushinteger(m_lvm, header->session_id);
-        lua_call_function(m_lvm, nullptr, 1, 0);
+        lua_pushstring(m_lvm, m_error_msg.c_str());
+        lua_call_function(m_lvm, nullptr, 2, 0);
     }
 }
 
