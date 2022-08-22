@@ -149,11 +149,20 @@ end
 function RpcClient:on_heartbeat(hid)
 end
 
+--路由失败
+function RpcClient:on_forward_error(session_id, ...)
+    log_err("[RpcClient][on_forward_error] resp:%s", tpack(...))
+    thread_mgr:response(session_id, ...)
+end
+
 --rpc事件
 function RpcClient:on_socket_rpc(socket, session_id, rpc_flag, source, rpc, ...)
     self.alive_time = hive.clock_ms
     if rpc == "on_heartbeat" then
         return self:on_heartbeat(...)
+    end
+    if rpc == "on_forward_error" then
+        return self:on_forward_error(session_id, ...)
     end
     if session_id == 0 or rpc_flag == FlagMask.REQ then
         local function dispatch_rpc_message(...)

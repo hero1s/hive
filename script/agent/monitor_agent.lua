@@ -19,7 +19,6 @@ local RPC_FAILED     = hive.enum("KernCode", "RPC_FAILED")
 local SECOND_MS      = hive.enum("PeriodTime", "SECOND_MS")
 local RECONNECT_TIME = hive.enum("NetwkTime", "RECONNECT_TIME")
 local HEARTBEAT_TIME = hive.enum("NetwkTime", "HEARTBEAT_TIME")
-local ServiceStatus  = enum("ServiceStatus")
 
 local MonitorAgent   = singleton()
 local prop           = property(MonitorAgent)
@@ -129,7 +128,7 @@ end
 
 function MonitorAgent:rpc_set_server_status(status)
     hive.service_status = status
-    log_err("[MonitorAgent][rpc_set_server_status] service_status:%s,:%s,%s", hive.service_status, hive.service_name, hive.index)
+    log_err("[MonitorAgent][rpc_set_server_status] service_status:%s,:%s", hive.service_status, hive.name)
     event_mgr:notify_trigger("evt_set_server_status", hive.service_status)
 end
 

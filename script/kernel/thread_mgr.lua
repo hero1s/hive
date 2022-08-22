@@ -1,22 +1,22 @@
 --thread_mgr.lua
-local select        = select
-local tunpack       = table.unpack
-local tsize         = table_ext.size
-local sformat       = string.format
-local co_yield      = coroutine.yield
-local co_create     = coroutine.create
-local co_resume     = coroutine.resume
-local co_running    = coroutine.running
-local hxpcall       = hive.xpcall
-local log_err       = logger.err
+local select       = select
+local tunpack      = table.unpack
+local tsize        = table_ext.size
+local sformat      = string.format
+local co_yield     = coroutine.yield
+local co_create    = coroutine.create
+local co_resume    = coroutine.resume
+local co_running   = coroutine.running
+local hxpcall      = hive.xpcall
+local log_err      = logger.err
 
-local QueueFIFO     = import("container/queue_fifo.lua")
-local SyncLock      = import("kernel/object/sync_lock.lua")
+local QueueFIFO    = import("container/queue_fifo.lua")
+local SyncLock     = import("kernel/object/sync_lock.lua")
 
-local MINUTE_10_MS  = hive.enum("PeriodTime", "MINUTE_10_MS")
+local MINUTE_10_MS = hive.enum("PeriodTime", "MINUTE_10_MS")
 
-local ThreadMgr = singleton()
-local prop = property(ThreadMgr)
+local ThreadMgr    = singleton()
+local prop         = property(ThreadMgr)
 prop:reader("session_id", 1)
 prop:reader("coroutine_map", {})
 prop:reader("syncqueue_map", {})
@@ -27,7 +27,7 @@ function ThreadMgr:__init()
 end
 
 function ThreadMgr:size()
-    local co_cur_max = self.coroutine_pool:size()
+    local co_cur_max  = self.coroutine_pool:size()
     local co_cur_size = tsize(self.coroutine_map) + 1
     return co_cur_size, co_cur_max
 end
@@ -35,10 +35,10 @@ end
 function ThreadMgr:lock(key, to)
     local queue = self.syncqueue_map[key]
     if not queue then
-        queue = QueueFIFO()
+        queue                   = QueueFIFO()
         self.syncqueue_map[key] = queue
     end
-    queue.ttl = hive.clock_ms
+    queue.ttl  = hive.clock_ms
     local head = queue:head()
     if not head then
         local lock = SyncLock(self, key, to)
@@ -71,7 +71,7 @@ end
 
 function ThreadMgr:co_create(f)
     local pool = self.coroutine_pool
-    local co = pool:pop()
+    local co   = pool:pop()
     if co == nil then
         co = co_create(function(...)
             hxpcall(f, "[ThreadMgr][co_create] fork error: %s", ...)
@@ -105,7 +105,7 @@ function ThreadMgr:resume(co, ...)
 end
 
 function ThreadMgr:yield(session_id, title, ms_to, ...)
-    local context = {co = co_running(), title = title, to = hive.clock_ms + ms_to}
+    local context                  = { co = co_running(), title = title, to = hive.clock_ms + ms_to }
     self.coroutine_map[session_id] = context
     return co_yield(...)
 end
@@ -153,7 +153,9 @@ function ThreadMgr:fork(f, ...)
         co = self:co_create(f)
     else
         local args = { ... }
-        co = self:co_create(function() f(tunpack(args, 1, n)) end)
+        co         = self:co_create(function()
+            f(tunpack(args, 1, n))
+        end)
     end
     self:resume(co, ...)
     return co
