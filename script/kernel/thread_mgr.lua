@@ -110,6 +110,14 @@ function ThreadMgr:yield(session_id, title, ms_to, ...)
     return co_yield(...)
 end
 
+function ThreadMgr:get_title(session_id)
+    local context = self.coroutine_map[session_id]
+    if context then
+        return context.title
+    end
+    return nil
+end
+
 function ThreadMgr:on_minute(clock_ms)
     for key, queue in pairs(self.syncqueue_map) do
         if queue:empty() and clock_ms - queue.ttl > MINUTE_10_MS then

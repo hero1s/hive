@@ -151,7 +151,7 @@ end
 
 --路由失败
 function RpcClient:on_forward_error(session_id, ...)
-    log_err("[RpcClient][on_forward_error] resp:%s", tpack(...))
+    log_err("[RpcClient][on_forward_error] rpc:%s,resp:%s", thread_mgr:get_title(session_id), tpack(...))
     thread_mgr:response(session_id, ...)
 end
 
@@ -200,11 +200,11 @@ function RpcClient:on_socket_connect(socket)
 end
 
 --转发系列接口
-function RpcClient:forward_socket(method, session_id, ...)
+function RpcClient:forward_socket(method, rpc, session_id, ...)
     if self.alive then
         if self.socket[method](session_id, ...) then
             if session_id > 0 then
-                return thread_mgr:yield(session_id, method, NetwkTime.RPC_CALL_TIMEOUT)
+                return thread_mgr:yield(session_id, rpc, NetwkTime.RPC_CALL_TIMEOUT)
             end
             return true, SUCCESS
         end
