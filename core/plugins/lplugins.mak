@@ -173,6 +173,11 @@ OBJS += $(patsubst $(SRC_DIR)/protobuf/%.m, $(INT_DIR)/protobuf/%.o, $(filter-ou
 OBJS += $(patsubst $(SRC_DIR)/protobuf/%.cc, $(INT_DIR)/protobuf/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/protobuf/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/protobuf/%.cpp, $(INT_DIR)/protobuf/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/protobuf/*.cpp)))
 #子目录
+OBJS += $(patsubst $(SRC_DIR)/snapshot/%.c, $(INT_DIR)/snapshot/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/snapshot/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/snapshot/%.m, $(INT_DIR)/snapshot/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/snapshot/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/snapshot/%.cc, $(INT_DIR)/snapshot/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/snapshot/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/snapshot/%.cpp, $(INT_DIR)/snapshot/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/snapshot/*.cpp)))
+#子目录
 OBJS += $(patsubst $(SRC_DIR)/tools/%.c, $(INT_DIR)/tools/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/tools/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/tools/%.m, $(INT_DIR)/tools/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/tools/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/tools/%.cc, $(INT_DIR)/tools/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/tools/*.cc)))
@@ -225,6 +230,7 @@ pre_build:
 	mkdir -p $(INT_DIR)/lzset
 	mkdir -p $(INT_DIR)/mongo
 	mkdir -p $(INT_DIR)/protobuf
+	mkdir -p $(INT_DIR)/snapshot
 	mkdir -p $(INT_DIR)/tools
 
 #后编译

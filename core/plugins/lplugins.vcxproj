@@ -66,6 +66,7 @@
     <ClCompile Include="src\lzset\lzset.cpp"/>
     <ClCompile Include="src\mongo\lua-mongo.c"/>
     <ClCompile Include="src\protobuf\pb.c"/>
+    <ClCompile Include="src\snapshot\snapshot.c"/>
     <ClCompile Include="src\tools\helper.cpp"/>
   </ItemGroup>
   <PropertyGroup Label="Globals">
