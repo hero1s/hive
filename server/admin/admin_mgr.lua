@@ -95,7 +95,6 @@ end
 ----------------------------------------------------------------------
 --gm_page
 function AdminMgr:on_gm_page(url, querys, request)
-    log_debug("---%s", querys)
     local user = querys["user"]
     local pwd  = querys["pwd"]
     if user ~= self.user or pwd ~= self.pwd then
