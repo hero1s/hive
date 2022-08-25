@@ -107,35 +107,37 @@ namespace lhttp {
         void parse_url(const string& str) {
             params.clear();
             size_t pos = str.find("?");
-            if (pos == string::npos) {
-                url = str;
-                return;
-            }
-            url = str.substr(0, pos);
-            string args = str.substr(pos + 1);
-            vector<string> parts;
-            split(args, "&", parts);
-            for (const string& part : parts) {
-                size_t pos = part.find("=");
-                if (pos != string::npos) {
-                    params.insert(make_pair(part.substr(0, pos), part.substr(pos + 1)));
+            if (pos != string::npos) {
+                url = str.substr(0, pos);
+                string args = str.substr(pos + 1);
+                vector<string> parts;
+                split(args, "&", parts);
+                for (const string& part : parts) {
+                    size_t pos = part.find("=");
+                    if (pos != string::npos) {
+                        params.insert(make_pair(part.substr(0, pos), part.substr(pos + 1)));
+                    }
                 }
+            } else {
+                url = str;
+            }
+            if (url.size() > 1 && url.back() == '/') {
+                url.pop_back();
             }
         }
 
         void parse_header(const string& str) {
-            size_t pos = str.find(": ");
+            size_t pos = str.find(":");
             if (pos != string::npos) {
                 string key = str.substr(0, pos);
                 string value = str.substr(pos + 2);
+                value.erase(0, value.find_first_not_of(" "));
                 headers.insert(make_pair(key, value));
-                if (method == "POST" || method != "PUT") {
-                    if (!strcasecmp(key.c_str(), "Content-Length")) {
-                        content_size = atoi(value.c_str());
-                    }
-                    else if (!strcasecmp(key.c_str(), "Transfer-Encoding") && !strcasecmp(value.c_str(), "chunked")) {
-                        chunked = true;
-                    }
+                if (!strcasecmp(key.c_str(), "Content-Length")) {
+                    content_size = atoi(value.c_str());
+                }
+                else if (!strcasecmp(key.c_str(), "Transfer-Encoding") && !strcasecmp(value.c_str(), "chunked")) {
+                    chunked = true;
                 }
             }
         }

@@ -10,6 +10,7 @@ local tpack       = table.pack
 local tunpack     = table.unpack
 local tsort       = table.sort
 local sformat     = string.format
+local sfind       = string.find
 local dgetinfo    = debug.getinfo
 local file_time   = lstdfs.last_write_time
 local ldir        = lstdfs.dir
@@ -41,6 +42,13 @@ for _, path in ipairs(ssplit(package.path, ";")) do
     search_path[#search_path + 1] = path:sub(1, path:find("?") - 1)
 end
 
+local function can_reload(fullpath)
+    if sfind(fullpath, "/hive/script/") then
+        return false
+    end
+    return true
+end
+
 local function search_load(node)
     local load_path = node.fullpath
     if load_path then
@@ -53,8 +61,9 @@ local function search_load(node)
         local file     = iopen(fullpath)
         if file then
             file:close()
-            node.fullpath = fullpath
-            node.time     = file_time(fullpath)
+            node.fullpath   = fullpath
+            node.time       = file_time(fullpath)
+            node.can_reload = can_reload(fullpath)
             return loadfile(fullpath)
         end
     end
@@ -131,20 +140,22 @@ end
 function hive.reload()
     local count = 0
     for path, node in pairs(load_files) do
-        local filetime = file_time(node.fullpath)
-        if node.time then
-            if mabs(node.time - filetime) > 3 then
-                local res = try_load(node,true)
-                if res then
-                    node.res = res
+        if node.can_reload then
+            local filetime = file_time(node.fullpath)
+            if node.time then
+                if mabs(node.time - filetime) > 3 then
+                    local res = try_load(node, true)
+                    if res then
+                        node.res = res
+                    end
+                    count = count + 1
                 end
-                count = count + 1
+                if count > 20 then
+                    return count
+                end
+            else
+                logger.error(sformat("[hive][reload] error file:%s", node.filename))
             end
-            if count > 20 then
-                return count
-            end
-        else
-            logger.error(sformat("[hive][reload] error file:%s", node.filename))
         end
     end
     return count

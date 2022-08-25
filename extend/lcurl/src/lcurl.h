@@ -16,6 +16,7 @@ namespace lcurl {
         ~curl_request() {
             if (curl) {
                 curl_multi_remove_handle(curlm, curl);
+                curl_easy_cleanup(curl);
                 curl = nullptr;
             }
             if (header) {

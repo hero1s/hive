@@ -109,6 +109,7 @@ bool socket_stream::update(int64_t now) {
         default: {
             if (m_timeout > 0 && now - m_last_recv_time > m_timeout) {
                 on_error(fmt::format("timeout:{}",m_timeout).c_str());
+                return true;
             }
             dispatch_package();
         }
