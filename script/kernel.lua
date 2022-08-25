@@ -78,13 +78,18 @@ function hive.startup(entry)
     hive.resume                = coroutine.resume
     hive.running               = coroutine.running
     hive.now_ms, hive.clock_ms = ltime()
-    hive.service_status        = ServiceStatus.RUN
+    hive.service_status        = ServiceStatus.STOP
     --初始化随机种子
     math.randomseed(hive.now_ms)
     --初始化hive
     hive.init()
     --启动服务器
     entry()
+    local timer_mgr = hive.get("timer_mgr")
+    timer_mgr:once(30 * 1000, function()
+        hive.service_status = ServiceStatus.RUN
+        logger.info("service start run status:%s",hive.name)
+    end)
 end
 
 --底层驱动

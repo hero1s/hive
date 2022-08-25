@@ -55,6 +55,10 @@ Distributed game server framework based on CPP 17 && LUA 5.4
   - quanta: https://github.com/xiyoo0812/quanta
   - moon: https://github.com/sniper00/moon
 
+## 特别贡献者
+  - xiyoo0812
+
+
 ## todo list 
   - 目前应用于即将上线大型实时在线FPS项目,同步更新优化.多多关注,建议,star
   - c++ gateway服务

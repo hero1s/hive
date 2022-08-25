@@ -363,7 +363,7 @@ function MongoDB:build_results(documents, results, limit)
     end
 end
 
-function MongoDB:find(collection, selector, fields, sortor, limit)
+function MongoDB:find(collection, selector, fields, sortor, limit, skip)
     local query_num_once = limit or ONCE_QUERY
     local full_name      = self.db .. "." .. collection
     local bson_fields    = fields and bson_encode(fields)
@@ -371,7 +371,7 @@ function MongoDB:find(collection, selector, fields, sortor, limit)
         selector = { ["$query"] = selector, ["$orderby"] = sort_param(sortor) }
     end
     local bson_selector                = selector and bson_encode(selector)
-    local succ, doc, cursor, documents = self:_query(full_name, bson_selector, bson_fields, query_num_once)
+    local succ, doc, cursor, documents = self:_query(full_name, bson_selector, bson_fields, query_num_once, skip)
     if not succ then
         return self:mongo_result(succ, doc)
     end

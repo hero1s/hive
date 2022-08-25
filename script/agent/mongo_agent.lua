@@ -12,7 +12,7 @@ function MongoAgent:find_one(db_query, hash_key, db_name)
     return router_mgr:call_dbsvr_hash(hash_key or hive.id, "mongo_find_one", db_name or "default", tunpack(db_query))
 end
 
---db_query: {coll_name, selector, fields, sortor, limit}
+--db_query: {coll_name, selector, fields, sortor, limit, skip}
 function MongoAgent:find(db_query, hash_key, db_name)
     return router_mgr:call_dbsvr_hash(hash_key or hive.id, "mongo_find", db_name or "default", tunpack(db_query))
 end

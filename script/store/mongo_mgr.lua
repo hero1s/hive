@@ -34,7 +34,7 @@ function MongoMgr:setup()
     local database = config_mgr:init_table("database", "db", "driver")
     for _, conf in database:iterator() do
         if conf.driver == "mongo" then
-            local mongo_db          = MongoDB(conf)
+            local mongo_db            = MongoDB(conf)
             self.mongo_dbs[conf.name] = mongo_db
             if conf.default then
                 self.default_db = mongo_db
@@ -51,12 +51,12 @@ function MongoMgr:get_db(db_name)
     return self.mongo_dbs[db_name]
 end
 
-function MongoMgr:find(db_name, coll_name, selector, fields, sortor, limit)
+function MongoMgr:find(db_name, coll_name, selector, fields, sortor, limit, skip)
     local mongodb = self:get_db(db_name)
     if mongodb then
-        local ok, res_oe = mongodb:find(coll_name, selector, fields, sortor, limit)
+        local ok, res_oe = mongodb:find(coll_name, selector, fields, sortor, limit, skip)
         if not ok then
-            log_err("[MongoMgr][find] execute %s failed, because: %s", tpack(coll_name, selector, fields, sortor, limit), res_oe)
+            log_err("[MongoMgr][find] execute %s failed, because: %s", tpack(coll_name, selector, fields, sortor, limit, skip), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end
@@ -164,7 +164,7 @@ function MongoMgr:execute(db_name, cmd, ...)
     if mongodb then
         local ok, res_oe = mongodb:runCommand(cmd, ...)
         if not ok then
-            log_err("[MongoMgr][execute] execute %s failed, because: %s", tpack(cmd,...), res_oe)
+            log_err("[MongoMgr][execute] execute %s failed, because: %s", tpack(cmd, ...), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end
