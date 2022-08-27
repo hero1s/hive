@@ -2,6 +2,12 @@
 
 #include <curl/curl.h>
 #include "lua_kit.h"
+#ifdef WIN32
+#include<winsock2.h>
+#pragma comment(lib,"ws2_32.lib")
+#endif // WIN32
+
+
 
 using namespace std;
 
@@ -32,7 +38,7 @@ namespace lcurl {
             curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)this);
             curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error);
             curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout_ms);
-            curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, timeout_ms / 2);
+            curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, 1000);
             curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
             curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
             curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, false);
@@ -122,8 +128,24 @@ namespace lcurl {
             luakit::kit_state kit_state(L);
             return kit_state.as_return(request, curl);
         }
-
+        bool curl_select()
+        {
+            struct timeval timeout;
+            fd_set fdread;
+            fd_set fdwrite;
+            fd_set fdexcep;
+            int maxfd = -1;
+            FD_ZERO(&fdread);
+            FD_ZERO(&fdwrite);
+            FD_ZERO(&fdexcep);
+            timeout.tv_sec = 0;
+            timeout.tv_usec = 0;
+            curl_multi_fdset(curlm, &fdread, &fdwrite, &fdexcep, &maxfd);
+            if (-1 == maxfd)return -1;
+            return select(maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout) > 0;
+        }
         int update(lua_State* L) {
+            if(!curl_select())return 1;
             int running_handles;
             CURLMcode result = curl_multi_perform(curlm, &running_handles);
             if (result != CURLM_OK && result != CURLM_CALL_MULTI_PERFORM) {

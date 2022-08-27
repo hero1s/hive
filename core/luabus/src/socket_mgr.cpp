@@ -218,11 +218,11 @@ int socket_mgr::connect(std::string& err, const char node_name[], const char ser
     }
 
 #ifdef _MSC_VER
-    socket_stream* stm = new socket_stream(this, m_connect_func, proto_type);
+    socket_stream* stm = new socket_stream(this, m_connect_func, proto_type,elink_type::elink_tcp_client);
 #endif
 
 #if defined(__linux) || defined(__APPLE__)
-    socket_stream* stm = new socket_stream(this, proto_type);
+    socket_stream* stm = new socket_stream(this, proto_type, elink_type::elink_tcp_client);
 #endif
 
     stm->connect(node_name, service_name, timeout);
@@ -425,7 +425,10 @@ bool socket_mgr::watch_send(socket_t fd, socket_object* object, bool enable) {
 }
 
 int socket_mgr::accept_stream(socket_t fd, const char ip[], const std::function<void(int, eproto_type)>& cb, eproto_type proto_type) {
-    auto* stm = new socket_stream(this, proto_type);
+    auto* stm = new socket_stream(this, proto_type, elink_type::elink_tcp_accept);
+    if (proto_type == eproto_type::proto_rpc) {
+        stm->set_handshake(false);
+    }
     if (watch_accepted(fd, stm) && stm->accept_socket(fd, ip)) {
         auto token = new_token();
         m_objects[token] = stm;

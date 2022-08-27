@@ -7,9 +7,9 @@
 struct socket_stream : public socket_object
 {
 #ifdef _MSC_VER
-    socket_stream(socket_mgr* mgr, LPFN_CONNECTEX connect_func, eproto_type proto_type = eproto_type::proto_rpc);
+    socket_stream(socket_mgr* mgr, LPFN_CONNECTEX connect_func, eproto_type proto_type, elink_type link_type);
 #endif
-    socket_stream(socket_mgr* mgr, eproto_type proto_type = eproto_type::proto_rpc);
+    socket_stream(socket_mgr* mgr, eproto_type proto_type, elink_type link_type);
 
     ~socket_stream();
     bool get_remote_ip(std::string& ip) override;
@@ -45,12 +45,15 @@ struct socket_stream : public socket_object
     void do_recv(size_t max_len, bool is_eof);
 
     void dispatch_package();
+    int  handshake_rpc(BYTE* data, size_t data_len);
+    void send_handshake_rpc();
     void on_error(const char err[]);
     void on_connect(bool ok, const char reason[]);
 
     int token = 0;
     socket_mgr* m_mgr = nullptr;
     eproto_type     m_proto_type = eproto_type::proto_rpc;
+    elink_type      m_link_type = elink_type::elink_tcp_client;
     socket_t m_socket = INVALID_SOCKET;
     io_buffer m_recv_buffer;
     io_buffer m_send_buffer;

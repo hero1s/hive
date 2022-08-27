@@ -7,6 +7,8 @@
 #include "socket_stream.h"
 #include "fmt/core.h"
 
+static const std::string s_handshake_verify = "CLBY20220816CLBY&*^%$#@!";
+
 #ifdef __linux
 static const int s_send_flag = MSG_NOSIGNAL;
 #endif
@@ -16,8 +18,8 @@ static const int s_send_flag = 0;
 #endif
 
 #ifdef _MSC_VER
-socket_stream::socket_stream(socket_mgr* mgr, LPFN_CONNECTEX connect_func, eproto_type proto_type) :
-    m_proto_type(proto_type) {
+socket_stream::socket_stream(socket_mgr* mgr, LPFN_CONNECTEX connect_func, eproto_type proto_type, elink_type link_type) :
+    m_proto_type(proto_type),m_link_type(link_type){
     mgr->increase_count();
     m_mgr = mgr;
     m_connect_func = connect_func;
@@ -25,8 +27,8 @@ socket_stream::socket_stream(socket_mgr* mgr, LPFN_CONNECTEX connect_func, eprot
 }
 #endif
 
-socket_stream::socket_stream(socket_mgr* mgr, eproto_type proto_type) :
-    m_proto_type(proto_type) {
+socket_stream::socket_stream(socket_mgr* mgr, eproto_type proto_type, elink_type link_type) :
+    m_proto_type(proto_type),m_link_type(link_type) {
     mgr->increase_count();
     m_proto_type = proto_type;
     m_mgr = mgr;
@@ -504,6 +506,14 @@ void socket_stream::dispatch_package() {
         size_t data_len = 0, header_len = 0;
         auto* data = m_recv_buffer.peek_data(&data_len);
         if (eproto_type::proto_rpc == m_proto_type) {
+            // 检测握手
+            if (!m_handshake) {
+                auto ret = handshake_rpc(data, data_len);
+                if (ret < 0) {
+                    on_error(fmt::format("handshake_rpc fail:{}", ret).c_str());                    
+                }
+                break;
+            }
             // rpc模式使用decode_u64获取head
             header_len = decode_u64(&package_size, data, data_len);
             if (header_len == 0) break;
@@ -554,6 +564,27 @@ void socket_stream::dispatch_package() {
     }
 }
 
+int socket_stream::handshake_rpc(BYTE* data, size_t data_len) {
+    if (data_len < s_handshake_verify.length()) {
+        return 1;
+    }
+    for (auto i = 0; i < s_handshake_verify.length(); ++i) {
+        if (data[i] != s_handshake_verify.at(i)) {
+            return -1;
+        }
+    }
+    m_recv_buffer.pop_data(s_handshake_verify.length());
+    m_last_recv_time = steady_ms();
+    m_handshake = true;
+    return 0;
+}
+
+void socket_stream::send_handshake_rpc() {
+    if (eproto_type::proto_rpc == m_proto_type) {
+        stream_send(s_handshake_verify.c_str(), s_handshake_verify.length());
+    }    
+}
+
 void socket_stream::on_error(const char err[]) {
     if (m_link_status == elink_status::link_connected) {
         // kqueue实现下,如果eof时不及时关闭或unwatch,则会触发很多次eof
@@ -582,6 +613,7 @@ void socket_stream::on_connect(bool ok, const char reason[]) {
         } else {
             m_link_status = elink_status::link_connected;
             m_last_recv_time = steady_ms();
+            send_handshake_rpc();
         }
         m_connect_cb(ok, reason);
     }

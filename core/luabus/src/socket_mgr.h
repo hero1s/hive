@@ -9,12 +9,19 @@
 #include <unordered_map>
 #include "socket_helper.h"
 
-enum class elink_status : int
+enum class elink_status : uint8_t
 {
     link_init       = 0,
     link_connected  = 1,
     link_colsing    = 2,
     link_closed     = 3,
+};
+
+// 连接类型
+enum elink_type : uint8_t
+{
+    elink_tcp_client = 0, //主动连接
+    elink_tcp_accept = 1, //服务连接
 };
 
 // 协议类型
@@ -59,8 +66,10 @@ struct socket_object
     virtual void on_can_send(size_t data_len = UINT_MAX, bool is_eof = false) {};
 #endif
     elink_status link_status() { return m_link_status; };
+    void set_handshake(bool status) { m_handshake = status; };
 protected:
     elink_status m_link_status = elink_status::link_init;
+    bool         m_handshake   = true; //握手状态
 };
 
 class socket_mgr

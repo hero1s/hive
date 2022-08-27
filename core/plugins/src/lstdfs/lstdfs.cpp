@@ -166,7 +166,7 @@ namespace lstdfs {
             return kit_state.as_return(cftime);
         }
         catch (filesystem::filesystem_error const& e) {
-            return kit_state.as_return(false, e.what());
+            return kit_state.as_return(0, e.what());
         }
     }
 
