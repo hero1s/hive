@@ -17,21 +17,14 @@ local config_mgr     = hive.get("config_mgr")
 
 local RPC_FAILED     = hive.enum("KernCode", "RPC_FAILED")
 local SECOND_MS      = hive.enum("PeriodTime", "SECOND_MS")
-local RECONNECT_TIME = hive.enum("NetwkTime", "RECONNECT_TIME")
-local HEARTBEAT_TIME = hive.enum("NetwkTime", "HEARTBEAT_TIME")
 
 local MonitorAgent   = singleton()
 local prop           = property(MonitorAgent)
 prop:reader("client", nil)
-prop:reader("next_connect_time", 0)
 function MonitorAgent:__init()
     --创建连接
     local ip, port = env_addr("HIVE_MONITOR_ADDR")
     self.client    = RpcClient(self, ip, port)
-    --心跳定时器
-    timer_mgr:loop(HEARTBEAT_TIME, function()
-        self:on_timer()
-    end)
     --注册事件
     event_mgr:add_listener(self, "rpc_hive_quit")
     event_mgr:add_listener(self, "on_remote_message")
@@ -41,25 +34,8 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "rpc_set_log_level")
 end
 
-function MonitorAgent:on_timer()
-    local clock_ms = hive.clock_ms
-    local client   = self.client
-    if not client:is_alive() then
-        if clock_ms >= self.next_connect_time then
-            self.next_connect_time = clock_ms + RECONNECT_TIME
-            client:connect()
-        end
-    else
-        if not client:check_lost(clock_ms) then
-            client:heartbeat()
-        end
-    end
-end
-
 -- 连接关闭回调
 function MonitorAgent:on_socket_error(client, token, err)
-    -- 设置重连时间
-    self.next_connect_time = hive.clock_ms
     log_err("[MonitorAgent][on_socket_error] disconnect monitor fail!:[%s:%s]", self.client.ip, self.client.port)
 end
 

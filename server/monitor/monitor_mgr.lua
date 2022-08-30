@@ -78,7 +78,7 @@ function MonitorMgr:register_admin()
 end
 
 function MonitorMgr:on_socket_accept(client)
-    log_info("[MonitorMgr][on_socket_accept] token:%s",client.token)
+    log_info("[MonitorMgr][on_socket_accept] token:%s", client.token)
 end
 
 -- 会话信息
@@ -91,7 +91,7 @@ end
 
 -- 会话关闭回调
 function MonitorMgr:on_socket_error(client, token, err)
-    log_warn("[MonitorMgr][on_socket_error] node name:%s, id:%s, token:%s,err:%s", client.name, client.id, token,err)
+    log_warn("[MonitorMgr][on_socket_error] node name:%s, id:%s, token:%s,err:%s", client.name, client.id, token, err)
     if client.id then
         self.monitor_lost_nodes[client.id] = self.monitor_nodes[token]
         self.monitor_nodes[token]          = nil
@@ -136,6 +136,15 @@ function MonitorMgr:broadcast(rpc, service_id, ...)
         end
     end
     return { code = 0, msg = "broadcast all nodes server!" }
+end
+
+function MonitorMgr:broadcast_svrname(rpc, svrname, ...)
+    local service_id = service.name2sid(svrname)
+    if not service_id then
+        log_err("[MonitorMgr][broadcast_svrname] the svrname:(%s) is not exist", svrname)
+        return { code = -1, msg = "the svrname is not exist" }
+    end
+    return self:broadcast(rpc, service_id, ...)
 end
 
 -- command处理

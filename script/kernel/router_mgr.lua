@@ -10,14 +10,10 @@ local sid2name         = service.id2name
 local qsuccess         = hive.success
 local hhash_code       = hive.hash_code
 
-local timer_mgr        = hive.get("timer_mgr")
 local thread_mgr       = hive.get("thread_mgr")
 local event_mgr        = hive.get("event_mgr")
-local update_mgr       = hive.get("update_mgr")
 local config_mgr       = hive.get("config_mgr")
 
-local HEARTBEAT_TIME   = hive.enum("NetwkTime", "HEARTBEAT_TIME")
-local RECONNECT_TIME   = hive.enum("NetwkTime", "RECONNECT_TIME")
 local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 
 local RouterMgr        = singleton()
@@ -42,14 +38,6 @@ function RouterMgr:setup()
     event_mgr:add_listener(self, "rpc_service_close")
     event_mgr:add_listener(self, "rpc_service_ready")
     event_mgr:add_listener(self, "rpc_service_kickout")
-    --加入更新
-    update_mgr:attach_frame(self)
-    --心跳定时器
-    timer_mgr:loop(HEARTBEAT_TIME, function()
-        for _, node in pairs(self.routers) do
-            node.client:heartbeat()
-        end
-    end)
 end
 
 --添加router
@@ -61,16 +49,16 @@ function RouterMgr:add_router(router_conf, index)
         local port              = router_conf.port + (index - 1)
         local RpcClient         = import("network/rpc_client.lua")
         self.routers[router_id] = {
-            addr              = host,
-            router_id         = router_id,
-            next_connect_time = 0,
-            client            = RpcClient(self, host, port)
+            addr      = host,
+            router_id = router_id,
+            client    = RpcClient(self, host, port)
         }
     end
 end
 
 --错误处理
 function RouterMgr:on_socket_error(client, token, err)
+    self:switch_master()
     log_err("[RouterMgr][on_socket_error] router lost %s:%s, err=%s", client.ip, client.port, err)
 end
 
@@ -95,27 +83,6 @@ function RouterMgr:switch_master()
     if node then
         self.master = node
         log_info("[RouterMgr][switch_master] switch router addr: %s", node.addr)
-    end
-end
-
---更新
-function RouterMgr:on_frame(clock_ms)
-    local now_tick = clock_ms
-    for _, node in pairs(self.routers) do
-        local client = node.client
-        if not client:is_alive() then
-            if now_tick > node.next_connect_time then
-                node.next_connect_time = now_tick + RECONNECT_TIME
-                client:connect()
-            end
-        else
-            if client:check_lost(now_tick) then
-                log_info("[RouterMgr][on_frame] router lost: %s:%s", client.ip, client.port)
-                if node == self.master then
-                    self:switch_master()
-                end
-            end
-        end
     end
 end
 

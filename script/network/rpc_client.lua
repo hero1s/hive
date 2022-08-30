@@ -1,33 +1,61 @@
 -- rpc_client.lua
-local tunpack      = table.unpack
-local tpack        = table.pack
-local log_err      = logger.err
-local log_info     = logger.info
-local hxpcall      = hive.xpcall
-local hhash_code   = hive.hash_code
+local tunpack        = table.unpack
+local tpack          = table.pack
+local log_err        = logger.err
+local log_info       = logger.info
+local hxpcall        = hive.xpcall
+local hhash_code     = hive.hash_code
 
-local event_mgr    = hive.get("event_mgr")
-local socket_mgr   = hive.get("socket_mgr")
-local thread_mgr   = hive.get("thread_mgr")
-local perfeval_mgr = hive.get("perfeval_mgr")
+local event_mgr      = hive.get("event_mgr")
+local socket_mgr     = hive.get("socket_mgr")
+local thread_mgr     = hive.get("thread_mgr")
+local update_mgr     = hive.get("update_mgr")
+local perfeval_mgr   = hive.get("perfeval_mgr")
 
-local FlagMask     = enum("FlagMask")
-local KernCode     = enum("KernCode")
-local NetwkTime    = enum("NetwkTime")
-local SUCCESS      = KernCode.SUCCESS
+local FlagMask       = enum("FlagMask")
+local KernCode       = enum("KernCode")
+local NetwkTime      = enum("NetwkTime")
+local HEARTBEAT_TIME = hive.enum("NetwkTime", "HEARTBEAT_TIME")
+local RECONNECT_TIME = hive.enum("NetwkTime", "RECONNECT_TIME")
 
-local RpcClient    = class()
-local prop         = property(RpcClient)
+local SUCCESS        = KernCode.SUCCESS
+
+local RpcClient      = class()
+local prop           = property(RpcClient)
 prop:reader("ip", nil)
 prop:reader("port", nil)
 prop:reader("alive", false)
 prop:reader("alive_time", 0)
+prop:reader("next_connect_time", 0)
+prop:reader("last_heart_time", 0)
 prop:reader("socket", nil)
 prop:reader("holder", nil)    --持有者
 function RpcClient:__init(holder, ip, port)
     self.holder = holder
     self.port   = port
     self.ip     = ip
+    self:setup()
+end
+
+function RpcClient:__release()
+    self:close()
+    update_mgr:detach_second(self)
+end
+
+function RpcClient:setup()
+    update_mgr:attach_second(self)
+end
+
+function RpcClient:on_second(clock_ms)
+    if not self:is_alive() then
+        if clock_ms >= self.next_connect_time then
+            self.next_connect_time = clock_ms + RECONNECT_TIME
+            self:connect()
+        end
+    else
+        self:heartbeat(false,clock_ms)
+        self:check_lost(clock_ms)
+    end
 end
 
 --调用rpc后续处理
@@ -44,12 +72,14 @@ end
 function RpcClient:check_lost(clock_ms)
     if clock_ms - self.alive_time > NetwkTime.ROUTER_TIMEOUT then
         self:close()
+        log_info("[RpcClient][check_lost] rpc client lost: %s:%s", self.ip, self.port)
         return true
     end
+    return false
 end
 
 --发送心跳
-function RpcClient:heartbeat(initial)
+function RpcClient:heartbeat(initial,clock_ms)
     if initial then
         local node_info = {
             id         = hive.id,
@@ -62,7 +92,10 @@ function RpcClient:heartbeat(initial)
         self:send("rpc_heartbeat", node_info)
         return
     end
-    self:send("rpc_heartbeat")
+    if clock_ms - self.last_heart_time > HEARTBEAT_TIME then
+        self.last_heart_time = clock_ms
+        self:send("rpc_heartbeat")
+    end
 end
 
 --连接服务器
@@ -140,8 +173,7 @@ end
 function RpcClient:close()
     if self.socket then
         self.socket.close()
-        self.alive  = false
-        self.socket = nil
+        self:on_socket_error(self.socket.token, "rpc-action-close")
     end
 end
 
@@ -181,6 +213,7 @@ end
 --错误处理
 function RpcClient:on_socket_error(token, err)
     log_info("[RpcClient][on_socket_error] socket %s:%s %s!", self.ip, self.port, err)
+    self.next_connect_time = hive.clock_ms
     thread_mgr:fork(function()
         self.socket = nil
         self.alive  = false
@@ -195,7 +228,7 @@ function RpcClient:on_socket_connect(socket)
     self.alive_time = hive.clock_ms
     thread_mgr:fork(function()
         self.holder:on_socket_connect(self)
-        self:heartbeat(true)
+        self:heartbeat(true,hive.clock_ms)
     end)
 end
 

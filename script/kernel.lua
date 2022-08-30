@@ -86,7 +86,7 @@ function hive.startup(entry)
     --启动服务器
     entry()
     local timer_mgr = hive.get("timer_mgr")
-    timer_mgr:once(30 * 1000, function()
+    timer_mgr:once(10 * 1000, function()
         hive.service_status = ServiceStatus.RUN
         logger.info("service start run status:%s",hive.name)
     end)
