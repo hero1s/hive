@@ -16,6 +16,7 @@ local SUCCESS      = KernCode.SUCCESS
 local CAREAD       = CacheType.READ
 local CAWRITE      = CacheType.WRITE
 
+local thread_mgr   = hive.get("thread_mgr")
 local event_mgr    = hive.get("event_mgr")
 local timer_mgr    = hive.get("timer_mgr")
 local config_mgr   = hive.get("config_mgr")
@@ -123,7 +124,8 @@ function CacheMgr:load_cache_impl(cache_list, conf, primary_key)
 end
 
 function CacheMgr:get_cache_obj(hive_id, cache_name, primary_key, cache_type)
-    local cache_list = self.cache_lists[cache_name]
+    local _lock<close> = thread_mgr:lock(cache_name .. primary_key)
+    local cache_list   = self.cache_lists[cache_name]
     if not cache_list then
         log_err("[CacheMgr][get_cache_obj] cache list not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return CacheCode.CACHE_NOT_SUPPERT

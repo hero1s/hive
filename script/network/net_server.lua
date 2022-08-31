@@ -223,7 +223,7 @@ function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
     -- 解码
     local body, cmd_name  = self:decode(cmd_id, data, flag)
     if not body then
-        log_warn("[NetServer][on_socket_recv] cmd(%s) parse failed.", cmd_id)
+        log_err("[NetServer][on_socket_recv] cmd(%s) parse failed.", cmd_id)
         return
     end
     if session_id == 0 or (flag & FLAG_REQ == FLAG_REQ) then
