@@ -57,10 +57,9 @@ local function search_load(node)
     end
     local filename = node.filename
     for _, path_root in pairs(search_path) do
-        local fullpath = path_root .. filename
-        local file     = iopen(fullpath)
+        local fullpath    = path_root .. filename
+        local file<close> = iopen(fullpath)
         if file then
-            file:close()
             node.fullpath   = fullpath
             node.time       = file_time(fullpath)
             node.can_reload = can_reload(fullpath)

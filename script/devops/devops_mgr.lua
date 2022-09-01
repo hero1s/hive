@@ -42,13 +42,12 @@ function DevopsMgr:file_pid_oper(is_create)
             lstdfs.mkdir("./pid")
             log_err("pid dir is not exist,create")
         end
-        local file = io.open(filename, "w")
+        local file<close> = io.open(filename, "w")
         if not file then
             log_err(sformat("open pid file %s failed!", filename))
             return
         end
         file:write(hive.pid)
-        file:close()
         log_info("[DevopsMgr][file_pid_oper] pid:%s", hive.pid)
     else
         log_info(sformat("remove pid file %s ", filename))
