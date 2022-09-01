@@ -142,8 +142,7 @@ function hive.import_file_dir(filename)
     if not node or not node.fullpath then
         return nil
     end
-    local path = io_ext.pathinfo(node.fullpath)
-    return path.dirname
+    return lstdfs.parent_path(node.fullpath)
 end
 
 function hive.reload()
