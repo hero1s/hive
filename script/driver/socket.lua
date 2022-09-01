@@ -35,7 +35,9 @@ end
 function Socket:close()
     if self.session then
         self.session.close()
-        self:on_socket_error(self.token,"action-close")
+        self.alive   = false
+        self.session = nil
+        self.token   = nil
     end
 end
 
@@ -130,7 +132,7 @@ function Socket:accept(session, ip, port)
     end
     session.on_error     = function(token, err)
         thread_mgr:fork(function()
-            self:on_socket_error(token, err)
+            hxpcall(self.on_socket_error, "on_socket_error: %s", self, token, err)
         end)
     end
     self.alive           = true

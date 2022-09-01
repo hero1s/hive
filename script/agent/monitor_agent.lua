@@ -12,7 +12,6 @@ local check_failed   = hive.failed
 
 local event_mgr      = hive.get("event_mgr")
 local timer_mgr      = hive.get("timer_mgr")
-local thread_mgr     = hive.get("thread_mgr")
 local config_mgr     = hive.get("config_mgr")
 
 local RPC_FAILED     = hive.enum("KernCode", "RPC_FAILED")
@@ -36,7 +35,7 @@ end
 
 -- 连接关闭回调
 function MonitorAgent:on_socket_error(client, token, err)
-    log_err("[MonitorAgent][on_socket_error] disconnect monitor fail!:[%s:%s]", self.client.ip, self.client.port)
+    log_err("[MonitorAgent][on_socket_error] disconnect monitor fail!:[%s:%s],err:%s", self.client.ip, self.client.port,err)
 end
 
 -- 连接成回调
@@ -63,13 +62,8 @@ end
 function MonitorAgent:rpc_hive_quit(reason)
     -- 发个退出通知
     event_mgr:notify_trigger("evt_hive_quit", reason)
-    -- 关闭会话连接
-    thread_mgr:fork(function()
-        thread_mgr:sleep(SECOND_MS)
-        self.client:close()
-    end)
     timer_mgr:once(SECOND_MS, function()
-        log_warn("[MonitorAgent][on_hive_quit]->service:%s", hive.name)
+        log_warn("[MonitorAgent][on_hive_quit]->service:%s,reason:%s", hive.name,reason)
         signal_quit()
     end)
     return { code = 0 }

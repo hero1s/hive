@@ -30,8 +30,6 @@ prop:reader("monitor_nodes", {})
 prop:reader("monitor_lost_nodes", {})
 
 function MonitorMgr:__init()
-    log_page        = readfile("../hive/server/monitor/log_page.html")
-
     --创建rpc服务器
     local ip, port  = env_addr("HIVE_MONITOR_HOST")
     self.rpc_server = RpcServer()
@@ -91,7 +89,7 @@ end
 
 -- 会话关闭回调
 function MonitorMgr:on_socket_error(client, token, err)
-    log_warn("[MonitorMgr][on_socket_error] node name:%s, id:%s, token:%s,err:%s", client.name, client.id, token, err)
+    log_warn("[MonitorMgr][on_socket_error] node name:%s, id:%s, token:%s,err:%s", service.id2nick(client.id), client.id, token, err)
     if client.id then
         self.monitor_lost_nodes[client.id] = self.monitor_nodes[token]
         self.monitor_nodes[token]          = nil
@@ -107,6 +105,13 @@ end
 
 --gm_page
 function MonitorMgr:on_log_page(url, querys, request)
+    if not log_page then
+        local html_path = hive.import_file_dir("monitor/monitor_mgr.lua") .. "/log_page.html"
+        log_page        = readfile(html_path)
+        if not log_page then
+            log_err("[MonitorMgr][on_log_page] load html faild:%s", html_path)
+        end
+    end
     return self.http_server:build_response(200, log_page)
 end
 
@@ -129,22 +134,21 @@ function MonitorMgr:call(token, rpc, ...)
 end
 
 --broadcast
-function MonitorMgr:broadcast(rpc, service_id, ...)
+function MonitorMgr:broadcast(rpc, target, ...)
+    local service_id = target
+    if type(target) == "string" then
+        if target == "" or target == "all" then
+            service_id = 0
+        else
+            service_id = service.name2sid(target)
+        end
+    end
     for token, client in self.rpc_server:iterator() do
         if service_id == 0 or service_id == client.service_id then
             self.rpc_server:send(client, rpc, ...)
         end
     end
     return { code = 0, msg = "broadcast all nodes server!" }
-end
-
-function MonitorMgr:broadcast_svrname(rpc, svrname, ...)
-    local service_id = service.name2sid(svrname)
-    if not service_id then
-        log_err("[MonitorMgr][broadcast_svrname] the svrname:(%s) is not exist", svrname)
-        return { code = -1, msg = "the svrname is not exist" }
-    end
-    return self:broadcast(rpc, service_id, ...)
 end
 
 -- command处理

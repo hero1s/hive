@@ -136,6 +136,15 @@ function hive.import_file_time(filename)
     end
     return node.time
 end
+--加载的文件路径
+function hive.import_file_dir(filename)
+    local node = load_files[filename]
+    if not node or not node.fullpath then
+        return nil
+    end
+    local path = io_ext.pathinfo(node.fullpath)
+    return path.dirname
+end
 
 function hive.reload()
     local count = 0

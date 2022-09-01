@@ -143,7 +143,7 @@ function WebSocket:accept(session, ip, port)
     end
     session.on_error     = function(token, err)
         thread_mgr:fork(function()
-            self:on_socket_error(token, err)
+            hxpcall(self.on_socket_error,"on_socket_error: %s", self, token, err)
         end)
     end
 end

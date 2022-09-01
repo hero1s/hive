@@ -33,8 +33,6 @@ prop:reader("services", {})
 prop:reader("monitors", {})
 
 function AdminMgr:__init()
-    gm_page = readfile("../hive/server/admin/gm_page.html")
-
     --监听事件
     event_mgr:add_listener(self, "rpc_register_command")
     event_mgr:add_listener(self, "rpc_execute_command")
@@ -95,6 +93,13 @@ end
 ----------------------------------------------------------------------
 --gm_page
 function AdminMgr:on_gm_page(url, querys, request)
+    if not gm_page then
+        local html_path = hive.import_file_dir("admin/admin_mgr.lua") .. "/gm_page.html"
+        gm_page         = readfile(html_path)
+        if not gm_page then
+            log_err("[AdminMgr][on_gm_page] load html faild:%s", html_path)
+        end
+    end
     local user = querys["user"]
     local pwd  = querys["pwd"]
     if user ~= self.user or pwd ~= self.pwd then

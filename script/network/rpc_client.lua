@@ -30,6 +30,7 @@ prop:reader("next_connect_time", 0)
 prop:reader("last_heart_time", 0)
 prop:reader("socket", nil)
 prop:reader("holder", nil)    --持有者
+prop:reader("auto_reconnect", true)
 function RpcClient:__init(holder, ip, port)
     self.holder = holder
     self.port   = port
@@ -38,7 +39,11 @@ function RpcClient:__init(holder, ip, port)
 end
 
 function RpcClient:__release()
-    self:close()
+    if self.socket then
+        self.socket.close()
+        self.socket = nil
+        self.alive  = false
+    end
     update_mgr:detach_second(self)
 end
 
@@ -48,12 +53,12 @@ end
 
 function RpcClient:on_second(clock_ms)
     if not self:is_alive() then
-        if clock_ms >= self.next_connect_time then
+        if self.auto_reconnect and clock_ms >= self.next_connect_time then
             self.next_connect_time = clock_ms + RECONNECT_TIME
             self:connect()
         end
     else
-        self:heartbeat(false,clock_ms)
+        self:heartbeat(false, clock_ms)
         self:check_lost(clock_ms)
     end
 end
@@ -70,8 +75,8 @@ end
 
 --检测存活
 function RpcClient:check_lost(clock_ms)
-    if clock_ms - self.alive_time > NetwkTime.ROUTER_TIMEOUT then
-        self:close()
+    if self.auto_reconnect and clock_ms - self.alive_time > NetwkTime.ROUTER_TIMEOUT then
+        self:close(true)
         log_info("[RpcClient][check_lost] rpc client lost: %s:%s", self.ip, self.port)
         return true
     end
@@ -79,7 +84,7 @@ function RpcClient:check_lost(clock_ms)
 end
 
 --发送心跳
-function RpcClient:heartbeat(initial,clock_ms)
+function RpcClient:heartbeat(initial, clock_ms)
     if initial then
         local node_info = {
             id         = hive.id,
@@ -170,10 +175,15 @@ function RpcClient:connect()
 end
 
 -- 主动关闭连接
-function RpcClient:close()
+function RpcClient:close(auto_reconnect)
+    if auto_reconnect ~= nil then
+        self.auto_reconnect = auto_reconnect
+    end
     if self.socket then
         self.socket.close()
-        self:on_socket_error(self.socket.token, "rpc-action-close")
+        thread_mgr:fork(function()
+            hxpcall(self.on_socket_error, "on_socket_error: %s", self, self.socket.token, "rpc-action-close")
+        end)
     end
 end
 
@@ -228,7 +238,7 @@ function RpcClient:on_socket_connect(socket)
     self.alive_time = hive.clock_ms
     thread_mgr:fork(function()
         self.holder:on_socket_connect(self)
-        self:heartbeat(true,hive.clock_ms)
+        self:heartbeat(true, hive.clock_ms)
     end)
 end
 
