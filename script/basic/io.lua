@@ -8,9 +8,10 @@ io_ext = _ENV.io_ext or {}
 -- Write content to a new file.
 --
 function io_ext.writefile(filename, content)
-    local file<close> = io.open(filename, "w+b")
+    local file = io.open(filename, "w+b")
     if file then
         file:write(content)
+        file:close()
         return true
     end
 end
@@ -19,9 +20,10 @@ end
 -- Read content from new file.
 --
 function io_ext.readfile(filename)
-    local file<close>, err = io.open(filename, "rb")
+    local file, err = io.open(filename, "rb")
     if file then
         local content = file:read("*a")
+        file:close()
         return content
     end
     return false, err

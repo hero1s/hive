@@ -137,9 +137,9 @@ end
 --导出到lua
 --使用configmgr结构
 local function export_records_to_struct(output, title, records)
-    local table_name         = sformat("%s_cfg", title)
-    local filename           = lappend(output, lconcat(table_name, ".lua"))
-    local export_file<close> = iopen(filename, "w")
+    local table_name  = sformat("%s_cfg", title)
+    local filename    = lappend(output, lconcat(table_name, ".lua"))
+    local export_file = iopen(filename, "w")
     if not export_file then
         print(sformat("open output file %s failed!", filename))
         return
@@ -169,15 +169,16 @@ local function export_records_to_struct(output, title, records)
     local output_data = tconcat(lines, "\n")
     export_file:write(output_data)
     export_file:write(sformat("\n%s:set_version('%s')", title, lmd5(output_data, 1)))
+    export_file:close()
     print(sformat("export %s success!", filename))
 end
 
 --导出到lua
 --使用luatable
 local function export_records_to_table(output, title, records)
-    local table_name         = sformat("%s_cfg", title)
-    local filename           = lappend(output, lconcat(table_name, ".lua"))
-    local export_file<close> = iopen(filename, "w")
+    local table_name  = sformat("%s_cfg", title)
+    local filename    = lappend(output, lconcat(table_name, ".lua"))
+    local export_file = iopen(filename, "w")
     if not export_file then
         print(sformat("open output file %s failed!", filename))
         return
@@ -207,13 +208,14 @@ local function export_records_to_table(output, title, records)
 
     local output_data = tconcat(lines, "\n")
     export_file:write(output_data)
+    export_file:close()
 
     local ret, err = loadfile(filename)
     if ret ~= nil then
         print(sformat("export %s success!", table_name))
     else
         error(sformat([[
-        
+
 ========================================================================
 export %s error:%s!
 ========================================================================]], table_name, err))
@@ -259,7 +261,7 @@ local function export_sheet_to_table(sheet, output, title)
         end
         -- 遍历每一列
         local record, record_flag = {}, {}
-        local pos                 = 0
+        local pos = 0
         for col = 2, sheet.last_col do
             -- 过滤掉没有配置的行
             local ftype = field_type[col]
@@ -268,10 +270,10 @@ local function export_sheet_to_table(sheet, output, title)
                 local value = get_sheet_value(sheet, row, col, ftype, key)
                 if value ~= nil then
                     tinsert(record, { key, value, ftype, field_desc[col] })
-                    pos              = pos + 1
+                    pos = pos + 1
                     record_flag[key] = 1
                 elseif record_flag[key] == nil then
-                    pos              = pos + 1
+                    pos = pos + 1
                     record_flag[key] = { pos, { key, value, ftype, field_desc[col] } }
                 else
                     --多选一的列并且都没配

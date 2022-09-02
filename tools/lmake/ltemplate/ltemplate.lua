@@ -1,28 +1,28 @@
 --ltemplate.lua
-local ipairs    = ipairs
-local iopen     = io.open
-local tconcat   = table.concat
-local ssub      = string.sub
-local sfind     = string.find
-local sgsub     = string.gsub
-local sformat   = string.format
-local sgmatch   = string.gmatch
+local ipairs        = ipairs
+local iopen         = io.open
+local tconcat       = table.concat
+local ssub          = string.sub
+local sfind         = string.find
+local sgsub         = string.gsub
+local sformat       = string.format
+local sgmatch       = string.gmatch
 
-local open_tag  = "{{%"
+local open_tag = "{{%"
 local close_tag = "%}}"
 local equal_tag = "="
 
 local function get_line(content, line_num)
     for line in sgmatch(content, "([^\n]*)\n?") do
-        if line_num == 1 then
-            return line
-        end
-        line_num = line_num - 1
+    if line_num == 1 then
+        return line
+    end
+    line_num = line_num - 1
     end
 end
 
 local function pos_to_line(content, pos)
-    local line     = 1
+    local line = 1
     local scontent = ssub(content, 1, pos)
     for _ in sgmatch(scontent, "\n") do
         line = line + 1
@@ -47,7 +47,7 @@ local function parse_error(code, err)
     end
     if line_no then
         local err_res
-        local line           = get_line(code, tonumber(line_no))
+        local line = get_line(code, tonumber(line_no))
         local source_line_no = tonumber(err:match("line (%d+)"))
         if source_line_no then
             err_res = error_for_line(code, tonumber(source_line_no), err_msg)
@@ -57,7 +57,7 @@ local function parse_error(code, err)
 end
 
 local function push_token(buffers, ...)
-    for _, str in ipairs({ ... }) do
+    for _, str in ipairs({...}) do
         buffers[#buffers + 1] = str
     end
 end
@@ -72,7 +72,7 @@ local function compile_chunks(chunks)
         elseif "code" == tpe then
             push_token(buffers, chunk[2], "\n")
         elseif "equal" == tpe then
-            push_token(buffers, "_b_i = _b_i + 1\n", "_b[_b_i] = ", chunk[2], "\n")
+            push_token(buffers, "_b_i = _b_i + 1\n", "_b[_b_i] = ",  chunk[2], "\n")
         end
     end
     push_token(buffers, "return _b")
@@ -83,7 +83,7 @@ local function push_chunk(chunks, kind, value)
     local chunk = chunks[#chunks]
     if chunk then
         if kind == "code" then
-            chunk[2]        = sgsub(chunk[2], "[ \t]+$", "")
+            chunk[2] = sgsub(chunk[2], "[ \t]+$", "")
             chunks[#chunks] = chunk
         end
         if chunk[1] == "code" and ssub(value, 1, 1) == "\n" then
@@ -106,7 +106,7 @@ local function next_tag(chunks, content, ppos)
     local equal
     if ssub(content, ppos, ppos) == equal_tag then
         equal = true
-        ppos  = ppos + 1
+        ppos = ppos + 1
     end
     local close_start, close_stop = sfind(content, close_tag, ppos, true)
     if not close_start then
@@ -150,9 +150,7 @@ local function render(content, env)
         return nil
     end
     local chunk = compile_chunks(chunks)
-    setmetatable(env, { __index = function(t, k)
-        return _G[k]
-    end })
+    setmetatable(env, { __index = function(t, k) return _G[k] end })
     local fn, err2 = load_chunk(chunk, env)
     if not fn then
         print(sformat("load_chunk content failed: %s", err2))
@@ -176,16 +174,15 @@ local function render_file(tpl_f, tpl_out_f, tpl_env, tpl_var_f)
         error("render template file params error!")
         return
     end
-    local template_file<close> = iopen(tpl_f, "rb")
+    local template_file = iopen(tpl_f, "rb")
     if not template_file then
         error(sformat("open template file %s failed!", tpl_f))
         return
     end
     local content = template_file:read("*all")
+    template_file:close()
     if tpl_var_f then
-        setmetatable(tpl_env, { __index = function(t, k)
-            return _G[k]
-        end })
+        setmetatable(tpl_env, { __index = function(t, k) return _G[k] end })
         local func, err = loadfile(tpl_var_f, "bt", tpl_env)
         if not func then
             error(sformat("open template variable file %s failed :%s", tpl_var_f, err))
@@ -198,7 +195,7 @@ local function render_file(tpl_f, tpl_out_f, tpl_env, tpl_var_f)
         end
         tpl_env.NAME = tpl_f
     end
-    local out_file<close> = iopen(tpl_out_f, "w")
+    local out_file = iopen(tpl_out_f, "w")
     if not out_file then
         error(sformat("open template out file %s failed!", tpl_out_f))
         return
@@ -208,10 +205,12 @@ local function render_file(tpl_f, tpl_out_f, tpl_env, tpl_var_f)
         if chunk then
             out_file:write(chunk)
         end
+        out_file:close()
         error(sformat("render template file %s to %s failed: %s!", tpl_f, tpl_out_f, template))
         return
     end
     out_file:write(template)
+    out_file:close()
     print(sformat("render template file %s to %s success!", tpl_f, tpl_out_f))
 end
 
@@ -225,6 +224,6 @@ if select("#", ...) == 3 then
 end
 
 return {
-    render      = render,
+    render = render,
     render_file = render_file
 }
