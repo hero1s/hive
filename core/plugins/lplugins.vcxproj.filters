@@ -99,7 +99,7 @@
     <ClCompile Include="src\bson\bson.c">
       <Filter>bson</Filter>
     </ClCompile>
-    <ClCompile Include="src\guid\lguid.c">
+    <ClCompile Include="src\guid\lguid.cpp">
       <Filter>guid</Filter>
     </ClCompile>
     <ClCompile Include="src\laoi\laoi.cpp">

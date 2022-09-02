@@ -41,7 +41,7 @@
   <ItemGroup>
     <ClCompile Include="src\bitarray\bitarray.c"/>
     <ClCompile Include="src\bson\bson.c"/>
-    <ClCompile Include="src\guid\lguid.c"/>
+    <ClCompile Include="src\guid\lguid.cpp"/>
     <ClCompile Include="src\laoi\laoi.cpp"/>
     <ClCompile Include="src\lbuffer\lbuffer.cpp"/>
     <ClCompile Include="src\lcjson\fpconv.c"/>
