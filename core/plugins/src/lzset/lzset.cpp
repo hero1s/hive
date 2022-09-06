@@ -2,202 +2,179 @@
 #include "zset.hpp"
 
 extern "C" {
-    #include "lua.h"
-    #include "lauxlib.h"
+#include "lua.h"
+#include "lauxlib.h"
 }
 
 #define METANAME "lzet"
 
-struct zset_proxy
-{
-    lzset::zset* zset;
-};
-
 static int lupdate(lua_State* L)
 {
-    int param_count = lua_gettop(L);
-    zset_proxy* proxy = (zset_proxy*)lua_touserdata(L, 1);
-    if (param_count < 3 || nullptr == proxy || nullptr == proxy->zset)
-    {
-        return luaL_error(L, "invalid lua-zset pointer or param less");
-    }
-    int64_t key = (int64_t)luaL_checkinteger(L, 2);
-    std::vector<int64_t> scores;
-    for (size_t i=3;i<=param_count;++i)
-    {
-        scores.push_back( (int64_t)luaL_checkinteger(L, i));
-    }
-    scores.shrink_to_fit();
-    auto ret = proxy->zset->update(key, std::move(scores));
-    if (ret == 1)
-    {
-        return luaL_error(L, "the update size is not eq \n");
-    }
-    lua_pushinteger(L, ret);
-    return 1;
-}
+    lzset::zset* zset = (lzset::zset*)lua_touserdata(L, 1);
+    if (nullptr == zset)
+        return luaL_argerror(L, 1, "invalid lua-zset pointer");
 
-static int lprepare(lua_State* L)
-{
-    zset_proxy* proxy = (zset_proxy*)lua_touserdata(L, 1);
-    if (nullptr == proxy || nullptr == proxy->zset)
-    {
-        return luaL_error(L, "invalid lua-zset pointer");
-    }
-    proxy->zset->prepare();
+    int64_t key = (int64_t)luaL_checkinteger(L, 2);
+    int64_t score = (int64_t)luaL_checkinteger(L, 3);
+    int64_t timestamp = (int64_t)luaL_checkinteger(L, 4);
+    zset->update(key, score, timestamp);
     return 0;
 }
 
 static int lrank(lua_State* L)
 {
-    zset_proxy* proxy = (zset_proxy*)lua_touserdata(L, 1);
-    if (nullptr == proxy || nullptr == proxy->zset)
-    {
-        return luaL_error(L, "invalid lua-zset pointer");
-    }
+    lzset::zset* zset = (lzset::zset*)lua_touserdata(L, 1);
+    if (nullptr == zset)
+        return luaL_argerror(L, 1, "invalid lua-zset pointer");
+
     int64_t key = (int64_t)luaL_checkinteger(L, 2);
-    lua_pushinteger(L, proxy->zset->rank(key));
+    lua_pushinteger(L, zset->rank(key));
     return 1;
+}
+
+static int lkey(lua_State* L)
+{
+    lzset::zset* zset = (lzset::zset*)lua_touserdata(L, 1);
+    if (nullptr == zset)
+        return luaL_argerror(L, 1, "invalid lua-zset pointer");
+
+    uint32_t rank = (uint32_t)luaL_checkinteger(L, 2);
+
+    if (zset->size() == 0 || zset->size() < rank)
+        return 0;
+
+    lzset::zset::const_iterator it = (rank == 1 ? zset->begin() : zset->find_by_rank(rank));
+
+    if (it != zset->end()) {
+        lua_pushinteger(L, it->key);
+        return 1;
+    }
+    return 0;
 }
 
 static int lscore(lua_State* L)
 {
-    zset_proxy* proxy = (zset_proxy*)lua_touserdata(L, 1);
-    if (nullptr == proxy || nullptr == proxy->zset)
-    {
-        return luaL_error(L, "invalid lua-zset pointer");
-    }
+    lzset::zset* zset = (lzset::zset*)lua_touserdata(L, 1);
+    if (nullptr == zset)
+        return luaL_argerror(L, 1, "invalid lua-zset pointer");
+
     int64_t key = (int64_t)luaL_checkinteger(L, 2);
-    const auto& scores = proxy->zset->score(key);
-    lua_createtable(L, scores.size(), 0);
-    for (auto i=0;i<scores.size();++i)
-    {
-        lua_pushinteger(L, scores[i]);
-        lua_rawseti(L, -2, i+1);
-    }
+    lua_pushinteger(L, zset->score(key));
     return 1;
 }
 
 static int lhas(lua_State* L)
 {
-    zset_proxy* proxy = (zset_proxy*)lua_touserdata(L, 1);
-    if (nullptr == proxy || nullptr == proxy->zset)
-    {
-        return luaL_error(L, "invalid lua-zset pointer");
-    }
+    lzset::zset* zset = (lzset::zset*)lua_touserdata(L, 1);
+    if (nullptr == zset)
+        return luaL_argerror(L, 1, "invalid lua-zset pointer");
+
     int64_t key = (int64_t)luaL_checkinteger(L, 2);
-    lua_pushboolean(L, proxy->zset->has(key)?1:0);
+    lua_pushboolean(L, zset->has(key) ? 1 : 0);
     return 1;
 }
 
 static int lsize(lua_State* L)
 {
-    zset_proxy* proxy = (zset_proxy*)lua_touserdata(L, 1);
-    if (nullptr == proxy || nullptr == proxy->zset)
-    {
-        return luaL_error(L, "invalid lua-zset pointer");
-    }
-    lua_pushinteger(L, proxy->zset->size());
+    lzset::zset* zset = (lzset::zset*)lua_touserdata(L, 1);
+    if (nullptr == zset)
+        return luaL_argerror(L, 1, "invalid lua-zset pointer");
+
+    lua_pushinteger(L, zset->size());
     return 1;
 }
 
 static int lclear(lua_State* L)
 {
-    zset_proxy* proxy = (zset_proxy*)lua_touserdata(L, 1);
-    if (nullptr == proxy || nullptr == proxy->zset)
-    {
-        return luaL_error(L, "invalid lua-zset pointer");
-    }
-    proxy->zset->clear();
+    lzset::zset* zset = (lzset::zset*)lua_touserdata(L, 1);
+    if (nullptr == zset)
+        return luaL_argerror(L, 1, "invalid lua-zset pointer");
+    zset->clear();
     return 0;
 }
 
 static int lerase(lua_State* L)
 {
-    zset_proxy* proxy = (zset_proxy*)lua_touserdata(L, 1);
-    if (nullptr == proxy || nullptr == proxy->zset)
-    {
-        return luaL_error(L, "invalid lua-zset pointer");
-    }
+    lzset::zset* zset = (lzset::zset*)lua_touserdata(L, 1);
+    if (nullptr == zset)
+        return luaL_argerror(L, 1, "invalid lua-zset pointer");
     int64_t key = (int64_t)luaL_checkinteger(L, 2);
-    lua_pushinteger(L, proxy->zset->erase(key));
+    lua_pushinteger(L, zset->erase(key));
     return 1;
 }
 
 static int lrange(lua_State* L)
 {
-    zset_proxy* proxy = (zset_proxy*)lua_touserdata(L, 1);
-    if (nullptr == proxy || nullptr == proxy->zset)
-    {
-        return luaL_error(L, "invalid lua-zset pointer");
-    }
-    uint32_t start = (uint32_t)luaL_checkinteger(L, 2);
-    uint32_t end = (uint32_t)luaL_checkinteger(L, 3);
+    lzset::zset* zset = (lzset::zset*)lua_touserdata(L, 1);
+    if (nullptr == zset)
+        return luaL_argerror(L, 1, "invalid lua-zset pointer");
+    int64_t start = luaL_checkinteger(L, 2) - 1;
+    int64_t end = luaL_checkinteger(L, 3) - 1;
+    bool reverse = lua_toboolean(L, 4) != 0;
+    int64_t llen = (int64_t)zset->size();
 
-    auto count = end - start + 1;
-    if (end < start || count == 0)
-    {
+    if (start < 0)
+        start = llen + start;
+    if (end < 0)
+        end = llen + end;
+    if (start < 0)
+        start = 0;
+
+    if (start > end || start >= llen)
         return 0;
+    if (end >= llen)
+        end = llen - 1;
+
+    int64_t ranglen = (end - start) + 1;
+
+    if (ranglen >= std::numeric_limits<int>::max())
+        return luaL_error(L, "zset.range out off limit");
+
+    lzset::zset::const_iterator it{ nullptr };
+    if (reverse) {
+        it = zset->tail();
+        if (start > 0)
+            it = zset->find_by_rank(llen - start);
     }
-    proxy->zset->prepare();
-    auto iter = proxy->zset->start(start);
-    if (iter == proxy->zset->end())
+    else
     {
-        return 0;
+        it = zset->begin();
+        if (start > 0)
+            it = zset->find_by_rank(start + 1);
     }
-    lua_createtable(L, std::min(32U, count), 0);
+
+    lua_createtable(L, (int)ranglen, 0);
     int idx = 1;
-    for (; iter != proxy->zset->end() && count > 0; ++iter)
-    {
-        lua_newtable(L);
-        lua_pushinteger(L, (*iter)->key);
-        lua_rawseti(L, -2, 1);
-        lua_pushinteger(L, (*iter)->rank);
-        lua_rawseti(L, -2, 2);
-        for (auto i=0;i<(*iter)->scores.size();++i)
-        {
-            lua_pushinteger(L, (*iter)->scores[i]);
-            lua_rawseti(L, -2, 3 + i);
-        }
+    while (ranglen--) {
+        lua_pushinteger(L, it->key);
         lua_rawseti(L, -2, idx++);
-        --count;
+        reverse ? --it : ++it;
     }
     return 1;
 };
 
 static int lrelease(lua_State* L)
 {
-    zset_proxy* proxy = (zset_proxy*)lua_touserdata(L, 1);
-    if (proxy && proxy->zset)
-    {
-        delete proxy->zset;
-        proxy->zset = nullptr;
-    }
+    lzset::zset* zset = (lzset::zset*)lua_touserdata(L, 1);
+    if (nullptr == zset)
+        return luaL_argerror(L, 1, "invalid lua-zset pointer");
+    std::destroy_at(zset);
     return 0;
 }
 
 static int lcreate(lua_State* L)
 {
     size_t max_count = (size_t)luaL_checkinteger(L, 1);
-    size_t score_count = (size_t)luaL_checkinteger(L, 2);
-    size_t len = 0;
-    const char* fmt = luaL_optlstring(L, 3, "><>>", &len);
-    if (len != score_count)
-        return luaL_error(L, "fmt need %d chars '>' or '<' for compare",score_count);
-    for (size_t i = 0; i < len; ++i)
-    {
-        if(fmt[i]!='>'&&fmt[i]!='<')
-            return luaL_error(L, "fmt need %d chars '>' or '<' for compare",score_count);
-    }
-    zset_proxy* proxy = (zset_proxy*)lua_newuserdatauv(L, sizeof(zset_proxy), 0);
-    proxy->zset = new lzset::zset(max_count,score_count, fmt);
+    bool reverse = lua_toboolean(L, 2) != 0;
+    void* p = lua_newuserdatauv(L, sizeof(lzset::zset), 0);
+    new (p) lzset::zset(max_count, reverse);
     if (luaL_newmetatable(L, METANAME))//mt
     {
         luaL_Reg l[] = {
             { "update", lupdate },
-            { "prepare",lprepare },
             { "has", lhas},
             { "rank", lrank},
+            { "key", lkey},
             { "score", lscore},
             { "range", lrange},
             { "clear", lclear},
@@ -215,14 +192,15 @@ static int lcreate(lua_State* L)
 }
 
 extern "C" {
-    LUAMOD_API int luaopen_lzset(lua_State* L){
+    int LUAMOD_API luaopen_lzset(lua_State* L)
+    {
         luaL_Reg l[] = {
             {"new",lcreate},
             {"release",lrelease },
             {NULL,NULL}
         };
-        luaL_checkversion(L);
         luaL_newlib(L, l);
         return 1;
     }
 }
+

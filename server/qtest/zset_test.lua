@@ -1,7 +1,7 @@
 do
     local zset = require("lzset")
     local max_rank = 3
-    local rank = zset.new(max_rank,2,"><")
+    local rank = zset.new(max_rank)
     rank:update(4, 1, 4)
     rank:update(3, 2, 3)
     rank:update(2, 3, 2)
