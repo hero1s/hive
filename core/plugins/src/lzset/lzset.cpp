@@ -29,7 +29,8 @@ static int lrank(lua_State* L)
 
     int64_t key = (int64_t)luaL_checkinteger(L, 2);
     lua_pushinteger(L, zset->rank(key));
-    return 1;
+    lua_pushinteger(L, zset->score(key));
+    return 2;
 }
 
 static int lkey(lua_State* L)
@@ -50,17 +51,6 @@ static int lkey(lua_State* L)
         return 1;
     }
     return 0;
-}
-
-static int lscore(lua_State* L)
-{
-    lzset::zset* zset = (lzset::zset*)lua_touserdata(L, 1);
-    if (nullptr == zset)
-        return luaL_argerror(L, 1, "invalid lua-zset pointer");
-
-    int64_t key = (int64_t)luaL_checkinteger(L, 2);
-    lua_pushinteger(L, zset->score(key));
-    return 1;
 }
 
 static int lhas(lua_State* L)
@@ -146,7 +136,13 @@ static int lrange(lua_State* L)
     lua_createtable(L, (int)ranglen, 0);
     int idx = 1;
     while (ranglen--) {
+        lua_createtable(L,3,0);
         lua_pushinteger(L, it->key);
+        lua_rawseti(L, -2, 1);
+        lua_pushinteger(L, ++start);
+        lua_rawseti(L, -2, 2);
+        lua_pushinteger(L, it->score);
+        lua_rawseti(L, -2, 3);        
         lua_rawseti(L, -2, idx++);
         reverse ? --it : ++it;
     }
@@ -175,7 +171,6 @@ static int lcreate(lua_State* L)
             { "has", lhas},
             { "rank", lrank},
             { "key", lkey},
-            { "score", lscore},
             { "range", lrange},
             { "clear", lclear},
             { "size", lsize},
