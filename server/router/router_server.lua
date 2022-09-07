@@ -86,6 +86,7 @@ function RouterServer:on_socket_error(server, server_token, err)
         self.service_masters[service_id] = new_master
         socket_mgr.set_master(service_id, new_master_token)
         log_info("[RouterServer][on_socket_error] switch master --> %s", sid2nick(new_master))
+        self:broadcast_switch_master(new_master)
     end
 end
 
@@ -143,7 +144,8 @@ function RouterServer:rpc_service_register(server, id)
         if id < group_master then
             self.service_masters[service_id] = id
             socket_mgr.set_master(service_id, server_token)
-            log_info("[RouterServer][rpc_service_register] switch master --> %s", server_name)
+            log_info("[RouterServer][rpc_service_register] switch master --> %s", sid2index(id))
+            self:broadcast_switch_master(id)
         end
         --通知其他服务器
         local router_id = hive.id
@@ -153,6 +155,17 @@ function RouterServer:rpc_service_register(server, id)
                 self.rpc_server:send(exist_server, "rpc_service_ready", id, router_id)
                 self.rpc_server:send(server, "rpc_service_ready", exist_server_id, router_id)
             end
+        end
+    end
+end
+
+-- 广播切换主从
+function RouterServer:broadcast_switch_master(server_id)
+    local router_id    = hive.id
+    local servive_name = sid2name(server_id)
+    for _, server in self.rpc_server:iterator() do
+        if server.id and servive_name == sid2name(server.id) then
+            self.rpc_server:send(server, "rpc_service_master", server_id, router_id)
         end
     end
 end

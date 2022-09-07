@@ -1,4 +1,3 @@
-#!./hive
 import("kernel.lua")
 
 hive.startup(function()

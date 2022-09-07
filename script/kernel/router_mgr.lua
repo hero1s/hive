@@ -23,6 +23,7 @@ prop:accessor("routers", {})
 prop:accessor("candidates", {})
 prop:accessor("ready_watchers", {})
 prop:accessor("close_watchers", {})
+prop:accessor("master_watchers", {})
 function RouterMgr:__init()
     self:setup()
 end
@@ -38,6 +39,7 @@ function RouterMgr:setup()
     event_mgr:add_listener(self, "rpc_service_close")
     event_mgr:add_listener(self, "rpc_service_ready")
     event_mgr:add_listener(self, "rpc_service_kickout")
+    event_mgr:add_listener(self, "rpc_service_master")
 end
 
 --添加router
@@ -297,6 +299,15 @@ function RouterMgr:watch_service_ready(listener, service_name)
     self.ready_watchers[service_name][listener] = true
 end
 
+--监听服务切换master
+function RouterMgr:watch_service_master(listener)
+    local service_name = hive.service_name --暂时只需要监听自身服务
+    if not self.master_watchers[service_name] then
+        self.master_watchers[service_name] = {}
+    end
+    self.master_watchers[service_name][listener] = true
+end
+
 --业务事件响应
 -------------------------------------------------------------------------------
 -- 刷新router配置
@@ -322,6 +333,17 @@ function RouterMgr:rpc_service_ready(id, router_id)
         local listener_set = self.ready_watchers[server_name]
         for listener in pairs(listener_set or {}) do
             listener:on_service_ready(id, server_name, router_id)
+        end
+    end
+end
+
+--服务器切换master
+function RouterMgr:rpc_service_master(id, router_id)
+    if self.master and self.master.router_id == router_id then
+        local server_name  = sid2name(id)
+        local listener_set = self.master_watchers[server_name]
+        for listener in pairs(listener_set or {}) do
+            listener:on_service_master(id, server_name, router_id)
         end
     end
 end
