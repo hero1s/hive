@@ -4,11 +4,6 @@ local mtointeger = math.tointeger
 
 math_ext         = _ENV.math_ext or {}
 
---取整
-function math_ext.round(n)
-    return mfloor(0.5 + n)
-end
-
 --保留小数位
 function math_ext.cut_tail(value, multiple, cut)
     local n = 10 ^ multiple

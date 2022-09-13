@@ -1,7 +1,7 @@
 --rmsg_mgr.lua
 import("agent/mongo_agent.lua")
 local bson          = require("bson")
-local lguid        = require("lguid")
+local lguid         = require("lguid")
 local bdate         = bson.date
 local log_err       = logger.err
 local log_info      = logger.info

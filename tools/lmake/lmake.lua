@@ -177,12 +177,11 @@ local function collect_sub_dir(project_dir, src_dir, sub_dirs, auto_sub_dir)
 end
 
 --初始化项目环境变量
-local function init_project_env(project_dir, bmimalloc)
+local function init_project_env(project_dir)
     local lguid = require("tguid")
     return {
         WORK_DIR        = project_dir,
         GUID_NEW        = lguid.guid,
-        MIMALLOC        = bmimalloc,
         COLLECT_SOURCES = collect_sources,
         COLLECT_SUBDIRS = collect_sub_dir,
     }
@@ -206,18 +205,18 @@ end
 --生成项目文件
 --project_dir：项目目录
 --lmake_dir：项目目录相对于lmake的路径
-local function build_projfile(solution_dir, project_dir, lmake_dir, bmimalloc)
+local function build_projfile(solution_dir, project_dir, lmake_dir)
     local lguid = require("tguid")
     local ltmpl = require("ltemplate.ltemplate")
     local dir_files = ldir(project_dir)
     for _, file in pairs(dir_files) do
         local fullname = file.name
         if file.type == "directory" then
-            build_projfile(solution_dir, fullname, lmake_dir, bmimalloc)
+            build_projfile(solution_dir, fullname, lmake_dir)
             goto continue
         end
         if lextension(fullname) == ".lmak" then
-            local env = init_project_env(project_dir, bmimalloc)
+            local env = init_project_env(project_dir)
             if not load_env_file(lappend(lmake_dir, "share.lua"), env) then
                 error("load share lmake file failed")
                 return
@@ -258,7 +257,7 @@ local function build_lmak(solution_dir)
     local dir_files = ldir(solution_dir)
     for _, file in pairs(dir_files) do
         if file.type == "directory" then
-            build_projfile(solution_dir, file.name, lmake_dir, env.USE_MIMALLOC)
+            build_projfile(solution_dir, file.name, lmake_dir)
         end
     end
     init_solution_env(env)

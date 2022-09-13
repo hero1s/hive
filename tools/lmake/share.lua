@@ -132,6 +132,9 @@ NWINDOWS_POSTBUILDS = {
 OBJS = {
 }
 
+--是否启用mimalloc库
+MIMALLOC = true
+
 --依赖项目
 DEPS = {
 }
