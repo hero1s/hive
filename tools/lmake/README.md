@@ -21,8 +21,6 @@
 SOLUTION = "xxxx"
 --lmake目录
 LMAKE_DIR = "../lmake"
---mimalloc
-USE_MIMALLOC = false
 ```
 - *.lmak：子项目配置文件, 此文件需要配置项目细节
 - share.lua: lmake公共配置文件, 以及参考说明, 此文件内包含lmake所有的默认选项
