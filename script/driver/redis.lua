@@ -509,7 +509,11 @@ function RedisDB:execute(cmd, ...)
     if RedisDB[cmd] then
         return self[cmd](self, ...)
     end
-    return self:commit(self.command_sock, { cmd = supper(cmd) }, ...)
+    local ok, res = self:commit(self.command_sock, { cmd = supper(cmd) }, ...)
+    if not ok then
+        self:close()
+    end
+    return ok, res
 end
 
 function RedisDB:ping()

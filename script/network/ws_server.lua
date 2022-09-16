@@ -1,17 +1,17 @@
 --ws_server.lua
-local WebSocket     = import("driver/websocket.lua")
+local WebSocket   = import("driver/websocket.lua")
 
-local type          = type
-local log_err       = logger.err
-local log_info      = logger.info
-local log_debug     = logger.debug
-local json_encode   = hive.json_encode
-local tunpack       = table.unpack
-local signalquit    = signal.quit
-local saddr         = string_ext.addr
+local type        = type
+local log_err     = logger.err
+local log_info    = logger.info
+local log_debug   = logger.debug
+local json_encode = hive.json_encode
+local tunpack     = table.unpack
+local signal_quit = signal.quit
+local saddr       = string_ext.addr
 
-local WSServer = class()
-local prop = property(WSServer)
+local WSServer    = class()
+local prop        = property(WSServer)
 prop:reader("listener", nil)        --网络连接对象
 prop:reader("ip", nil)              --WS server地址
 prop:reader("port", 8191)           --WS server端口
@@ -25,10 +25,10 @@ end
 
 function WSServer:setup(ws_addr)
     self.ip, self.port = saddr(ws_addr)
-    local socket = WebSocket(self)
+    local socket       = WebSocket(self)
     if not socket:listen(self.ip, self.port) then
         log_info("[WSServer][setup] now listen %s failed", ws_addr)
-        signalquit(1)
+        signal_quit(1)
         return
     end
     log_info("[WSServer][setup] listen(%s:%s) success!", self.ip, self.port)
@@ -58,7 +58,7 @@ end
 
 --回调
 function WSServer:on_socket_recv(socket, token, message)
-    local url = socket:get_url()
+    local url          = socket:get_url()
     local handler_info = self.handlers[url] or self.handlers["*"]
     if handler_info then
         local handler, target = tunpack(handler_info)

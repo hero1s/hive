@@ -28,7 +28,7 @@
 #endif
 
 using namespace std::chrono;
-//c++20֧�ֺ�ɾ��
+//c++20支持后删掉
 using days = duration<int, std::ratio<3600 * 24>>;
 
 namespace logger {

@@ -7,7 +7,7 @@ local log_warn         = logger.warn
 local hxpcall          = hive.xpcall
 local env_status       = environ.status
 local env_number       = environ.number
-local signalquit       = signal.quit
+local signal_quit      = signal.quit
 
 local event_mgr        = hive.get("event_mgr")
 local thread_mgr       = hive.get("thread_mgr")
@@ -39,7 +39,7 @@ prop:reader("session_count", 0)         --会话数量
 prop:reader("listener", nil)            --监听器
 prop:reader("command_cds", {})          --CMD定制CD
 prop:accessor("coder", nil)             --编解码对象
-prop:accessor("log_client_msg",nil)     --消息日志函数
+prop:accessor("log_client_msg", nil)     --消息日志函数
 
 function NetServer:__init(session_type)
     self.session_type = session_type
@@ -52,7 +52,7 @@ function NetServer:setup(ip, port, induce)
     -- 开启监听
     if not ip or not port then
         log_err("[NetServer][setup] ip:%s or port:%s is nil", ip, port)
-        signalquit()
+        signal_quit()
     end
     local listen_proto_type = 1
     local socket_mgr        = hive.get("socket_mgr")
@@ -60,7 +60,7 @@ function NetServer:setup(ip, port, induce)
     self.listener           = socket_mgr.listen(ip, real_port, listen_proto_type)
     if not self.listener then
         log_err("[NetServer][setup] failed to listen: %s:%d type=%d", ip, real_port, listen_proto_type)
-        signalquit()
+        signal_quit()
     end
     self.ip, self.port = ip, real_port
     log_info("[NetServer][setup] start listen at: %s:%d type=%d", ip, real_port, listen_proto_type)
@@ -144,7 +144,7 @@ end
 function NetServer:send_pack(session, cmd_id, data, session_id)
     local send_len = self:write(session, cmd_id, data, session_id, FLAG_REQ)
     if send_len > 0 and self.log_client_msg then
-        self.log_client_msg(session, cmd_id, data, session_id, send_len,false)
+        self.log_client_msg(session, cmd_id, data, session_id, send_len, false)
     end
     return send_len > 0
 end
@@ -153,7 +153,7 @@ end
 function NetServer:callback_pack(session, cmd_id, data, session_id)
     local send_len = self:write(session, cmd_id, data, session_id, FLAG_RES)
     if send_len > 0 and self.log_client_msg then
-        self.log_client_msg(session, cmd_id, data, session_id, send_len,false)
+        self.log_client_msg(session, cmd_id, data, session_id, send_len, false)
     end
     return send_len > 0
 end
@@ -234,7 +234,7 @@ function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
                 log_err("[NetServer][on_socket_recv] on_session_cmd failed! cmd_id:%s", cmd_id)
             else
                 if self.log_client_msg then
-                    self.log_client_msg(session,cmd,bd,session_id,#data,true)
+                    self.log_client_msg(session, cmd, bd, session_id, #data, true)
                 end
             end
         end

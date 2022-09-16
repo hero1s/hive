@@ -10,7 +10,7 @@ local log_info    = logger.info
 local log_debug   = logger.debug
 local json_encode = hive.json_encode
 local tunpack     = table.unpack
-local signalquit  = signal.quit
+local signal_quit = signal.quit
 local saddr       = string_ext.addr
 
 local thread_mgr  = hive.get("thread_mgr")
@@ -37,7 +37,7 @@ function HttpServer:setup(http_addr)
     local socket       = Socket(self)
     if not socket:listen(self.ip, self.port) then
         log_info("[HttpServer][setup] now listen %s failed", http_addr)
-        signalquit(1)
+        signal_quit(1)
         return
     end
     log_info("[HttpServer][setup] listen(%s:%s) success!", self.ip, self.port)

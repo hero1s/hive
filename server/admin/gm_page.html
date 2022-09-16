@@ -16,29 +16,36 @@
         margin: 0;
     }
     body{
+        width:100%;
+        height:100%;
+        background-color:white;
         padding-top: 10px;
         overflow: auto;
+    }
+    .container {
+        width:90%;
+        height:100%;
     }
     .gmDumpContainer {
         float: left;
         border: 1px solid black;
-        height: 800px;
+        height: 900px;
         width: 30%;
-        margin-top:50px;
+        margin-top:5px;
         overflow: auto;
     }
     .gmContainer {
-        padding: 2px;
+        padding: 1px;
         border: 1px solid black;
-        margin-top:50px;
-        height: 800px;
+        margin-top:5px;
+        height: 900px;
         width: 70%;
         overflow: auto;
     }
     .historyMsg{
         top: 5px;
         border: 1px solid black;
-        height: 710px;
+        height: 650px;
         padding: 3px;
         overflow: auto;
     }
@@ -54,23 +61,19 @@
     }
     .control{
         border: 1px solid black;
-        height: 80px;
+        height: 240px;
     }
     .control-row{
         margin-top: 10px;
     }
-    .inputMsg{
-        height: 60px !important;
-        resize: none;
-    }
     .sendBtn{
-        height: 60px;
+        height: 220px;
     }
     footer{
         text-align: center;
     }
 </style>
-<body>
+<body size>
 <div class="container gm-container" stype="width:1600px;height=900px">
     <!-- gm dump -->
     <div class="gmDumpContainer">
@@ -82,8 +85,15 @@
         </div>
         <div class="col-md-12 col-sm-12 control">
             <div class="row control-row">
-                <div class="col-md-10 col-sm-10">
-                    <textarea id="inputMsg" class="inputMsg form-control"></textarea>
+                <div id="inputForm" class="col-md-10 col-sm-10">
+                    <div class="row control-row">
+                        <div class="col-md-2 col-sm-2">
+                            <p>GM命令</p>
+                        </div>
+                        <div class="col-md-2 col-sm-2">
+                            <input id="name" value="请选择GM命令" size="60px" readonly="true"></input>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-2 col-sm-2">
                     <button id="sendBtn" class="form-control sendBtn btn btn-primary">send</button>
@@ -105,6 +115,7 @@
     GMConsole.prototype = {
         init: function(){
             var that = this;
+            var select_cmd_info = {};
             var treeNodes = [
                 {
                     text : "GM指令",
@@ -179,7 +190,6 @@
                         treeNodes[0].nodes[i].nodes = nodes[i];
                     };
 
-
                     that._showConsole(treeNodes);
                 },
                 error: function(status) {
@@ -211,12 +221,40 @@
             document.getElementById('sendBtn').addEventListener('click', function(){
                 that._sendCommand();
             }, false);
-            //inputMsg事件
-            document.getElementById('inputMsg').addEventListener('keyup', function(e){
-                if (e.keyCode == 13){
-                    that._sendCommand();
-                }
-            }, false);
+        },
+
+        _addInputItem: function(container_id, field_name, field_type, default_value, index) {
+             var container = document.getElementById(container_id);
+
+             var div1 = document.createElement('div');
+             div1.setAttribute('id', 'div'+index);
+             div1.setAttribute('class', 'row control-row');
+             var div11 = document.createElement('div');
+             div11.setAttribute('class', 'col-md-2 col-sm-2');
+             var p = document.createElement('p');
+             p.innerHTML = field_name
+             div11.appendChild(p);
+
+             var div12 = document.createElement('div');
+             div12.setAttribute('class', 'ol-md-2 col-sm-2');
+             if(field_type == "string"){
+                 var textarea1 = document.createElement('textarea');
+                 textarea1.setAttribute('id', field_name);
+                 textarea1.setAttribute('value', default_value);
+                 textarea1.setAttribute('cols', 60);
+                 textarea1.setAttribute('rows', 1);
+                 div12.appendChild(textarea1);
+             } else {
+                 var input1 = document.createElement('input');
+                 input1.setAttribute('id', field_name);
+                 input1.setAttribute('value', default_value);
+                 input1.setAttribute('size', 60);
+                 div12.appendChild(input1);
+             }
+
+             div1.appendChild(div11);
+             div1.appendChild(div12);
+             container.appendChild(div1);
         },
 
         _showConsole: function(treeNodes) {
@@ -230,9 +268,32 @@
                     if (cmd_data) {
                         var msg = "<pre>功能: " + cmd_data.desc + "<br/>参数: " + cmd_data.command + "</pre>";
                         that._displayNewMsg("historyMsg", msg, "myMsg");
-                        var inputMsg = document.getElementById('inputMsg');
-                        inputMsg.value = cmd_name + " ";
-                        inputMsg.focus();
+
+                        var cmd_input_ctr = document.getElementById('name');
+                        cmd_input_ctr.value = cmd_name;
+
+                        select_cmd_info = {};
+                        select_cmd_info.name = cmd_name;
+
+                        for(i=0;i<10;i++){
+                             var container = document.getElementById('inputForm');
+                             var divi = document.getElementById('div'+i);
+                             if(divi) {
+                                 container.removeChild(divi);
+                             }
+                        }
+
+                        if(cmd_data.command.length > 0) {
+                            var params = cmd_data.command.split(' ');
+                            var len = params.length;
+                            for (var i=0; i < len; i++) {
+                                var field_info = params[i].split('|');
+                                var field_name = field_info[0];
+                                var field_type = field_info[1];
+                                that._addInputItem("inputForm", field_name, field_type, "", i);
+                                select_cmd_info[field_name] = field_name
+                            }
+                        }
                     }
                 } else if (data.tag == "log") {
                     window.open("http://" + data.text);
@@ -242,19 +303,18 @@
 
         _sendCommand: function() {
             var that = this;
-            var inputMsg = document.getElementById('inputMsg');
-            var msg = inputMsg.value.replace('\n','');
-            if (msg == ''){
-                inputMsg.focus();
-                return;
+            var json_data = {};
+            for(key in select_cmd_info) {
+                json_data[key] = document.getElementById(key).value;
             }
-            that._displayNewMsg("historyMsg", msg, "myMsg");
+
+            that._displayNewMsg("historyMsg", JSON.stringify(json_data), "myMsg");
             $.ajax({
-                url:"/command",
+                url:"/message",
                 type: "POST",
                 dataType: "json",
                 contentType: "utf-8",
-                data: JSON.stringify({ data : msg }),
+                data: JSON.stringify({ data : json_data }),
                 success: function (res) {
                     if (res.code != 0) {
                         that._displayNewMsg("historyMsg", res.msg, "newMsg");
@@ -277,8 +337,6 @@
                     that._displayNewMsg("historyMsg", data, "newMsg");
                 }
             });
-            inputMsg.value = "";
-            inputMsg.focus();
         },
 
         _displayNewMsg: function(container_id, msg, type){
@@ -291,7 +349,6 @@
             container.appendChild(p);
             container.scrollTop = container.scrollHeight;
         },
-
     };
 </script>
 </html>

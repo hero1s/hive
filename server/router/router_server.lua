@@ -4,7 +4,7 @@ local mhuge        = math.huge
 local log_err      = logger.err
 local log_info     = logger.info
 local log_warn     = logger.warn
-local signalquit   = signal.quit
+local signal_quit  = signal.quit
 local env_get      = environ.get
 local sidhash      = service.hash
 local sid2sid      = service.id2sid
@@ -35,7 +35,7 @@ function RouterServer:setup()
     local router_conf = router_db:find_one(host)
     if not router_conf then
         log_err("[RouterServer][setup] router_conf is nil host:%s", host)
-        signalquit()
+        signal_quit()
         return
     end
     --重定义routerid

@@ -9,6 +9,7 @@
 
 uint32_t get_group_idx(uint32_t service_id) { return  (service_id >> 16) & 0xff; }
 uint32_t build_service_id(uint16_t group_idx, uint16_t index) { return (group_idx & 0xff) << 16 | index; }
+bool comp_node(service_node& node, uint32_t id) { return node.id < id; }
 
 void socket_router::map_token(uint32_t service_id, uint32_t token, uint16_t hash) {
     uint32_t group_idx = get_group_idx(service_id);
@@ -24,7 +25,7 @@ void socket_router::map_token(uint32_t service_id, uint32_t token, uint16_t hash
             }
         }
     }
-    auto it = std::lower_bound(nodes.begin(), nodes.end(), service_id, [](service_node& node, uint32_t id) { return node.id < id; });
+    auto it = std::lower_bound(nodes.begin(), nodes.end(), service_id, comp_node);
     if (it != nodes.end() && it->id == service_id) {
         if (group.hash > 0 || token > 0) {
             it->token = token;
@@ -43,7 +44,7 @@ void socket_router::erase(uint32_t service_id) {
     uint32_t group_idx = get_group_idx(service_id);
     auto& group = m_groups[group_idx];
     auto& nodes = group.nodes;
-    auto it = std::lower_bound(nodes.begin(), nodes.end(), service_id, [](service_node& node, uint32_t id) { return node.id < id; });
+    auto it = std::lower_bound(nodes.begin(), nodes.end(), service_id, comp_node);
     if (it != nodes.end() && it->id == service_id) {
         nodes.erase(it);
     }
@@ -79,7 +80,7 @@ bool socket_router::do_forward_target(router_header* header, char* data, size_t 
     uint32_t group_idx = get_group_idx(target_id);
     auto& group = m_groups[group_idx];
     auto& nodes = group.nodes;
-    auto it = std::lower_bound(nodes.begin(), nodes.end(), target_id, [](service_node& node, uint32_t id) { return node.id < id; });
+    auto it = std::lower_bound(nodes.begin(), nodes.end(), target_id, comp_node);
     if (it == nodes.end() || it->id != target_id) {
         error = fmt::format("router forward-target not find,target_id:{}, group:{}", target_id, group_idx);
         return false;

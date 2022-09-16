@@ -1,25 +1,25 @@
 --rpc_server.lua
-local next          = next
-local pairs         = pairs
-local tunpack       = table.unpack
-local log_err       = logger.err
-local log_info      = logger.info
-local hxpcall       = hive.xpcall
-local signalquit    = signal.quit
+local next         = next
+local pairs        = pairs
+local tunpack      = table.unpack
+local log_err      = logger.err
+local log_info     = logger.info
+local hxpcall      = hive.xpcall
+local signal_quit  = signal.quit
 
-local FlagMask      = enum("FlagMask")
-local KernCode      = enum("KernCode")
-local NetwkTime     = enum("NetwkTime")
-local SUCCESS       = KernCode.SUCCESS
+local FlagMask     = enum("FlagMask")
+local KernCode     = enum("KernCode")
+local NetwkTime    = enum("NetwkTime")
+local SUCCESS      = KernCode.SUCCESS
 
-local event_mgr     = hive.get("event_mgr")
-local thread_mgr    = hive.get("thread_mgr")
-local socket_mgr    = hive.get("socket_mgr")
-local perfeval_mgr  = hive.get("perfeval_mgr")
+local event_mgr    = hive.get("event_mgr")
+local thread_mgr   = hive.get("thread_mgr")
+local socket_mgr   = hive.get("socket_mgr")
+local perfeval_mgr = hive.get("perfeval_mgr")
 
-local RpcServer = singleton()
+local RpcServer    = singleton()
 
-local prop = property(RpcServer)
+local prop         = property(RpcServer)
 prop:reader("ip", "")                     --监听ip
 prop:reader("port", 0)                    --监听端口
 prop:reader("clients", {})
@@ -32,13 +32,13 @@ end
 function RpcServer:setup(ip, port, induce)
     if not ip or not port then
         log_err("[RpcServer][setup] ip:%s or port:%s is nil", ip, port)
-        signalquit()
+        signal_quit()
     end
     local real_port = induce and (port + hive.index - 1) or port
-    self.listener = socket_mgr.listen(ip, real_port)
+    self.listener   = socket_mgr.listen(ip, real_port)
     if not self.listener then
         log_err("[RpcServer][setup] now listen %s:%s failed", ip, real_port)
-        signalquit()
+        signal_quit()
     end
     self.ip, self.port = ip, real_port
     log_info("[RpcServer][setup] now listen %s:%s success!", ip, real_port)
@@ -55,7 +55,7 @@ function RpcServer:on_socket_rpc(client, rpc, session_id, rpc_flag, source, ...)
     client.alive_time = hive.clock_ms
     if session_id == 0 or rpc_flag == FlagMask.REQ then
         local function dispatch_rpc_message(...)
-            local _<close> = perfeval_mgr:eval(rpc)
+            local _<close>  = perfeval_mgr:eval(rpc)
             local rpc_datas = event_mgr:notify_listener(rpc, client, ...)
             if session_id > 0 then
                 client.call_rpc(session_id, FlagMask.RES, rpc, tunpack(rpc_datas))
@@ -81,7 +81,7 @@ function RpcServer:on_socket_accept(client)
     client.set_timeout(NetwkTime.ROUTER_TIMEOUT)
     self.clients[client.token] = client
 
-    client.call_rpc = function(session_id, rpc_flag, rpc, ...)
+    client.call_rpc            = function(session_id, rpc_flag, rpc, ...)
         local send_len = client.call(session_id, rpc_flag, 0, rpc, ...)
         if send_len < 0 then
             event_mgr:notify_listener("on_rpc_send", rpc, send_len)
@@ -90,11 +90,11 @@ function RpcServer:on_socket_accept(client)
         end
         return true, SUCCESS
     end
-    client.on_call = function(recv_len, session_id, rpc_flag, source, rpc, ...)
+    client.on_call             = function(recv_len, session_id, rpc_flag, source, rpc, ...)
         event_mgr:notify_listener("on_rpc_recv", rpc, recv_len)
         hxpcall(self.on_socket_rpc, "on_socket_rpc: %s", self, client, rpc, session_id, rpc_flag, source, ...)
     end
-    client.on_error = function(token, err)
+    client.on_error            = function(token, err)
         thread_mgr:fork(function()
             hxpcall(self.on_socket_error, "on_socket_error: %s", self, token, err)
         end)
@@ -140,7 +140,7 @@ end
 
 --迭代器
 function RpcServer:iterator()
-    local token = nil
+    local token   = nil
     local clients = self.clients
     local function iter()
         token = next(clients, token)
@@ -157,7 +157,7 @@ end
 function RpcServer:rpc_heartbeat(client, node_info)
     self:send(client, "on_heartbeat", hive.id)
     if node_info then
-        client.id = node_info.id
+        client.id         = node_info.id
         client.service_id = node_info.service_id
         event_mgr:notify_listener("on_socket_info", client, node_info)
     end
