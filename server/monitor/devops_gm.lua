@@ -1,10 +1,16 @@
 ﻿---devops_gm_mgr.lua
 local lcrypt        = require("lcrypt")
+local lstdfs        = require('lstdfs')
 local sdump         = string.dump
 local log_err       = logger.err
 local log_warn      = logger.warn
 local log_debug     = logger.debug
 local time_str      = datetime_ext.time_str
+local ssplit        = string_ext.split
+
+import("network/http_client.lua")
+local http_client = hive.get("http_client")
+local env_get     = environ.get
 
 local event_mgr     = hive.get("event_mgr")
 local gm_agent      = hive.get("gm_agent")
@@ -27,7 +33,7 @@ function DevopsGmMgr:register_gm()
         { gm_type = GMType.DEV_OPS, name = "gm_inject", desc = "代码注入", args = "svr_name|string file_name|string base64_code|string" },
         { gm_type = GMType.DEV_OPS, name = "gm_set_server_status", desc = "设置服务器状态[0运行1禁开局2强退],延迟(秒)", args = "status|integer delay|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_hive_quit", desc = "关闭服务器[杀进程],延迟(秒)", args = "reason|integer delay|integer" },
-        { gm_type = GMType.DEV_OPS, name = "gm_cfg_reload", desc = "配置表热更新", args = "file_name|string base64_file_content|string" },
+        { gm_type = GMType.DEV_OPS, name = "gm_cfg_reload", desc = "配置表热更新(0 本地 1 远程)", args = "is_remote|integer" },
     }
     for _, v in ipairs(cmd_list) do
         event_mgr:add_listener(self, v.name)
@@ -47,7 +53,7 @@ end
 -- 热更新
 function DevopsGmMgr:gm_hotfix()
     log_warn("[DevopsGmMgr][gm_hotfix]")
-    monitor_mgr:broadcast("rpc_reload", 0)
+    monitor_mgr:broadcast("rpc_reload")
     return { code = 0 }
 end
 
@@ -86,14 +92,31 @@ function DevopsGmMgr:gm_hive_quit(reason, delay)
     return { code = 0 }
 end
 
-function DevopsGmMgr:gm_cfg_reload(file_name, base64_file_content)
-    log_debug("[DevopsGmMgr][gm_cfg_reload] file_name:%s, file_content:%s", file_name, base64_file_content)
-    local file_content = lcrypt.b64_decode(base64_file_content)
-    log_debug("[DevopsGmMgr][gm_cfg_reload] file_name:%s, file_content:%s", file_name, file_content)
+function DevopsGmMgr:gm_cfg_reload(is_remote)
+    log_debug("[DevopsGmMgr][gm_cfg_reload] is_remote:%s", is_remote)
+    local flag = (is_remote == 1)
+    if flag then
+        local url = env_get("HIVE_CONFIG_RELOAD_URL", "")
+        if url == "" then return end
+        -- 查看本地文件路径下的所有配置文件
+        -- 遍历配置表，依次查询本地文件是否存在远端
+        -- 存在则拉取并覆盖
 
-    -- TODO:(henry)
-    -- 1.文件覆盖(获取文件路径,生成文件并覆盖)
-    -- 2.通知配置表更新
+        local current_path = lstdfs.current_path()
+        local cfg_path =  current_path .. "/../server/config/"
+        local cur_dirs = lstdfs.dir(cfg_path)
+        for _, file in pairs(cur_dirs) do
+            local full_file_name = file.name
+            local split_arr = ssplit(full_file_name, "/")
+            local file_name = split_arr[#split_arr]
+            local remote_file_url = url .. "/" .. file_name
+            local ok, status, res = http_client:call_get(remote_file_url)
+            if ok and status == 200 then
+                io_ext.writefile(full_file_name, res)
+            end
+        end
+    end
+    monitor_mgr:broadcast("rpc_config_reload")
 
     return { code = 0 }
 end

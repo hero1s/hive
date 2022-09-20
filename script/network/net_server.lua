@@ -229,13 +229,12 @@ function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
     if session_id == 0 or (flag & FLAG_REQ == FLAG_REQ) then
         local function dispatch_rpc_message(_session, cmd, bd)
             local _<close> = perfeval_mgr:eval(cmd_name)
+            if self.log_client_msg then
+                self.log_client_msg(session, cmd, bd, session_id, #data, true)
+            end
             local result   = event_mgr:notify_listener("on_session_cmd", _session, cmd, bd, session_id)
             if not result[1] then
                 log_err("[NetServer][on_socket_recv] on_session_cmd failed! cmd_id:%s", cmd_id)
-            else
-                if self.log_client_msg then
-                    self.log_client_msg(session, cmd, bd, session_id, #data, true)
-                end
             end
         end
         thread_mgr:fork(dispatch_rpc_message, session, cmd_id, body)

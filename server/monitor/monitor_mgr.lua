@@ -135,7 +135,7 @@ end
 
 --broadcast
 function MonitorMgr:broadcast(rpc, target, ...)
-    local service_id = target
+    local service_id = target or 0
     if type(target) == "string" then
         if target == "" or target == "all" then
             service_id = 0

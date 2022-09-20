@@ -31,6 +31,7 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "rpc_inject")
     event_mgr:add_listener(self, "rpc_set_server_status")
     event_mgr:add_listener(self, "rpc_set_log_level")
+    event_mgr:add_listener(self, "rpc_config_reload")
 end
 
 -- 连接关闭回调
@@ -88,6 +89,12 @@ function MonitorAgent:rpc_reload()
     hive.protobuf_mgr:reload()
     config_mgr:reload()
 
+    event_mgr:notify_trigger("reload_config")
+end
+
+function MonitorAgent:rpc_config_reload()
+    log_info("[MonitorAgent][rpc_config_reload]")
+    config_mgr:reload()
     event_mgr:notify_trigger("reload_config")
 end
 

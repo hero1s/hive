@@ -68,6 +68,12 @@ namespace lcurl {
             header = curl_slist_append(header, value.c_str());
         }
 
+        void enable_ssl(const char* ca_path) {
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 2L);
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+            curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path);
+        }
+
         luakit::variadic_results get_respond(lua_State* L) {
             long code = 0;
             luakit::kit_state kit_state(L);

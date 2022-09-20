@@ -3,7 +3,9 @@
 -- 配置管理器
 local tpack       = table.pack
 local tunpack     = table.unpack
+
 local ConfigTable = import("kernel/object/config_table.lua")
+
 local ConfigMgr = singleton()
 function ConfigMgr:__init()
     -- 配置对象列表

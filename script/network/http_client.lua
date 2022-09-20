@@ -9,6 +9,8 @@ local hxpcall           = hive.xpcall
 local luencode          = lcurl.url_encode
 local json_encode       = hive.json_encode
 
+local env_get           = environ.get
+
 local curlm_mgr         = lcurl.curlm_mgr
 local thread_mgr        = hive.get("thread_mgr")
 local update_mgr        = hive.get("update_mgr")
@@ -28,6 +30,7 @@ function HttpClient:__init()
     curlm_mgr.on_respond = function(curl_handle, result)
         hxpcall(self.on_respond, "on_respond: %s", self, curl_handle, result)
     end
+    self.ca_path         = env_get("HIVE_CA_PATH")
 end
 
 function HttpClient:on_quit()
@@ -86,6 +89,12 @@ function HttpClient:send_request(url, timeout, querys, headers, method, datas)
         log_err("[HttpClient][send_request] failed : %s", curl_handle)
         return false
     end
+
+    -- enable ssl verify
+    if self.ca_path and url[5] == "s" then
+        request.enable_ssl(self.ca_path)
+    end
+
     if not headers then
         headers = { ["Content-Type"] = "text/plain" }
     end

@@ -139,6 +139,13 @@ function ConfigTable:find_one(...)
     return row
 end
 
+-- 获取一项，
+-- ...必须与初始化index对应。
+function ConfigTable:try_find_one(...)
+    local row_index = tconcat({ ... }, "@@")
+    return self.rows[row_index]
+end
+
 -- 获取一项的指定key值，
 -- ...必须与初始化index对应。
 function ConfigTable:find_value(key, ...)

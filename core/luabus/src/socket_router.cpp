@@ -82,7 +82,7 @@ bool socket_router::do_forward_target(router_header* header, char* data, size_t 
     auto& nodes = group.nodes;
     auto it = std::lower_bound(nodes.begin(), nodes.end(), target_id, comp_node);
     if (it == nodes.end() || it->id != target_id) {
-        error = fmt::format("router forward-target not find,target_id:{}, group:{}", target_id, group_idx);
+        error = fmt::format("router forward-target not find,target_id:{}, group:{},index:{}", target_id, group_idx,target_id<<16);
         return false;
     }
     

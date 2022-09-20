@@ -9,6 +9,7 @@ local LIMIT_COUNT = 3    -- 周期内最大次数
 
 local http_client = hive.get("http_client")
 local thread_mgr  = hive.get("thread_mgr")
+local update_mgr  = hive.get("update_mgr")
 local HOUR_S      = hive.enum("PeriodTime", "HOUR_S")
 
 local Webhook     = singleton()
@@ -28,6 +29,13 @@ function Webhook:__init()
     if env_get("HIVE_WECHAT_URL") then
         return self:setup(env_get("HIVE_WECHAT_URL"), "wechat_log")
     end
+    -- 退出通知
+    update_mgr:attach_quit(self)
+end
+
+function Webhook:on_quit()
+    self.interface = nil
+    logger.set_webhook(nil)
 end
 
 function Webhook:setup(url, interface)
