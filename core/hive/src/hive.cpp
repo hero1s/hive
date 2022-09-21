@@ -169,10 +169,12 @@ bool hive_app::load(int argc, const char* argv[]) {
 		}
 	}
 	//设置默认参数
-	setenv("HIVE_SANDBOX", "sandbox", 1);
-	setenv("HIVE_SERVICE", "hive", 0);
-	setenv("HIVE_INDEX", "1", 0);
-	setenv("HIVE_HOST_IP", "127.0.0.1", 0);
+	if (lua_conf) {
+		setenv("HIVE_SANDBOX", "sandbox", 1);
+		setenv("HIVE_SERVICE", "hive", 0);
+		setenv("HIVE_INDEX", "1", 0);
+		setenv("HIVE_HOST_IP", "127.0.0.1", 0);
+	}
     return bRet;
 }
 
@@ -198,9 +200,11 @@ void hive_app::run() {
     hive.set_function("default_signal", [](int n) { signal(n, SIG_DFL); });
     hive.set_function("register_signal", [](int n) { signal(n, on_signal); });
     	
-	lua.run_script(fmt::format("require '{}'", getenv("HIVE_SANDBOX")), [&](std::string err) {
-		exception_handler("load sandbox err: ", err);
-		});
+	if (getenv("HIVE_SANDBOX") != NULL) {
+		lua.run_script(fmt::format("require '{}'", getenv("HIVE_SANDBOX")), [&](std::string err) {
+			exception_handler("load sandbox err: ", err);
+			});
+	}
 	lua.run_script(fmt::format("require '{}'", getenv("HIVE_ENTRY")), [&](std::string err) {
 		exception_handler("load entry err: ", err);
 		});

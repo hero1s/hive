@@ -223,6 +223,20 @@ local function findKeyByValue(tbl, obj)
     end
 end
 
+---comment 过滤符合函数条件的元素并返回新的结果数组
+---@param func   function  @回调函数, 返回值必须是`boolean`
+---@param list   table     @原始数组
+---@return table           @返回新数组
+local function tfilter(func, list)
+    local newlist = {}
+    for i = 1, #list do
+        if func(list[i]) then
+            newlist[#newlist + 1] = list[i]
+        end
+    end
+    return newlist
+end
+
 table_ext                   = _ENV.table_ext or {}
 
 table_ext.random            = trandom
@@ -245,6 +259,7 @@ table_ext.contains          = contains
 table_ext.equals            = equals
 table_ext.indexof           = indexof
 table_ext.find_key_by_value = findKeyByValue
+table_ext.filter            = tfilter
 
 -- 按哈希key排序
 --[[ 使用示例:
