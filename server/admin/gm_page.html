@@ -160,23 +160,24 @@
                     var cmd_names = [[],[],[],[],[]];
                     for (var cmd_name in res) {
                         var cmd_data = res[cmd_name];
+                        var cmd_title = cmd_data.desc;
                         if(cmd_data) {
                             var gm_type = parseInt(cmd_data.type);
                             switch(gm_type) {
                                 case 0 :
-                                    cmd_names[0].push(cmd_name);
+                                    cmd_names[0].push(cmd_title);
                                     break;
                                 case 2 :
-                                    cmd_names[2].push(cmd_name);
+                                    cmd_names[2].push(cmd_title);
                                     break;
                                 case 3 :
-                                    cmd_names[3].push(cmd_name);
+                                    cmd_names[3].push(cmd_title);
                                     break;
                                 case 4 :
-                                    cmd_names[4].push(cmd_name);
+                                    cmd_names[4].push(cmd_title);
                                     break;
                                 default :
-                                    cmd_names[1].push(cmd_name);
+                                    cmd_names[1].push(cmd_title);
                             }
                         }
                     };
@@ -263,10 +264,23 @@
             //consoleTree事件
             $('#consoleTree').on('nodeSelected', function(event, data) {
                 if (data.tag == "gm") {
-                    var cmd_name = data.text;
+                    var cmd_desc = data.text;
+                    var cmd_name;
+                    for (var key in that.cmdlist) {
+                        var data = that.cmdlist[key];
+                        if(data.desc == cmd_desc) {
+                            cmd_name = key;
+                            break;
+                        }
+                    }
                     var cmd_data = that.cmdlist[cmd_name];
                     if (cmd_data) {
-                        var msg = "<pre>功能: " + cmd_data.desc + "<br/>参数: " + cmd_data.command + "</pre>";
+                        var desc = cmd_data.desc;
+                        var comment = cmd_data.comment;
+                        if(typeof(comment) != "undefined"){
+                            desc += cmd_data.comment;
+                        }
+                        var msg = "<pre>功能: " + desc + "<br/>参数: " + cmd_data.command + "</pre>";
                         that._displayNewMsg("historyMsg", msg, "myMsg");
 
                         var cmd_input_ctr = document.getElementById('name');

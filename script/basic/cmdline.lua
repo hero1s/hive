@@ -77,13 +77,13 @@ end
 --command : command command定义
 --command 示例
 --command = "player_id|integer aa|table bb|string dd|number"
-function Cmdline:register_command(name, command, desc, cmd_type, service)
+function Cmdline:register_command(name, command, desc, comment, cmd_type, service)
     if self.command_defines[name] then
         log_warn("[Cmdline][register_command] command (%s) repeat registered!", name)
         return false
     end
     local def_args = {}
-    local cmd_define = {type = cmd_type, desc = desc, command = command, service = service }
+    local cmd_define = {type = cmd_type, desc = desc, comment = comment, command = command, service = service }
     for arg_name, arg_type in sgmatch(command, "([%a%d%_]+)|([%a%d%_]+)") do
         def_args[#def_args + 1] = {name = arg_name, type = arg_type}
     end

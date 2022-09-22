@@ -1,5 +1,4 @@
 ﻿---devops_gm_mgr.lua
-local lcrypt        = require("lcrypt")
 local lstdfs        = require('lstdfs')
 local sdump         = string.dump
 local log_err       = logger.err
@@ -28,12 +27,12 @@ end
 
 function DevopsGmMgr:register_gm()
     local cmd_list = {
-        { gm_type = GMType.DEV_OPS, name = "gm_set_log_level", desc = "设置日志等级(all/全部,日志等级debug[1]-fatal[6])", args = "svr_name|string level|integer" },
+        { gm_type = GMType.DEV_OPS, name = "gm_set_log_level", desc = "设置日志等级", comment="(all/全部,日志等级debug[1]-fatal[6])", args = "svr_name|string level|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_hotfix", desc = "代码热更新", args = "" },
-        { gm_type = GMType.DEV_OPS, name = "gm_inject", desc = "代码注入", args = "svr_name|string file_name|string base64_code|string" },
-        { gm_type = GMType.DEV_OPS, name = "gm_set_server_status", desc = "设置服务器状态[0运行1禁开局2强退],延迟(秒)", args = "status|integer delay|integer" },
-        { gm_type = GMType.DEV_OPS, name = "gm_hive_quit", desc = "关闭服务器[杀进程],延迟(秒)", args = "reason|integer delay|integer" },
-        { gm_type = GMType.DEV_OPS, name = "gm_cfg_reload", desc = "配置表热更新(0 本地 1 远程)", args = "is_remote|integer" },
+        { gm_type = GMType.DEV_OPS, name = "gm_inject", desc = "代码注入", args = "svr_name|string file_name|string code_content|string" },
+        { gm_type = GMType.DEV_OPS, name = "gm_set_server_status", desc = "设置服务器状态", comment="[0运行1禁开局2强退],延迟(秒)", args = "status|integer delay|integer" },
+        { gm_type = GMType.DEV_OPS, name = "gm_hive_quit", desc = "关闭服务器", comment="[杀进程],延迟(秒)", args = "reason|integer delay|integer" },
+        { gm_type = GMType.DEV_OPS, name = "gm_cfg_reload", desc = "配置表热更新", comment="(0 本地 1 远程)", args = "is_remote|integer" },
     }
     for _, v in ipairs(cmd_list) do
         event_mgr:add_listener(self, v.name)
@@ -57,19 +56,18 @@ function DevopsGmMgr:gm_hotfix()
     return { code = 0 }
 end
 
-function DevopsGmMgr:gm_inject(svr_name, file_name, base64_code)
-    local decode_code = lcrypt.b64_decode(base64_code)
-    log_debug("[DevopsGmMgr][gm_inject] svr_name:%s, file_name:%s, decode_code:%s", svr_name, file_name, decode_code)
+function DevopsGmMgr:gm_inject(svr_name, file_name, code_content)
+    log_debug("[DevopsGmMgr][gm_inject] svr_name:%s, file_name:%s, code_content:%s", svr_name, file_name, code_content)
     local func = nil
     if file_name ~= "" then
         func = loadfile(file_name)
-    elseif base64_code ~= "" then
-        func = load(decode_code)
+    elseif code_content ~= "" then
+        func = load(code_content)
     end
     if func and func ~= "" then
         return monitor_mgr:broadcast("rpc_inject", svr_name, sdump(func))
     end
-    log_err("[DevopsGmMgr][gm_inject] error file_name:%s, decode_code:%s", file_name, decode_code)
+    log_err("[DevopsGmMgr][gm_inject] error file_name:%s, code_content:%s", file_name, code_content)
     return { code = -1 }
 end
 
