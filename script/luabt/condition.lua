@@ -1,36 +1,37 @@
 --condition.lua
-local ipairs        = ipairs
-local SUCCESS       = luabt.BTConst.SUCCESS
-local node_execute  = luabt.node_execute
 
-local ConditionNode = class()
-function ConditionNode:__init(cond, success, failed)
-    self.name     = "condition"
-    self.cond     = cond
-    self.failed   = failed
-    self.success  = success
-    self.children = { cond, failed, success }
+local Node      = luabt.Node
+local WAITING   = luabt.WAITING
+
+local ConditionNode = class(Node)
+function ConditionNode:__init(success, failed)
+    self.name = "condition"
+    self.failed = failed
+    self.success = success
+    self.current = nil
 end
 
-function ConditionNode:run(btree, node_data)
-    local status = node_execute(self.cond, btree, node_data.__level + 1)
-    if status == SUCCESS then
-        return node_execute(self.success, btree, node_data.__level + 1)
-    else
-        return node_execute(self.failed, btree, node_data.__level + 1)
-    end
-end
-
-function ConditionNode:close(btree)
-    for _, node in ipairs(self.children) do
-        local child_data = btree[node]
-        if child_data and child_data.is_open then
-            child_data.is_open = false
-            if node.close then
-                node:close(btree, child_data)
-            end
+function ConditionNode:run(tree)
+    if not self.current  then
+        if self:on_check(tree) then
+            self.current = self.success
+        else
+            self.current = self.failed
         end
+        self.current:open(tree)
+        return WAITING
     end
+    return tree.status
+end
+
+function ConditionNode:on_close(tree)
+    self.success:close(tree)
+    self.failed:close(tree)
+    self.current = nil
+end
+
+function ConditionNode:on_check(tree)
+    return true
 end
 
 return ConditionNode

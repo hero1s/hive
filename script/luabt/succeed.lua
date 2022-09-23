@@ -1,38 +1,24 @@
 --succeed.lua
-local RUNNING      = luabt.BTConst.RUNNING
-local SUCCESS      = luabt.BTConst.SUCCESS
+local SUCCESS   = luabt.SUCCESS
+local RUNNING   = luabt.RUNNING
 
-local node_execute = luabt.node_execute
+local Node      = luabt.Node
 
-local SucceedNode  = class()
-function SucceedNode:__init(node)
-    self.name  = "always_succeed"
-    self.child = node
+local SucceedNode = class(Node)
+function SucceedNode:__init()
+    self.name = "always_succeed"
 end
 
-function SucceedNode:run(btree, node_data)
-    if self.child then
-        local status = node_execute(self.child, btree, node_data.__level + 1)
-        if status == RUNNING then
-            return status
-        else
-            return SUCCESS
-        end
+function SucceedNode:run(tree)
+    local status = self:on_execute(tree)
+    if status ~= RUNNING then
+        return SUCCESS
     end
+    return RUNNING
+end
+
+function SucceedNode:on_execute(tree)
     return SUCCESS
-end
-
-function SucceedNode:close(btree)
-    if self.child then
-        local node      = self.child
-        local node_data = btree[node]
-        if node_data and node_data.is_open then
-            node_data.is_open = false
-            if node.close then
-                node:close(btree, node_data)
-            end
-        end
-    end
 end
 
 return SucceedNode

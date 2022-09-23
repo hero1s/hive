@@ -1,22 +1,22 @@
---sequence.lua
+--select.lua
 local ipairs    = ipairs
 
-local FAIL      = luabt.FAIL
+local SUCCESS   = luabt.SUCCESS
 local WAITING   = luabt.WAITING
 
 local Node      = luabt.Node
 
-local SequenceNode = class(Node)
-function SequenceNode:__init(...)
-    self.name = "sequence"
+local SelectNode = class(Node)
+function SelectNode:__init(...)
+    self.name = "select"
     self.childs = {...}
     self.index = 0
 end
 
-function SequenceNode:run(tree)
+function SelectNode:run(tree)
     local status = tree:get_status()
-    if status == FAIL then
-        return FAIL
+    if status == SUCCESS then
+        return SUCCESS
     end
     local index = self.index + 1
     if index > #self.childs then
@@ -27,11 +27,11 @@ function SequenceNode:run(tree)
     return WAITING
 end
 
-function SequenceNode:on_close(tree)
+function SelectNode:on_close(tree)
     self.index = 0
     for _, child in ipairs(self.childs) do
         child:close(tree)
     end
 end
 
-return SequenceNode
+return SelectNode

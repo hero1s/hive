@@ -48,6 +48,7 @@ private:
     eproto_type m_proto_type;  
     std::string m_msg_body;
     std::string m_error_msg;
+    uint8_t m_seq_id = 0;
 public:
     DECLARE_LUA_CLASS(lua_socket_node);
 };

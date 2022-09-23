@@ -1,75 +1,140 @@
 --luabt.lua
-luabt = luabt or {}
+local pairs     = pairs
+local tremove   = table.remove
 
-import("luabt/const.lua")
-import("luabt/node.lua")
-local pairs        = pairs
-local node_execute = luabt.node_execute
-local SUCCESS      = luabt.BTConst.SUCCESS
-
-local BtTrace      = import("luabt/trace.lua")
-local NODE_TYPE    = luabt.NODE_TYPE
-local NODE_CLASS   = {
-    [NODE_TYPE.SUCCESS]         = import("luabt/succeed.lua"),
-    [NODE_TYPE.FAILED]          = import("luabt/failed.lua"),
-    [NODE_TYPE.INVERT]          = import("luabt/invert.lua"),
-    [NODE_TYPE.RANDOM]          = import("luabt/random.lua"),
-    [NODE_TYPE.PRIORITY]        = import("luabt/priority.lua"),
-    [NODE_TYPE.PARALLEL]        = import("luabt/parallel.lua"),
-    [NODE_TYPE.CONDITION]       = import("luabt/condition.lua"),
-    [NODE_TYPE.SEQUENCE]        = import("luabt/sequence.lua"),
-    [NODE_TYPE.MEM_SEQUENCE]    = import("luabt/mem_sequence.lua"),
-    [NODE_TYPE.MEM_PRIORITY]    = import("luabt/mem_priority.lua"),
-    [NODE_TYPE.WEIGHT_SEQUENCE] = import("luabt/weight_sequence.lua"),
-    [NODE_TYPE.WEIGHT_PRIORITY] = import("luabt/weight_priority.lua"),
+luabt = {
+    -- Node Status
+    WAITING     = 0,
+    SUCCESS     = 1,
+    FAIL        = 2,
+    RUNNING     = 3,
+    -- Parallel Policy
+    SUCCESS_ONE = 1,    -- success when one child success
+    SUCCESS_ALL = 2,    -- success when all children success
+    FAIL_ONE    = 3,    -- fail when one child fail
+    FAIL_ALL    = 4,    -- fail when all children fail
 }
 
---创建节点
-luabt.create_node  = function(node_type, ...)
-    local node_class = NODE_CLASS[node_type]
-    if node_class then
-        return node_class(...)
-    end
-end
+luabt.Node      = require("luabt.node")
+luabt.Failed    = require("luabt.failed")
+luabt.Invert    = require("luabt.invert")
+luabt.Random    = require("luabt.random")
+luabt.Repeat    = require("luabt.repeat")
+luabt.Select    = require("luabt.select")
+luabt.Succeed   = require("luabt.succeed")
+luabt.Sequence  = require("luabt.sequence")
+luabt.Parallel  = require("luabt.parallel")
+luabt.WSelect   = require("luabt.wselect")
+luabt.WSequence = require("luabt.wsequence")
+luabt.Condition = require("luabt.condition")
 
-local LuaBT        = class()
+local WAITING   = luabt.WAITING
+local RUNNING   = luabt.RUNNING
+local SUCCESS   = luabt.SUCCESS
 
--- bt tree 实例：保存树的状态和黑板, [node] -> {is_open:boolean, ...}
--- @param robot     The robot to control
--- @param root      The behaviour tree root
+local LuaBT = class()
+local prop = property(LuaBT)
+prop:reader("frame", 0)
+prop:reader("root", nil)
+prop:reader("robot", nil)
+prop:reader("nodes", {})
+prop:reader("history", {})
+prop:reader("interrupts", {})
+prop:accessor("args", {})
+prop:accessor("blackboard", {})
+prop:accessor("tracing", false)
+prop:accessor("status", WAITING)
+
 function LuaBT:__init(robot, root)
-    self.robot      = robot
-    self.root       = root
-    self.open_nodes = {}    -- 上一次 tick 运行中的节点
-    self.last_open  = {}
-    self.frame      = 0          -- 帧数
-    self.trace      = BtTrace()
+    self.robot = robot
+    self.root = root
 end
 
 function LuaBT:tick()
-    self.trace:clear()
-    local status    = node_execute(self.root, self, 0)
-    -- close open nodes if necessary
-    local openNodes = self.open_nodes
-    local lastOpen  = self.last_open
-    for node in pairs(lastOpen) do
-        local node_data = self[node]
-        if not openNodes[node] and node_data.is_open then
-            node_data.is_open = false
-            if node.close then
-                node:close(self, node_data)
-            end
+    self.frame = self.frame + 1
+    for _, node in pairs(self.interrupts) do
+        if node:on_interrupt(self) then
+            self:interrupt(node)
+            break
         end
-        lastOpen[node] = nil
     end
-    self.last_open  = openNodes
-    self.open_nodes = lastOpen  -- empty table
-    self.frame      = self.frame + 1
-    return status == SUCCESS
+    while #self.nodes > 0 do
+        local node = self.nodes[#self.nodes]
+        self.status = node:run(self)
+        self:trace(node)
+        if self.status == RUNNING then
+            break
+        end
+        if self.status ~= WAITING then
+            --进入子节点
+            self:pop(node)
+        end
+    end
+    local succes = (self.status == SUCCESS)
+    if self.status ~= RUNNING then
+        self:reset()
+    end
+    return succes
 end
 
-function LuaBT:trace()
-    self.trace:trace()
+--压入节点
+function LuaBT:push(node)
+    self.nodes[#self.nodes + 1] = node
+    if node.on_interrupt then
+        self.interrupts[#self.interrupts + 1] = node
+    end
+end
+
+--弹出节点
+function LuaBT:pop(node)
+    if self.nodes[#self.nodes] == node then
+        node:close(self)
+        tremove(self.nodes)
+        if self.interrupts[#self.interrupts] == node then
+            tremove(self.interrupts)
+        end
+    end
+end
+
+--清空
+function LuaBT:reset()
+    self.frame = 0
+    self.nodes = {}
+    self.history = {}
+    self.interrupts = {}
+    self.status = WAITING
+    self.root:open(self)
+end
+
+--中断
+function LuaBT:interrupt(node)
+    for i = #self.nodes, 1, -1 do
+        local curr = self.nodes[i]
+        if curr ~= node then
+            curr:close(self)
+        end
+    end
+    for i = #self.interrupts, 1, -1 do
+        local curr = self.interrupts[i]
+        if curr ~= node then
+            curr:close(self)
+        end
+    end
+end
+
+--调试
+function LuaBT:trace(node)
+    if self.tracing then
+        local hnode = { name = node.name, frame = self.frame }
+        self.history[#self.history + 1] = hnode
+    end
+end
+
+--打印流程图
+function LuaBT:dump()
+    for _, node in pairs(self.history) do
+        print("lua bt history node:%s, frame:%s", node.node.name, node.frame)
+    end
 end
 
 return LuaBT

@@ -1,41 +1,33 @@
 --random.lua
-local ipairs       = ipairs
-local mrandom      = math.random
+local ipairs    = ipairs
+local mrandom   = math.random
 
-local FAIL         = luabt.BTConst.FAIL
-local SUCCESS      = luabt.BTConst.SUCCESS
+local WAITING   = luabt.WAITING
 
-local node_execute = luabt.node_execute
+local Node      = luabt.Node
 
-local RandomNode   = class()
+local RandomNode = class(Node)
 function RandomNode:__init(...)
-    self.name     = "random"
-    self.children = { ... }
+    self.name = "random"
+    self.childs = {...}
+    self.current = nil
 end
 
-function RandomNode:open(_, node_data)
-    node_data.runningChild = mrandom(#self.children)
-end
-
-function RandomNode:run(btree, node_data)
-    local child  = node_data.runningChild
-    local node   = self.children[child]
-    local status = node_execute(node, btree, node_data.__level + 1)
-    if status == SUCCESS then
-        return status
+function RandomNode:run(tree)
+    if not self.current then
+        local index = mrandom(#self.childs)
+        local node = self.childs[index]
+        self.current = node
+        node:open(tree)
+        return WAITING
     end
-    return FAIL
+    return tree.status
 end
 
-function RandomNode:close(btree)
-    for _, node in ipairs(self.children) do
-        local child_data = btree[node]
-        if child_data and child_data.is_open then
-            child_data.is_open = false
-            if node.close then
-                node:close(btree, child_data)
-            end
-        end
+function RandomNode:on_close(tree)
+    self.current = nil
+    for _, child in ipairs(self.childs) do
+        child:close(tree)
     end
 end
 

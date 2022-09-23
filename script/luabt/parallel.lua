@@ -1,70 +1,54 @@
 --parallel.lua
-local ipairs       = ipairs
-local FAIL         = luabt.BTConst.FAIL
-local SUCCESS      = luabt.BTConst.SUCCESS
-local RUNNING      = luabt.BTConst.RUNNING
-local FAIL_ONE     = luabt.BTConst.FAIL_ONE
-local FAIL_ALL     = luabt.BTConst.FAIL_ALL
-local SUCCESS_ALL  = luabt.BTConst.SUCCESS_ALL
-local SUCCESS_ONE  = luabt.BTConst.SUCCESS_ONE
+local ipairs        = ipairs
+local FAIL          = luabt.FAIL
+local WAITING       = luabt.WAITING
+local SUCCESS       = luabt.SUCCESS
+local FAIL_ONE      = luabt.FAIL_ONE
+local FAIL_ALL      = luabt.FAIL_ALL
+local SUCCESS_ALL   = luabt.SUCCESS_ALL
+local SUCCESS_ONE   = luabt.SUCCESS_ONE
 
-local node_execute = luabt.node_execute
+local Node          = luabt.Node
 
-local ParallelNode = class()
---fail_policy == luabt.BTConst.FAIL_ALL or BTConst.FAIL_ONE
---success_policy == luabt.BTConst.SUCCESS_ALL or BTConst.SUCCESS_ONE
+local ParallelNode = class(Node)
 function ParallelNode:__init(fail_policy, success_policy, ...)
-    self.name           = "parallel"
-    self.fail_policy    = fail_policy
+    self.name = "parallel"
+    self.fail_count = 0
+    self.fail_policy = fail_policy
     self.success_policy = success_policy
-    self.children       = { ... }
+    self.childs = {...}
+    self.index = 0
 end
 
--- luacheck: ignore 561
-function ParallelNode:run(btree, data)
-    local saw_success     = false
-    local saw_fail        = false
-    local saw_running     = false
-    local saw_all_fail    = true
-    local saw_all_success = true
-
-    for _, node in ipairs(self.children) do
-        local status = node_execute(node, btree, data.__level + 1)
-        if status == FAIL then
-            saw_fail        = true
-            saw_all_success = false
-        elseif status == SUCCESS then
-            saw_success  = true
-            saw_all_fail = false
-        else
-            saw_running     = true
-            saw_all_fail    = false
-            saw_all_success = false
+function ParallelNode:run(tree)
+    local status = tree:get_status()
+    if status == FAIL then
+        self.fail_count = self.fail_count + 1
+        if self.fail_policy == FAIL_ONE or self.success_policy == SUCCESS_ALL then
+            return FAIL
         end
     end
-
-    local result = saw_running and RUNNING or FAIL
-
-    if self.fail_policy == FAIL_ALL and saw_all_fail or
-            self.fail_policy == FAIL_ONE and saw_fail then
-        result = FAIL
-    elseif self.success_policy == SUCCESS_ALL and saw_all_success or
-            self.success_policy == SUCCESS_ONE and saw_success then
-        result = SUCCESS
+    if status == SUCCESS and self.success_policy == SUCCESS_ONE then
+        return SUCCESS
     end
-
-    return result
+    local child_count = #self.childs
+    local index = self.index + 1
+    if index > child_count then
+        if self.fail_count < child_count and self.success_policy == FAIL_ALL then
+            return SUCCESS
+        end
+        return FAIL
+    end
+    self.childs[index]:open(tree)
+    self.index = index
+    return WAITING
 end
 
-function ParallelNode:close(btree)
-    for _, node in ipairs(self.children) do
-        local node_data = btree[node]
-        if node_data and node_data.is_open then
-            node_data.is_open = false
-            if node.close then
-                node:close(btree, node_data)
-            end
-        end
+function ParallelNode:on_close(tree)
+    self.index = 0
+    self.fail_count = 0
+    for _, child in ipairs(self.childs) do
+        child:close(tree)
     end
 end
 

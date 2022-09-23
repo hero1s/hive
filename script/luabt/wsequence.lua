@@ -1,19 +1,24 @@
---sequence.lua
+--weight_sequence.lua
 local ipairs    = ipairs
+local tsort     = table.sort
 
 local FAIL      = luabt.FAIL
 local WAITING   = luabt.WAITING
 
 local Node      = luabt.Node
 
-local SequenceNode = class(Node)
-function SequenceNode:__init(...)
-    self.name = "sequence"
-    self.childs = {...}
+local WSequenceNode = class(Node)
+function WSequenceNode:__init(...)
+    local childs = {...}
+    tsort(childs, function(a, b)
+        return a.weight < b.weight
+    end)
+    self.name = "weight_sequence"
+    self.childs = childs
     self.index = 0
 end
 
-function SequenceNode:run(tree)
+function WSequenceNode:run(tree)
     local status = tree:get_status()
     if status == FAIL then
         return FAIL
@@ -27,11 +32,11 @@ function SequenceNode:run(tree)
     return WAITING
 end
 
-function SequenceNode:on_close(tree)
+function WSequenceNode:on_close(tree)
     self.index = 0
     for _, child in ipairs(self.childs) do
         child:close(tree)
     end
 end
 
-return SequenceNode
+return WSequenceNode

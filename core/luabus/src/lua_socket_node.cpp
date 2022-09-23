@@ -74,6 +74,7 @@ int lua_socket_node::call_pack(lua_State* L) {
     header.cmd_id = lua_tointeger(L, 1);
     header.flag = lua_tointeger(L, 2);
     header.session_id = lua_tointeger(L, 3);
+    header.seq_id = m_seq_id++;
 
     size_t data_len = 0;
     const char* data_ptr = lua_tolstring(L, 4, &data_len);
