@@ -36,7 +36,7 @@ end
 
 -- 连接关闭回调
 function MonitorAgent:on_socket_error(client, token, err)
-    log_err("[MonitorAgent][on_socket_error] disconnect monitor fail!:[%s:%s],err:%s", self.client.ip, self.client.port,err)
+    --log_err("[MonitorAgent][on_socket_error] disconnect monitor fail!:[%s:%s],err:%s", self.client.ip, self.client.port,err)
 end
 
 -- 连接成回调

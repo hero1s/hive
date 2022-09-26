@@ -4,6 +4,7 @@ local log_info   = logger.info
 local sformat    = string.format
 local update_mgr = hive.get("update_mgr")
 local env_get    = environ.get
+local readfile   = io_ext.readfile
 local DevopsMgr  = singleton()
 function DevopsMgr:__init()
     self:setup()
@@ -23,7 +24,7 @@ end
 
 --挂载附加服务
 function DevopsMgr:attach_service()
-    local service = environ.get("HIVE_ATTACH_SERVICE")
+    local service = env_get("HIVE_ATTACH_SERVICE")
     if service then
         import(service)
     end
@@ -52,7 +53,13 @@ function DevopsMgr:file_pid_oper(is_create)
         log_info("[DevopsMgr][file_pid_oper] pid:%s", hive.pid)
     else
         log_info(sformat("remove pid file %s ", filename))
-        lstdfs.remove(filename)
+        local pid = readfile(filename)
+        if pid then
+            pid = tonumber(pid)
+        end
+        if pid == hive.pid then
+            lstdfs.remove(filename)
+        end
     end
 end
 

@@ -14,6 +14,7 @@ function io_ext.writefile(filename, content)
         file:close()
         return true
     end
+    return false
 end
 
 --
