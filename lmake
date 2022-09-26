@@ -1,10 +1,10 @@
 --lmake
 
+--vs版本(vs2019:v142,vs2022:v143)
+VSVERSION = "v142"
+
 --工程名
 SOLUTION = "hive"
 
 --lmake目录
 LMAKE_DIR = "tools/lmake"
-
---mimalloc
-USE_MIMALLOC = true
