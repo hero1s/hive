@@ -83,7 +83,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     {{% end %}}
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>{{%= VSVERSION %}}</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />

@@ -60,7 +60,7 @@ end
 
 --路径剪裁
 local function path_cut(fullname, basename)
-    local cutname = sgsub(fullname, basename, "")
+    local cutname  = sgsub(fullname, basename, "")
     local relapath = lrelativedir(cutname)
     return relapath
 end
@@ -70,7 +70,7 @@ local function init_project_deps(project, find_name)
     local find_project = projects[find_name]
     if find_project then
         for _, dep_name in ipairs(find_project.DEPS) do
-            local all_deps = project.ALLDEPS
+            local all_deps          = project.ALLDEPS
             all_deps[#all_deps + 1] = dep_name
             init_project_deps(project, dep_name)
         end
@@ -79,14 +79,14 @@ end
 
 --初始化solution环境变量
 local function init_solution_env(env)
-    local groups = {}
-    local sgroup = {}
-    local sprojects = {}
+    local groups     = {}
+    local sgroup     = {}
+    local sprojects  = {}
     local fmt_groups = ""
     for name, project in pairs(projects) do
         project.ALLDEPS = {}
         for _, dep_name in ipairs(project.DEPS) do
-            local all_deps = project.ALLDEPS
+            local all_deps          = project.ALLDEPS
             all_deps[#all_deps + 1] = dep_name
             init_project_deps(project, dep_name)
         end
@@ -97,20 +97,20 @@ local function init_solution_env(env)
     for i, proj in ipairs(sprojects) do
         local gname = proj.GROUP
         if not groups[gname] then
-            fmt_groups = fmt_groups .. " " .. gname
+            fmt_groups    = fmt_groups .. " " .. gname
             groups[gname] = { NAME = gname, PROJECTS = {} }
         end
-        groups[gname].INDEX = i
-        local gprojects = groups[gname].PROJECTS
+        groups[gname].INDEX       = i
+        local gprojects           = groups[gname].PROJECTS
         gprojects[#gprojects + 1] = proj
     end
     for _, group in pairs(groups) do
         sgroup[#sgroup + 1] = group
     end
     tsort(sgroup, group_sort)
-    env.GUID_NEW = lguid.guid
+    env.GUID_NEW   = lguid.guid
     env.FMT_GROUPS = fmt_groups
-    env.GROUPS = sgroup
+    env.GROUPS     = sgroup
 end
 
 --收集文件
@@ -124,22 +124,22 @@ local function collect_files(collect_dir, project_dir, source_dir, args, group, 
             end
             goto continue
         end
-        local fullname = file.name
-        local ext_name = lextension(fullname)
-        local fmt_name = path_cut(fullname, project_dir)
+        local fullname   = file.name
+        local ext_name   = lextension(fullname)
+        local fmt_name   = path_cut(fullname, project_dir)
         local fmt_name_c = sgsub(fmt_name, '/', '\\')
         if is_hfile then
             if ext_name == ".h" or ext_name == ".hpp" then
-                collects[#collects + 1] = {fmt_name_c, group, false, false}
+                collects[#collects + 1] = { fmt_name_c, group, false, false }
             end
             goto continue
         end
         if ext_name == ".c" or ext_name == ".cc" or ext_name == ".cpp" then
-            local cmp_name = path_cut(fullname, source_dir)
-            local is_obj = tcontain(args.OBJS, cmp_name)
-            local cmp_name_c = sgsub(cmp_name, '/', '\\')
-            local is_exclude = tcontain(path_fmt(args.EXCLUDE_FILE), cmp_name_c)
-            collects[#collects + 1] = {fmt_name_c, group, is_exclude, is_obj}
+            local cmp_name          = path_cut(fullname, source_dir)
+            local is_obj            = tcontain(args.OBJS, cmp_name)
+            local cmp_name_c        = sgsub(cmp_name, '/', '\\')
+            local is_exclude        = tcontain(path_fmt(args.EXCLUDE_FILE), cmp_name_c)
+            collects[#collects + 1] = { fmt_name_c, group, is_exclude, is_obj }
         end
         :: continue ::
     end
@@ -148,7 +148,7 @@ end
 --vs工程收集源文件
 local function collect_sources(project_dir, src_dir, args)
     local includes, sources = {}, {}
-    local source_dir = lappend(project_dir, src_dir)
+    local source_dir        = lappend(project_dir, src_dir)
     collect_files(source_dir, project_dir, source_dir, args, "inc", includes, true)
     collect_files(source_dir, project_dir, source_dir, args, "src", sources, false)
     tsort(includes, files_sort)
@@ -205,14 +205,14 @@ end
 --生成项目文件
 --project_dir：项目目录
 --lmake_dir：项目目录相对于lmake的路径
-local function build_projfile(solution_dir, project_dir, lmake_dir)
-    local lguid = require("tguid")
-    local ltmpl = require("ltemplate.ltemplate")
+local function build_projfile(solution_dir, project_dir, lmake_dir, vsversion)
+    local lguid     = require("tguid")
+    local ltmpl     = require("ltemplate.ltemplate")
     local dir_files = ldir(project_dir)
     for _, file in pairs(dir_files) do
         local fullname = file.name
         if file.type == "directory" then
-            build_projfile(solution_dir, fullname, lmake_dir)
+            build_projfile(solution_dir, fullname, lmake_dir, vsversion)
             goto continue
         end
         if lextension(fullname) == ".lmak" then
@@ -221,17 +221,18 @@ local function build_projfile(solution_dir, project_dir, lmake_dir)
                 error("load share lmake file failed")
                 return
             end
+            env.VSVERSION = vsversion
             local mak_dir = path_cut(project_dir, solution_dir)
-            ltmpl.render_file(lappend(lmake_dir, "tmpl/make.tpl"),  lrepextension(fullname, ".mak"), env, fullname)
-            ltmpl.render_file(lappend(lmake_dir, "tmpl/vcxproj.tpl"),  lrepextension(fullname, ".vcxproj"), env, fullname)
-            ltmpl.render_file(lappend(lmake_dir, "tmpl/filters.tpl"),  lrepextension(fullname, ".vcxproj.filters"), env, fullname)
+            ltmpl.render_file(lappend(lmake_dir, "tmpl/make.tpl"), lrepextension(fullname, ".mak"), env, fullname)
+            ltmpl.render_file(lappend(lmake_dir, "tmpl/vcxproj.tpl"), lrepextension(fullname, ".vcxproj"), env, fullname)
+            ltmpl.render_file(lappend(lmake_dir, "tmpl/filters.tpl"), lrepextension(fullname, ".vcxproj.filters"), env, fullname)
             projects[env.PROJECT_NAME] = {
-                DIR = mak_dir,
-                DEPS = env.DEPS,
+                DIR   = mak_dir,
+                DEPS  = env.DEPS,
                 GROUP = env.GROUP,
-                NAME = env.PROJECT_NAME,
-                FILE = lstem(fullname),
-                GUID = lguid.guid(env.PROJECT_NAME)
+                NAME  = env.PROJECT_NAME,
+                FILE  = lstem(fullname),
+                GUID  = lguid.guid(env.PROJECT_NAME)
             }
         end
         :: continue ::
@@ -251,13 +252,17 @@ local function build_lmak(solution_dir)
         error(sformat("lmake solution or dir not config"))
         return
     end
+    local vsversion = env.VSVERSION
+    if not vsversion then
+        vsversion = "v142" --默认vs2019
+    end
     local lmake_dir = labsolute(lappend(solution_dir, env.LMAKE_DIR))
     print(sformat("build_lmak: lmake_dir %s", lmake_dir))
-    package.path = sformat("%s;%s/?.lua", package.path, lmake_dir)
+    package.path    = sformat("%s;%s/?.lua", package.path, lmake_dir)
     local dir_files = ldir(solution_dir)
     for _, file in pairs(dir_files) do
         if file.type == "directory" then
-            build_projfile(solution_dir, file.name, lmake_dir)
+            build_projfile(solution_dir, file.name, lmake_dir, vsversion)
         end
     end
     init_solution_env(env)
