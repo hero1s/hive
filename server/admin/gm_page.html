@@ -72,6 +72,7 @@
     footer{
         text-align: center;
     }
+
 </style>
 <body size>
 <div class="container gm-container" stype="width:1600px;height=900px">
@@ -139,7 +140,11 @@
                         {
                             "text" : "运维相关",
                             nodes : [],
-                        }
+                        },
+                        {
+                            "text" : "工具相关",
+                            nodes : [],
+                        },
                     ],
                 },
                 {
@@ -155,9 +160,9 @@
                 dataType: "json",
                 contentType: "utf-8",
                 success: function (res) {
-                    var nodes = [[],[],[],[],[]];
+                    var nodes = [[],[],[],[],[],[]];
                     that.cmdlist = res;
-                    var cmd_names = [[],[],[],[],[]];
+                    var cmd_names = [[],[],[],[],[],[]];
                     for (var cmd_name in res) {
                         var cmd_data = res[cmd_name];
                         var cmd_title = cmd_data.desc;
@@ -175,6 +180,9 @@
                                     break;
                                 case 4 :
                                     cmd_names[4].push(cmd_title);
+                                    break;
+                                case 5 :
+                                    cmd_names[5].push(cmd_title);
                                     break;
                                 default :
                                     cmd_names[1].push(cmd_title);
@@ -364,5 +372,6 @@
             container.scrollTop = container.scrollHeight;
         },
     };
+
 </script>
 </html>

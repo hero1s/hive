@@ -88,6 +88,7 @@ GMType.PLAYER                     = 1       -- 玩家相关,ID为玩家的ID
 GMType.SERVICE                    = 2       -- 服务相关,ID按hash分发
 GMType.SYSTEM                     = 3       -- 业务相关,ID为队伍ID,房间ID等
 GMType.DEV_OPS                    = 4       -- 开发运维相关
+GMType.TOOLS                      = 5       -- 工具相关
 
 --Cache错误码
 local CacheType                   = enum("CacheType", 0)
