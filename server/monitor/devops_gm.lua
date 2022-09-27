@@ -36,6 +36,7 @@ function DevopsGmMgr:register_gm()
         { gm_type = GMType.DEV_OPS, name = "gm_cfg_reload", desc = "配置表热更新", comment = "(0 本地 1 远程)", args = "is_remote|integer" },
         --工具
         { gm_type = GMType.TOOLS, name = "gm_guid_view", desc = "guid信息", comment = "(拆解guid)", args = "guid|integer" },
+        { gm_type = GMType.TOOLS, name = "gm_log_format", desc = "日志格式", comment = "0压缩,1格式化", args = "data|string swline|integer" },
     }
     for _, v in ipairs(cmd_list) do
         event_mgr:add_listener(self, v.name)
@@ -129,6 +130,11 @@ function DevopsGmMgr:gm_guid_view(guid)
     local group_h, group_l   = (group >> 4) & 0xf, group & 0xf
 
     return { group = group, group_h = group_h, group_l = group_l, index = index, time = datetime_ext.time_str(time) }
+end
+
+function DevopsGmMgr:gm_log_format(data, swline)
+    local data_t = hive.unserialize(data)
+    return hive.serialize(data_t, swline)
 end
 
 hive.devops_gm_mgr = DevopsGmMgr()
