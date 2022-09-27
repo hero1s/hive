@@ -19,6 +19,9 @@ local group2, index2, time2 = lguid.guid_source(guid)
 log_info("nsource-> group: %s, index: %s, time:%s", group2, index2, time2)
 
 local guid      = lguid.guid_new()
-local guid_code = lguid.encode_code(guid, 10)
+local guid_code = lguid.encode_code(guid)
 local guid_num  = lguid.decode_code(guid_code)
-log_info("guid=%s,guid_code=%s,guid_num=%s", guid, guid_code, guid_num)
+log_info("guid=%s --> %s -- > %s", guid, guid_code, guid_num)
+local name = "tencent"
+local name_num = lguid.decode_code(name)
+log_info("guid:%s -->%s --> %s ",name,name_num,lguid.encode_code(name_num))

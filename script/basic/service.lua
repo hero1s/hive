@@ -54,14 +54,6 @@ function service.make_id(name, index)
     return (name << 16) | index
 end
 
---生成节点id
-function service.make_sid(name, index)
-    if type(name) == "string" then
-        name = SERVICES[name]
-    end
-    return (name << 16) | index
-end
-
 --节点id获取服务id
 function service.id2sid(hive_id)
     return (hive_id >> 16) & 0xff
