@@ -175,6 +175,13 @@ bool hive_app::load(int argc, const char* argv[]) {
 		setenv("HIVE_INDEX", "1", 0);
 		setenv("HIVE_HOST_IP", "127.0.0.1", 0);
 	}
+	//默认lib目录
+#if defined(__linux) || defined(__APPLE__)
+	setenv("LUA_CPATH", "./lib/?.so;",0);
+#else
+	setenv("LUA_CPATH", "!/lib/?.dll;",0);
+#endif
+
     return bRet;
 }
 

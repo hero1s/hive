@@ -129,7 +129,7 @@ function DevopsGmMgr:gm_guid_view(guid)
     local group, index, time = lguid.guid_source(guid)
     local group_h, group_l   = (group >> 4) & 0xf, group & 0xf
 
-    return { group = group, group_h = group_h, group_l = group_l, index = index, time = datetime_ext.time_str(time) }
+    return { group = group, group_h = group_h, group_l = group_l, index = index, time = time_str(time) }
 end
 
 function DevopsGmMgr:gm_log_format(data, swline)
