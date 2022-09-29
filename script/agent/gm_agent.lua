@@ -6,12 +6,14 @@ local check_success = hive.success
 
 local router_mgr    = hive.get("router_mgr")
 local event_mgr     = hive.get("event_mgr")
+local thread_mgr    = hive.get("thread_mgr")
 
 local SUCCESS       = hive.enum("KernCode", "SUCCESS")
 local LOGIC_FAILED  = hive.enum("KernCode", "LOGIC_FAILED")
+local PeriodTime    = enum("PeriodTime")
 
-local GMAgent = singleton()
-local prop = property(GMAgent)
+local GMAgent       = singleton()
+local prop          = property(GMAgent)
 prop:accessor("command_list", {})
 
 function GMAgent:__init()
@@ -60,6 +62,7 @@ function GMAgent:report_command()
         log_info("[GMAgent][report_command] success!")
         return true
     end
+    return false
 end
 
 -- 通知执行GM指令
@@ -73,7 +76,9 @@ end
 function GMAgent:on_service_ready(id, service_name)
     log_info("[GMAgent][on_service_ready]->id:%s, service_name:%s", id, service_name)
     -- 上报gm列表
-    self:report_command()
+    thread_mgr:success_call(PeriodTime.SECOND_10_MS, function()
+        return self:report_command()
+    end, PeriodTime.SECOND_5_MS)
 end
 
 hive.gm_agent = GMAgent()
