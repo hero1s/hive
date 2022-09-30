@@ -14,6 +14,7 @@ local tpack      = table.pack
 local event_mgr  = hive.get("event_mgr")
 local update_mgr = hive.get("update_mgr")
 local thread_mgr = hive.get("thread_mgr")
+local timer_mgr  = hive.get("timer_mgr")
 
 local LineTitle  = "\r\n"
 local DB_TIMEOUT = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
@@ -326,7 +327,6 @@ function RedisDB:__init(conf)
     self.subscribe_sessions = QueueFIFO()
     self.subscribe_context  = { name = "subcribe_monitor" }
     --update
-    update_mgr:attach_minute(self)
     update_mgr:attach_second(self)
     --setup
     self:setup()
@@ -334,6 +334,7 @@ end
 
 function RedisDB:__release()
     self:close()
+    timer_mgr:unregister(self.timer_id)
 end
 
 function RedisDB:setup()
@@ -347,15 +348,18 @@ function RedisDB:setup()
             return this:commit(this.subscribe_sock, param, ...)
         end
     end
+    self.timer_id = timer_mgr:loop(10 * 1000, function()
+        self:ping()
+    end)
 end
 
 function RedisDB:close()
     if self.command_sock then
-        self.command_sessions:clear()
+        self:clear_session(self.command_sock, "action-close")
         self.command_sock:close()
     end
     if self.subscribe_sock then
-        self.subscribe_sessions:clear()
+        self:clear_session(self.subscribe_sock, "action-close")
         self.subscribe_sock:close()
     end
 end
@@ -383,30 +387,14 @@ function RedisDB:login(socket, title)
     return true
 end
 
-function RedisDB:on_minute()
-    if self.command_sock:is_alive() and self.subscribe_sock:is_alive() then
-        if not self:ping() then
-            self:close()
-        end
-    end
-end
-
 function RedisDB:on_second()
-    local clock_ms       = hive.clock_ms
+    local _lock<close>   = thread_mgr:lock("redis-second")
     local command_sock   = self.command_sock
     local subscribe_sock = self.subscribe_sock
-    if command_sock:is_alive() then
-        if (clock_ms - command_sock:get_alive_time() >= NT_TIMEOUT) and (not self.command_sessions:empty()) then
-            command_sock:close()
-        end
-    else
+    if not command_sock:is_alive() then
         self:login(command_sock, "query")
     end
-    if subscribe_sock:is_alive() then
-        if (clock_ms - subscribe_sock:get_alive_time() >= NT_TIMEOUT) and (not self.subscribe_sessions:empty()) then
-            subscribe_sock:close()
-        end
-    else
+    if not subscribe_sock:is_alive() then
         if self:login(subscribe_sock, "subcribe") then
             for channel in pairs(self.subscribes) do
                 self:subscribe(channel)
@@ -418,7 +406,12 @@ function RedisDB:on_second()
     end
 end
 
-function RedisDB:on_socket_error(sock, token, err)
+function RedisDB:ping()
+    self:commit(self.command_sock, { cmd = "PING" })
+    self:commit(self.subscribe_sock, { cmd = "PING" })
+end
+
+function RedisDB:clear_session(sock, err)
     if sock == self.command_sock then
         for _, context in self.command_sessions:iter() do
             thread_mgr:response(context.session_id, false, err)
@@ -430,6 +423,11 @@ function RedisDB:on_socket_error(sock, token, err)
         end
         self.subscribe_sessions:clear()
     end
+end
+
+function RedisDB:on_socket_error(sock, token, err)
+    self:clear_session(sock, err)
+    log_err("[RedisDB][on_socket_error] token:%s, error:%s", token, err)
 end
 
 function RedisDB:on_socket_recv(sock, token)
@@ -509,17 +507,7 @@ function RedisDB:execute(cmd, ...)
     if RedisDB[cmd] then
         return self[cmd](self, ...)
     end
-    local ok, res = self:commit(self.command_sock, { cmd = supper(cmd) }, ...)
-    if not ok then
-        self:close()
-    end
-    return ok, res
-end
-
-function RedisDB:ping()
-    local ok1, _ = self:commit(self.command_sock, { cmd = "PING" })
-    local ok2, _ = self:commit(self.subscribe_sock, { cmd = "PING" })
-    return ok1 and ok2
+    return self:commit(self.command_sock, { cmd = supper(cmd) }, ...)
 end
 
 function RedisDB:auth(socket)
