@@ -18,7 +18,6 @@ local timer_mgr  = hive.get("timer_mgr")
 
 local LineTitle  = "\r\n"
 local DB_TIMEOUT = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
-local NT_TIMEOUT = hive.enum("NetwkTime", "NETWORK_TIMEOUT")
 
 local function _async_call(context, quote)
     local session_id = thread_mgr:build_session_id()

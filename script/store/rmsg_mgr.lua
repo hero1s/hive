@@ -19,7 +19,6 @@ function RmsgMgr:__init(db_name, table_name, due_day)
     self.ttl        = (due_day or 1) * PeriodTime.DAY_S
     self.db_name    = db_name
     self.table_name = table_name
-    log_info("[RmsgMgr][init] init rmsg db:%s, table: %s", db_name, table_name)
 end
 
 function RmsgMgr:build_index()

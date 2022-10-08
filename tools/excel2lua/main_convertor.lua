@@ -1,7 +1,10 @@
 --main_convertor.lua
-local lcrypt        = require('lcrypt')
-local lstdfs        = require('lstdfs')
-local lexcel        = require('luaxlsx')
+local lcrypt = require('lcrypt')
+local lstdfs = require('lstdfs')
+local lexcel = require('luaxlsx')
+
+require("check_valid")
+local check_valid   = hive.check_valid
 
 local type          = type
 local pairs         = pairs
@@ -209,16 +212,29 @@ local function export_records_to_table(output, title, records)
     local output_data = tconcat(lines, "\n")
     export_file:write(output_data)
     export_file:close()
-
-    local ret, err = loadfile(filename)
-    if ret ~= nil then
-        print(sformat("export %s success!", table_name))
-    else
+    --检测表格合法性
+    local data, err = loadfile(filename)
+    if err then
         error(sformat([[
-
 ========================================================================
 export %s error:%s!
 ========================================================================]], table_name, err))
+    else
+        local check_func = check_valid.get_check_func(table_name)
+        if check_func then
+            local records = dofile(filename)
+            local ret, err = check_func(records)
+            if not ret then
+                error(sformat([[
+========================================================================
+export %s error:%s!
+========================================================================]], table_name, err))
+            else
+                print(sformat("export %s success and ----------->> check valid success!", table_name))
+            end
+            return
+        end
+        print(sformat("export %s success!", table_name))
     end
 end
 
@@ -261,7 +277,7 @@ local function export_sheet_to_table(sheet, output, title)
         end
         -- 遍历每一列
         local record, record_flag = {}, {}
-        local pos = 0
+        local pos                 = 0
         for col = 2, sheet.last_col do
             -- 过滤掉没有配置的行
             local ftype = field_type[col]
@@ -270,10 +286,10 @@ local function export_sheet_to_table(sheet, output, title)
                 local value = get_sheet_value(sheet, row, col, ftype, key)
                 if value ~= nil then
                     tinsert(record, { key, value, ftype, field_desc[col] })
-                    pos = pos + 1
+                    pos              = pos + 1
                     record_flag[key] = 1
                 elseif record_flag[key] == nil then
-                    pos = pos + 1
+                    pos              = pos + 1
                     record_flag[key] = { pos, { key, value, ftype, field_desc[col] } }
                 else
                     --多选一的列并且都没配
@@ -415,8 +431,17 @@ local function export_config()
     return input, output, recursion
 end
 
+--挂载表格校验逻辑
+local function attach_check_valid()
+    local valid_file = hgetenv("HIVE_VALID_FILE")
+    if valid_file then
+        require(valid_file)
+    end
+end
+attach_check_valid()
 print("useage: hive.exe [--input=xxx] [--output=xxx]")
 print("begin export excels to lua!")
+
 local input, output, recursion = export_config()
 local ok, err                  = pcall(export_excel, input, output, recursion)
 if not ok then
