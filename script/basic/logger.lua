@@ -77,12 +77,12 @@ local function logger_output(feature, lvl, lvl_name, fmt, log_conf, ...)
         return false
     end
     local content
-    local lvl_func, extend, notify, swline, graylog = tunpack(log_conf)
+    local lvl_func, extend, swline,max_depth,notify, graylog = tunpack(log_conf)
     if extend then
         local args = tpack(...)
         for i, arg in pairs(args) do
             if type(arg) == "table" then
-                args[i] = serialize(arg, swline and 1 or 0)
+                args[i] = serialize(arg, swline and 1 or 0,max_depth)
             end
         end
         content = sformat(fmt, tunpack(args, 1, args.n))
@@ -105,13 +105,13 @@ local function logger_output(feature, lvl, lvl_name, fmt, log_conf, ...)
 end
 
 local LOG_LEVEL_OPTIONS = {
-    --lvl_func,     extend, notify, swline, graylog
-    [LOG_LEVEL.INFO]  = { "info", { driver.info, false, false, false, true } },
-    [LOG_LEVEL.WARN]  = { "warn", { driver.warn, true, false, true, true } },
-    [LOG_LEVEL.DUMP]  = { "dump", { driver.dump, true, false, true, true } },
-    [LOG_LEVEL.DEBUG] = { "debug", { driver.debug, true, false, false, false } },
-    [LOG_LEVEL.ERROR] = { "err", { driver.error, true, true, true, true } },
-    [LOG_LEVEL.FATAL] = { "fatal", { driver.fatal, true, true, true, true } }
+                                    --lvl_func,    extend,  swline, max_depth,  notify, graylog
+    [LOG_LEVEL.INFO]  = { "info",  { driver.info,  false,   false,  0,          false,  true } },
+    [LOG_LEVEL.WARN]  = { "warn",  { driver.warn,  true,    true,   5,          false,  true } },
+    [LOG_LEVEL.DUMP]  = { "dump",  { driver.dump,  true,    true,   4,          false,  true } },
+    [LOG_LEVEL.DEBUG] = { "debug", { driver.debug, true,    false,  6,          false,  false } },
+    [LOG_LEVEL.ERROR] = { "err",   { driver.error, true,    true,   5,          true,   true } },
+    [LOG_LEVEL.FATAL] = { "fatal", { driver.fatal, true,    true,   5,          true,   true } }
 }
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl_name, log_conf = tunpack(conf)
