@@ -108,15 +108,15 @@ OBJS += $(patsubst $(SRC_DIR)/laoi/%.m, $(INT_DIR)/laoi/%.o, $(filter-out $(EXCL
 OBJS += $(patsubst $(SRC_DIR)/laoi/%.cc, $(INT_DIR)/laoi/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/laoi/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/laoi/%.cpp, $(INT_DIR)/laoi/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/laoi/*.cpp)))
 #子目录
-OBJS += $(patsubst $(SRC_DIR)/lbuffer/%.c, $(INT_DIR)/lbuffer/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lbuffer/*.c)))
-OBJS += $(patsubst $(SRC_DIR)/lbuffer/%.m, $(INT_DIR)/lbuffer/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lbuffer/*.m)))
-OBJS += $(patsubst $(SRC_DIR)/lbuffer/%.cc, $(INT_DIR)/lbuffer/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lbuffer/*.cc)))
-OBJS += $(patsubst $(SRC_DIR)/lbuffer/%.cpp, $(INT_DIR)/lbuffer/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lbuffer/*.cpp)))
-#子目录
 OBJS += $(patsubst $(SRC_DIR)/lcjson/%.c, $(INT_DIR)/lcjson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcjson/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lcjson/%.m, $(INT_DIR)/lcjson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcjson/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/lcjson/%.cc, $(INT_DIR)/lcjson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcjson/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/lcjson/%.cpp, $(INT_DIR)/lcjson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcjson/*.cpp)))
+#子目录
+OBJS += $(patsubst $(SRC_DIR)/lcodec/%.c, $(INT_DIR)/lcodec/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcodec/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/lcodec/%.m, $(INT_DIR)/lcodec/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcodec/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/lcodec/%.cc, $(INT_DIR)/lcodec/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcodec/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/lcodec/%.cpp, $(INT_DIR)/lcodec/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcodec/*.cpp)))
 #子目录
 OBJS += $(patsubst $(SRC_DIR)/lcrab/%.c, $(INT_DIR)/lcrab/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrab/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lcrab/%.m, $(INT_DIR)/lcrab/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrab/*.m)))
@@ -217,8 +217,8 @@ pre_build:
 	mkdir -p $(INT_DIR)/bson
 	mkdir -p $(INT_DIR)/guid
 	mkdir -p $(INT_DIR)/laoi
-	mkdir -p $(INT_DIR)/lbuffer
 	mkdir -p $(INT_DIR)/lcjson
+	mkdir -p $(INT_DIR)/lcodec
 	mkdir -p $(INT_DIR)/lcrab
 	mkdir -p $(INT_DIR)/lcrypt
 	mkdir -p $(INT_DIR)/lhttp

@@ -2,7 +2,7 @@
 #include "bufpool.h"
 #include "shmpool.h"
 
-namespace lbuffer {
+namespace lcodec {
     struct fixbuffer {
         uint32_t len = 0;
         uint32_t end = 0;

@@ -3,7 +3,7 @@
 #include "shm.h"
 #include "bufpool.h"
 
-namespace lbuffer {
+namespace lcodec {
     //shmpool
     template<int BLOCK_SIZE = 512, int BLOCK_NUM = 2048>
     class shmpool : public buf_pool {

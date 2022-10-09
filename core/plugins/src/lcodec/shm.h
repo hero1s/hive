@@ -1,6 +1,6 @@
 #pragma once
 
-namespace lbuffer {
+namespace lcodec {
 #ifdef WIN32
     #include <stdio.h>
     #include <windows.h>

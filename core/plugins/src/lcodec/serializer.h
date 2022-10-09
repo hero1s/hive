@@ -7,7 +7,7 @@
 #include <vector>
 #include "buffer.h"
 
-namespace lbuffer {
+namespace lcodec {
     const uint8_t type_nil          = 0;
     const uint8_t type_true         = 1;
     const uint8_t type_false        = 2;
@@ -35,7 +35,7 @@ namespace lbuffer {
         ~serializer() {
             delete m_buffer;
         }
-        
+
         slice* encode(lua_State* L) {
             m_buffer->reset();
             m_sshares.clear();
@@ -161,7 +161,7 @@ namespace lbuffer {
             value_encode(type_int64);
             value_encode(integer);
         }
-        
+
         void number_encode(double number) {
             value_encode(type_number);
             value_encode(number);
@@ -192,7 +192,7 @@ namespace lbuffer {
                 break;
             }
         }
-        
+
         void table_encode(lua_State* L, int index, int depth) {
             index = lua_absindex(L, index);
             value_encode(type_tab_head);
@@ -236,7 +236,7 @@ namespace lbuffer {
                 lua_rawset(L, -3);
             } while (1);
         }
-        
+
         void decode_value(lua_State* L, slice* buf, uint8_t type) {
             switch (type) {
             case type_nil:
@@ -297,7 +297,7 @@ namespace lbuffer {
 
         template<typename T>
         T value_decode(lua_State* L, slice* buff) {
-            T value = 0;
+            T value;
             if (buff->pop((uint8_t*)&value, sizeof(T)) == 0){
                 luaL_error(L, "decode can't unpack one value");
             }
@@ -398,7 +398,7 @@ namespace lbuffer {
             serialize_crcn(depth - 1, line);
             serialize_value("}");
         }
-    
+
     public:
         var_buffer* m_buffer;
         std::vector<std::string> m_sshares;

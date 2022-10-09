@@ -1,7 +1,7 @@
 #pragma once
 #include "slice.h"
 
-namespace lbuffer {
+namespace lcodec {
 
     const size_t BUFFER_DEF = 64 * 1024;        //64K
     const size_t BUFFER_MAX = 16 * 1024 * 1024; //16M
@@ -15,7 +15,6 @@ namespace lbuffer {
             if (m_size != BUFFER_DEF) {
                 m_data = (uint8_t*)realloc(m_data, BUFFER_DEF);
             }
-            memset(m_data, 0, BUFFER_DEF);
             m_end = m_data + BUFFER_DEF;
             m_head = m_tail = m_data;
             m_size = BUFFER_DEF;
@@ -124,6 +123,15 @@ namespace lbuffer {
         std::string string() {
             size_t len = (size_t)(m_tail - m_head);
             return std::string((const char*)m_head, len);
+        }
+
+        template<typename T>
+        void write(T value) {
+            push_data((const uint8_t*)&value, sizeof(T));
+        }
+
+        void write(const char* src, size_t len) {
+            push_data((const uint8_t*)src, len);
         }
 
     protected:

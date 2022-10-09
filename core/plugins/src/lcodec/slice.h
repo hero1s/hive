@@ -1,7 +1,7 @@
 #pragma once
 #include "lua_kit.h"
 
-namespace lbuffer {
+namespace lcodec {
 
     class slice {
     public:
@@ -14,6 +14,10 @@ namespace lbuffer {
 
         size_t size() {
             return m_tail - m_head;
+        }
+
+        size_t empty() {
+            return m_tail == m_head;
         }
 
         void attach(uint8_t* data, size_t size) {
@@ -70,6 +74,10 @@ namespace lbuffer {
 
         uint8_t* data(size_t* len) {
             *len = (size_t)(m_tail - m_head);
+            return m_head;
+        }
+
+        uint8_t* head() {
             return m_head;
         }
 

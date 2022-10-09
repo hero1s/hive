@@ -1,7 +1,7 @@
 --buffer_test.lua
-local lbuffer      = require("lbuffer")
+local lcodec       = require("lcodec")
 local lcrypt       = require("lcrypt")
-local serializer   = lbuffer.new_serializer()
+local serializer   = lcodec.new_serializer()
 
 local log_debug    = logger.debug
 local log_dump     = logger.dump

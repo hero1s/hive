@@ -2,7 +2,7 @@
 --logger功能支持
 local llog      = require("lualog")
 local lstdfs    = require("lstdfs")
-
+local lcodec    = require("lcodec")
 local pcall     = pcall
 local pairs     = pairs
 local sformat   = string.format
@@ -10,7 +10,7 @@ local dgetinfo  = debug.getinfo
 local tpack     = table.pack
 local tunpack   = table.unpack
 local fsstem    = lstdfs.stem
-local serialize = hive.serialize
+local serialize = lcodec.serialize
 
 local LOG_LEVEL = llog.LOG_LEVEL
 local driver    = hive.get_logger()

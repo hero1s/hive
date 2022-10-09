@@ -1,4 +1,5 @@
 --influx.lua
+local lcodec = require("lcodec")
 import("network/http_client.lua")
 local log_err     = logger.err
 local log_info    = logger.info
@@ -7,7 +8,7 @@ local tconcat     = table.concat
 local sgsub       = string.gsub
 local sformat     = string.format
 local ssplit      = string_ext.split
-local serialize   = hive.serialize
+local serialize   = lcodec.serialize
 
 local http_client = hive.get("http_client")
 local WEEK_S      = hive.enum("PeriodTime", "WEEK_S")
@@ -197,12 +198,12 @@ function Influx:batch(batch_datas)
     for measurement, datas in pairs(batch_datas) do
         local prefix = self:quote_tags(measurement, datas.tags)
         for _, fields in pairs(datas.field_list) do
-            local suffix = self:quote_fields(fields)
+            local suffix              = self:quote_fields(fields)
             protocols[#protocols + 1] = sformat("%s %s", prefix, suffix)
         end
     end
-    local line_protocol = tconcat(protocols, "\n")
-    local headers       = {
+    local line_protocol   = tconcat(protocols, "\n")
+    local headers         = {
         ["Accept"]        = "application/json",
         ["Content-type"]  = "text/plain",
         ["Authorization"] = self.common_headers["Authorization"],

@@ -1,6 +1,7 @@
 ﻿---devops_gm_mgr.lua
 local lstdfs    = require('lstdfs')
 local lguid     = require("lguid")
+local lcodec    = require("lcodec")
 local sdump     = string.dump
 local log_err   = logger.err
 local log_warn  = logger.warn
@@ -133,8 +134,8 @@ function DevopsGmMgr:gm_guid_view(guid)
 end
 
 function DevopsGmMgr:gm_log_format(data, swline)
-    local data_t = hive.unserialize(data)
-    return hive.serialize(data_t, swline)
+    local data_t = lcodec.unserialize(data)
+    return lcodec.serialize(data_t, swline)
 end
 
 hive.devops_gm_mgr = DevopsGmMgr()
