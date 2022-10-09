@@ -9,19 +9,19 @@
 
 int main(int argc, const char* argv[])
 {
-    tzset();
-    setlocale(LC_ALL, "");
+	tzset();
+	setlocale(LC_ALL, "");
 
-    if (argc < 2)
-    {
-        std::cout << "--(hive_run program_entry.lua ...)--" << std::endl;
-        return 0;
-    }
+	if (argc < 2)
+	{
+		std::cout << "--(hive_run program_entry.lua ...)--" << std::endl;
+		return 0;
+	}
 
-    g_app = new hive_app();
-    g_app->setup(argc, argv);
-    delete g_app;
-    return 0;
+	g_app = new hive_app();
+	g_app->setup(argc, argv);
+	delete g_app;
+	return 0;
 }
 
 
@@ -81,17 +81,17 @@ LONG WINAPI CMiniDump::MyUnhandledExceptionFilter(EXCEPTION_POINTERS* ExceptionI
 
 BOOL CMiniDump::GetModulePath(LPTSTR lpBuf, DWORD dwBufSize)
 {
-    TCHAR sModuleName[MAX_PATH] = { 0 };
-    GetModuleFileName(NULL, sModuleName, MAX_PATH);
-    TCHAR* pChar = _tcsrchr(sModuleName, _T('\\'));
-    if (NULL != pChar)
-    {
-        size_t iPos = pChar - sModuleName;
-        sModuleName[iPos + 1] = _T('\0');
-        _tcscpy_s(lpBuf, dwBufSize, sModuleName);
-        return TRUE;
-    }
-    return FALSE;
+	TCHAR sModuleName[MAX_PATH] = { 0 };
+	GetModuleFileName(NULL, sModuleName, MAX_PATH);
+	TCHAR* pChar = _tcsrchr(sModuleName, _T('\\'));
+	if (NULL != pChar)
+	{
+		size_t iPos = pChar - sModuleName;
+		sModuleName[iPos + 1] = _T('\0');
+		_tcscpy_s(lpBuf, dwBufSize, sModuleName);
+		return TRUE;
+	}
+	return FALSE;
 }
 
 CMiniDump g_minidump;

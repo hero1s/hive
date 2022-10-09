@@ -45,7 +45,7 @@ namespace guid
 	//补位码不能在base数组里,否则无法区分
 	static const char PAD = '0';
 	//生成邀请码(数字变字符,根据数字大小估算长度,32位整数小于6字符,64位整数10字符)
-	string encode_code(uint64_t guid,size_t code_size) {
+	string encode_code(uint64_t guid, size_t code_size) {
 		string code;
 		auto base_len = BASE.size();
 		while (guid > 0)
@@ -81,7 +81,7 @@ namespace guid
 				break;
 			}
 			auto index = BASE_MAP[code[i]];
-			guid += uint64_t(index * pow(base_len,r));
+			guid += uint64_t(index * pow(base_len, r));
 			r++;
 		}
 		return guid;
@@ -209,7 +209,7 @@ namespace guid
 	luakit::lua_table open_lguid(lua_State* L) {
 		luakit::kit_state kit_state(L);
 		auto luaguid = kit_state.new_table();
-		
+
 		luaguid.set_function("guid_new", lguid_new);
 		luaguid.set_function("guid_string", lguid_string);
 		luaguid.set_function("guid_tostring", lguid_tostring);

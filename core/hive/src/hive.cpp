@@ -29,18 +29,18 @@ extern "C" void open_custom_libs(lua_State * L);
 
 hive_app* g_app = nullptr;
 static void on_signal(int signo) {
-    if (g_app) {
-        g_app->set_signal(signo);
-    }
+	if (g_app) {
+		g_app->set_signal(signo);
+	}
 }
 
 static const char* get_platform() {
 #if defined(__linux)
-    return "linux";
+	return "linux";
 #elif defined(__APPLE__)
-    return "apple";
+	return "apple";
 #else
-    return "windows";
+	return "windows";
 #endif
 }
 
@@ -63,37 +63,37 @@ static void daemon() {
 
 static void check_input(luakit::kit_state& lua) {
 #ifdef WIN32
-    if (_kbhit()) {
-        char cur = _getch();
-        if (cur == '\xE0' || cur == '\x0') {
-            if (_kbhit()) {
-                _getch();
-                return;
-            }
-        }
-        lua.run_script(fmt::format("hive.console({:d})", cur));
-    }
+	if (_kbhit()) {
+		char cur = _getch();
+		if (cur == '\xE0' || cur == '\x0') {
+			if (_kbhit()) {
+				_getch();
+				return;
+			}
+		}
+		lua.run_script(fmt::format("hive.console({:d})", cur));
+	}
 #endif
 }
 
 static int hash_code(lua_State* L) {
-    size_t hcode = 0;
-    int type = lua_type(L, 1);
-    if (type == LUA_TNUMBER) {
-        hcode = std::hash<int64_t>{}(lua_tointeger(L, 1));
-    }
-    else if (type == LUA_TSTRING) {
-        hcode = std::hash<std::string>{}(lua_tostring(L, 1));
-    }
-    else {
-        luaL_error(L, fmt::format("hashkey only support number or string!,not support:{}", lua_typename(L, type)).c_str());
-    }
-    size_t mod = luaL_optinteger(L, 2, 0);
-    if (mod > 0) {
-        hcode = (hcode % mod) + 1;
-    }
-    lua_pushinteger(L, hcode);
-    return 1;
+	size_t hcode = 0;
+	int type = lua_type(L, 1);
+	if (type == LUA_TNUMBER) {
+		hcode = std::hash<int64_t>{}(lua_tointeger(L, 1));
+	}
+	else if (type == LUA_TSTRING) {
+		hcode = std::hash<std::string>{}(lua_tostring(L, 1));
+	}
+	else {
+		luaL_error(L, fmt::format("hashkey only support number or string!,not support:{}", lua_typename(L, type)).c_str());
+	}
+	size_t mod = luaL_optinteger(L, 2, 0);
+	if (mod > 0) {
+		hcode = (hcode % mod) + 1;
+	}
+	lua_pushinteger(L, hcode);
+	return 1;
 }
 
 static int lset_env(lua_State* L) {
@@ -104,7 +104,7 @@ static int lset_env(lua_State* L) {
 	return 0;
 }
 
-static int ldebug(int type,int param,bool pr) {
+static int ldebug(int type, int param, bool pr) {
 	if (pr) {
 		std::cout << fmt::format("{},{}", type, param) << std::endl;
 	}
@@ -112,18 +112,18 @@ static int ldebug(int type,int param,bool pr) {
 }
 
 void hive_app::set_signal(uint32_t n) {
-    uint32_t mask = 1 << n;
-    m_signal |= mask;
+	uint32_t mask = 1 << n;
+	m_signal |= mask;
 }
 
 void hive_app::setup(int argc, const char* argv[]) {
-    srand((unsigned)time(nullptr));
-    //初始化日志
-    m_logger = new log_service();
-    //加载配置
-    if (load(argc, argv)) {
-        run();
-    }
+	srand((unsigned)time(nullptr));
+	//初始化日志
+	m_logger = new log_service();
+	//加载配置
+	if (load(argc, argv)) {
+		run();
+	}
 }
 
 void hive_app::exception_handler(std::string msg, std::string& err) {
@@ -136,7 +136,7 @@ void hive_app::exception_handler(std::string msg, std::string& err) {
 }
 
 bool hive_app::load(int argc, const char* argv[]) {
-    bool bRet = true;
+	bool bRet = true;
 	//将启动参数转负责覆盖环境变量
 	const char* lua_conf = nullptr;
 	if (argc > 1) {
@@ -177,12 +177,12 @@ bool hive_app::load(int argc, const char* argv[]) {
 	}
 	//默认lib目录
 #if defined(__linux) || defined(__APPLE__)
-	setenv("LUA_CPATH", "./lib/?.so;",0);
+	setenv("LUA_CPATH", "./lib/?.so;", 0);
 #else
-	setenv("LUA_CPATH", "!/lib/?.dll;",0);
+	setenv("LUA_CPATH", "!/lib/?.dll;", 0);
 #endif
 
-    return bRet;
+	return bRet;
 }
 
 void hive_app::run() {
@@ -190,23 +190,23 @@ void hive_app::run() {
 		daemon();
 	}
 	m_logger->start();
-    luakit::kit_state lua;
-    lua.set("platform", get_platform());	
+	luakit::kit_state lua;
+	lua.set("platform", get_platform());
 
-    open_custom_libs(lua.L());//添加扩展库
-    auto hive = lua.new_table("hive");
-    hive.set("pid", ::getpid());
-    hive.set("platform", get_platform());
+	open_custom_libs(lua.L());//添加扩展库
+	auto hive = lua.new_table("hive");
+	hive.set("pid", ::getpid());
+	hive.set("platform", get_platform());
 
 	hive.set_function("debug", ldebug);
-    hive.set_function("hash_code", hash_code);
-    hive.set_function("get_signal", [&]() { return m_signal; });
-    hive.set_function("set_signal", [&](int n) { set_signal(n); });
-    hive.set_function("get_logger", [&]() { return m_logger; });
-    hive.set_function("ignore_signal", [](int n) { signal(n, SIG_IGN); });
-    hive.set_function("default_signal", [](int n) { signal(n, SIG_DFL); });
-    hive.set_function("register_signal", [](int n) { signal(n, on_signal); });
-    	
+	hive.set_function("hash_code", hash_code);
+	hive.set_function("get_signal", [&]() { return m_signal; });
+	hive.set_function("set_signal", [&](int n) { set_signal(n); });
+	hive.set_function("get_logger", [&]() { return m_logger; });
+	hive.set_function("ignore_signal", [](int n) { signal(n, SIG_IGN); });
+	hive.set_function("default_signal", [](int n) { signal(n, SIG_DFL); });
+	hive.set_function("register_signal", [](int n) { signal(n, on_signal); });
+
 	if (getenv("HIVE_SANDBOX") != NULL) {
 		lua.run_script(fmt::format("require '{}'", getenv("HIVE_SANDBOX")), [&](std::string err) {
 			exception_handler("load sandbox err: ", err);
@@ -216,7 +216,7 @@ void hive_app::run() {
 		exception_handler("load entry err: ", err);
 		});
 	while (hive.get_function("run")) {
-        hive.call([&](std::string err) {
+		hive.call([&](std::string err) {
 			LOG_FATAL(m_logger) << "hive run err: " << err;
 			});
 		//check_input(lua);

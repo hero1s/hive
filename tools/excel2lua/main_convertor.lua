@@ -220,7 +220,7 @@ local function export_records_to_table(output, title, records)
 export %s error:%s!
 ========================================================================]], table_name, err))
     else
-        local check_func = check_valid.get_check_func(table_name)
+        local check_func = check_valid:get_check_func(table_name)
         if check_func then
             local records = dofile(filename)
             local ret, err = check_func(records)
