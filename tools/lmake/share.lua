@@ -141,3 +141,6 @@ DEPS = {
 
 --分组定义
 GROUP = "proj"
+
+--是否生效
+ENABLE = true

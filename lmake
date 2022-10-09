@@ -8,3 +8,4 @@ SOLUTION = "hive"
 
 --lmake目录
 LMAKE_DIR = "tools/lmake"
+

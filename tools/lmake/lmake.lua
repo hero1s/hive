@@ -221,6 +221,14 @@ local function build_projfile(solution_dir, project_dir, lmake_dir, vsversion)
                 error("load share lmake file failed")
                 return
             end
+            if not load_env_file(fullname, env) then
+                error(sformat("load %s failed", fullname))
+                return
+            end
+            --不生效的跳过
+            if not env.ENABLE then
+                goto continue
+            end
             env.VSVERSION = vsversion
             local mak_dir = path_cut(project_dir, solution_dir)
             ltmpl.render_file(lappend(lmake_dir, "tmpl/make.tpl"), lrepextension(fullname, ".mak"), env, fullname)

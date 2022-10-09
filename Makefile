@@ -27,7 +27,6 @@ lua:
 
 luaext:
 	cd extend/lcurl; make -j4 SOLUTION_DIR=$(CUR_DIR) -f lcurl.mak;
-	cd extend/ljps; make -j4 SOLUTION_DIR=$(CUR_DIR) -f ljps.mak;
 	cd extend/luaxlsx; make -j4 SOLUTION_DIR=$(CUR_DIR) -f luaxlsx.mak;
 
 share:

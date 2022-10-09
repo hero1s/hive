@@ -1,3 +1,6 @@
+--是否生效
+ENABLE = false
+
 --工程名字
 PROJECT_NAME = "ljps"
 
