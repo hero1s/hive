@@ -1,6 +1,5 @@
 ﻿---devops_gm_mgr.lua
 local lstdfs    = require('lstdfs')
-local lguid     = require("lguid")
 local lcodec    = require("lcodec")
 local sdump     = string.dump
 local log_err   = logger.err
@@ -127,7 +126,7 @@ function DevopsGmMgr:gm_cfg_reload(is_remote)
 end
 
 function DevopsGmMgr:gm_guid_view(guid)
-    local group, index, time = lguid.guid_source(guid)
+    local group, index, time = lcodec.guid_source(guid)
     local group_h, group_l   = (group >> 4) & 0xf, group & 0xf
 
     return { group = group, group_h = group_h, group_l = group_l, index = index, time = time_str(time) }

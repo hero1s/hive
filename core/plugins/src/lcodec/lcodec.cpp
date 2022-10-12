@@ -36,6 +36,8 @@ namespace lcodec {
         llcodec.set_function("guid_string", guid_string);
         llcodec.set_function("guid_tostring", guid_tostring);
         llcodec.set_function("guid_number", guid_number);
+        llcodec.set_function("guid_encode", guid_encode);
+        llcodec.set_function("guid_decode", guid_decode);
         llcodec.set_function("guid_source", guid_source);
         llcodec.set_function("guid_group", guid_group);
         llcodec.set_function("guid_index", guid_index);

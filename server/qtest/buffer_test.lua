@@ -1,15 +1,14 @@
 --buffer_test.lua
 local lcodec       = require("lcodec")
 local lcrypt       = require("lcrypt")
-local serializer   = lcodec.new_serializer()
 
 local log_debug    = logger.debug
 local log_dump     = logger.dump
 local lhex_encode  = lcrypt.hex_encode
-local lencode      = serializer.encode
-local ldecode      = serializer.decode
-local lserialize   = serializer.serialize
-local lunserialize = serializer.unserialize
+local lencode      = lcodec.encode
+local ldecode      = lcodec.decode
+local lserialize   = lcodec.serialize
+local lunserialize = lcodec.unserialize
 
 --serialize
 ----------------------------------------------------------------

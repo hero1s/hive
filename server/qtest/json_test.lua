@@ -1,7 +1,7 @@
 --json_test.lua
-local lguid      = require("lguid")
+local lcodec      = require("lcodec")
 
-local new_guid    = lguid.guid_new
+local new_guid    = lcodec.guid_new
 local json_encode = hive.json_encode
 local json_decode = hive.json_decode
 

@@ -2,12 +2,12 @@
 import("basic/cmdline.lua")
 import("agent/online_agent.lua")
 
-local lguid        = require("lguid")
+local lcodec       = require("lcodec")
 local gm_page      = nil
 local HttpServer   = import("network/http_server.lua")
 
 local json_decode  = hive.json_decode
-local guid_index   = lguid.guid_index
+local guid_index   = lcodec.guid_index
 local tunpack      = table.unpack
 local env_get      = environ.get
 local smake_id     = service.make_id

@@ -102,9 +102,6 @@
     <ClCompile Include="src\bson\bson.c">
       <Filter>bson</Filter>
     </ClCompile>
-    <ClCompile Include="src\guid\lguid.cpp">
-      <Filter>guid</Filter>
-    </ClCompile>
     <ClCompile Include="src\laoi\laoi.cpp">
       <Filter>laoi</Filter>
     </ClCompile>
@@ -190,9 +187,6 @@
     </Filter>
     <Filter Include="bson">
       <UniqueIdentifier>{0B6879B1-86BF-B2B1-EC65-D2460E4ECCD4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="guid">
-      <UniqueIdentifier>{1E0CA5B1-252F-1F6B-1E0A-C91BE7E7219E}</UniqueIdentifier>
     </Filter>
     <Filter Include="laoi">
       <UniqueIdentifier>{DC8FEA7C-8450-92D3-4C20-3A6D15D99A08}</UniqueIdentifier>

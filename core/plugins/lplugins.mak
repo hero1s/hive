@@ -98,11 +98,6 @@ OBJS += $(patsubst $(SRC_DIR)/bson/%.m, $(INT_DIR)/bson/%.o, $(filter-out $(EXCL
 OBJS += $(patsubst $(SRC_DIR)/bson/%.cc, $(INT_DIR)/bson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/bson/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/bson/%.cpp, $(INT_DIR)/bson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/bson/*.cpp)))
 #子目录
-OBJS += $(patsubst $(SRC_DIR)/guid/%.c, $(INT_DIR)/guid/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/guid/*.c)))
-OBJS += $(patsubst $(SRC_DIR)/guid/%.m, $(INT_DIR)/guid/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/guid/*.m)))
-OBJS += $(patsubst $(SRC_DIR)/guid/%.cc, $(INT_DIR)/guid/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/guid/*.cc)))
-OBJS += $(patsubst $(SRC_DIR)/guid/%.cpp, $(INT_DIR)/guid/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/guid/*.cpp)))
-#子目录
 OBJS += $(patsubst $(SRC_DIR)/laoi/%.c, $(INT_DIR)/laoi/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/laoi/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/laoi/%.m, $(INT_DIR)/laoi/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/laoi/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/laoi/%.cc, $(INT_DIR)/laoi/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/laoi/*.cc)))
@@ -215,7 +210,6 @@ pre_build:
 	mkdir -p $(TARGET_DIR)
 	mkdir -p $(INT_DIR)/bitarray
 	mkdir -p $(INT_DIR)/bson
-	mkdir -p $(INT_DIR)/guid
 	mkdir -p $(INT_DIR)/laoi
 	mkdir -p $(INT_DIR)/lcjson
 	mkdir -p $(INT_DIR)/lcodec

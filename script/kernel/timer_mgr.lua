@@ -1,12 +1,12 @@
 --timer_mgr.lua
 local ltimer          = require("ltimer")
-local lguid           = require("lguid")
+local lcodec          = require("lcodec")
 local log_err         = logger.err
 local log_info        = logger.info
 local ipairs          = ipairs
 local tpack           = table.pack
 local tunpack         = table.unpack
-local new_guid        = lguid.guid_new
+local new_guid        = lcodec.guid_new
 local lclock_ms       = ltimer.clock_ms
 local lcron_next      = ltimer.cron_next
 

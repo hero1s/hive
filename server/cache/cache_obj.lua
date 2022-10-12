@@ -1,8 +1,8 @@
 -- cache_obj.lua
 -- cache的实体类
-local lguid        = require("lguid")
+local lcodec        = require("lcodec")
 local log_err       = logger.err
-local new_guid      = lguid.guid_new
+local new_guid      = lcodec.guid_new
 local check_failed  = hive.failed
 local check_success = hive.success
 
