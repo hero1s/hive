@@ -15,12 +15,13 @@
     mixin类似多继承，但是继承强调i'am，而mixin强调i'can.
     mixin无法实例化，必须依附到class上，mixin函数的self都是属主class对象
 --]]
-local pcall        = pcall
 local pairs        = pairs
+local xpcall       = xpcall
 local ssub         = string.sub
 local dgetinfo     = debug.getinfo
 local sformat      = string.format
 local setmetatable = setmetatable
+local dtraceback   = debug.traceback
 
 local mixin_tpls   = _ENV.mixin_tpls or {}
 
@@ -39,7 +40,7 @@ local function invoke(class, object, method, ...)
     for _, mixin in ipairs(class.__mixins) do
         local mixin_method = mixin[method]
         if mixin_method then
-            local ok, res = pcall(mixin_method, object, ...)
+            local ok, res = xpcall(mixin_method, dtraceback, object, ...)
             if not ok then
                 error(sformat("mixin: %s invoke '%s' failed: %s.", mixin.__source, method, res))
             end
@@ -57,7 +58,7 @@ local function collect(class, object, method, ...)
     for _, mixin in ipairs(class.__mixins) do
         local mixin_method = mixin[method]
         if mixin_method then
-            local ok, res = pcall(mixin_method, object, ...)
+            local ok, res = xpcall(mixin_method, dtraceback, object, ...)
             if (not ok) or (not res) then
                 error(sformat("mixin: %s collect '%s' failed: %s.", mixin.__source, method, res))
                 return false

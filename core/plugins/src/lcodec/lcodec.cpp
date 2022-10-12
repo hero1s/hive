@@ -3,34 +3,24 @@
 
 namespace lcodec {
 
-    static serializer* def_seri = nullptr;
-
+    thread_local serializer thread_seri;
     static slice* encode_slice(lua_State* L) {
-        return def_seri->encode_slice(L);
+        return thread_seri.encode_slice(L);
     }
     static int decode_slice(lua_State* L, slice* buf) {
-        return def_seri->decode_slice(L, buf);
+        return thread_seri.decode_slice(L, buf);
     }
     static int serialize(lua_State* L) {
-        return def_seri->serialize(L);
+        return thread_seri.serialize(L);
     }
     static int unserialize(lua_State* L) {
-        return def_seri->unserialize(L);
+        return thread_seri.unserialize(L);
     }
     static int encode(lua_State* L) {
-        return def_seri->encode(L);
+        return thread_seri.encode(L);
     }
     static int decode(lua_State* L, const char* buf, size_t len) {
-        return def_seri->decode(L, buf, len);
-    }
-    static serializer* new_serializer() {
-        return new serializer();
-    }
-
-    static void init_static_codec() {
-        if (!def_seri) {
-            def_seri = new serializer();
-        }
+        return thread_seri.decode(L, buf, len);
     }
 
     luakit::lua_table open_lcodec(lua_State* L) {
@@ -42,7 +32,14 @@ namespace lcodec {
         llcodec.set_function("unserialize", unserialize);
         llcodec.set_function("encode_slice", encode_slice);
         llcodec.set_function("decode_slice", decode_slice);
-        llcodec.set_function("new_serializer", new_serializer);
+        llcodec.set_function("guid_new", guid_new);
+        llcodec.set_function("guid_string", guid_string);
+        llcodec.set_function("guid_tostring", guid_tostring);
+        llcodec.set_function("guid_number", guid_number);
+        llcodec.set_function("guid_source", guid_source);
+        llcodec.set_function("guid_group", guid_group);
+        llcodec.set_function("guid_index", guid_index);
+        llcodec.set_function("guid_time", guid_time);
         kit_state.new_class<slice>(
             "size", &slice::size,
             "read", &slice::read,
@@ -50,21 +47,12 @@ namespace lcodec {
             "string", &slice::string,
             "contents", &slice::contents
             );
-        kit_state.new_class<serializer>(
-            "encode", &serializer::encode,
-            "decode", &serializer::decode,
-            "serialize", &serializer::serialize,
-            "unserialize", &serializer::unserialize,
-            "encode_slice", &serializer::encode_slice,
-            "decode_slice", &serializer::decode_slice
-            );
         return llcodec;
     }
 }
 
 extern "C" {
     LUALIB_API int luaopen_lcodec(lua_State* L) {
-        lcodec::init_static_codec();
         auto lluabus = lcodec::open_lcodec(L);
         return lluabus.push_stack();
     }

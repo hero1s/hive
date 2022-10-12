@@ -6,4 +6,5 @@
 #include "bufpool.h"
 #include "shmpool.h"
 #include "bufqueue.h"
+#include "guid.h"
 

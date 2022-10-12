@@ -25,6 +25,9 @@
     <ClInclude Include="src\lcodec\bufqueue.h">
       <Filter>lcodec</Filter>
     </ClInclude>
+    <ClInclude Include="src\lcodec\guid.h">
+      <Filter>lcodec</Filter>
+    </ClInclude>
     <ClInclude Include="src\lcodec\lcodec.h">
       <Filter>lcodec</Filter>
     </ClInclude>

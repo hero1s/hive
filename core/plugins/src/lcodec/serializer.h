@@ -20,7 +20,8 @@ namespace lcodec {
     const uint8_t type_str_shrt     = 9;
     const uint8_t type_str_long     = 10;
     const uint8_t type_index        = 11;
-    const uint8_t type_max          = 12;
+    const uint8_t type_undefine     = 12;
+    const uint8_t type_max          = 13;
 
     const uint8_t max_encode_depth  = 16;
     const uint8_t max_share_string  = 255;
@@ -29,21 +30,19 @@ namespace lcodec {
     class serializer {
     public:
         serializer() {
-            m_buffer = new var_buffer();
         }
 
         ~serializer() {
-            delete m_buffer;
         }
 
         slice* encode_slice(lua_State* L) {
-            m_buffer->reset();
+            m_buffer.reset();
             m_sshares.clear();
             int n = lua_gettop(L);
             for (int i = 1; i <= n; i++) {
                 encode_one(L, i, 0);
             }
-            return m_buffer->get_slice();
+            return m_buffer.get_slice();
         }
 
         int encode(lua_State* L) {
@@ -68,19 +67,19 @@ namespace lcodec {
         }
 
         int decode(lua_State* L, const char* buf, size_t len) {
-            m_buffer->reset();
-            m_buffer->push_data((uint8_t*)buf, len);
-            return decode_slice(L, m_buffer->get_slice());
+            m_buffer.reset();
+            m_buffer.push_data((uint8_t*)buf, len);
+            return decode_slice(L, m_buffer.get_slice());
         }
 
         int serialize(lua_State* L) {
-            m_buffer->reset();
+            m_buffer.reset();
             size_t data_len = 0;
             luaL_optinteger(L, 2, 0);
             int line = luaL_optinteger(L, 2, 0);
             int max_depth = luaL_optinteger(L, 3, 6);
             serialize_one(L, 1, 1, line,max_depth);
-            const char* data = (const char*)m_buffer->data(&data_len);
+            const char* data = (const char*)m_buffer.data(&data_len);
             lua_pushlstring(L, data, data_len);
             return 1;
         }
@@ -192,6 +191,7 @@ namespace lcodec {
                 lua_isinteger(L, idx) ? integer_encode(lua_tointeger(L, idx)) : number_encode(lua_tonumber(L, idx));
                 break;
             default:
+                value_encode(type_undefine);
                 break;
             }
         }
@@ -277,6 +277,9 @@ namespace lcodec {
             case type_int64:
                 lua_pushinteger(L, value_decode<int64_t>(L, buf));
                 break;
+            case type_undefine:
+                lua_pushstring(L, "undefine");
+                break;
             default:
                 lua_pushinteger(L, type - type_max);
                 break;
@@ -291,11 +294,11 @@ namespace lcodec {
 
         template<typename T>
         void value_encode(T data) {
-            m_buffer->push_data((const uint8_t*)&data, sizeof(T));
+            m_buffer.push_data((const uint8_t*)&data, sizeof(T));
         }
 
         void value_encode(const char* data, size_t len) {
-            m_buffer->push_data((const uint8_t*)data, len);
+            m_buffer.push_data((const uint8_t*)data, len);
         }
 
         template<typename T>
@@ -308,7 +311,7 @@ namespace lcodec {
         }
 
         inline void serialize_value(const char* str) {
-            m_buffer->push_data((const uint8_t*)str, strlen(str));
+            m_buffer.push_data((const uint8_t*)str, strlen(str));
         }
 
         inline void serialize_udata(const char* data) {
@@ -329,7 +332,7 @@ namespace lcodec {
             serialize_value("'");
             const char* str = luaL_checklstring(L, index, &sz);
             if (sz > 0) {
-                m_buffer->push_data((const uint8_t*)str, sz);
+                m_buffer.push_data((const uint8_t*)str, sz);
             }
             serialize_value("'");
         }
@@ -407,7 +410,7 @@ namespace lcodec {
         }
 
     public:
-        var_buffer* m_buffer;
+        var_buffer m_buffer;
         std::vector<std::string> m_sshares;
     };
 }

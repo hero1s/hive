@@ -119,21 +119,33 @@ namespace ltimer {
 		}
 	}
 
+	thread_local lua_timer thread_timer;
+	static void timer_insert(uint64_t timer_id, size_t escape) {
+		thread_timer.insert(timer_id, escape);
+	}
+
+	static integer_vector timer_update(size_t elapse) {
+		return thread_timer.update(elapse);
+	}
+
+	static luakit::variadic_results timer_time(lua_State* L) {
+		luakit::kit_state kit_state(L);
+		return kit_state.as_return(now_ms(), steady_ms());
+	}
+
 	luakit::lua_table open_ltimer(lua_State* L) {
 		luakit::kit_state kit_state(L);
 		auto luatimer = kit_state.new_table();
-		kit_state.new_class<lua_timer>("insert", &lua_timer::insert, "update", &lua_timer::update);
-		luatimer.set_function("new", []() { return new lua_timer(); });
+		luatimer.set_function("time", timer_time);
+		luatimer.set_function("insert", timer_insert);
+		luatimer.set_function("update", timer_update);
+		luatimer.set_function("now", []() { return now(); });
 		luatimer.set_function("now", []() { return now(); });
 		luatimer.set_function("now_ms", []() { return now_ms(); });
 		luatimer.set_function("clock", []() { return steady(); });
 		luatimer.set_function("clock_ms", []() { return steady_ms(); });
 		luatimer.set_function("sleep", [](uint64_t ms) { return sleep(ms); });
 		luatimer.set_function("cron_next", cron_next);
-		luatimer.set_function("time", [](lua_State* L) {
-			luakit::kit_state kit_state(L);
-			return kit_state.as_return(now_ms(), steady_ms());
-			});
 		return luatimer;
 	}
 }

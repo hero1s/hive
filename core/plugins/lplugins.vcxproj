@@ -15,6 +15,7 @@
     <ClInclude Include="src\lcodec\buffer.h"/>
     <ClInclude Include="src\lcodec\bufpool.h"/>
     <ClInclude Include="src\lcodec\bufqueue.h"/>
+    <ClInclude Include="src\lcodec\guid.h"/>
     <ClInclude Include="src\lcodec\lcodec.h"/>
     <ClInclude Include="src\lcodec\serializer.h"/>
     <ClInclude Include="src\lcodec\shm.h"/>
