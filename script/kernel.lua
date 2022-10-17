@@ -87,8 +87,14 @@ function hive.startup(entry)
     local timer_mgr = hive.get("timer_mgr")
     timer_mgr:once(10 * 1000, function()
         hive.service_status = ServiceStatus.RUN
-        logger.info("service start run status:%s",hive.name)
+        logger.info("service start run status:%s", hive.name)
     end)
+    update_mgr:update(ltime())
+    --开启debug模式
+    local debug = environ.number("HIVE_DEBUG", 0)
+    if debug == 1 then
+        hive.check_endless_loop()
+    end
 end
 
 --底层驱动

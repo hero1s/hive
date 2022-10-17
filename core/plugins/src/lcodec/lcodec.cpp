@@ -1,3 +1,4 @@
+#define LUA_LIB
 
 #include "lcodec.h"
 
@@ -23,6 +24,24 @@ namespace lcodec {
         return thread_seri.decode(L, buf, len);
     }
 
+    static int hash_code(lua_State* L) {
+        size_t hcode = 0;
+        int type = lua_type(L, 1);
+        if (type == LUA_TNUMBER) {
+            hcode = std::hash<int64_t>{}(lua_tointeger(L, 1));
+        } else if (type == LUA_TSTRING) {
+            hcode = std::hash<std::string>{}(lua_tostring(L, 1));
+        } else {
+            luaL_error(L, "hashkey only support number or string!");
+        }
+        size_t mod = luaL_optinteger(L, 2, 0);
+        if (mod > 0) {
+            hcode = (hcode % mod) + 1;
+        }
+        lua_pushinteger(L, hcode);
+        return 1;
+    }
+
     luakit::lua_table open_lcodec(lua_State* L) {
         luakit::kit_state kit_state(L);
         auto llcodec = kit_state.new_table();
@@ -42,6 +61,7 @@ namespace lcodec {
         llcodec.set_function("guid_group", guid_group);
         llcodec.set_function("guid_index", guid_index);
         llcodec.set_function("guid_time", guid_time);
+        llcodec.set_function("hash_code", hash_code);
         kit_state.new_class<slice>(
             "size", &slice::size,
             "read", &slice::read,

@@ -60,6 +60,7 @@ end
 local check_close_loop = true
 function hive.check_endless_loop()
     if check_close_loop then
+        log_err("open check_endless_loop will degrade performance!")
         local debug_hook = function()
             local now = otime()
             if now - hive.now >= 10 then

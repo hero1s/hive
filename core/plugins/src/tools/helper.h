@@ -9,6 +9,7 @@ namespace tools
 	class CHelper
 	{
 	public:
+		//网络
 		static std::string GetLanIP();
 		static std::string GetNetIP();
 		static bool IsHaveNetIP();
@@ -17,6 +18,8 @@ namespace tools
 		static uint32_t IPToValue(const std::string& strIP);
 		static std::string ValueToIP(uint32_t ulAddr);
 		static bool PortIsUsed(int port);
+		static std::string GetHostByDomain(std::string& domain);
+		//硬件信息
 		static void MemAvailable(double& total, double& available);
 		static double CpuUsePercent();
 		static float MemUsage(int pid);

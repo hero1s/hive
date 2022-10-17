@@ -239,7 +239,69 @@ namespace tools
 		return false;
 	}
 
-
+	std::string CHelper::GetHostByDomain(std::string& domain)
+	{
+		std::string host_ip;
+#ifdef WIN32
+		WSADATA wsaData;
+		int iResult = 0;
+		struct hostent* host;
+		struct in_addr addr;
+		iResult = WSAStartup(MAKEWORD(2, 2), &wsaData); /*init winsocket*/
+		if (iResult != 0)
+		{
+			fprintf(stderr, "init winsocket failed\n");
+			return "";
+		}
+		host = gethostbyname(domain.c_str());
+		if (NULL == host) {
+			fprintf(stderr, "gethostbyname error:%d", WSAGetLastError());
+			return "";
+		}
+		if (host->h_addrtype == AF_INET) {
+			if (*(host->h_addr_list) != NULL)
+			{
+				addr.s_addr = *(u_long*)(*(host->h_addr_list));
+				char* ipAddr = inet_ntoa(addr);
+				return std::string(ipAddr);
+			}
+		}
+#else
+		struct addrinfo hints;
+		struct addrinfo* result, * result_pointer;
+		memset(&hints, 0, sizeof(struct addrinfo));
+		hints.ai_family = AF_UNSPEC;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_flags = AI_CANONNAME;
+		hints.ai_protocol = 0;  /* any protocol */
+		auto ret = getaddrinfo(domain.c_str(), NULL, &hints, &result);
+		if (ret != 0)
+		{
+			fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(ret));
+			return "";
+		}
+		/* traverse the returned list and output the ip addresses */
+		for (result_pointer = result; result_pointer != NULL; result_pointer = result_pointer->ai_next)
+		{
+			if (AF_INET == result_pointer->ai_family)
+			{
+				//struct sockaddr_in *sockaddr_ipv4 = (struct sockaddr_in *)result_pointer->ai_addr;
+				//char *ipAddr = inet_ntoa(sockaddr_ipv4->sin_addr);
+				char ipAddr[1024 + 1] = "";
+				ret = getnameinfo(result_pointer->ai_addr, result_pointer->ai_addrlen, ipAddr, sizeof(ipAddr), NULL, 0, NI_NUMERICHOST);
+				if (ret != 0)
+				{
+					fprintf(stderr, "error in getnameinfo: %s \n", gai_strerror(ret));
+					continue;
+				}
+				host_ip = std::string(ipAddr);
+				break;
+			}
+		}
+		freeaddrinfo(result);
+#endif
+		return host_ip;
+	}
 
 #ifdef WIN32
 	__int64 CompareFileTime(FILETIME time1, FILETIME time2)
@@ -379,6 +441,8 @@ namespace tools
 		helper.set_function("value_to_ip", [](uint32_t addr) { return CHelper::ValueToIP(addr); });
 		helper.set_function("is_lan_ip", [](std::string ip) { return CHelper::IsLanIP(CHelper::IPToValue(ip)); });
 		helper.set_function("port_is_used", [](int port) { return CHelper::PortIsUsed(port); });
+		helper.set_function("get_host_by_domain", [](std::string domain) { return CHelper::GetHostByDomain(domain); });
+
 		helper.set_function("mem_available", [](lua_State* L) {
 			luakit::kit_state kit_state(L);
 			double total = 0, available = 0;

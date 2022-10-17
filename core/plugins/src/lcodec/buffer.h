@@ -90,9 +90,9 @@ namespace lcodec {
             return 0;
         }
 
-        slice* get_slice(size_t len = 0) {
-            size_t data_len = m_tail - m_head;
-            m_slice.attach(m_head, len == 0 ? data_len : len);
+        slice* get_slice(size_t len = 0, uint16_t offset = 0) {
+            size_t data_len = m_tail - (m_head + offset);
+            m_slice.attach(m_head + offset, len == 0 ? data_len : len);
             return &m_slice;
         }
 

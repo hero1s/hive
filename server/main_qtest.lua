@@ -30,5 +30,6 @@ hive.startup(function() --初始化test
     --import("qtest/nacos_test.lua")
     --import("qtest/bitarray_test.lua")
     --import("qtest/snapshot_test.lua")
-    import("qtest/guid_test.lua")
+    --import("qtest/guid_test.lua")
+    import("qtest/helper_test.lua")
 end)

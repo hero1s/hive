@@ -29,12 +29,6 @@ namespace lcodec {
 
     class serializer {
     public:
-        serializer() {
-        }
-
-        ~serializer() {
-        }
-
         slice* encode_slice(lua_State* L) {
             m_buffer.reset();
             m_sshares.clear();
