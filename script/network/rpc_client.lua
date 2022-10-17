@@ -1,10 +1,13 @@
 -- rpc_client.lua
+local lcodec         = require("lcodec")
+
 local tunpack        = table.unpack
 local tpack          = table.pack
 local log_err        = logger.err
 local log_info       = logger.info
 local hxpcall        = hive.xpcall
 local hhash_code     = hive.hash_code
+local new_guid       = lcodec.guid_new
 
 local event_mgr      = hive.get("event_mgr")
 local socket_mgr     = hive.get("socket_mgr")
@@ -35,6 +38,7 @@ function RpcClient:__init(holder, ip, port)
     self.holder = holder
     self.port   = port
     self.ip     = ip
+    self.uuid   = new_guid()
     self:setup()
 end
 
@@ -52,6 +56,7 @@ function RpcClient:setup()
 end
 
 function RpcClient:on_second(clock_ms)
+    local _lock<close> = thread_mgr:lock("rpc-client-second" .. self.uuid)
     if not self:is_alive() then
         if self.auto_reconnect and clock_ms >= self.next_connect_time then
             self.next_connect_time = clock_ms + RECONNECT_TIME

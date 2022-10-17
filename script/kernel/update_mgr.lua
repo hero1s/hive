@@ -24,6 +24,7 @@ prop:reader("last_day", 0)
 prop:reader("last_hour", 0)
 prop:reader("last_minute", 0)
 prop:reader("max_mem_usage", 0)
+prop:reader("max_lua_mem_usage", 0)
 prop:reader("quit_objs", {})
 prop:reader("hour_objs", {})
 prop:reader("frame_objs", {})
@@ -182,14 +183,16 @@ function UpdateMgr:detach_quit(obj)
 end
 
 function UpdateMgr:monitor_mem()
-    local mem = cut_tail(mem_usage(),2)
+    local mem           = cut_tail(mem_usage(), 1)
+    local lua_mem = cut_tail(collectgarbage("count") / 1024, 1)
     if mem > self.max_mem_usage then
         self.max_mem_usage = mem
-        self.lua_mem_usage = cut_tail(collectgarbage("count") / 1024,2)
-        log_warn("UpdateMgr][monitor_mem] mem:%s M,lua_mem: %s M,threads:%s/%s", self.max_mem_usage, self.lua_mem_usage,thread_mgr:size())
-    else
-        log_info("UpdateMgr][monitor_mem] mem:%s M,lua_mem: %s M,threads:%s/%s", self.max_mem_usage, self.lua_mem_usage,thread_mgr:size())
     end
+    if lua_mem > self.max_lua_mem_usage then
+        self.max_lua_mem_usage = lua_mem
+    end
+    log_info("UpdateMgr][monitor_mem] mem:%s/%s M,lua_mem: %s/%s M,threads:%s/%s",
+             mem, self.max_mem_usage, lua_mem, self.max_lua_mem_usage, thread_mgr:size())
 end
 
 hive.update_mgr = UpdateMgr()

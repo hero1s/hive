@@ -222,7 +222,7 @@ export %s error:%s!
     else
         local check_func = check_valid:get_check_func(table_name)
         if check_func then
-            local records = dofile(filename)
+            local records  = dofile(filename)
             local ret, err = check_func(records)
             if not ret then
                 error(sformat([[
@@ -345,6 +345,20 @@ local function is_excel_file(file)
     return false
 end
 
+--导出lua文件名
+local function get_export_file_name(fname)
+    local _, idx = fname:find(".*_")
+    if idx then
+        return slower(fname:sub(1, idx - 1))
+    else
+        idx = fname:match(".+()%.%w+$")
+        if idx then
+            return slower(fname:sub(1, idx - 1))
+        end
+        return slower(fname)
+    end
+end
+
 --入口函数
 local function export_excel(input, output, recursion)
     local files = ldir(input)
@@ -378,14 +392,15 @@ local function export_excel(input, output, recursion)
                 break
             end
 
-            local title = slower(sheet_name)
-            local ret   = export_sheet_to_table(sheet, output, title)
+            local fname  = lfilename(fullname)
+            local title  = get_export_file_name(fname)
+            local ret    = export_sheet_to_table(sheet, output, title)
             if ret then
-                if file_names[sheet_name] then
+                if file_names[title] then
                     print(sformat("repeated sheet_name:%s old_name:%s file_name:%s", sheet_name, file_names[sheet_name], fullname))
                     goto continue
                 end
-                file_names[sheet_name] = fullname
+                file_names[title] = fullname
             end
         end
         :: continue ::

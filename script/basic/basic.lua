@@ -21,6 +21,7 @@ import("basic/listener.lua")
 local otime      = os.time
 local odate      = os.date
 local log_err    = logger.err
+local log_warn   = logger.warn
 local sformat    = string.format
 local tpack      = table.pack
 local tunpack    = table.unpack
@@ -60,7 +61,7 @@ end
 local check_close_loop = true
 function hive.check_endless_loop()
     if check_close_loop then
-        log_err("open check_endless_loop will degrade performance!")
+        log_warn("open check_endless_loop will degrade performance!")
         local debug_hook = function()
             local now = otime()
             if now - hive.now >= 10 then
