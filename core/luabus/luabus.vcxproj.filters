@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="src\io_buffer.h">
-      <Filter>inc</Filter>
-    </ClInclude>
     <ClInclude Include="src\lua_socket_mgr.h">
       <Filter>inc</Filter>
     </ClInclude>

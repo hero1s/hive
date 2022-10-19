@@ -1327,7 +1327,7 @@ lobjectid(lua_State *L) {
 	return 1;
 }
 
-LUALIB_API int
+LUAMOD_API int
 luaopen_bson(lua_State *L) {
 	luaL_checkversion(L);
 	int i;
@@ -1366,3 +1366,4 @@ luaopen_bson(lua_State *L) {
 
 	return 1;
 }
+

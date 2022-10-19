@@ -1,6 +1,5 @@
 ﻿#include "stdafx.h"
 #include "socket_helper.h"
-#include "io_buffer.h"
 #include "socket_mgr.h"
 #include "socket_stream.h"
 #include "socket_listener.h"
@@ -230,20 +229,6 @@ int socket_mgr::connect(std::string& err, const char node_name[], const char ser
 	int token = new_token();
 	m_objects[token] = stm;
 	return token;
-}
-
-void socket_mgr::set_send_buffer_size(uint32_t token, size_t size) {
-	auto node = get_object(token);
-	if (node && size > 0) {
-		node->set_send_buffer_size(size);
-	}
-}
-
-void socket_mgr::set_recv_buffer_size(uint32_t token, size_t size) {
-	auto node = get_object(token);
-	if (node && size > 0) {
-		node->set_recv_buffer_size(size);
-	}
 }
 
 void socket_mgr::set_timeout(uint32_t token, int duration) {

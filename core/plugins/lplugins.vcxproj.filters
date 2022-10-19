@@ -99,7 +99,7 @@
     <ClCompile Include="src\bitarray\bitarray.c">
       <Filter>bitarray</Filter>
     </ClCompile>
-    <ClCompile Include="src\bson\bson.c">
+    <ClCompile Include="src\bson\lua-bson.c">
       <Filter>bson</Filter>
     </ClCompile>
     <ClCompile Include="src\laoi\laoi.cpp">

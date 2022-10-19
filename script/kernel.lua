@@ -71,7 +71,7 @@ end
 
 --启动
 function hive.startup(entry)
-    hive.now                   = 0
+    hive.now                   = os.time()
     hive.frame                 = 0
     hive.yield                 = coroutine.yield
     hive.resume                = coroutine.resume

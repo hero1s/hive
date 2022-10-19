@@ -7,6 +7,8 @@
 #include "socket_stream.h"
 #include "fmt/core.h"
 
+constexpr int IO_BUFFER_SEND = 4 * 1024;
+
 static const std::string s_handshake_verify = "CLBY20220816CLBY&*^%$#@!";
 
 #ifdef __linux
@@ -291,27 +293,22 @@ int socket_stream::sendv(const sendv_item items[], int count)
 
 int socket_stream::stream_send(const char* data, size_t data_len)
 {
-	int send_len = data_len;
 	if (m_link_status != elink_status::link_connected)
 		return 0;
-	if (m_send_buffer.data_len() >= IO_BUFFER_SEND)
+	if (m_send_buffer.size() >= IO_BUFFER_SEND)
 	{
 		do_send(UINT_MAX, false);
 	}
-	while (data_len > 0) {
-		size_t space_len;
-		m_send_buffer.peek_space(&space_len);
-		if (space_len == 0) {
-			on_error(fmt::format("send-buffer-full:{}", m_send_buffer.data_len()).c_str());
+	if (data_len > 0) {
+		auto space = m_send_buffer.peek_space(data_len);
+		if (space == nullptr) {
+			on_error(fmt::format("send-buffer-full:{}", m_send_buffer.size()).c_str());
 			return 0;
 		}
-		size_t try_len = std::min<size_t>(space_len, data_len);
-		if (!m_send_buffer.push_data(data, try_len)) {
-			on_error(fmt::format("send-buffer-failed:{}", try_len).c_str());
+		if (!m_send_buffer.push_data((const uint8_t*)data, data_len)) {
+			on_error(fmt::format("send-buffer-failed:{}", data_len).c_str());
 			return 0;
 		}
-		data_len -= try_len;
-		data += try_len;
 	}
 #if _MSC_VER
 	if (!wsa_send_empty(m_socket, m_send_ovl)) {
@@ -325,7 +322,7 @@ int socket_stream::stream_send(const char* data, size_t data_len)
 		return 0;
 	}
 #endif
-	return send_len;
+	return data_len;
 }
 
 #ifdef _MSC_VER
@@ -402,7 +399,7 @@ void socket_stream::do_send(size_t max_len, bool is_eof) {
 	size_t total_send = 0;
 	while (total_send < max_len && (m_link_status != elink_status::link_closed)) {
 		size_t data_len = 0;
-		auto* data = m_send_buffer.peek_data(&data_len);
+		auto* data = m_send_buffer.data(&data_len);
 		if (data_len == 0) {
 			if (!m_mgr->watch_send(m_socket, this, false)) {
 				on_error("do-watch-error");
@@ -441,7 +438,7 @@ void socket_stream::do_send(size_t max_len, bool is_eof) {
 			return;
 		}
 		total_send += send_len;
-		m_send_buffer.pop_data((size_t)send_len);
+		m_send_buffer.pop_size((size_t)send_len);
 	}
 	if (is_eof || max_len == 0) {
 		on_error("connection-lost");
@@ -452,14 +449,13 @@ void socket_stream::do_recv(size_t max_len, bool is_eof)
 {
 	size_t total_recv = 0;
 	while (total_recv < max_len && m_link_status == elink_status::link_connected) {
-		size_t space_len = 0;
-		auto* space = m_recv_buffer.peek_space(&space_len);
-		if (space_len == 0) {
-			on_error(fmt::format("do-recv-buffer-full:{}", m_recv_buffer.data_len()).c_str());
+		auto* space = m_recv_buffer.peek_space(IO_BUFFER_SEND);
+		if (space == nullptr) {
+			on_error(fmt::format("do-recv-buffer-full:{}", m_recv_buffer.size()).c_str());
 			return;
 		}
 
-		size_t try_len = std::min<size_t>(space_len, max_len - total_recv);
+		size_t try_len = std::min<size_t>(IO_BUFFER_SEND, max_len - total_recv);
 		int recv_len = recv(m_socket, (char*)space, (int)try_len, 0);
 		if (recv_len < 0) {
 			int err = get_socket_error();
@@ -505,7 +501,7 @@ void socket_stream::dispatch_package() {
 	while (m_link_status == elink_status::link_connected) {
 		uint64_t package_size = 0;
 		size_t data_len = 0, header_len = 0;
-		auto* data = m_recv_buffer.peek_data(&data_len);
+		auto* data = m_recv_buffer.data(&data_len);
 		if (eproto_type::proto_rpc == m_proto_type) {
 			// 检测握手
 			if (!m_handshake) {
@@ -562,7 +558,7 @@ void socket_stream::dispatch_package() {
 		}
 
 		// 接收缓冲读游标调整
-		m_recv_buffer.pop_data(header_len + (size_t)package_size);
+		m_recv_buffer.pop_size(header_len + (size_t)package_size);
 		m_last_recv_time = steady_ms();
 
 		// 防止单个连接处理太久，不能大于20ms
@@ -582,7 +578,7 @@ int socket_stream::handshake_rpc(BYTE* data, size_t data_len) {
 			return -1;
 		}
 	}
-	m_recv_buffer.pop_data(s_handshake_verify.length());
+	m_recv_buffer.pop_size(s_handshake_verify.length());
 	m_last_recv_time = steady_ms();
 	m_handshake = true;
 	return 0;
