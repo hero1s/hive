@@ -7,7 +7,7 @@
 #include "socket_stream.h"
 #include "fmt/core.h"
 
-constexpr int IO_BUFFER_SEND = 4 * 1024;
+constexpr int IO_BUFFER_SEND = 32 * 1024;
 
 static const std::string s_handshake_verify = "CLBY20220816CLBY&*^%$#@!";
 

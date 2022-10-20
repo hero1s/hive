@@ -30,44 +30,42 @@ local function deep_copy(src, dst)
     return ndst
 end
 
+local function class_raw_call(method, class, object, ...)
+    local func = rawget(class.__vtbl, method)
+    if type(func) == "function" then
+        func(object, ...)
+    end
+end
+
+local function class_mixin_call(method, class, object, ...)
+    for _, mixin in ipairs(class.__mixins) do
+        local func = rawget(mixin.__methods, method)
+        if type(func) == "function" then
+            func(object, ...)
+        end
+    end
+end
+
 local function object_init(class, object, ...)
     if class.__super then
         object_init(class.__super, object, ...)
     end
-    if type(class.__init) == "function" then
-        class.__init(object, ...)
-    end
-    for _, mixin in ipairs(class.__mixins) do
-        if type(mixin.__init) == "function" then
-            mixin.__init(object, ...)
-        end
-    end
+    class_raw_call("__init", class, object, ...)
+    class_mixin_call("__init", class, object, ...)
     return object
 end
 
 local function object_release(class, object, ...)
-    for _, mixin in ipairs(class.__mixins) do
-        if type(mixin.__release) == "function" then
-            mixin.__release(object, ...)
-        end
-    end
-    if type(class.__release) == "function" then
-        class.__release(object, ...)
-    end
+    class_mixin_call("__release", class, object, ...)
+    class_raw_call("__release", class, object, ...)
     if class.__super then
         object_release(class.__super, object, ...)
     end
 end
 
 local function object_defer(class, object, ...)
-    for _, mixin in ipairs(class.__mixins) do
-        if type(mixin.__defer) == "function" then
-            mixin.__defer(object, ...)
-        end
-    end
-    if type(class.__defer) == "function" then
-        class.__defer(object, ...)
-    end
+    class_mixin_call("__defer", class, object, ...)
+    class_raw_call("__defer", class, object, ...)
     if class.__super then
         object_defer(class.__super, object, ...)
     end

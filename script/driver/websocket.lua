@@ -27,6 +27,7 @@ prop:reader("host", nil)
 prop:reader("token", nil)
 prop:reader("alive", false)
 prop:reader("alive_time", 0)
+prop:reader("proto_type", 2)
 prop:reader("session", nil)         --连接成功对象
 prop:reader("listener", nil)
 prop:reader("recvbuf", "")
@@ -55,14 +56,13 @@ function WebSocket:listen(ip, port)
     if self.listener then
         return true
     end
-    local proto_type = 2
-    self.listener    = socket_mgr.listen(ip, port, proto_type)
+    self.listener    = socket_mgr.listen(ip, port, self.proto_type)
     if not self.listener then
-        log_err("[WebSocket][listen] failed to listen: %s:%d type=%d", ip, port, proto_type)
+        log_err("[WebSocket][listen] failed to listen: %s:%d type=%d", ip, port, self.proto_type)
         return false
     end
     self.ip, self.port = ip, port
-    log_info("[WebSocket][listen] start listen at: %s:%d type=%d", ip, port, proto_type)
+    log_info("[WebSocket][listen] start listen at: %s:%d type=%d", ip, port, self.proto_type)
     self.listener.on_accept = function(session)
         thread_mgr:fork(function()
             hxpcall(self.on_socket_accept, "on_socket_accept: %s", self, session, ip, port)

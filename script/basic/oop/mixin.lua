@@ -27,7 +27,7 @@ local mixin_tpls   = _ENV.mixin_tpls or {}
 
 local function tab_copy(src, dst)
     local ndst = dst or {}
-    for field, value in pairs(src) do
+    for field, value in pairs(src or {}) do
         ndst[field] = value
     end
     return ndst

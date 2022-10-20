@@ -99,12 +99,12 @@ function MongoMgr:update(db_name, coll_name, obj, selector, upsert, multi)
     return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
 end
 
-function MongoMgr:find_and_modify(db_name, coll_name, obj, selector, upsert, fields)
+function MongoMgr:find_and_modify(db_name, coll_name, obj, selector, upsert, fields, new)
     local mongodb = self:get_db(db_name)
     if mongodb then
-        local ok, res_oe = mongodb:find_and_modify(coll_name, obj, selector, upsert, fields)
+        local ok, res_oe = mongodb:find_and_modify(coll_name, obj, selector, upsert, fields, new)
         if not ok then
-            log_err("[MongoMgr][find_and_modify] execute %s failed, because: %s", tpack(coll_name, obj, selector, upsert, fields), res_oe)
+            log_err("[MongoMgr][find_and_modify] execute %s failed, because: %s", tpack(coll_name, obj, selector, upsert, fields, new), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end

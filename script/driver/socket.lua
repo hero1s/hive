@@ -19,6 +19,7 @@ prop:reader("host", nil)
 prop:reader("token", nil)
 prop:reader("alive", false)
 prop:reader("alive_time", 0)
+prop:reader("proto_type", 2)
 prop:reader("session", nil)          --连接成功对象
 prop:reader("listener", nil)
 prop:reader("recvbuf", "")
@@ -41,18 +42,20 @@ function Socket:close()
     end
 end
 
-function Socket:listen(ip, port)
+function Socket:listen(ip, port, ptype)
     if self.listener then
         return true
     end
-    local proto_type = 2
-    self.listener    = socket_mgr.listen(ip, port, proto_type)
+    if ptype then
+        self.proto_type = ptype
+    end
+    self.listener = socket_mgr.listen(ip, port, self.proto_type)
     if not self.listener then
-        log_err("[Socket][listen] failed to listen: %s:%d type=%d", ip, port, proto_type)
+        log_err("[Socket][listen] failed to listen: %s:%d type=%d", ip, port, self.proto_type)
         return false
     end
     self.ip, self.port = ip, port
-    log_info("[Socket][listen] start listen at: %s:%d type=%d", ip, port, proto_type)
+    log_info("[Socket][listen] start listen at: %s:%d type=%d", ip, port, self.proto_type)
     self.listener.on_accept = function(session)
         thread_mgr:fork(function()
             hxpcall(self.on_socket_accept, "on_socket_accept: %s", self, session, ip, port)
@@ -61,14 +64,16 @@ function Socket:listen(ip, port)
     return true
 end
 
-function Socket:connect(ip, port)
+function Socket:connect(ip, port, ptype)
     if self.session then
         return true
     end
-    local proto_type    = 2
-    local session, cerr = socket_mgr.connect(ip, port, CONNECT_TIMEOUT, proto_type)
+    if ptype then
+        self.proto_type = ptype
+    end
+    local session, cerr = socket_mgr.connect(ip, port, CONNECT_TIMEOUT, self.proto_type)
     if not session then
-        log_err("[Socket][connect] failed to connect: %s:%d type=%d, err=%s", ip, port, proto_type, cerr)
+        log_err("[Socket][connect] failed to connect: %s:%d type=%d, err=%s", ip, port, self.proto_type, cerr)
         return false, cerr
     end
     --设置阻塞id

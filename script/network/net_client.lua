@@ -21,6 +21,7 @@ prop:reader("ip", nil)
 prop:reader("port", nil)
 prop:reader("alive", false)
 prop:reader("alive_time", 0)
+prop:reader("proto_type", 1)
 prop:reader("socket", nil)          --连接成功对象
 prop:reader("holder", nil)          --持有者
 prop:reader("wait_list", {})        --等待协议列表
@@ -38,10 +39,9 @@ function NetClient:connect(block)
     if self.socket then
         return true
     end
-    local proto_type   = 1
-    local socket, cerr = socket_mgr.connect(self.ip, self.port, NetwkTime.CONNECT_TIMEOUT, proto_type)
+    local socket, cerr = socket_mgr.connect(self.ip, self.port, NetwkTime.CONNECT_TIMEOUT, self.proto_type)
     if not socket then
-        log_err("[NetClient][connect] failed to connect: %s:%d type=%d, err=%s", self.ip, self.port, proto_type, cerr)
+        log_err("[NetClient][connect] failed to connect: %s:%d type=%d, err=%s", self.ip, self.port, self.proto_type, cerr)
         return false, cerr
     end
     --设置阻塞id

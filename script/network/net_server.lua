@@ -33,13 +33,14 @@ local NetServer        = class()
 local prop             = property(NetServer)
 prop:reader("ip", "")                   --监听ip
 prop:reader("port", 0)                  --监听端口
+prop:reader("proto_type", 1)
 prop:reader("sessions", {})             --会话列表
 prop:reader("session_type", "default")  --会话类型
 prop:reader("session_count", 0)         --会话数量
 prop:reader("listener", nil)            --监听器
 prop:reader("command_cds", {})          --CMD定制CD
 prop:accessor("coder", nil)             --编解码对象
-prop:accessor("log_client_msg", nil)     --消息日志函数
+prop:accessor("log_client_msg", nil)    --消息日志函数
 
 function NetServer:__init(session_type)
     self.session_type = session_type
@@ -54,16 +55,15 @@ function NetServer:setup(ip, port, induce)
         log_err("[NetServer][setup] ip:%s or port:%s is nil", ip, port)
         signal_quit()
     end
-    local listen_proto_type = 1
     local socket_mgr        = hive.get("socket_mgr")
     local real_port         = induce and (port + hive.index - 1) or port
-    self.listener           = socket_mgr.listen(ip, real_port, listen_proto_type)
+    self.listener           = socket_mgr.listen(ip, real_port, self.proto_type)
     if not self.listener then
-        log_err("[NetServer][setup] failed to listen: %s:%d type=%d", ip, real_port, listen_proto_type)
+        log_err("[NetServer][setup] failed to listen: %s:%d type=%d", ip, real_port, self.proto_type)
         signal_quit()
     end
     self.ip, self.port = ip, real_port
-    log_info("[NetServer][setup] start listen at: %s:%d type=%d", ip, real_port, listen_proto_type)
+    log_info("[NetServer][setup] start listen at: %s:%d type=%d", ip, real_port, self.proto_type)
     -- 安装回调
     self.listener.on_accept = function(session)
         thread_mgr:fork(function()
