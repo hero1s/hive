@@ -6,6 +6,10 @@ local Socket        = import("driver/socket.lua")
 
 local log_err       = logger.err
 local log_info      = logger.info
+local tunpack       = table.unpack
+local tinsert       = table.insert
+local tis_array     = table_ext.is_array
+local tdeep_copy    = table_ext.deep_copy
 local tjoin         = table_ext.join
 local ssub          = string.sub
 local sgsub         = string.gsub
@@ -100,6 +104,29 @@ local function salt_password(password, salt, iter)
         output = lxor_byte(output, inter)
     end
     return output
+end
+
+---排序参数/联合主键需要控制顺序,将参数写成数组模式{{k1=1},{k2=2}},单参数或不需要优先级可以{k1=1,k2=2}
+function MongoDB:sort_param(param)
+    local dst = {}
+    if type(param) == "table" then
+        if tis_array(param) then
+            for _, p in ipairs(param) do
+                for k, v in pairs(p) do
+                    tinsert(dst, k)
+                    tinsert(dst, v)
+                end
+            end
+        else
+            for k, v in pairs(param) do
+                tinsert(dst, k)
+                tinsert(dst, v)
+            end
+        end
+    else
+        log_err("sort_param is not table:%s", param)
+    end
+    return bson_encode_o(tunpack(dst))
 end
 
 function MongoDB:auth(username, password)
@@ -234,7 +261,11 @@ end
 -- 参数说明
 -- indexes={{key={open_id=1,platform_id=1},name="open_id-platform_id",unique=true}, }
 function MongoDB:create_indexes(co_name, indexes)
-    local succ, doc = self:runCommand("createIndexes", co_name, "indexes", indexes)
+    local tindexs = tdeep_copy(indexes)
+    for _, v in ipairs(tindexs) do
+        v.key = self:sort_param(v.key)
+    end
+    local succ, doc = self:runCommand("createIndexes", co_name, "indexes", tindexs)
     if not succ then
         return succ, doc
     end
@@ -284,6 +315,9 @@ function MongoDB:find_one(co_name, query, projection)
 end
 
 function MongoDB:find(co_name, query, projection, sortor, limit, skip)
+    if sortor and next(sortor) then
+        sortor = self:sort_param(sortor)
+    end
     local succ, reply = self:runCommand("find", co_name, "filter", query, "projection", projection or {}, "sort", sortor or {}, "limit", limit or 1, "skip", skip or 0)
     if not succ then
         return succ, reply

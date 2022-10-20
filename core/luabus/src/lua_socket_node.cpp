@@ -14,6 +14,8 @@ EXPORT_LUA_FUNCTION_AS(forward_by_group<msg_id::forward_random>, "forward_random
 EXPORT_LUA_FUNCTION_AS(forward_by_group<msg_id::forward_broadcast>, "forward_broadcast")
 EXPORT_LUA_FUNCTION(forward_hash)
 EXPORT_LUA_FUNCTION(close)
+EXPORT_LUA_FUNCTION(set_send_buffer_size)
+EXPORT_LUA_FUNCTION(set_recv_buffer_size)
 EXPORT_LUA_FUNCTION(set_timeout)
 EXPORT_LUA_FUNCTION(set_nodelay)
 EXPORT_LUA_FUNCTION(can_send)

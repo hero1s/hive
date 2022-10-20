@@ -24,6 +24,8 @@ struct lua_socket_node final
 	int forward_hash(lua_State* L);
 
 	void close();
+	void set_send_buffer_size(size_t size) { m_mgr->set_send_buffer_size(m_token, size); }
+	void set_recv_buffer_size(size_t size) { m_mgr->set_recv_buffer_size(m_token, size); }
 	void set_timeout(int ms) { m_mgr->set_timeout(m_token, ms); }
 	void set_nodelay(bool flag) { m_mgr->set_nodelay(m_token, flag); }
 	bool can_send() { return m_mgr->can_send(m_token); }

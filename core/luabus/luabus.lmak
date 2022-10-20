@@ -20,9 +20,7 @@ FLAGS = {
 --需要的include目录
 INCLUDES = {
 	"../luna/src",
-	"../plugins/src",
 	"../../extend/lua/lua",
-	"../../extend/luakit/include",
     "../../extend/fmt/include",
 	"../../extend/utility"
 }

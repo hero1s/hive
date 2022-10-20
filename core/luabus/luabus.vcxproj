@@ -7,6 +7,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\io_buffer.h"/>
     <ClInclude Include="src\lua_socket_mgr.h"/>
     <ClInclude Include="src\lua_socket_node.h"/>
     <ClInclude Include="src\socket_helper.h"/>
@@ -60,7 +61,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\luna\src;..\plugins\src;..\..\extend\lua\lua;..\..\extend\luakit\include;..\..\extend\fmt\include;..\..\extend\utility;$(SolutionDir)extend\mimalloc\mimalloc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\luna\src;..\..\extend\lua\lua;..\..\extend\fmt\include;..\..\extend\utility;$(SolutionDir)extend\mimalloc\mimalloc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
