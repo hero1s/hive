@@ -13,7 +13,6 @@ local fsstem    = lstdfs.stem
 local serialize = lcodec.serialize
 
 local LOG_LEVEL = llog.LOG_LEVEL
-local driver    = hive.get_logger()
 
 logger          = {}
 logfeature      = {}
@@ -25,18 +24,14 @@ function logger.init()
     local rolltype            = environ.number("HIVE_LOG_ROLL", 0)
     local maxline             = environ.number("HIVE_LOG_LINE", 100000)
     local maxdays             = environ.number("HIVE_LOG_DAYS", 7)
-    driver.option(path, service_name, index, rolltype, maxline, maxdays);
+    llog.set_max_line(maxline)
+    llog.set_clean_time(maxdays * 24 * 3600)
+    llog.option(path, service_name, index, rolltype);
     --设置日志过滤
     logger.filter(environ.number("HIVE_LOG_LVL", 1))
     --添加输出目标
-    driver.add_dest(service_name);
-    driver.add_lvl_dest(LOG_LEVEL.ERROR)
-    --设置daemon
-    driver.daemon(environ.status("HIVE_DAEMON"))
-end
-
-function logger.daemon(daemon)
-    driver.daemon(daemon)
+    llog.add_dest(service_name);
+    llog.add_lvl_dest(LOG_LEVEL.ERROR)
 end
 
 function logger.setup_graylog()
@@ -53,7 +48,7 @@ function logger.feature(name)
     end
     if not logfeature.features[name] then
         logfeature.features[name] = true
-        driver.add_dest(name)
+        llog.add_dest(name)
     end
 end
 
@@ -67,22 +62,22 @@ end
 
 function logger.filter(level)
     for lvl = LOG_LEVEL.DEBUG, LOG_LEVEL.FATAL do
-        --driver.filter(level, on/off)
-        driver.filter(lvl, lvl >= level)
+        --llog.filter(level, on/off)
+        llog.filter(lvl, lvl >= level)
     end
 end
 
 local function logger_output(feature, lvl, lvl_name, fmt, log_conf, ...)
-    if driver.is_filter(lvl) then
+    if llog.is_filter(lvl) then
         return false
     end
     local content
-    local lvl_func, extend, swline,max_depth,notify, graylog = tunpack(log_conf)
+    local lvl_func, extend, swline, max_depth, notify, graylog = tunpack(log_conf)
     if extend then
         local args = tpack(...)
         for i, arg in pairs(args) do
             if type(arg) == "table" then
-                args[i] = serialize(arg, swline and 1 or 0,max_depth)
+                args[i] = serialize(arg, swline and 1 or 0, max_depth)
             end
         end
         content = sformat(fmt, tunpack(args, 1, args.n))
@@ -105,13 +100,13 @@ local function logger_output(feature, lvl, lvl_name, fmt, log_conf, ...)
 end
 
 local LOG_LEVEL_OPTIONS = {
-                                    --lvl_func,    extend,  swline, max_depth,  notify, graylog
-    [LOG_LEVEL.INFO]  = { "info",  { driver.info,  false,   false,  0,          false,  true } },
-    [LOG_LEVEL.WARN]  = { "warn",  { driver.warn,  true,    true,   5,          false,  true } },
-    [LOG_LEVEL.DUMP]  = { "dump",  { driver.dump,  true,    true,   4,          false,  true } },
-    [LOG_LEVEL.DEBUG] = { "debug", { driver.debug, true,    false,  6,          false,  false } },
-    [LOG_LEVEL.ERROR] = { "err",   { driver.error, true,    true,   5,          true,   true } },
-    [LOG_LEVEL.FATAL] = { "fatal", { driver.fatal, true,    true,   5,          true,   true } }
+    --lvl_func,    extend,  swline, max_depth,  notify, graylog
+    [LOG_LEVEL.INFO]  = { "info", { llog.info, false, false, 0, false, true } },
+    [LOG_LEVEL.WARN]  = { "warn", { llog.warn, true, true, 5, false, true } },
+    [LOG_LEVEL.DUMP]  = { "dump", { llog.dump, true, true, 4, false, true } },
+    [LOG_LEVEL.DEBUG] = { "debug", { llog.debug, true, false, 6, false, false } },
+    [LOG_LEVEL.ERROR] = { "err", { llog.error, true, true, 5, true, true } },
+    [LOG_LEVEL.FATAL] = { "fatal", { llog.fatal, true, true, 5, true, true } }
 }
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl_name, log_conf = tunpack(conf)
@@ -119,7 +114,7 @@ for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
         local ok, res = pcall(logger_output, "", lvl, lvl_name, fmt, log_conf, ...)
         if not ok then
             local info = dgetinfo(2, "S")
-            driver.warn(sformat("[logger][%s] format failed: %s, source(%s:%s)", lvl_name, res, info.short_src, info.linedefined))
+            llog.warn(sformat("[logger][%s] format failed: %s, source(%s:%s)", lvl_name, res, info.short_src, info.linedefined))
             return false
         end
         return res
@@ -138,7 +133,7 @@ for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
             local ok, res = pcall(logger_output, feature, lvl, lvl_name, fmt, log_conf, ...)
             if not ok then
                 local info = dgetinfo(2, "S")
-                driver.warn(sformat("[logger][%s] format failed: %s, source(%s:%s)", lvl_name, res, info.short_src, info.linedefined))
+                llog.warn(sformat("[logger][%s] format failed: %s, source(%s:%s)", lvl_name, res, info.short_src, info.linedefined))
                 return false
             end
             return res

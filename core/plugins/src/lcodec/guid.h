@@ -32,32 +32,6 @@ namespace lcodec {
 
     static char letter[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-    static std::string guid_encode(uint64_t val){
-        char tmp[LETTER_LEN];
-        memset(tmp, 0, LETTER_LEN);
-        for (int i = 0; i < LETTER_SIZE; ++i) {
-            tmp[i] = letter[val % LETTER_SIZE];
-            val /= LETTER_SIZE;
-            if (val == 0) break;
-        }
-        return tmp;
-    }
-    static int find_index(char val) {
-        if (val >= 97) return val - 61;
-        if (val >= 65) return val - 55;
-        return val - 48;
-    }
-
-    static uint64_t guid_decode(std::string sval){
-        uint64_t val = 0;
-        size_t len = sval.size();
-        const char* cval = sval.c_str();
-        for (int i = 0; i < len; ++i) {
-            val += uint64_t(find_index(cval[i]) * pow(LETTER_SIZE, i));
-        }
-        return val;
-    }
-
     static uint64_t guid_new(uint32_t group, uint32_t index){
         if (group == 0) {
             group = rand();
@@ -104,6 +78,35 @@ namespace lcodec {
 
     static uint64_t guid_number(std::string guid) {
         return strtoull(guid.c_str(), nullptr, 16);
+    }
+
+    static int guid_encode(lua_State* L) {
+        char tmp[LETTER_LEN];
+        memset(tmp, 0, LETTER_LEN);
+        uint64_t val = (lua_gettop(L) > 0) ? lua_tointeger(L, 1) : guid_new(0, 0);
+        for (int i = 0; i < LETTER_SIZE; ++i) {
+            tmp[i] = letter[val % LETTER_SIZE];
+            val /= LETTER_SIZE;
+            if (val == 0) break;
+        }
+        lua_pushstring(L, tmp);
+        return 1;
+    }
+    
+    static int find_index(char val) {
+        if (val >= 97) return val - 61;
+        if (val >= 65) return val - 55;
+        return val - 48;
+    }
+
+    static uint64_t guid_decode(std::string sval){
+        uint64_t val = 0;
+        size_t len = sval.size();
+        const char* cval = sval.c_str();
+        for (int i = 0; i < len; ++i) {
+            val += uint64_t(find_index(cval[i]) * pow(LETTER_SIZE, i));
+        }
+        return val;
     }
 
     size_t format_guid(lua_State* L) {

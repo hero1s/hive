@@ -19,7 +19,7 @@ public:
 		char** symbols = backtrace_symbols(array, nSize);
 		for (int i = 0; i < nSize; i++) {
 			cout << symbols[i] << endl;
-			LOG_ERROR(g_app->get_logger()) << "ExceptionTracer()：" << symbols[i];
+			LOG_ERROR << "ExceptionTracer()：" << symbols[i];
 		}
 		free(symbols);
 	}
@@ -97,7 +97,7 @@ private:
 			}
 			//if this is a thread performing some core activity
 			//异常处理
-			g_app->get_logger()->stop();
+			log_service::instance()->stop();
 			abort();
 			// else if this is a thread used to service requests
 			// pthread_exit();

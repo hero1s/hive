@@ -1,5 +1,5 @@
 --sandbox.lua
-require("lualog")
+local llog        = require("lualog")
 local lstdfs      = require("lstdfs")
 
 local pairs       = pairs
@@ -17,7 +17,6 @@ local ldir        = lstdfs.dir
 local lfilename   = lstdfs.filename
 local lextension  = lstdfs.extension
 local is_dir      = lstdfs.is_directory
-local logger      = hive.get_logger()
 
 local load_files  = {}
 local search_path = {}
@@ -73,16 +72,16 @@ end
 local function try_load(node, reload)
     local trunk_func, err = search_load(node)
     if not trunk_func then
-        logger.error(sformat("[sandbox][try_load] load file: %s ... [failed]\nerror : %s", node.filename, err))
+        llog.error(sformat("[sandbox][try_load] load file: %s ... [failed]\nerror : %s", node.filename, err))
         return
     end
     local res = tpack(pcall(trunk_func))
     if not res[1] then
-        logger.error(sformat("[sandbox][try_load] exec file: %s ... [failed]\nerror : %s", node.filename, res[2]))
+        llog.error(sformat("[sandbox][try_load] exec file: %s ... [failed]\nerror : %s", node.filename, res[2]))
         return
     end
     if reload then
-        logger.info(sformat("[sandbox][try_load] load file: %s ... [ok]", node.filename))
+        llog.info(sformat("[sandbox][try_load] load file: %s ... [ok]", node.filename))
     end
     return tunpack(res, 2)
 end
@@ -162,7 +161,7 @@ function hive.reload()
                     return count
                 end
             else
-                logger.error(sformat("[hive][reload] error file:%s", node.filename))
+                llog.error(sformat("[hive][reload] error file:%s", node.filename))
             end
         end
     end
@@ -173,7 +172,7 @@ function hive.get(name)
     local global_obj = hive[name]
     if not global_obj then
         local info = dgetinfo(2, "S")
-        logger.error(sformat("[hive][get] %s not initial! source(%s:%s)", name, info.short_src, info.linedefined))
+        llog.error(sformat("[hive][get] %s not initial! source(%s:%s)", name, info.short_src, info.linedefined))
         return
     end
     return global_obj

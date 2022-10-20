@@ -118,8 +118,6 @@ void hive_app::set_signal(uint32_t n) {
 
 void hive_app::setup(int argc, const char* argv[]) {
 	srand((unsigned)time(nullptr));
-	//初始化日志
-	m_logger = new log_service();
 	//加载配置
 	if (load(argc, argv)) {
 		run();
@@ -127,8 +125,8 @@ void hive_app::setup(int argc, const char* argv[]) {
 }
 
 void hive_app::exception_handler(std::string msg, std::string& err) {
-	LOG_FATAL(m_logger) << msg << err;
-	m_logger->stop();
+	LOG_FATAL << msg << err;
+	log_service::instance()->stop();
 #if WIN32
 	_getch();
 #endif
@@ -188,8 +186,8 @@ bool hive_app::load(int argc, const char* argv[]) {
 void hive_app::run() {
 	if ((std::stoi(get_environ_def("HIVE_DAEMON", "0")))) {
 		daemon();
+		log_service::instance()->daemon(true);
 	}
-	m_logger->start();
 	luakit::kit_state lua;
 	lua.set("platform", get_platform());
 
@@ -202,7 +200,6 @@ void hive_app::run() {
 	hive.set_function("hash_code", hash_code);
 	hive.set_function("get_signal", [&]() { return m_signal; });
 	hive.set_function("set_signal", [&](int n) { set_signal(n); });
-	hive.set_function("get_logger", [&]() { return m_logger; });
 	hive.set_function("ignore_signal", [](int n) { signal(n, SIG_IGN); });
 	hive.set_function("default_signal", [](int n) { signal(n, SIG_DFL); });
 	hive.set_function("register_signal", [](int n) { signal(n, on_signal); });
@@ -217,17 +214,15 @@ void hive_app::run() {
 		});
 	while (hive.get_function("run")) {
 		hive.call([&](std::string err) {
-			LOG_FATAL(m_logger) << "hive run err: " << err;
+			LOG_FATAL << "hive run err: " << err;
 			});
 		//check_input(lua);
 	}
 	if (hive.get_function("exit")) {
 		hive.call([&](std::string err) {
-			LOG_FATAL(m_logger) << "hive exit err: " << err;
+			LOG_FATAL << "hive exit err: " << err;
 			});
 	}
-	m_logger->stop();
 	lua.close();
-	m_logger = nullptr;
-	//todo 这里m_logger已经在lua中gc了 后续优化 todo
+	log_service::instance()->stop();
 }

@@ -11,9 +11,11 @@ local log_err        = logger.err
 local sig_check      = signal.check
 local collectgarbage = collectgarbage
 local cut_tail       = math_ext.cut_tail
+local is_same_day    = datetime_ext.is_same_day
 
 local timer_mgr      = hive.get("timer_mgr")
 local thread_mgr     = hive.get("thread_mgr")
+local event_mgr      = hive.get("event_mgr")
 
 local HALF_MS        = hive.enum("PeriodTime", "HALF_MS")
 local SECOND_5_MS    = hive.enum("PeriodTime", "SECOND_5_MS")
@@ -23,6 +25,7 @@ local prop           = property(UpdateMgr)
 prop:reader("last_day", 0)
 prop:reader("last_hour", 0)
 prop:reader("last_minute", 0)
+prop:reader("last_check_time", 0)
 prop:reader("max_mem_usage", 0)
 prop:reader("max_lua_mem_usage", 0)
 prop:reader("quit_objs", {})
@@ -93,6 +96,7 @@ function UpdateMgr:update(now_ms, clock_ms)
         for obj in pairs(self.minute_objs) do
             obj:on_minute(clock_ms)
         end
+        self:check_new_day()
         self:monitor_mem()
         --时更新
         if time.hour == self.last_hour then
@@ -115,6 +119,16 @@ function UpdateMgr:sig_check()
         end
         hive.run = nil
     end
+end
+
+function UpdateMgr:check_new_day()
+    if self.last_check_time > 0 then
+        if not is_same_day(self.last_check_time, hive.now) then
+            log_err("[UpdateMgr][check_new_day] notify this time is new day!!!")
+            event_mgr:notify_trigger("evt_new_day")
+        end
+    end
+    self.last_check_time = hive.now
 end
 
 --添加对象到小时更新循环
@@ -183,7 +197,7 @@ function UpdateMgr:detach_quit(obj)
 end
 
 function UpdateMgr:monitor_mem()
-    local mem           = cut_tail(mem_usage(), 1)
+    local mem     = cut_tail(mem_usage(), 1)
     local lua_mem = cut_tail(collectgarbage("count") / 1024, 1)
     if mem > self.max_mem_usage then
         self.max_mem_usage = mem

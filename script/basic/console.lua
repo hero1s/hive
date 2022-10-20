@@ -1,5 +1,5 @@
 --trace.lua
-
+local llog          = require("lualog")
 local load          = load
 local pcall         = pcall
 local stdout        = io.stdout
@@ -7,10 +7,9 @@ local ssub          = string.sub
 local schar         = string.char
 local tpack         = table.pack
 local tconcat       = table.concat
-local logger        = hive.get_logger()
 
 --
-local console_buf    = ""
+local console_buf   = ""
 local console_input = false
 
 local function exec_command(cmd)
@@ -39,18 +38,18 @@ hive.console = function(ch)
             end
         end
         if ch == 13 or #console_buf > 255 then
-            logger.daemon(false)
+            llog.daemon(false)
             if #console_buf > 0 then
                 exec_command(console_buf)
             end
             stdout:write("\n")
             console_input = false
-            console_buf = ""
+            console_buf   = ""
         end
     else
         if ch == 13 then
             console_input = true
-            logger.daemon(true)
+            llog.daemon(true)
             stdout:write("input> ")
         end
     end

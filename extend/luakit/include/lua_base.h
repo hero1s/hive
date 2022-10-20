@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <set>
 #include <map>
@@ -28,7 +28,7 @@ namespace luakit {
 
     template<typename T>
     const char* lua_get_meta_name() {
-        static char meta_name[MAX_LUA_META_KEY];
+        thread_local char meta_name[MAX_LUA_META_KEY];
         using OT = std::remove_cv_t<std::remove_pointer_t<T>>;
         snprintf(meta_name, MAX_LUA_META_KEY, "__lua_class_meta_%zu__", typeid(OT).hash_code());
         return meta_name;
@@ -36,7 +36,7 @@ namespace luakit {
 
     template<typename T>
     const char* lua_get_object_key(void* obj) {
-        static char objkey[MAX_LUA_META_KEY];
+        thread_local char objkey[MAX_LUA_META_KEY];
         using OT = std::remove_cv_t<std::remove_pointer_t<T>>;
         snprintf(objkey, MAX_LUA_META_KEY, "%p@%zu", obj, typeid(OT).hash_code());
         return objkey;

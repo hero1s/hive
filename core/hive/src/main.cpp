@@ -74,8 +74,8 @@ LONG WINAPI CMiniDump::MyUnhandledExceptionFilter(EXCEPTION_POINTERS* ExceptionI
 	MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), lhDumpFile, MiniDumpNormal, &loExceptionInfo, NULL, NULL);
 	CloseHandle(lhDumpFile);
 	StackBackTrace stackBackTrace;
-	LOG_ERROR(g_app->get_logger()) << stackBackTrace.build() << " \n";
-	g_app->get_logger()->stop();
+	LOG_ERROR << stackBackTrace.build() << " \n";
+	log_service::instance()->stop();
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 

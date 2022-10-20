@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "lua_function.h"
 
 namespace luakit {
@@ -45,7 +45,7 @@ namespace luakit {
         //类成员函数的get/set辅助器
         template <typename return_type, typename T, typename... arg_types>
         static member_wrapper getter(return_type(T::* func)(arg_types...)) {
-            return[adapter = lua_adapter(func)](lua_State* L, void* obj) mutable {
+            return [adapter = lua_adapter(func)](lua_State* L, void* obj) mutable {
                 lua_pushlightuserdata(L, obj);
                 lua_pushlightuserdata(L, &adapter);
                 lua_pushcclosure(L, lua_object_bridge, 2);
@@ -54,7 +54,7 @@ namespace luakit {
         //类const成员函数的get/set辅助器
         template <typename return_type, typename T, typename... arg_types>
         static member_wrapper getter(return_type(T::* func)(arg_types...) const) {
-            return[adapter = lua_adapter(func)](lua_State* L, void* obj) mutable {
+            return [adapter = lua_adapter(func)](lua_State* L, void* obj) mutable {
                 lua_pushlightuserdata(L, obj);
                 lua_pushlightuserdata(L, &adapter);
                 lua_pushcclosure(L, lua_object_bridge, 2);
