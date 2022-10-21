@@ -526,7 +526,7 @@ namespace logger {
     template<log_level level>
     class log_stream {
     public:
-        log_stream(std::string& feature, std::string& source = "", int line = 0) {
+        log_stream(std::string& feature, std::string& source, int line) {
             auto service = log_service::instance();
             if (!service->is_filter(level)) {
                 logmsg_ = service->message_pool()->allocate();

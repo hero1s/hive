@@ -1,4 +1,5 @@
 --socket.lua
+local lhelper         = require("lhelper")
 local ssub            = string.sub
 local sfind           = string.find
 local log_err         = logger.err
@@ -71,7 +72,7 @@ function Socket:connect(ip, port, ptype)
     if ptype then
         self.proto_type = ptype
     end
-    local session, cerr = socket_mgr.connect(ip, port, CONNECT_TIMEOUT, self.proto_type)
+    local session, cerr = socket_mgr.connect(self:real_ip(ip), port, CONNECT_TIMEOUT, self.proto_type)
     if not session then
         log_err("[Socket][connect] failed to connect: %s:%d type=%d, err=%s", ip, port, self.proto_type, cerr)
         return false, cerr
@@ -179,6 +180,15 @@ function Socket:send(data)
     end
     log_err("[Socket][send] the socket not alive, can't send")
     return false
+end
+
+function Socket:real_ip(ip)
+    if ip:match("^[%d%.]+$") or ip:find(":") then
+        return ip
+    end
+    local rip = lhelper.dns(ip)
+    log_info("[Socket][real_ip] dns:[%s]->>[%s]", ip, rip)
+    return rip
 end
 
 return Socket

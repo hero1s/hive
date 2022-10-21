@@ -4,6 +4,7 @@
 
 namespace lcodec {
     class buf_pool {
+    public:
         virtual uint8_t* alloc() = 0;
         virtual void erase(uint8_t* data) = 0;
     };
