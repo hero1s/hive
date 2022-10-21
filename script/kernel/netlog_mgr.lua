@@ -1,23 +1,22 @@
 -- netlog_mgr.lua
-local odate         = os.date
-local log_debug     = logger.debug
-local set_monitor   = logger.set_monitor
-local sfind         = string.find
-local sformat       = string.format
-local ssplit        = string_ext.split
+local odate        = os.date
+local log_debug    = logger.debug
+local sfind        = string.find
+local sformat      = string.format
+local ssplit       = string_ext.split
 
-local event_mgr     = hive.get("event_mgr")
-local timer_mgr     = hive.get("timer_mgr")
-local thread_mgr    = hive.get("thread_mgr")
+local event_mgr    = hive.get("event_mgr")
+local timer_mgr    = hive.get("timer_mgr")
+local thread_mgr   = hive.get("thread_mgr")
 
-local SUCCESS       = hive.enum("KernCode", "SUCCESS")
-local SECOND_MS     = hive.enum("PeriodTime", "SECOND_MS")
-local SECOND_5_S    = hive.enum("PeriodTime", "SECOND_5_S")
+local SUCCESS      = hive.enum("KernCode", "SUCCESS")
+local SECOND_MS    = hive.enum("PeriodTime", "SECOND_MS")
+local SECOND_5_S   = hive.enum("PeriodTime", "SECOND_5_S")
 
-local PULL_CNT_MAX  = 10
+local PULL_CNT_MAX = 10
 
-local NetlogMgr = singleton()
-local prop = property(NetlogMgr)
+local NetlogMgr    = singleton()
+local prop         = property(NetlogMgr)
 prop:reader("sessions", {})
 function NetlogMgr:__init()
     event_mgr:add_listener(self, "rpc_show_log")
@@ -33,11 +32,11 @@ function NetlogMgr:open_session(data)
     end
     local session = self.sessions[session_id]
     if not session then
-        session = {
-            pull_index  = 0,
-            cache_logs  = {},
-            filters     = {},
-            session_id  = session_id,
+        session                   = {
+            pull_index = 0,
+            cache_logs = {},
+            filters    = {},
+            session_id = session_id,
         }
         self.sessions[session_id] = session
     end
@@ -51,11 +50,11 @@ end
 function NetlogMgr:close_session(session_id)
     self.sessions[session_id] = nil
     if not next(self.sessions) then
-        set_monitor(nil)
+        logger.remove_monitor(self)
     end
 end
 
-function NetlogMgr:notify(level, content)
+function NetlogMgr:dispatch_log(content, lvl_name, level)
     for _, session in pairs(self.sessions) do
         local cache = false
         if #session.filters == 0 then
@@ -70,7 +69,7 @@ function NetlogMgr:notify(level, content)
         end
         :: docache ::
         if cache then
-            local cache_logs = session.cache_logs
+            local cache_logs            = session.cache_logs
             cache_logs[#cache_logs + 1] = sformat("[%s][%s]%s", odate("%Y-%m-%d %H:%M:%S"), level, content)
         end
     end
@@ -78,12 +77,12 @@ end
 
 function NetlogMgr:rpc_show_log(data)
     if not next(self.sessions) then
-        set_monitor(self)
+        logger.add_monitor(self)
     end
     local show_logs = {}
-    local session = self:open_session(data)
-    local log_size = #(session.cache_logs)
-    local log_cnt = log_size - session.pull_index
+    local session   = self:open_session(data)
+    local log_size  = #(session.cache_logs)
+    local log_cnt   = log_size - session.pull_index
     if log_cnt > 0 then
         local count = log_cnt > PULL_CNT_MAX and PULL_CNT_MAX or log_cnt
         for idx = 1, count do

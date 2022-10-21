@@ -15,7 +15,15 @@ all : pre_build target post_build
 MYCFLAGS =
 
 #需要定义的FLAG
+MYCFLAGS += -Wno-unused-variable
+MYCFLAGS += -Wno-unused-parameter
+MYCFLAGS += -Wno-unused-but-set-parameter
+MYCFLAGS += -Wno-unused-function
 MYCFLAGS += -Wno-sign-compare
+MYCFLAGS += -Wno-implicit-fallthrough
+MYCFLAGS += -Wno-maybe-uninitialized
+MYCFLAGS += -Wno-unused-variable
+MYCFLAGS += -Wno-unused-result
 
 #c标准库版本
 #gnu99/gnu11/gnu17

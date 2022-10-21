@@ -1,21 +1,26 @@
 --logger.lua
 --logger功能支持
-local llog      = require("lualog")
-local lstdfs    = require("lstdfs")
-local lcodec    = require("lcodec")
-local pcall     = pcall
-local pairs     = pairs
-local sformat   = string.format
-local dgetinfo  = debug.getinfo
-local tpack     = table.pack
-local tunpack   = table.unpack
-local fsstem    = lstdfs.stem
-local serialize = lcodec.serialize
+local llog        = require("lualog")
+local lstdfs      = require("lstdfs")
+local lcodec      = require("lcodec")
+local pcall       = pcall
+local pairs       = pairs
+local sformat     = string.format
+local dgetinfo    = debug.getinfo
+local tpack       = table.pack
+local tunpack     = table.unpack
+local fsstem      = lstdfs.stem
+local serialize   = lcodec.serialize
+local lwarn       = llog.warn
+local lfilter     = llog.filter
+local lis_filter  = llog.is_filter
 
-local LOG_LEVEL = llog.LOG_LEVEL
+local LOG_LEVEL   = llog.LOG_LEVEL
 
-logger          = {}
-logfeature      = {}
+logger            = {}
+logfeature        = {}
+local monitors    = _ENV.monitors or {}
+local dispatching = false
 
 function logger.init()
     --配置日志信息
@@ -37,8 +42,9 @@ end
 function logger.setup_graylog()
     local logaddr = environ.get("HIVE_GRAYLOG_ADDR")
     if logaddr then
-        local GrayLog     = import("driver/graylog.lua")
-        logger.graydriver = GrayLog(logaddr)
+        local GrayLog    = import("driver/graylog.lua")
+        local graydriver = GrayLog(logaddr)
+        logger.add_monitor(graydriver)
     end
 end
 
@@ -56,23 +62,27 @@ function logger.set_webhook(webhook)
     logger.webhook = webhook
 end
 
-function logger.set_monitor(monitor)
-    logger.monitor = monitor
+function logger.add_monitor(monitor)
+    monitors[monitor] = true
+end
+
+function logger.remove_monitor(monitor)
+    monitors[monitor] = nil
 end
 
 function logger.filter(level)
     for lvl = LOG_LEVEL.DEBUG, LOG_LEVEL.FATAL do
         --llog.filter(level, on/off)
-        llog.filter(lvl, lvl >= level)
+        lfilter(lvl, lvl >= level)
     end
 end
 
 local function logger_output(feature, lvl, lvl_name, fmt, log_conf, ...)
-    if llog.is_filter(lvl) then
+    if lis_filter(lvl) then
         return false
     end
     local content
-    local lvl_func, extend, swline, max_depth, notify, graylog = tunpack(log_conf)
+    local lvl_func, extend, swline, max_depth = tunpack(log_conf)
     if extend then
         local args = tpack(...)
         for i, arg in pairs(args) do
@@ -84,29 +94,25 @@ local function logger_output(feature, lvl, lvl_name, fmt, log_conf, ...)
     else
         content = sformat(fmt, ...)
     end
-    local webhook = logger.webhook
-    if notify and webhook then
-        webhook:notify(lvl_name, content)
-    end
-    local monitor = logger.monitor
-    if monitor then
-        monitor:notify(lvl_name, content)
-    end
-    local graydriver = logger.graydriver
-    if graylog and graydriver then
-        graydriver:write(content, lvl)
+    if not dispatching then
+        --防止重入 toney,这里有bug,待优化
+        --dispatching = true
+        for monitor in pairs(monitors) do
+            monitor:dispatch_log(content, lvl_name, lvl)
+        end
+        --dispatching = false
     end
     return lvl_func(content, feature)
 end
 
 local LOG_LEVEL_OPTIONS = {
-    --lvl_func,    extend,  swline, max_depth,  notify, graylog
-    [LOG_LEVEL.INFO]  = { "info", { llog.info, false, false, 0, false, true } },
-    [LOG_LEVEL.WARN]  = { "warn", { llog.warn, true, true, 5, false, true } },
-    [LOG_LEVEL.DUMP]  = { "dump", { llog.dump, true, true, 4, false, true } },
-    [LOG_LEVEL.DEBUG] = { "debug", { llog.debug, true, false, 6, false, false } },
-    [LOG_LEVEL.ERROR] = { "err", { llog.error, true, true, 5, true, true } },
-    [LOG_LEVEL.FATAL] = { "fatal", { llog.fatal, true, true, 5, true, true } }
+    --lvl_func,    extend,  swline, max_depth
+    [LOG_LEVEL.INFO]  = { "info", { llog.info, false, false, 0 } },
+    [LOG_LEVEL.WARN]  = { "warn", { llog.warn, true, true, 5 } },
+    [LOG_LEVEL.DUMP]  = { "dump", { llog.dump, true, true, 4 } },
+    [LOG_LEVEL.DEBUG] = { "debug", { llog.debug, true, false, 6 } },
+    [LOG_LEVEL.ERROR] = { "err", { llog.error, true, true, 5 } },
+    [LOG_LEVEL.FATAL] = { "fatal", { llog.fatal, true, true, 5 } }
 }
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl_name, log_conf = tunpack(conf)
@@ -114,7 +120,7 @@ for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
         local ok, res = pcall(logger_output, "", lvl, lvl_name, fmt, log_conf, ...)
         if not ok then
             local info = dgetinfo(2, "S")
-            llog.warn(sformat("[logger][%s] format failed: %s, source(%s:%s)", lvl_name, res, info.short_src, info.linedefined))
+            lwarn(sformat("[logger][%s] format failed: %s, source(%s:%s)", lvl_name, res, info.short_src, info.linedefined))
             return false
         end
         return res
@@ -133,7 +139,7 @@ for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
             local ok, res = pcall(logger_output, feature, lvl, lvl_name, fmt, log_conf, ...)
             if not ok then
                 local info = dgetinfo(2, "S")
-                llog.warn(sformat("[logger][%s] format failed: %s, source(%s:%s)", lvl_name, res, info.short_src, info.linedefined))
+                lwarn(sformat("[logger][%s] format failed: %s, source(%s:%s)", lvl_name, res, info.short_src, info.linedefined))
                 return false
             end
             return res

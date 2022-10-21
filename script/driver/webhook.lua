@@ -18,6 +18,7 @@ prop:reader("url", nil)             --url地址
 prop:reader("interface", nil)       --通知接口
 prop:reader("notify_limit", {})     --控制同样消息的发送频率
 prop:reader("lan_ip", "")
+prop:reader("limit_lv", 5)          --抄送日志等级
 
 function Webhook:__init()
     if env_get("HIVE_LARK_URL") then
@@ -35,7 +36,7 @@ end
 
 function Webhook:on_quit()
     self.interface = nil
-    logger.set_webhook(nil)
+    logger.remove_monitor(self)
 end
 
 function Webhook:setup(url, interface)
@@ -43,7 +44,7 @@ function Webhook:setup(url, interface)
     self.url       = url
     self.interface = interface
     if sfind(self.url, "http") then
-        logger.set_webhook(self)
+        logger.add_monitor(self)
     end
 end
 
@@ -78,7 +79,10 @@ function Webhook:ding_log(title, context, at_mobiles, at_all)
     end)
 end
 
-function Webhook:notify(title, context, ...)
+function Webhook:dispatch_log(context, title, lvl, ...)
+    if lvl < self.limit_lv then
+        return
+    end
     title           = title .. " host:" .. self.lan_ip
     local interface = self.interface
     if interface then

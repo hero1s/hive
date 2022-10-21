@@ -1,5 +1,6 @@
 -- wheel_map.lua
-local hhash_code = hive.hash_code
+local lcodec     = require("lcodec")
+local hhash_code = lcodec.hash_code
 
 local WheelMap   = class()
 local prop       = property(WheelMap)

@@ -14,7 +14,10 @@ FLAGS = {
 	"Wno-unused-but-set-parameter",
     "Wno-unused-function",
     "Wno-sign-compare",
-    "Wno-implicit-fallthrough"
+    "Wno-implicit-fallthrough",
+    "Wno-maybe-uninitialized",
+    "Wno-unused-variable",
+    "Wno-unused-result"
 }
 
 --需要定义的选项

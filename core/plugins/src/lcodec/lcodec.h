@@ -7,4 +7,5 @@
 #include "shmpool.h"
 #include "bufqueue.h"
 #include "guid.h"
+#include "hash.h"
 

@@ -76,38 +76,11 @@ static void check_input(luakit::kit_state& lua) {
 #endif
 }
 
-static int hash_code(lua_State* L) {
-	size_t hcode = 0;
-	int type = lua_type(L, 1);
-	if (type == LUA_TNUMBER) {
-		hcode = std::hash<int64_t>{}(lua_tointeger(L, 1));
-	}
-	else if (type == LUA_TSTRING) {
-		hcode = std::hash<std::string>{}(lua_tostring(L, 1));
-	}
-	else {
-		luaL_error(L, fmt::format("hashkey only support number or string!,not support:{}", lua_typename(L, type)).c_str());
-	}
-	size_t mod = luaL_optinteger(L, 2, 0);
-	if (mod > 0) {
-		hcode = (hcode % mod) + 1;
-	}
-	lua_pushinteger(L, hcode);
-	return 1;
-}
-
 static int lset_env(lua_State* L) {
 	const char* key = lua_tostring(L, 1);
 	const char* value = lua_tostring(L, 2);
 	auto overwrite = luaL_optinteger(L, 3, 1);
 	setenv(key, value, int(overwrite));
-	return 0;
-}
-
-static int ldebug(int type, int param, bool pr) {
-	if (pr) {
-		std::cout << fmt::format("{},{}", type, param) << std::endl;
-	}
 	return 0;
 }
 
@@ -195,9 +168,6 @@ void hive_app::run() {
 	auto hive = lua.new_table("hive");
 	hive.set("pid", ::getpid());
 	hive.set("platform", get_platform());
-
-	hive.set_function("debug", ldebug);
-	hive.set_function("hash_code", hash_code);
 	hive.set_function("get_signal", [&]() { return m_signal; });
 	hive.set_function("set_signal", [&](int n) { set_signal(n); });
 	hive.set_function("ignore_signal", [](int n) { signal(n, SIG_IGN); });

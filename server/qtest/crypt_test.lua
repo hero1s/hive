@@ -59,13 +59,3 @@ log_info("hmac_sha384: %s", hmac_sha384)
 local hmac_sha512 = lhex_encode(lhmac_sha512(key, value))
 log_info("hmac_sha512: %s", hmac_sha512)
 
---hash
-local hash_n1 = hive.hash_code(12345)
-local hash_n2 = hive.hash_code(guid, 1000)
-log_info("hash_code number: %s, %s", hash_n1, hash_n2)
--- -1792800413050876852
-
-local hash_s1 = hive.hash_code("12345")
-local hash_s2 = hive.hash_code(sguid, 1000)
-log_info("hash_code string: %s, %s", hash_s1, hash_s2)
--- -1912366794928059912

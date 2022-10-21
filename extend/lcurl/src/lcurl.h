@@ -101,8 +101,8 @@ namespace lcurl {
 		string content;
 
 	private:
-		CURL* curl = nullptr;
 		CURLM* curlm = nullptr;
+		CURL* curl = nullptr;
 		curl_slist* header = nullptr;
 		char error[CURL_ERROR_SIZE] = {};
 	};
@@ -173,8 +173,8 @@ namespace lcurl {
 		}
 
 	private:
-		CURL* curle = nullptr;
 		CURLM* curlm = nullptr;
+		CURL* curle = nullptr;
 	};
 
 	static size_t write_callback(char* buffer, size_t block_size, size_t count, void* arg) {

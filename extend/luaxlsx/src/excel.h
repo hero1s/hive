@@ -104,7 +104,7 @@ namespace lxlsx
 	private:
 		bool open_xml(const char* filename, XMLDocument& doc) {
 			uint32_t index = mz_zip_reader_locate_file(&archive, filename, nullptr, 0);
-			if (index >= 0) {
+			if (index > 0) {
 				size_t size = 0;
 				auto data = (const char*)mz_zip_reader_extract_to_heap(&archive, index, &size, 0);
 				if (data && doc.Parse(data, size) == XML_SUCCESS) {

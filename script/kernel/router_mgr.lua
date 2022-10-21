@@ -1,4 +1,5 @@
 -- router_mgr.lua
+local lcodec           = require("lcodec")
 local pairs            = pairs
 local log_err          = logger.err
 local log_info         = logger.info
@@ -8,7 +9,7 @@ local tunpack          = table.unpack
 local sformat          = string.format
 local sid2name         = service.id2name
 local qsuccess         = hive.success
-local hhash_code       = hive.hash_code
+local hhash_code       = lcodec.hash_code
 
 local thread_mgr       = hive.get("thread_mgr")
 local event_mgr        = hive.get("event_mgr")

@@ -92,7 +92,7 @@ function GrayLog:build(message, level, optional)
     return gelf
 end
 
-function GrayLog:write(message, level, optional)
+function GrayLog:dispatch_log(message, lvl_name, level, optional)
     local gelf = self:build(message, level, optional)
     if self.proto == "http" then
         thread_mgr:fork(function()

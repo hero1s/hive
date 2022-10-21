@@ -6,7 +6,7 @@ local tpack          = table.pack
 local log_err        = logger.err
 local log_info       = logger.info
 local hxpcall        = hive.xpcall
-local hhash_code     = hive.hash_code
+local hhash_code     = lcodec.hash_code
 local new_guid       = lcodec.guid_new
 
 local event_mgr      = hive.get("event_mgr")
