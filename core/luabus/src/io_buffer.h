@@ -26,7 +26,10 @@ struct io_buffer
 		m_data_end = m_buffer + data_len;
 		m_data_begin = m_buffer;
 		m_buffer_size = size;
-		if (align) { m_align_size = size; }
+		if (align) { 
+			m_align_size = size; 
+			m_align_max = m_align_size * 4; 
+		}
 		return m_buffer_size - data_len;
 	}
 
@@ -46,7 +49,7 @@ struct io_buffer
 		regularize();
 
 		size_t data_len = (size_t)(m_data_end - m_data_begin);
-		if (m_buffer_size > m_align_size && data_len < m_buffer_size / 4)
+		if (m_buffer_size > m_align_max && data_len < m_align_size)
 		{
 			resize(m_buffer_size / 2);
 		}
@@ -127,6 +130,7 @@ private:
 	void alloc_buffer(size_t align_size)
 	{
 		m_align_size = align_size;
+		m_align_max = m_align_size * 4;
 		m_buffer = (BYTE*)malloc(align_size);
 		m_buffer_size = align_size;
 		m_data_begin = m_buffer;
@@ -138,4 +142,5 @@ private:
 	BYTE* m_buffer = nullptr;
 	size_t m_buffer_size = 0;
 	size_t m_align_size = 0;
+	size_t m_align_max = 0;
 };

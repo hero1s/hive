@@ -1,14 +1,13 @@
 ﻿---devops_gm_mgr.lua
-local lstdfs    = require('lstdfs')
-local lcodec    = require("lcodec")
-local sdump     = string.dump
-local log_err   = logger.err
-local log_warn  = logger.warn
-local log_debug = logger.debug
-local time_str  = datetime_ext.time_str
-local ssplit    = string_ext.split
+local lstdfs        = require('lstdfs')
+local lcodec        = require("lcodec")
+local sdump         = string.dump
+local log_err       = logger.err
+local log_warn      = logger.warn
+local log_debug     = logger.debug
+local time_str      = datetime_ext.time_str
+local ssplit        = string_ext.split
 
-import("network/http_client.lua")
 local http_client   = hive.get("http_client")
 local env_get       = environ.get
 

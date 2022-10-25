@@ -1,7 +1,7 @@
---proxy.lua
-import("kernel.lua")
+--proxy_mgr.lua
+import("driver/worker.lua")
 
+--启动worker
 hive.startup(function()
-    --初始化proxy
     import("proxy/proxy_mgr.lua")
 end)

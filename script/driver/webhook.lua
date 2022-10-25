@@ -1,96 +1,64 @@
 --webhook.lua
+import("network/http_client.lua")
 
-local env_get     = environ.get
 local sformat     = string.format
-local sfind       = string.find
-local json_encode = hive.json_encode
 
 local LIMIT_COUNT = 3    -- 周期内最大次数
 
 local http_client = hive.get("http_client")
-local thread_mgr  = hive.get("thread_mgr")
-local update_mgr  = hive.get("update_mgr")
 local HOUR_S      = hive.enum("PeriodTime", "HOUR_S")
 
 local Webhook     = singleton()
 local prop        = property(Webhook)
 prop:reader("url", nil)             --url地址
-prop:reader("interface", nil)       --通知接口
+prop:reader("lvl", 100)             --上报等级
+prop:reader("hooks", {})            --webhook通知接口
 prop:reader("notify_limit", {})     --控制同样消息的发送频率
 prop:reader("lan_ip", "")
-prop:reader("limit_lv", 5)          --抄送日志等级
 
 function Webhook:__init()
-    if env_get("HIVE_LARK_URL") then
-        return self:setup(env_get("HIVE_LARK_URL"), "lark_log")
-    end
-    if env_get("HIVE_DING_URL") then
-        return self:setup(env_get("HIVE_DING_URL"), "ding_log")
-    end
-    if env_get("HIVE_WECHAT_URL") then
-        return self:setup(env_get("HIVE_WECHAT_URL"), "wechat_log")
-    end
-    -- 退出通知
-    update_mgr:attach_quit(self)
-end
-
-function Webhook:on_quit()
-    self.interface = nil
-    logger.remove_monitor(self)
-end
-
-function Webhook:setup(url, interface)
-    self.lan_ip    = hive.lan_ip
-    self.url       = url
-    self.interface = interface
-    if sfind(self.url, "http") then
-        logger.add_monitor(self)
+    self.lvl    = environ.number("HIVE_WEBHOOK_LVL", "4")
+    self.lan_ip = hive.lan_ip
+    if self.lvl then
+        self.hooks.lark_log   = environ.get("HIVE_LARK_URL")
+        self.hooks.ding_log   = environ.get("HIVE_DING_URL")
+        self.hooks.wechat_log = environ.get("HIVE_WECHAT_URL")
     end
 end
 
 --飞书
-function Webhook:lark_log(title, context)
-    local text = sformat("service:%s \n %s \n %s", hive.name, title, context)
+function Webhook:lark_log(url, title, context)
+    local text = sformat("%s\n %s", title, context)
     local body = { msg_type = "text", content = { text = text } }
-    thread_mgr:fork(function()
-        http_client:call_post(self.url, json_encode(body))
-    end)
+    http_client:call_post(url, body)
 end
 
 --企业微信
 --at_members: 成员列表，数组，如 at_members = {"wangqing", "@all"}
 --at_mobiles: 手机号列表，数组, 如 at_mobiles = {"156xxxx8827", "@all"}
-function Webhook:wechat_log(title, context, at_mobiles, at_members)
-    local text = sformat("service:%s \n %s \n %s", hive.name, title, context)
+function Webhook:wechat_log(url, title, context, at_mobiles, at_members)
+    local text = sformat("%s\n %s", title, context)
     local body = { msgtype = "text", text = { content = text, mentioned_list = at_members, mentioned_mobile_list = at_mobiles } }
-    thread_mgr:fork(function()
-        http_client:call_post(self.url, json_encode(body))
-    end)
+    http_client:call_post(url, body)
 end
 
 --钉钉
 --at_all: 是否群at，如 at_all = false/false
 --at_mobiles: 手机号列表，数组, 如 at_mobiles = {"189xxxx8325", "156xxxx8827"}
-function Webhook:ding_log(title, context, at_mobiles, at_all)
-    local text = sformat("service:%s \n %s \n %s", hive.name, title, context)
+function Webhook:ding_log(url, title, context, at_mobiles, at_all)
+    local text = sformat("%s\n %s", title, context)
     local body = { msgtype = "text", text = { content = text }, at = { atMobiles = at_mobiles, isAtAll = at_all } }
-    thread_mgr:fork(function()
-        http_client:call_post(self.url, json_encode(body))
-    end)
+    http_client:call_post(url, body)
 end
 
-function Webhook:dispatch_log(context, title, lvl, ...)
-    if lvl < self.limit_lv then
-        return
-    end
-    title           = title .. " host:" .. self.lan_ip
-    local interface = self.interface
-    if interface then
+function Webhook:notify(title, content, lvl, ...)
+    if next(self.hooks) and lvl >= self.lvl then
+        title        = title .. " host:" .. self.lan_ip
         local now    = hive.now
-        local notify = self.notify_limit[context]
+        local notify = self.notify_limit[content]
         if not notify then
             notify                     = { time = now, count = 0 }
-            self.notify_limit[context] = notify
+            self.notify_limit[content] = notify
         end
         if now - notify.time > HOUR_S then
             notify = { time = now, count = 0 }
@@ -99,10 +67,12 @@ function Webhook:dispatch_log(context, title, lvl, ...)
             return
         end
         notify.count = notify.count + 1
-        self[interface](self, title, context, ...)
+        for hook_api, url in pairs(self.hooks) do
+            self[hook_api](self, url, title, content, ...)
+        end
     end
 end
 
-hive.oanotify = Webhook()
+hive.webhook = Webhook()
 
 return Webhook

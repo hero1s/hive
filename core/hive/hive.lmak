@@ -29,6 +29,7 @@ INCLUDES = {
 	"../../extend/fmt/include",
 	"../../extend/luakit/include",
 	"../../extend/utility",
+	"../plugins/src",
 }
 
 ---子目录路径

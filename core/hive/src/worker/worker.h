@@ -4,22 +4,24 @@
 #include <atomic>
 #include <thread>
 
-#include "../lcodec/buffer.h"
+#include "lcodec/buffer.h"
 #include "fmt/core.h"
 
 using namespace lcodec;
 using namespace luakit;
 
+extern "C" void open_custom_libs(lua_State * L);
+
 namespace lworker {
 
     static slice* read_slice(std::shared_ptr<var_buffer> buff, size_t* pack_len) {
-        uint8_t* plen = buff->peek_data(sizeof(uint16_t));
+        uint8_t* plen = buff->peek_data(sizeof(uint32_t));
         if (plen) {
-            uint16_t len = *(uint16_t*)plen;
+            uint32_t len = *(uint32_t*)plen;
             uint8_t* pdata = buff->peek_data(len);
             if (pdata) {
-                *pack_len = sizeof(uint16_t) + len;
-                return buff->get_slice(len, sizeof(uint16_t));
+                *pack_len = sizeof(uint32_t) + len;
+                return buff->get_slice(len, sizeof(uint32_t));
             }
         }
         return nullptr;
@@ -67,7 +69,7 @@ namespace lworker {
 
         bool call(slice* buf) {
             std::unique_lock<spin_mutex> lock(m_mutex);
-            m_write_buf->write<uint16_t>(buf->size());
+            m_write_buf->write<uint32_t>(buf->size());
             m_write_buf->push_data(buf->head(), buf->size());
             return true;
         }
@@ -91,6 +93,7 @@ namespace lworker {
         }
 
         void startup(){            
+            open_custom_libs(m_lua->L());
             std::thread(&worker::run, this).swap(m_thread);            
         }
 

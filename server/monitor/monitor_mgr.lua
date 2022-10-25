@@ -1,6 +1,6 @@
 --monitor_mgr.lua
-import("network/http_client.lua")
 local log_page    = nil
+import("network/http_client.lua")
 local RpcServer   = import("network/rpc_server.lua")
 local HttpServer  = import("network/http_server.lua")
 
@@ -19,7 +19,7 @@ local PeriodTime  = enum("PeriodTime")
 local router_mgr  = hive.get("router_mgr")
 local event_mgr   = hive.get("event_mgr")
 local thread_mgr  = hive.get("thread_mgr")
-local http_client = hive.get("http_client")
+local proxy_agent = hive.get("proxy_agent")
 local timer_mgr   = hive.get("timer_mgr")
 
 local MonitorMgr  = singleton()
@@ -62,7 +62,7 @@ function MonitorMgr:register_admin()
         local purl      = sformat("%s/monitor", admin_url)
         local http_addr = sformat("%s:%d", host, self.http_server:get_port())
         thread_mgr:success_call(PeriodTime.SECOND_MS, function()
-            local ok, status, res = http_client:call_post(purl, { addr = http_addr })
+            local ok, status, res = proxy_agent:post(purl, { addr = http_addr })
             if ok and status == 200 then
                 ok, res = json_decode(res, true)
                 if ok and res.code == 0 then

@@ -39,15 +39,6 @@ function logger.init()
     llog.add_lvl_dest(LOG_LEVEL.ERROR)
 end
 
-function logger.setup_graylog()
-    local logaddr = environ.get("HIVE_GRAYLOG_ADDR")
-    if logaddr then
-        local GrayLog    = import("driver/graylog.lua")
-        local graydriver = GrayLog(logaddr)
-        logger.add_monitor(graydriver)
-    end
-end
-
 function logger.feature(name)
     if not logfeature.features then
         logfeature.features = {}

@@ -168,6 +168,10 @@ function hive.reload()
     return count
 end
 
+function hive.load(name)
+    return hive[name]
+end
+
 function hive.get(name)
     local global_obj = hive[name]
     if not global_obj then

@@ -6,12 +6,18 @@ local ltimer        = require("ltimer")
 local lprof         = require("lprof")
 local ProfObj       = import("kernel/object/prof_obj.lua")
 
-local socket_mgr    = nil
-local update_mgr    = nil
+local tpack         = table.pack
+local tunpack       = table.unpack
+local raw_yield     = coroutine.yield
+local raw_resume    = coroutine.resume
 local ltime         = ltimer.time
 
 local HiveMode      = enum("HiveMode")
 local ServiceStatus = enum("ServiceStatus")
+
+local co_hookor     = hive.load("co_hookor")
+local socket_mgr    = hive.load("socket_mgr")
+local update_mgr    = hive.load("update_mgr")
 
 --初始化网络
 local function init_network()
@@ -24,9 +30,33 @@ end
 --初始化路由
 local function init_router()
     import("kernel/router_mgr.lua")
-    import("driver/webhook.lua")
     import("agent/gm_agent.lua")
-    import("agent/http_agent.lua")
+end
+
+--协程改造
+local function init_coroutine()
+    coroutine.yield = function(...)
+        if co_hookor then
+            co_hookor:yield()
+        end
+        return raw_yield(...)
+    end
+    coroutine.resume = function(co, ...)
+        if co_hookor then
+            co_hookor:yield()
+            co_hookor:resume(co)
+        end
+        local args = tpack(raw_resume(co, ...))
+        if co_hookor then
+            co_hookor:resume()
+        end
+        return tunpack(args)
+    end
+    hive.eval = function(name)
+        if co_hookor then
+            return co_hookor:eval(name)
+        end
+    end
 end
 
 --初始化loop
@@ -37,6 +67,13 @@ local function init_mainloop()
     update_mgr = hive.get("update_mgr")
 end
 
+--初始化调度器
+local function init_scheduler()
+    import("driver/scheduler.lua")
+    hive.scheduler:setup("hive")
+    import("agent/proxy_agent.lua")
+end
+
 function hive.init()
     --初始化基础模块
     lprof.init()
@@ -45,6 +82,7 @@ function hive.init()
     service.init()
     logger.init()
     --主循环
+    init_coroutine()
     init_mainloop()
     --网络
     if hive.mode < HiveMode.TINY then
@@ -56,6 +94,8 @@ function hive.init()
     --其他模块加载
     if hive.mode == HiveMode.SERVICE then
         init_router()
+        --加载调度器
+        init_scheduler()
         --加载协议
         import("kernel/protobuf_mgr.lua")
         --加载monotor
@@ -63,19 +103,19 @@ function hive.init()
         if not environ.get("HIVE_MONITOR_HOST") then
             import("kernel/netlog_mgr.lua")
         end
-        --graylog
-        logger.setup_graylog()
         import("devops/devops_mgr.lua")
     end
+end
+
+function hive.hook_coroutine(hooker)
+    co_hookor = hooker
+    hive.co_hookor = hooker
 end
 
 --启动
 function hive.startup(entry)
     hive.now                   = os.time()
     hive.frame                 = 0
-    hive.yield                 = coroutine.yield
-    hive.resume                = coroutine.resume
-    hive.running               = coroutine.running
     hive.now_ms, hive.clock_ms = ltime()
     hive.service_status        = ServiceStatus.STOP
     --初始化随机种子
@@ -84,6 +124,11 @@ function hive.startup(entry)
     hive.init()
     --启动服务器
     entry()
+    hive.after_start()
+end
+
+--启动后
+function hive.after_start()
     local timer_mgr = hive.get("timer_mgr")
     timer_mgr:once(10 * 1000, function()
         hive.service_status = ServiceStatus.RUN

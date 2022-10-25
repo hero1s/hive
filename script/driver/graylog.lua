@@ -1,36 +1,35 @@
 --graylog.lua
 import("network/http_client.lua")
 local lkcp        = require("lkcp")
+local ljson       = require("lcjson")
 
 local log_err     = logger.err
 local log_info    = logger.info
-local json_encode = hive.json_encode
+local json_encode = ljson.encode
 local sformat     = string.format
 local dgetinfo    = debug.getinfo
 local tcopy       = table_ext.copy
-local sid2sid     = service.id2sid
-local sid2nick    = service.id2nick
-local sid2name    = service.id2name
-local sid2index   = service.id2index
 local protoaddr   = string_ext.protoaddr
 
-local Socket      = import("driver/socket.lua")
-local thread_mgr  = hive.get("thread_mgr")
 local update_mgr  = hive.get("update_mgr")
 local http_client = hive.get("http_client")
 
-local GrayLog     = class()
+local Socket      = import("driver/socket.lua")
+
+local GrayLog     = singleton()
 local prop        = property(GrayLog)
 prop:reader("ip", nil)          --地址
 prop:reader("tcp", nil)         --网络连接对象
 prop:reader("udp", nil)         --网络连接对象
 prop:reader("port", 12021)      --端口
 prop:reader("addr", nil)        --http addr
-prop:reader("proto", "http")    --proto
-prop:reader("host", nil)        --host
+prop:reader("proto", nil)       --proto
 
-function GrayLog:__init(addr)
-    self.host             = environ.get("HIVE_HOST_IP")
+function GrayLog:__init()
+    local addr = environ.get("HIVE_GRAYLOG_ADDR")
+    if not addr then
+        return
+    end
     local ip, port, proto = protoaddr(addr)
     self.proto            = proto
     if proto == "http" then
@@ -50,9 +49,6 @@ function GrayLog:__init(addr)
     log_info("[GrayLog][setup] setup udp (%s:%s) success!", self.ip, self.port)
 end
 
-function GrayLog:http(ip, port)
-end
-
 function GrayLog:close()
     if self.tcp then
         self.tcp:close()
@@ -70,21 +66,19 @@ function GrayLog:on_second()
 end
 
 function GrayLog:build(message, level, optional)
-    local hive_id    = hive.id
     local debug_info = dgetinfo(6, "S")
     local gelf       = {
         level         = level,
         version       = "1.1",
-        host          = self.host,
-        _node_id      = hive_id,
+        host          = hive.host,
         timestamp     = hive.now,
         short_message = message,
         file          = debug_info.short_src,
         line          = debug_info.linedefined,
-        _name         = sid2name(hive_id),
-        _nick         = sid2nick(hive_id),
-        _index        = sid2index(hive_id),
-        _service      = sid2sid(hive_id)
+        _service      = hive.service,
+        _index        = hive.index,
+        _name         = hive.name,
+        _id           = hive.id,
     }
     if optional then
         tcopy(optional, gelf)
@@ -92,15 +86,13 @@ function GrayLog:build(message, level, optional)
     return gelf
 end
 
-function GrayLog:dispatch_log(message, lvl_name, level, optional)
+function GrayLog:write(message, level, optional)
+    if not self.proto then
+        return
+    end
     local gelf = self:build(message, level, optional)
-    if self.proto == "http" then
-        thread_mgr:fork(function()
-            local ok, status, res = http_client:call_post(self.addr, gelf)
-            if not ok then
-                print("[GrayLog][write] post failed!:", status, res)
-            end
-        end)
+    if self.proto == "http" and self.addr then
+        http_client:call_post(self.addr, gelf)
         return
     end
     if self.proto == "tcp" then
@@ -109,8 +101,12 @@ function GrayLog:dispatch_log(message, lvl_name, level, optional)
         end
         return
     end
-    local udpmsg = json_encode(gelf)
-    self.udp:send(udpmsg, #udpmsg, self.ip, self.port)
+    if self.udp then
+        local udpmsg = json_encode(gelf)
+        self.udp:send(udpmsg, #udpmsg, self.ip, self.port)
+    end
 end
+
+hive.graylog = GrayLog()
 
 return GrayLog

@@ -60,7 +60,7 @@ namespace lcodec {
         return ((last_time - BASE_TIME) << (SNUM_BITS + GROUP_BITS + INDEX_BITS)) |
                 (serial_index << (GROUP_BITS + INDEX_BITS)) | (index << GROUP_BITS) | group;
     }
-    
+
     static int guid_string(lua_State* L, uint32_t group, uint32_t index) {
         char sguid[32];
         size_t guid = guid_new(group, index);
@@ -92,7 +92,7 @@ namespace lcodec {
         lua_pushstring(L, tmp);
         return 1;
     }
-    
+
     static int find_index(char val) {
         if (val >= 97) return val - 61;
         if (val >= 65) return val - 55;

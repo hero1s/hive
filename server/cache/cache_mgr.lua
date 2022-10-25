@@ -76,7 +76,7 @@ end
 
 function CacheMgr:evt_set_server_status(status)
     log_err("[CacheMgr][evt_set_server_status] enter flush mode,wait stop service:%s", hive.index)
-    self.flush = (status ~= 0) and true or false
+    self.flush = (status ~= 0)
 end
 
 function CacheMgr:on_timer_update()

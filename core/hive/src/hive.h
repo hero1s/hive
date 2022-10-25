@@ -2,6 +2,7 @@
 #include <map>
 
 #include "lualog/logger.h"
+#include "worker/scheduler.h"
 
 using namespace logger;
 class hive_app final
@@ -20,6 +21,7 @@ protected:
 
 private:
 	uint64_t m_signal = 0;
+	lworker::scheduler m_schedulor;
 };
 
 extern hive_app* g_app;

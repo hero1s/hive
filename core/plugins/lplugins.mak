@@ -156,11 +156,6 @@ OBJS += $(patsubst $(SRC_DIR)/ltimer/%.m, $(INT_DIR)/ltimer/%.o, $(filter-out $(
 OBJS += $(patsubst $(SRC_DIR)/ltimer/%.cc, $(INT_DIR)/ltimer/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/ltimer/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/ltimer/%.cpp, $(INT_DIR)/ltimer/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/ltimer/*.cpp)))
 #子目录
-OBJS += $(patsubst $(SRC_DIR)/lworker/%.c, $(INT_DIR)/lworker/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lworker/*.c)))
-OBJS += $(patsubst $(SRC_DIR)/lworker/%.m, $(INT_DIR)/lworker/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lworker/*.m)))
-OBJS += $(patsubst $(SRC_DIR)/lworker/%.cc, $(INT_DIR)/lworker/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lworker/*.cc)))
-OBJS += $(patsubst $(SRC_DIR)/lworker/%.cpp, $(INT_DIR)/lworker/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lworker/*.cpp)))
-#子目录
 OBJS += $(patsubst $(SRC_DIR)/lzset/%.c, $(INT_DIR)/lzset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lzset/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lzset/%.m, $(INT_DIR)/lzset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lzset/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/lzset/%.cc, $(INT_DIR)/lzset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lzset/*.cc)))
@@ -229,7 +224,6 @@ pre_build:
 	mkdir -p $(INT_DIR)/lrandom
 	mkdir -p $(INT_DIR)/lstdfs
 	mkdir -p $(INT_DIR)/ltimer
-	mkdir -p $(INT_DIR)/lworker
 	mkdir -p $(INT_DIR)/lzset
 	mkdir -p $(INT_DIR)/mongo
 	mkdir -p $(INT_DIR)/protobuf

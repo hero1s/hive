@@ -36,6 +36,7 @@ MYCFLAGS += -I../../extend/lua/lua
 MYCFLAGS += -I../../extend/fmt/include
 MYCFLAGS += -I../../extend/luakit/include
 MYCFLAGS += -I../../extend/utility
+MYCFLAGS += -I../plugins/src
 
 #需要定义的选项
 MYCFLAGS += -DFMT_HEADER_ONLY
@@ -101,6 +102,11 @@ OBJS += $(patsubst $(SRC_DIR)/lualog/%.c, $(INT_DIR)/lualog/%.o, $(filter-out $(
 OBJS += $(patsubst $(SRC_DIR)/lualog/%.m, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/lualog/%.cc, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/lualog/%.cpp, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.cpp)))
+#子目录
+OBJS += $(patsubst $(SRC_DIR)/worker/%.c, $(INT_DIR)/worker/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/worker/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/worker/%.m, $(INT_DIR)/worker/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/worker/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/worker/%.cc, $(INT_DIR)/worker/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/worker/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/worker/%.cpp, $(INT_DIR)/worker/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/worker/*.cpp)))
 #根目录
 OBJS += $(patsubst $(SRC_DIR)/%.c, $(INT_DIR)/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/%.m, $(INT_DIR)/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/*.m)))
@@ -133,6 +139,7 @@ pre_build:
 	mkdir -p $(TARGET_DIR)
 	mkdir -p $(INT_DIR)/exception
 	mkdir -p $(INT_DIR)/lualog
+	mkdir -p $(INT_DIR)/worker
 
 #后编译
 post_build:

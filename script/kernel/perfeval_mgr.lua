@@ -1,49 +1,44 @@
 --perfeval_mgr.lua
-local ltimer = require("ltimer")
+local ltimer      = require("ltimer")
 
-local pairs         = pairs
-local tpack         = table.pack
-local tunpack       = table.unpack
-local env_status    = environ.status
-local raw_yield     = hive.yield
-local raw_resume    = hive.resume
-local raw_running   = hive.running
-local lclock_ms     = ltimer.clock_ms
+local pairs       = pairs
+local co_running  = coroutine.running
+local env_status  = environ.status
+local lclock_ms   = ltimer.clock_ms
 
-local EvalSlot      = import("kernel/object/eval_slot.lua")
-local event_mgr     = hive.get("event_mgr")
+local EvalSlot    = import("kernel/object/eval_slot.lua")
+local event_mgr   = hive.get("event_mgr")
 
 local PerfevalMgr = singleton()
-local prop = property(PerfevalMgr)
+local prop        = property(PerfevalMgr)
 prop:reader("eval_id", 0)
 prop:reader("perfeval", false)  --性能开关
 prop:reader("eval_list", {})    --协程评估表
 function PerfevalMgr:__init()
     self.perfeval = env_status("HIVE_PERFEVAL")
+    if self.perfeval then
+        hive.hook_coroutine(self)
+    end
 end
 
 function PerfevalMgr:yield()
-    if self.perfeval then
-        local clock_ms = lclock_ms()
-        local yield_co = raw_running()
-        local eval_cos = self.eval_list[yield_co]
-        for _, eval_data in pairs(eval_cos or {}) do
-            eval_data.yield_tick = clock_ms
-        end
+    local clock_ms = lclock_ms()
+    local yield_co = co_running()
+    local eval_cos = self.eval_list[yield_co]
+    for _, eval_data in pairs(eval_cos or {}) do
+        eval_data.yield_tick = clock_ms
     end
 end
 
 function PerfevalMgr:resume(co)
-    if self.perfeval then
-        local clock_ms = lclock_ms()
-        local resume_co = co or raw_running()
-        local eval_cos = self.eval_list[resume_co]
-        for _, eval_data in pairs(eval_cos or {}) do
-            if eval_data.yield_tick > 0 then
-                local pause_time = clock_ms - eval_data.yield_tick
-                eval_data.yield_time = eval_data.yield_time + pause_time
-                eval_data.yield_tick = 0
-            end
+    local clock_ms  = lclock_ms()
+    local resume_co = co or co_running()
+    local eval_cos  = self.eval_list[resume_co]
+    for _, eval_data in pairs(eval_cos or {}) do
+        if eval_data.yield_tick > 0 then
+            local pause_time     = clock_ms - eval_data.yield_tick
+            eval_data.yield_time = eval_data.yield_time + pause_time
+            eval_data.yield_tick = 0
         end
     end
 end
@@ -63,16 +58,16 @@ function PerfevalMgr:eval(eval_name)
 end
 
 function PerfevalMgr:start(eval_name)
-    local co = raw_running()
-    local eval_id = self:get_eval_id()
+    local co        = co_running()
+    local eval_id   = self:get_eval_id()
     local eval_data = {
-        co = co,
+        co         = co,
         yield_time = 0,
-        eval_id = eval_id,
-        eval_name = eval_name,
+        eval_id    = eval_id,
+        eval_name  = eval_name,
         begin_time = lclock_ms(),
     }
-    local eval_cos = self.eval_list[co]
+    local eval_cos  = self.eval_list[co]
     if eval_cos then
         eval_cos[eval_id] = eval_data
     else
@@ -87,22 +82,6 @@ function PerfevalMgr:stop(eval_data)
     self.eval_list[eval_data.co][eval_data.eval_id] = nil
 end
 
-local perfeval_mgr = PerfevalMgr()
-
---协程改造
-coroutine.yield = function(...)
-    perfeval_mgr:yield()
-    return raw_yield(...)
-end
-
-coroutine.resume = function(co, ...)
-    perfeval_mgr:yield()
-    perfeval_mgr:resume(co)
-    local args = tpack(raw_resume(co, ...))
-    perfeval_mgr:resume()
-    return tunpack(args)
-end
-
-hive.perfeval_mgr = perfeval_mgr
+hive.perfeval_mgr = PerfevalMgr()
 
 return PerfevalMgr

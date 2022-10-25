@@ -10,6 +10,12 @@
     <ClInclude Include="src\lualog\logger.h">
       <Filter>lualog</Filter>
     </ClInclude>
+    <ClInclude Include="src\worker\scheduler.h">
+      <Filter>worker</Filter>
+    </ClInclude>
+    <ClInclude Include="src\worker\worker.h">
+      <Filter>worker</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\exception\exception.cpp">
@@ -43,6 +49,9 @@
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{25D902C2-4283-AB8C-FBAC-54DFA101AD31}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="worker">
+      <UniqueIdentifier>{B61822E8-357D-CAFF-77EA-ACCF348D9134}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

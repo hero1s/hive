@@ -359,7 +359,7 @@ local function _parse_field_packet(packet)
     --2 byte 列（字段）标志
     local flags            = sunpack("<I2", packet, pos_col_flags)
     -- https://mariadb.com/kb/en/resultset/
-    local signed           = (flags & 0x20 == 0) and true or false
+    local signed           = (flags & 0x20 == 0)
     return { type = type, signed = signed, name = name }
 end
 

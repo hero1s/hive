@@ -1,5 +1,6 @@
 --worker.lua
 import("basic/basic.lua")
+import("basic/json.lua")
 import("kernel/config_mgr.lua")
 local lcodec        = require("lcodec")
 local ltimer        = require("ltimer")
@@ -36,6 +37,7 @@ end
 
 function hive.init()
     --初始化基础模块
+    environ.init()
     service.init()
     --主循环
     init_mainloop()

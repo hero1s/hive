@@ -10,6 +10,8 @@
     <ClInclude Include="src\exception\stack_back_trace.h"/>
     <ClInclude Include="src\hive.h"/>
     <ClInclude Include="src\lualog\logger.h"/>
+    <ClInclude Include="src\worker\scheduler.h"/>
+    <ClInclude Include="src\worker\worker.h"/>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\exception\exception.cpp"/>
@@ -51,7 +53,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\extend\lua\lua;..\..\extend\fmt\include;..\..\extend\luakit\include;..\..\extend\utility;$(SolutionDir)extend\mimalloc\mimalloc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\extend\lua\lua;..\..\extend\fmt\include;..\..\extend\luakit\include;..\..\extend\utility;..\plugins\src;$(SolutionDir)extend\mimalloc\mimalloc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;FMT_HEADER_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>

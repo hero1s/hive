@@ -25,7 +25,6 @@ start "dbsvr1 "%~dp0        ./hive.exe ./conf/dbsvr.conf       --index=1
 rem start "dbsvr2 "%~dp0        ./hive.exe ./conf/dbsvr.conf       --index=2
 start "cachesvr1 "%~dp0     ./hive.exe ./conf/cachesvr.conf    --index=1
 rem start "cachesvr2 "%~dp0     ./hive.exe ./conf/cachesvr.conf    --index=2
-start "proxy1 "%~dp0        ./hive.exe ./conf/proxy.conf       --index=1
 rem start "proxy2 "%~dp0        ./hive.exe ./conf/proxy.conf       --index=2
 start "online1 "%~dp0       ./hive.exe ./conf/online.conf      --index=1
 rem start "online2 "%~dp0       ./hive.exe ./conf/online.conf      --index=2

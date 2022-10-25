@@ -112,7 +112,7 @@ function UpdateMgr:update(now_ms, clock_ms)
 end
 
 function UpdateMgr:sig_check()
-    if sig_check() then
+    if sig_check and sig_check() then
         log_info("[UpdateMgr][sig_check]service quit for signal !")
         for obj in pairs(self.quit_objs) do
             obj:on_quit()

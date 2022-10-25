@@ -4,7 +4,7 @@
 namespace lcodec {
 
     const size_t BUFFER_DEF = 64 * 1024;        //64K
-    const size_t BUFFER_MAX = 16 * 1024 * 1024; //16M
+    const size_t BUFFER_MAX = 64 * 1024 * 1024; //64M
 
     class var_buffer {
     public:

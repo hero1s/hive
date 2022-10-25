@@ -70,7 +70,7 @@ namespace lworker {
 
         void callback(slice* buf) {
             std::unique_lock<spin_mutex> lock(m_mutex);            
-            m_write_buf->write<uint16_t>(buf->size());
+            m_write_buf->write<uint32_t>(buf->size());
             m_write_buf->push_data(buf->head(), buf->size());
         }
 

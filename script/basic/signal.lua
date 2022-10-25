@@ -61,7 +61,7 @@ signal.init       = function()
 end
 
 signal.check      = function()
-    local signalv = get_signal()
+    local signalv = get_signal and get_signal() or 0
     if signalv > 0 then
         for sig, sig_name in pairs(EXIT_SIGNAL) do
             if signalv & (1 << sig) ~= 0 then

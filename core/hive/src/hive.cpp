@@ -173,6 +173,20 @@ void hive_app::run() {
 	hive.set_function("ignore_signal", [](int n) { signal(n, SIG_IGN); });
 	hive.set_function("default_signal", [](int n) { signal(n, SIG_DFL); });
 	hive.set_function("register_signal", [](int n) { signal(n, on_signal); });
+	//begin worker操作接口
+	hive.set_function("worker_update", [&](size_t to) { m_schedulor.update(); });
+	hive.set_function("worker_suspend", [&](size_t to) { m_schedulor.suspend(to); });
+	hive.set_function("worker_setup", [&](lua_State* L, std::string service, std::string sandbox) {
+		m_schedulor.setup(L, service, sandbox);
+		return 0;
+		});
+	hive.set_function("worker_startup", [&](std::string name, std::string entry) {
+		m_schedulor.startup(name, entry);
+		});
+	hive.set_function("worker_call", [&](std::string name, slice* buf, size_t hash) {
+		return m_schedulor.call(name, buf, hash);
+		});
+	//end worker接口
 
 	if (getenv("HIVE_SANDBOX") != NULL) {
 		lua.run_script(fmt::format("require '{}'", getenv("HIVE_SANDBOX")), [&](std::string err) {
