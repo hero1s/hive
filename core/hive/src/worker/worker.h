@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef __WORKER_H__
+#define __WORKER_H__
 #include <mutex>
 #include <atomic>
 #include <thread>
@@ -46,7 +46,7 @@ namespace lworker {
     class ischeduler {
     public:
         virtual void wakeup(slice* buf) = 0;
-        virtual void callback(slice* buf) = 0;
+        virtual bool callback(slice* buf) = 0;
         virtual void destory(std::string& name, std::shared_ptr<worker> workor) = 0;
     };
 
@@ -69,9 +69,12 @@ namespace lworker {
 
         bool call(slice* buf) {
             std::unique_lock<spin_mutex> lock(m_mutex);
-            m_write_buf->write<uint32_t>(buf->size());
-            m_write_buf->push_data(buf->head(), buf->size());
-            return true;
+            if (buf->size() < UINT32_MAX) {
+                m_write_buf->write<uint32_t>(buf->size());
+                m_write_buf->push_data(buf->head(), buf->size());
+                return true;
+            }
+            return false;
         }
 
         void update() {
@@ -104,7 +107,7 @@ namespace lworker {
             hive.set_function("update", [&]() { update(); });
             hive.set_function("getenv", [&](const char* key) { return get_env(key); });
             hive.set_function("wakeup", [&](slice* buf) { m_schedulor->wakeup(buf); });
-            hive.set_function("callback", [&](slice* buf) { m_schedulor->callback(buf); });
+            hive.set_function("callback", [&](slice* buf) { return m_schedulor->callback(buf); });
             m_lua->run_script(fmt::format("require '{}'", m_sandbox), [&](std::string err) {
                 printf("worker load %s failed, because: %s", m_sandbox.c_str(), err.c_str());
                 m_schedulor->destory(m_name, shared_from_this());
@@ -139,3 +142,4 @@ namespace lworker {
     };
 }
 
+#endif

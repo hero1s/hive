@@ -84,6 +84,17 @@ static int lset_env(lua_State* L) {
 	return 0;
 }
 
+static std::string add_lua_path(std::string path) {
+	auto p = getenv("LUA_PATH");
+	std::string cur_path = (p != NULL) ? p : "";
+#ifdef WIN32
+	cur_path.append("!/");
+#endif // #if WIN32
+	cur_path.append(path).append("?.lua;");
+	setenv("LUA_PATH", cur_path.c_str(), 1);
+	return cur_path;
+}
+
 void hive_app::set_signal(uint32_t n) {
 	uint32_t mask = 1 << n;
 	m_signal |= mask;
@@ -121,6 +132,8 @@ bool hive_app::load(int argc, const char* argv[]) {
 		luakit::kit_state lua;
 		lua.set("platform", get_platform());
 		lua.set_function("set_env", lset_env);
+		lua.set_function("add_lua_path", add_lua_path);
+
 		lua.run_file(lua_conf, [&](std::string err) {
 			std::cout << "load lua config err: " << err << std::endl;
 			bRet = false;
@@ -168,6 +181,7 @@ void hive_app::run() {
 	auto hive = lua.new_table("hive");
 	hive.set("pid", ::getpid());
 	hive.set("platform", get_platform());
+	
 	hive.set_function("get_signal", [&]() { return m_signal; });
 	hive.set_function("set_signal", [&](int n) { set_signal(n); });
 	hive.set_function("ignore_signal", [](int n) { signal(n, SIG_IGN); });

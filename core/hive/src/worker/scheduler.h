@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef __SCHEDULER_H__
+#define __SCHEDULER_H__
 #include <condition_variable>
 
 #include "worker.h"
@@ -68,10 +68,14 @@ namespace lworker {
             return false;
         }
 
-        void callback(slice* buf) {
-            std::unique_lock<spin_mutex> lock(m_mutex);            
-            m_write_buf->write<uint32_t>(buf->size());
-            m_write_buf->push_data(buf->head(), buf->size());
+        bool callback(slice* buf) {
+            if (buf->size() < UINT32_MAX) {
+                std::unique_lock<spin_mutex> lock(m_mutex);
+                m_write_buf->write<uint32_t>(buf->size());
+                m_write_buf->push_data(buf->head(), buf->size());
+                return true;
+            }
+            return false;
         }
 
         void update() {
@@ -118,3 +122,4 @@ namespace lworker {
     };
 }
 
+#endif
