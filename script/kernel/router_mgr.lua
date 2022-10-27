@@ -276,10 +276,8 @@ end
 
 --生成针对服务的访问接口
 function RouterMgr:build_service()
-    local service_db = config_mgr:get_table("service")
-    for _, service_conf in service_db:iterator() do
-        local service    = service_conf.name
-        local service_id = service_conf.id
+    local services = service.services()
+    for service, service_id in pairs(services) do
         self:build_service_method(service, service_id)
     end
 end

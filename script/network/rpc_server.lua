@@ -24,12 +24,10 @@ prop:reader("ip", "")                     --监听ip
 prop:reader("port", 0)                    --监听端口
 prop:reader("clients", {})
 prop:reader("listener", nil)
-function RpcServer:__init()
-end
+prop:reader("holder", nil)                --持有者
 
---初始化
 --induce：根据index推导port
-function RpcServer:setup(ip, port, induce)
+function RpcServer:__init(holder, ip, port, induce)
     if not ip or not port then
         log_err("[RpcServer][setup] ip:%s or port:%s is nil", ip, port)
         signal_quit()
@@ -40,6 +38,7 @@ function RpcServer:setup(ip, port, induce)
         log_err("[RpcServer][setup] now listen %s:%s failed", ip, real_port)
         signal_quit()
     end
+    self.holder        = holder
     self.ip, self.port = ip, real_port
     log_info("[RpcServer][setup] now listen %s:%s success!", ip, real_port)
     self.listener.on_accept = function(client)
@@ -72,7 +71,9 @@ function RpcServer:on_socket_error(token, err)
     local client = self.clients[token]
     if client then
         self.clients[token] = nil
-        event_mgr:notify_listener("on_socket_error", client, token, err)
+        thread_mgr:fork(function()
+            self.holder:on_client_error(client, token, err)
+        end)
     end
 end
 
@@ -100,7 +101,7 @@ function RpcServer:on_socket_accept(client)
         end)
     end
     --通知收到新client
-    event_mgr:notify_listener("on_socket_accept", client)
+    self.holder:on_client_accept(client)
 end
 
 --send接口
@@ -159,7 +160,7 @@ function RpcServer:rpc_heartbeat(client, node_info)
     if node_info then
         client.id         = node_info.id
         client.service_id = node_info.service_id
-        event_mgr:notify_listener("on_socket_info", client, node_info)
+        self.holder:on_client_register(client, node_info)
     end
 end
 

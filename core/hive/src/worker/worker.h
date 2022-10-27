@@ -56,10 +56,10 @@ namespace lworker {
         worker(ischeduler* schedulor, std::string& name, std::string& entry, std::string& service, std::string& sandbox)
             : m_schedulor(schedulor), m_name(name), m_entry(entry), m_service(service), m_sandbox(sandbox) { }
 
-        ~worker() {
+        virtual ~worker() {
             m_running = false;
             if (m_thread.joinable()) {
-                m_thread.join();
+                m_thread.detach();
             }
         }
 

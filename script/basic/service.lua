@@ -19,21 +19,25 @@
 
 import("kernel/config_mgr.lua")
 
-local sformat    = string.format
-
-local config_mgr = hive.get("config_mgr")
-local service_db = config_mgr:init_table("service", "id")
+local sformat       = string.format
 
 --服务组常量
-local SERVICES   = _ENV.SERVICES or {}
+local SERVICES      = _ENV.SERVICES or {}
+local SERVICE_NAMES = _ENV.SERVICE_NAMES or {}
+local SERVICE_HASHS = _ENV.SERVICE_HASHS or {}
 
-service          = {}
+service             = {}
 
 function service.init()
     --加载服务配置
+    local config_mgr = hive.get("config_mgr")
+    local service_db = config_mgr:init_table("service", "id")
     for _, conf in service_db:iterator() do
-        SERVICES[conf.name] = conf.id
+        SERVICES[conf.name]    = conf.id
+        SERVICE_NAMES[conf.id] = conf.name
+        SERVICE_HASHS[conf.id] = conf.hash
     end
+    config_mgr:close_table("service")
     --初始化服务信息
     local name        = environ.get("HIVE_SERVICE")
     local index       = environ.number("HIVE_INDEX", 1)
@@ -54,6 +58,10 @@ function service.make_id(name, index)
     return (name << 16) | index
 end
 
+function service.services()
+    return SERVICES
+end
+
 --节点id获取服务id
 function service.id2sid(hive_id)
     return (hive_id >> 16) & 0xff
@@ -66,12 +74,12 @@ end
 
 --节点id转服务名
 function service.id2name(hive_id)
-    return service_db:find_value("name", hive_id >> 16)
+    return SERVICE_NAMES[hive_id >> 16]
 end
 
 --服务id转服务名
 function service.sid2name(service_id)
-    return service_db:find_value("name", service_id)
+    return SERVICE_NAMES[service_id]
 end
 
 --服务名转服务id
@@ -92,7 +100,7 @@ end
 
 --服务固定hash
 function service.hash(service_id)
-    return service_db:find_value("hash", service_id)
+    return SERVICE_HASHS[service_id]
 end
 
 --生成router_id

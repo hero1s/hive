@@ -42,18 +42,14 @@ function RouterServer:setup()
     hive.id         = service.router_id(router_conf.host_id, hive.index)
     hive.name       = service.router_name(router_conf.host_id, hive.index)
     --启动server
-    self.rpc_server = RpcServer()
-    self.rpc_server:setup(host, router_conf.port, true)
+    self.rpc_server = RpcServer(self, host, router_conf.port, true)
     --监听事件
-    event_mgr:add_listener(self, "on_socket_info")
-    event_mgr:add_listener(self, "on_socket_error")
-    event_mgr:add_listener(self, "on_socket_accept")
     event_mgr:add_listener(self, "rpc_service_register")
 end
 
 --其他服务器节点关闭
-function RouterServer:on_socket_error(server, server_token, err)
-    log_info("[RouterServer][on_socket_error] %s lost: %s", server.name or server_token, err)
+function RouterServer:on_client_error(server, server_token, err)
+    log_info("[RouterServer][on_client_error] %s lost: %s", server.name or server_token, err)
     local kick_server_id = self.kick_servers[server_token]
     if kick_server_id then
         local format = "[RouterServer][on_socket_error] kick server close! token:%s, name:%s, ip:%s"
@@ -91,10 +87,10 @@ function RouterServer:on_socket_error(server, server_token, err)
 end
 
 --accept事件
-function RouterServer:on_socket_accept(server)
-    log_info("[RouterServer][on_socket_accept] new connection, token=%s", server.token)
+function RouterServer:on_client_accept(server)
+    log_info("[RouterServer][on_client_accept] new connection, token=%s", server.token)
     server.on_forward_error     = function(session_id, error_msg)
-        log_err("[RouterServer][on_socket_accept] on_forward_error:%s, session_id=%s,%s", error_msg, session_id, server.name)
+        log_err("[RouterServer][on_client_accept] on_forward_error:%s, session_id=%s,%s", error_msg, session_id, server.name)
         server.call(session_id, FlagMask.RES, hive.id, "on_forward_error", false, KernCode.RPC_UNREACHABLE, error_msg)
     end
     server.on_forward_broadcast = function(session_id, broadcast_num)
@@ -171,7 +167,7 @@ function RouterServer:broadcast_switch_master(server_id)
 end
 
 -- 会话信息
-function RouterServer:on_socket_info(client, node_info)
+function RouterServer:on_client_register(client, node_info)
 end
 
 hive.router_server = RouterServer()

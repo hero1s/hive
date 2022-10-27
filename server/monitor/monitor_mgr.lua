@@ -1,5 +1,5 @@
 --monitor_mgr.lua
-local log_page    = nil
+local log_page = nil
 import("network/http_client.lua")
 local RpcServer   = import("network/rpc_server.lua")
 local HttpServer  = import("network/http_server.lua")
@@ -17,7 +17,6 @@ local sformat     = string.format
 local PeriodTime  = enum("PeriodTime")
 
 local router_mgr  = hive.get("router_mgr")
-local event_mgr   = hive.get("event_mgr")
 local thread_mgr  = hive.get("thread_mgr")
 local proxy_agent = hive.get("proxy_agent")
 local timer_mgr   = hive.get("timer_mgr")
@@ -32,13 +31,7 @@ prop:reader("monitor_lost_nodes", {})
 function MonitorMgr:__init()
     --创建rpc服务器
     local ip, port  = env_addr("HIVE_MONITOR_HOST")
-    self.rpc_server = RpcServer()
-    self.rpc_server:setup(ip, port)
-    --监听事件
-    event_mgr:add_listener(self, "on_socket_info")
-    event_mgr:add_listener(self, "on_socket_error")
-    event_mgr:add_listener(self, "on_socket_accept")
-
+    self.rpc_server = RpcServer(self, ip, port)
     --创建HTTP服务器
     local server = HttpServer(env_get("HIVE_MONITOR_HTTP"))
     server:register_get("/", "on_log_page", self)
@@ -75,21 +68,21 @@ function MonitorMgr:register_admin()
     end
 end
 
-function MonitorMgr:on_socket_accept(client)
-    log_info("[MonitorMgr][on_socket_accept] token:%s", client.token)
+function MonitorMgr:on_client_accept(client)
+    log_info("[MonitorMgr][on_client_accept] token:%s", client.token)
 end
 
 -- 会话信息
-function MonitorMgr:on_socket_info(client, node_info)
-    log_info("[MonitorMgr][on_socket_info] node token:%s,%s,%s", client.token, node_info.service, service.id2nick(node_info.id))
+function MonitorMgr:on_client_register(client, node_info)
+    log_info("[MonitorMgr][on_client_register] node token:%s,%s,%s", client.token, node_info.service, service.id2nick(node_info.id))
     node_info.token                       = client.token
     self.monitor_nodes[client.token]      = node_info
     self.monitor_lost_nodes[node_info.id] = nil
 end
 
 -- 会话关闭回调
-function MonitorMgr:on_socket_error(client, token, err)
-    log_warn("[MonitorMgr][on_socket_error] node name:%s, id:%s, token:%s,err:%s", service.id2nick(client.id), client.id, token, err)
+function MonitorMgr:on_client_error(client, token, err)
+    log_warn("[MonitorMgr][on_client_error] node name:%s, id:%s, token:%s,err:%s", service.id2nick(client.id), client.id, token, err)
     if client.id then
         self.monitor_lost_nodes[client.id] = self.monitor_nodes[token]
         self.monitor_nodes[token]          = nil

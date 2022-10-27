@@ -74,6 +74,10 @@ end
 
 --事件分发
 local function worker_rpc(session_id, rpc, ...)
+    if rpc == "stop" then
+        hive.stop()
+        return
+    end
     local rpc_datas = event_mgr:notify_listener(rpc, ...)
     if session_id > 0 then
         hive.callback(lencode(session_id, tunpack(rpc_datas)))

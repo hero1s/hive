@@ -86,6 +86,11 @@ function ConfigMgr:get_table(name)
     return self.table_list[name]
 end
 
+-- 关闭配置表
+function ConfigMgr:close_table(name)
+    self.table_list[name] = nil
+end
+
 -- 获取配置表一条记录
 function ConfigMgr:find_one(name, ...)
     local conf_tab = self.table_list[name]

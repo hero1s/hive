@@ -93,11 +93,6 @@ LDFLAGS += -L$(SOLUTION_DIR)library
 #自动生成目标
 OBJS =
 #子目录
-OBJS += $(patsubst $(SRC_DIR)/exception/%.c, $(INT_DIR)/exception/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/exception/*.c)))
-OBJS += $(patsubst $(SRC_DIR)/exception/%.m, $(INT_DIR)/exception/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/exception/*.m)))
-OBJS += $(patsubst $(SRC_DIR)/exception/%.cc, $(INT_DIR)/exception/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/exception/*.cc)))
-OBJS += $(patsubst $(SRC_DIR)/exception/%.cpp, $(INT_DIR)/exception/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/exception/*.cpp)))
-#子目录
 OBJS += $(patsubst $(SRC_DIR)/lualog/%.c, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lualog/%.m, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/lualog/%.cc, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.cc)))
@@ -137,7 +132,6 @@ clean :
 pre_build:
 	mkdir -p $(INT_DIR)
 	mkdir -p $(TARGET_DIR)
-	mkdir -p $(INT_DIR)/exception
 	mkdir -p $(INT_DIR)/lualog
 	mkdir -p $(INT_DIR)/worker
 

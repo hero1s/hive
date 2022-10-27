@@ -1,7 +1,6 @@
 ﻿#include <stdio.h>
 #include <locale>
 #include "hive.h"
-#include "exception/stack_back_trace.h"
 
 #ifdef WIN32
 #define tzset _tzset
@@ -73,9 +72,6 @@ LONG WINAPI CMiniDump::MyUnhandledExceptionFilter(EXCEPTION_POINTERS* ExceptionI
 	loExceptionInfo.ClientPointers = FALSE;
 	MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), lhDumpFile, MiniDumpNormal, &loExceptionInfo, NULL, NULL);
 	CloseHandle(lhDumpFile);
-	StackBackTrace stackBackTrace;
-	LOG_ERROR << stackBackTrace.build() << " \n";
-	log_service::instance()->stop();
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 

@@ -57,14 +57,14 @@ end
 
 function RpcClient:on_second(clock_ms)
     local _lock<close> = thread_mgr:lock("rpc-client-second" .. self.uuid)
-    if not self:is_alive() then
-        if self.auto_reconnect and clock_ms >= self.next_connect_time then
-            self.next_connect_time = clock_ms + RECONNECT_TIME
-            self:connect()
-        end
-    else
+    if self.alive then
         self:heartbeat(false, clock_ms)
         self:check_lost(clock_ms)
+        return
+    end
+    if self.auto_reconnect and clock_ms >= self.next_connect_time then
+        self.next_connect_time = clock_ms + RECONNECT_TIME
+        self:connect()
     end
 end
 
