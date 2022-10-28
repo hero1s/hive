@@ -3,7 +3,7 @@
 #include <signal.h>
 #include <functional>
 #include "hive.h"
-#include "ltimer/ltimer.h"
+
 #include "lua_kit.h"
 #include <fmt/core.h>
 
@@ -221,7 +221,6 @@ void hive_app::run() {
 			LOG_FATAL << "hive exit err: " << err;
 			});
 	}
-	ltimer::sleep(1000);
 	lua.close();
 	log_service::instance()->stop();
 }
