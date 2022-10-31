@@ -357,7 +357,7 @@ namespace tools
 #ifdef WIN32
 		return 1;
 #else
-		static CPU_OCCUPY last;
+		static thread_local CPU_OCCUPY last;
 		CPU_OCCUPY cur;
 		get_cpuoccupy(&cur);
 		auto cpu_use = cal_cpuoccupy(&last, &cur);

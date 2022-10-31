@@ -48,7 +48,6 @@
     <ClCompile Include="src\lcjson\lua_cjson.c"/>
     <ClCompile Include="src\lcjson\strbuf.c"/>
     <ClCompile Include="src\lcodec\lcodec.cpp"/>
-    <ClCompile Include="src\lcrab\lua-crab.c"/>
     <ClCompile Include="src\lcrypt\base64.c"/>
     <ClCompile Include="src\lcrypt\des56.c"/>
     <ClCompile Include="src\lcrypt\lcrypt.c"/>

@@ -88,7 +88,6 @@ function Socket:connect(ip, port, ptype)
         end
         self.alive      = success
         self.alive_time = hive.clock_ms
-        session.set_timeout(SOCKET_TIMEOUT)
         thread_mgr:response(block_id, success, res)
     end
     session.on_call_text = function(recv_len, data)

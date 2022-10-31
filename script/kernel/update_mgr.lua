@@ -124,7 +124,7 @@ end
 function UpdateMgr:check_new_day()
     if self.last_check_time > 0 then
         if not is_same_day(self.last_check_time, hive.now) then
-            log_err("[UpdateMgr][check_new_day] notify this time is new day!!!")
+            log_warn("[UpdateMgr][check_new_day] notify this time is new day!!!")
             event_mgr:notify_trigger("evt_new_day")
         end
     end

@@ -120,9 +120,6 @@
     <ClCompile Include="src\lcodec\lcodec.cpp">
       <Filter>lcodec</Filter>
     </ClCompile>
-    <ClCompile Include="src\lcrab\lua-crab.c">
-      <Filter>lcrab</Filter>
-    </ClCompile>
     <ClCompile Include="src\lcrypt\base64.c">
       <Filter>lcrypt</Filter>
     </ClCompile>
@@ -199,9 +196,6 @@
     </Filter>
     <Filter Include="lcodec">
       <UniqueIdentifier>{E24CB1AD-193A-E647-45BE-564E7264711B}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lcrab">
-      <UniqueIdentifier>{801D02A4-8781-DC43-F7D7-623523C1E8A1}</UniqueIdentifier>
     </Filter>
     <Filter Include="lcrypt">
       <UniqueIdentifier>{6779B38A-0EC6-088E-3974-E2A164AE1520}</UniqueIdentifier>

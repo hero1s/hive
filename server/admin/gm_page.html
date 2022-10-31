@@ -271,6 +271,13 @@
             $('#consoleTree').treeview({data: treeNodes});
             //consoleTree事件
             $('#consoleTree').on('nodeSelected', function(event, data) {
+                if (data.state.expanded == true){
+                    $('#consoleTree').treeview('collapseNode',data.nodeId);
+                }else{
+                    $('#consoleTree').treeview('expandNode',data.nodeId);
+                }
+                $('#consoleTree').treeview('unselectNode',data.nodeId);
+
                 if (data.tag == "gm") {
                     var cmd_desc = data.text;
                     var cmd_name;

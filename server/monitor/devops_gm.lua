@@ -132,6 +132,12 @@ function DevopsGmMgr:gm_guid_view(guid)
 end
 
 function DevopsGmMgr:gm_log_format(data, swline)
+    if type(data) ~= "string" then
+        return "格式错误"
+    end
+    if type(swline) ~= "number" then
+        swline = 0
+    end
     local data_t = lcodec.unserialize(data)
     return lcodec.serialize(data_t, swline)
 end

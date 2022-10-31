@@ -116,11 +116,6 @@ OBJS += $(patsubst $(SRC_DIR)/lcodec/%.m, $(INT_DIR)/lcodec/%.o, $(filter-out $(
 OBJS += $(patsubst $(SRC_DIR)/lcodec/%.cc, $(INT_DIR)/lcodec/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcodec/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/lcodec/%.cpp, $(INT_DIR)/lcodec/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcodec/*.cpp)))
 #子目录
-OBJS += $(patsubst $(SRC_DIR)/lcrab/%.c, $(INT_DIR)/lcrab/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrab/*.c)))
-OBJS += $(patsubst $(SRC_DIR)/lcrab/%.m, $(INT_DIR)/lcrab/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrab/*.m)))
-OBJS += $(patsubst $(SRC_DIR)/lcrab/%.cc, $(INT_DIR)/lcrab/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrab/*.cc)))
-OBJS += $(patsubst $(SRC_DIR)/lcrab/%.cpp, $(INT_DIR)/lcrab/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrab/*.cpp)))
-#子目录
 OBJS += $(patsubst $(SRC_DIR)/lcrypt/%.c, $(INT_DIR)/lcrypt/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrypt/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lcrypt/%.m, $(INT_DIR)/lcrypt/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrypt/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/lcrypt/%.cc, $(INT_DIR)/lcrypt/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrypt/*.cc)))
@@ -216,7 +211,6 @@ pre_build:
 	mkdir -p $(INT_DIR)/laoi
 	mkdir -p $(INT_DIR)/lcjson
 	mkdir -p $(INT_DIR)/lcodec
-	mkdir -p $(INT_DIR)/lcrab
 	mkdir -p $(INT_DIR)/lcrypt
 	mkdir -p $(INT_DIR)/lhttp
 	mkdir -p $(INT_DIR)/lkcp

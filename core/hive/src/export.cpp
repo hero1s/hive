@@ -35,7 +35,6 @@ extern "C"
 		REGISTER_CUSTOM_LIBRARY("lrandom", luaopen_lrandom);
 		REGISTER_CUSTOM_LIBRARY("bitarray", luaopen_bitarray);
 		//optional
-		REGISTER_CUSTOM_LIBRARY("lcrab", luaopen_lcrab);
 		REGISTER_CUSTOM_LIBRARY("lsnapshot", luaopen_snapshot);
 	}
 }
