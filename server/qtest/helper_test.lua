@@ -17,3 +17,6 @@ logger.debug("ip:%s",guess_name_type("192.168.1.13"))
 logger.debug("ip:%s",guess_name_type("192.168.1.13:jfdkalj"))
 logger.debug("ip:%s",guess_name_type("baidu.com"))
 logger.debug("ip:%s",guess_name_type("git.ids111.com"))
+
+logger.debug("lan ip:%s,net ip:%s",lhelper.get_lan_ip(),lhelper.get_net_ip())
+logger.debug("all ips:%s",lhelper.get_all_ips())

@@ -138,24 +138,12 @@ namespace tools
 		addrinfo* addrInfo = addr;
 		while (addrInfo != NULL)
 		{
-			std::string sockAddr;
 			if (addrInfo->ai_family == AF_INET || addrInfo->ai_family == PF_INET)
 			{
 				sockaddr_in addrin = *((sockaddr_in*)addrInfo->ai_addr);
 				char* ip = inet_ntoa(addrin.sin_addr);
-				//int32_t port = htons(addrin.sin_port);
-				sockAddr = ip;
+				oIPs.push_back(IPToValue(ip));
 			}
-			else
-			{
-				sockaddr_in6 addrin6 = *((sockaddr_in6*)addrInfo->ai_addr);
-				char ip[64] = { 0 };
-				getnameinfo((sockaddr*)&addrin6, sizeof(addrin6), ip, 64, NULL, 0, NI_NUMERICHOST);
-				//int32_t port = htons(addrin6.sin6_port);
-
-				sockAddr = ip;
-			}
-			oIPs.push_back(IPToValue(sockAddr));
 			addrInfo = addrInfo->ai_next;
 		}
 		freeaddrinfo(addr);
@@ -191,37 +179,14 @@ namespace tools
 
 	uint32_t CHelper::IPToValue(const std::string& strIP)
 	{
-		uint32_t a[4];
-		std::string IP = strIP;
-		std::string strTemp;
-		size_t pos;
-		size_t i = 3;
-		do {
-			pos = IP.find(".");
-			if (pos != std::string::npos) {
-				strTemp = IP.substr(0, pos);
-				a[i] = atoi(strTemp.c_str());
-				i--;
-				IP.erase(0, pos + 1);
-			}
-			else {
-				strTemp = IP;
-				a[i] = atoi(strTemp.c_str());
-				break;
-			}
-
-		} while (1);
-
-		uint32_t nResult = (a[3]) + (a[2] << 8) + (a[1] << 16) + (a[0] << 24);
-		return nResult;
+		return inet_addr(strIP.c_str());
 	}
 
 	std::string CHelper::ValueToIP(uint32_t ulAddr)
 	{
-		char strTemp[20];
-		memset(strTemp, 0, sizeof(strTemp));
-		sprintf(strTemp, "%d.%d.%d.%d", (ulAddr & 0x000000ff), (ulAddr & 0x0000ff00) >> 8, (ulAddr & 0x00ff0000) >> 16, (ulAddr & 0xff000000) >> 24);
-		return std::string(strTemp);
+		struct in_addr ipAddr;
+		memcpy(&ipAddr, &ulAddr, 4);
+		return inet_ntoa(ipAddr);
 	}
 
 	bool CHelper::PortIsUsed(int port)
@@ -409,6 +374,14 @@ namespace tools
 		auto helper = lua.new_table();
 		helper.set_function("get_lan_ip", []() { return CHelper::GetLanIP(); });
 		helper.set_function("get_net_ip", []() { return CHelper::GetNetIP(); });
+		helper.set_function("get_all_ips", []() { 
+			std::vector<uint32_t> oIPs; CHelper::GetAllHostIPs(oIPs); 
+			std::vector<std::string> ips;
+			for (auto ip : oIPs) {
+				ips.emplace_back(CHelper::ValueToIP(ip));
+			}
+			return ips;
+			});
 		helper.set_function("ip_to_value", [](std::string ip) { return CHelper::IPToValue(ip); });
 		helper.set_function("value_to_ip", [](uint32_t addr) { return CHelper::ValueToIP(addr); });
 		helper.set_function("is_lan_ip", [](std::string ip) { return CHelper::IsLanIP(CHelper::IPToValue(ip)); });
