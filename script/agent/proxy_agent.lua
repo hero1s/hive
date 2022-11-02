@@ -11,6 +11,7 @@ prop:reader("run_thread", false) --是否启用子线程
 prop:reader("proxy_mgr", nil)
 
 function ProxyAgent:__init()
+    self.run_thread = environ.status("HIVE_OPEN_WORK_THREAD")
     if self.run_thread then
         --启动代理线程
         scheduler:startup(self.service_name, "proxy")
@@ -37,7 +38,7 @@ end
 
 function ProxyAgent:get(url, querys, headers)
     if self.proxy_mgr then
-        return true,self.proxy_mgr:rpc_http_get(url, querys, headers)
+        return true, self.proxy_mgr:rpc_http_get(url, querys, headers)
     end
     local ok, code, res = scheduler:call(self.service_name, "rpc_http_get", url, querys, headers)
     if not ok or 200 ~= code then
@@ -48,7 +49,7 @@ end
 
 function ProxyAgent:post(url, post_data, headers, querys)
     if self.proxy_mgr then
-        return true,self.proxy_mgr:rpc_http_post(url, post_data, headers, querys)
+        return true, self.proxy_mgr:rpc_http_post(url, post_data, headers, querys)
     end
     local ok, code, res = scheduler:call(self.service_name, "rpc_http_post", url, post_data, headers, querys)
     if not ok or 200 ~= code then
@@ -59,7 +60,7 @@ end
 
 function ProxyAgent:put(url, post_data, headers, querys)
     if self.proxy_mgr then
-        return true,self.proxy_mgr:rpc_http_put(url, post_data, headers, querys)
+        return true, self.proxy_mgr:rpc_http_put(url, post_data, headers, querys)
     end
     local ok, code, res = scheduler:call(self.service_name, "rpc_http_put", url, post_data, headers, querys)
     if not ok or 200 ~= code then
@@ -70,7 +71,7 @@ end
 
 function ProxyAgent:del(url, querys, headers)
     if self.proxy_mgr then
-        return true,self.proxy_mgr:rpc_http_del(url, querys, headers)
+        return true, self.proxy_mgr:rpc_http_del(url, querys, headers)
     end
     local ok, code, res = scheduler:call(self.service_name, "rpc_http_del", url, querys, headers)
     if not ok or 200 ~= code then

@@ -193,6 +193,15 @@ local function contains(t, value)
     return false
 end
 
+local function contains_if(t, fn)
+    for k, v in pairs(t) do
+        if fn(v) then
+            return true
+        end
+    end
+    return false
+end
+
 local function equals(a, b)
     for k, v in pairs(a) do
         if b[k] ~= v then
@@ -256,6 +265,7 @@ table_ext.mapsort           = tmapsort
 table_ext.fastremove        = fastremove
 table_ext.shuffle           = shuffle
 table_ext.contains          = contains
+table_ext.contains_if       = contains_if
 table_ext.equals            = equals
 table_ext.indexof           = indexof
 table_ext.find_key_by_value = findKeyByValue

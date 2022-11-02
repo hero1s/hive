@@ -99,6 +99,7 @@ function DevopsGmMgr:gm_cfg_reload(is_remote)
     if flag then
         local url = env_get("HIVE_CONFIG_RELOAD_URL", "")
         if url == "" then
+            log_err("[DevopsGmMgr][gm_cfg_reload] HIVE_CONFIG_RELOAD_URL not set")
             return
         end
         -- 查看本地文件路径下的所有配置文件

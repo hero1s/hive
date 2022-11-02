@@ -11,7 +11,6 @@ local thread_mgr      = hive.get("thread_mgr")
 
 local CONNECT_TIMEOUT = hive.enum("NetwkTime", "CONNECT_TIMEOUT")
 local NETWORK_TIMEOUT = hive.enum("NetwkTime", "NETWORK_TIMEOUT")
-local SOCKET_TIMEOUT  = hive.enum("NetwkTime", "SOCKET_TIMEOUT")
 
 local Socket          = class()
 local prop            = property(Socket)

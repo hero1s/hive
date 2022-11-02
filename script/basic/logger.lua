@@ -99,11 +99,11 @@ end
 local LOG_LEVEL_OPTIONS = {
     --lvl_func,    extend,  swline, max_depth
     [LOG_LEVEL.INFO]  = { "info", { llog.info, false, false, 0 } },
-    [LOG_LEVEL.WARN]  = { "warn", { llog.warn, true, true, 5 } },
-    [LOG_LEVEL.DUMP]  = { "dump", { llog.dump, true, true, 4 } },
-    [LOG_LEVEL.DEBUG] = { "debug", { llog.debug, true, false, 6 } },
-    [LOG_LEVEL.ERROR] = { "err", { llog.error, true, true, 5 } },
-    [LOG_LEVEL.FATAL] = { "fatal", { llog.fatal, true, true, 5 } }
+    [LOG_LEVEL.WARN]  = { "warn", { llog.warn, true, true, 8 } },
+    [LOG_LEVEL.DUMP]  = { "dump", { llog.dump, true, true, 8 } },
+    [LOG_LEVEL.DEBUG] = { "debug", { llog.debug, true, false, 8 } },
+    [LOG_LEVEL.ERROR] = { "err", { llog.error, true, true, 8 } },
+    [LOG_LEVEL.FATAL] = { "fatal", { llog.fatal, true, true, 8 } }
 }
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl_name, log_conf = tunpack(conf)

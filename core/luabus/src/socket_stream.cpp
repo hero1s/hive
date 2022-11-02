@@ -300,7 +300,7 @@ int socket_stream::stream_send(const char* data, size_t data_len)
 	}
 	while (data_len > 0) {
 		size_t space_len;
-		m_send_buffer.peek_space(&space_len);
+		m_send_buffer.peek_space(&space_len,data_len);
 		if (space_len == 0) {
 			on_error(fmt::format("send-buffer-full:{}", m_send_buffer.data_len()).c_str());
 			return 0;
@@ -453,7 +453,7 @@ void socket_stream::do_recv(size_t max_len, bool is_eof)
 	size_t total_recv = 0;
 	while (total_recv < max_len && m_link_status == elink_status::link_connected) {
 		size_t space_len = 0;
-		auto* space = m_recv_buffer.peek_space(&space_len);
+		auto* space = m_recv_buffer.peek_space(&space_len, IO_BUFFER_SEND);
 		if (space_len == 0) {
 			on_error(fmt::format("do-recv-buffer-full:{}", m_recv_buffer.data_len()).c_str());
 			return;
