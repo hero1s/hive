@@ -16,14 +16,14 @@ local dtraceback = debug.traceback
 function hive.xpcall(func, format, ...)
     local ok, err = xpcall(func, dtraceback, ...)
     if not ok then
-        log_err(format, err)
+        log_err(sformat(format, err))
     end
 end
 
 function hive.xpcall_ret(func, format, ...)
     local result = tpack(xpcall(func, dtraceback, ...))
     if not result[1] then
-        log_err(format, result[2])
+        log_err(sformat(format, result[2]))
     end
     return tunpack(result)
 end
@@ -46,7 +46,7 @@ function hive.check_endless_loop()
         local debug_hook = function()
             local now = otime()
             if now - hive.now >= 10 then
-                log_err("check_endless_loop:%s", dtraceback())
+                log_err(sformat("check_endless_loop:%s", dtraceback()))
             end
         end
         dsethook(debug_hook, "l")
@@ -76,12 +76,18 @@ local SUCCESS = henum("KernCode", "SUCCESS")
 local DAY_S   = henum("PeriodTime", "DAY_S")
 local HOUR_S  = henum("PeriodTime", "HOUR_S")
 
-function hive.success(code)
-    return code == SUCCESS
+function hive.success(code, ok)
+    if ok == nil then
+        return code == SUCCESS
+    end
+    return ok and code == SUCCESS
 end
 
-function hive.failed(code)
-    return code ~= SUCCESS
+function hive.failed(code, ok)
+    if ok == nil then
+        return code ~= SUCCESS
+    end
+    return not ok or code ~= SUCCESS
 end
 
 ---获取utc时间戳

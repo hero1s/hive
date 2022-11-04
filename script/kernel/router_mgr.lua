@@ -9,7 +9,7 @@ local signal_quit      = signal.quit
 local tunpack          = table.unpack
 local sformat          = string.format
 local sid2name         = service.id2name
-local qsuccess         = hive.success
+local check_success    = hive.success
 local jumphash         = lcodec.jumphash
 
 local thread_mgr       = hive.get("thread_mgr")
@@ -128,11 +128,11 @@ function RouterMgr:collect(service_id, rpc, ...)
     local collect_res          = {}
     local session_id           = thread_mgr:build_session_id()
     local ok, code, target_cnt = self:forward_client(self.master, "call_broadcast", rpc, session_id, service_id, rpc, ...)
-    if ok and qsuccess(code) then
+    if check_success(code, ok) then
         while target_cnt > 0 do
             target_cnt              = target_cnt - 1
             local ok_c, code_c, res = thread_mgr:yield(session_id, "collect", RPC_CALL_TIMEOUT)
-            if ok_c and qsuccess(code_c) then
+            if check_success(code_c, ok_c) then
                 collect_res[#collect_res + 1] = res
             end
         end

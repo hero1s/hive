@@ -93,7 +93,7 @@ local function init_solution_env(env)
         sprojects[#sprojects + 1] = project
     end
     tsort(sprojects, project_sort)
-    local lguid = require("tguid")
+    local lguid = require("lguid")
     for i, proj in ipairs(sprojects) do
         local gname = proj.GROUP
         if not groups[gname] then
@@ -178,7 +178,7 @@ end
 
 --初始化项目环境变量
 local function init_project_env(project_dir)
-    local lguid = require("tguid")
+    local lguid = require("lguid")
     return {
         WORK_DIR        = project_dir,
         GUID_NEW        = lguid.guid,
@@ -206,7 +206,7 @@ end
 --project_dir：项目目录
 --lmake_dir：项目目录相对于lmake的路径
 local function build_projfile(solution_dir, project_dir, lmake_dir, vsversion)
-    local lguid     = require("tguid")
+    local lguid     = require("lguid")
     local ltmpl     = require("ltemplate.ltemplate")
     local dir_files = ldir(project_dir)
     for _, file in pairs(dir_files) do
@@ -222,18 +222,17 @@ local function build_projfile(solution_dir, project_dir, lmake_dir, vsversion)
                 return
             end
             if not load_env_file(fullname, env) then
-                error(sformat("load %s failed", fullname))
+                error(sformat("load env %s failed", fullname))
                 return
             end
-            --不生效的跳过
             if not env.ENABLE then
                 goto continue
             end
             env.VSVERSION = vsversion
             local mak_dir = path_cut(project_dir, solution_dir)
-            ltmpl.render_file(lappend(lmake_dir, "tmpl/make.tpl"), lrepextension(fullname, ".mak"), env, fullname)
-            ltmpl.render_file(lappend(lmake_dir, "tmpl/vcxproj.tpl"), lrepextension(fullname, ".vcxproj"), env, fullname)
-            ltmpl.render_file(lappend(lmake_dir, "tmpl/filters.tpl"), lrepextension(fullname, ".vcxproj.filters"), env, fullname)
+            ltmpl.render_file(lappend(lmake_dir, "tmpl/make.tpl"), lrepextension(fullname, ".mak"), env)
+            ltmpl.render_file(lappend(lmake_dir, "tmpl/vcxproj.tpl"), lrepextension(fullname, ".vcxproj"), env)
+            ltmpl.render_file(lappend(lmake_dir, "tmpl/filters.tpl"), lrepextension(fullname, ".vcxproj.filters"), env)
             projects[env.PROJECT_NAME] = {
                 DIR   = mak_dir,
                 DEPS  = env.DEPS,

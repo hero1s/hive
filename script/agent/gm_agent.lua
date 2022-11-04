@@ -35,7 +35,7 @@ end
 --command：字符串格式
 function GMAgent:execute_command(command)
     local ok, code, res = router_mgr:call_admin_master("rpc_execute_command", command)
-    if ok and check_success(code) then
+    if check_success(code, ok) then
         return ok, res
     end
     return false, res
@@ -46,7 +46,7 @@ end
 --message：lua table格式
 function GMAgent:execute_message(message)
     local ok, codeoe, res = router_mgr:call_admin_master("rpc_execute_message", message)
-    if ok and check_success(codeoe) then
+    if check_success(codeoe, ok) then
         return ok, res
     end
     return false, ok and res or codeoe
@@ -58,7 +58,7 @@ function GMAgent:report_command()
         command_list[#command_list + 1] = cmd
     end
     local ok, code = router_mgr:call_admin_master("rpc_register_command", command_list, hive.service_id)
-    if ok and check_success(code) then
+    if check_success(code, ok) then
         log_info("[GMAgent][report_command] success!")
         return true
     end

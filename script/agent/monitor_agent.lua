@@ -1,24 +1,24 @@
 --monitor_agent.lua
-local RpcClient      = import("network/rpc_client.lua")
+local RpcClient     = import("network/rpc_client.lua")
 
-local tunpack        = table.unpack
-local signal_quit    = signal.quit
-local env_addr       = environ.addr
-local log_err        = logger.err
-local log_warn       = logger.warn
-local log_info       = logger.info
-local check_success  = hive.success
-local check_failed   = hive.failed
+local tunpack       = table.unpack
+local signal_quit   = signal.quit
+local env_addr      = environ.addr
+local log_err       = logger.err
+local log_warn      = logger.warn
+local log_info      = logger.info
+local check_success = hive.success
+local check_failed  = hive.failed
 
-local event_mgr      = hive.get("event_mgr")
-local timer_mgr      = hive.get("timer_mgr")
-local config_mgr     = hive.get("config_mgr")
+local event_mgr     = hive.get("event_mgr")
+local timer_mgr     = hive.get("timer_mgr")
+local config_mgr    = hive.get("config_mgr")
 
-local RPC_FAILED     = hive.enum("KernCode", "RPC_FAILED")
-local SECOND_MS      = hive.enum("PeriodTime", "SECOND_MS")
+local RPC_FAILED    = hive.enum("KernCode", "RPC_FAILED")
+local SECOND_MS     = hive.enum("PeriodTime", "SECOND_MS")
 
-local MonitorAgent   = singleton()
-local prop           = property(MonitorAgent)
+local MonitorAgent  = singleton()
+local prop          = property(MonitorAgent)
 prop:reader("client", nil)
 function MonitorAgent:__init()
     --创建连接
@@ -53,7 +53,7 @@ function MonitorAgent:service_request(api_name, data)
         service = hive.service_id,
     }
     local ok, code, res = self.client:call("rpc_monitor_post", api_name, req)
-    if ok and check_success(code) then
+    if check_success(code, ok) then
         return tunpack(res)
     end
     return false
@@ -64,7 +64,7 @@ function MonitorAgent:rpc_hive_quit(reason)
     -- 发个退出通知
     event_mgr:notify_trigger("evt_hive_quit", reason)
     timer_mgr:once(SECOND_MS, function()
-        log_warn("[MonitorAgent][on_hive_quit]->service:%s,reason:%s", hive.name,reason)
+        log_warn("[MonitorAgent][on_hive_quit]->service:%s,reason:%s", hive.name, reason)
         signal_quit()
     end)
     return { code = 0 }
@@ -76,7 +76,7 @@ function MonitorAgent:on_remote_message(data, message)
         return { code = RPC_FAILED, msg = "message is nil !" }
     end
     local ok, code, res = tunpack(event_mgr:notify_listener(message, data))
-    if not ok or check_failed(code) then
+    if check_failed(code, ok) then
         log_err("[MonitorAgent][on_remote_message] web_rpc faild: ok=%s, ec=%s", ok, code)
         return { code = ok and code or RPC_FAILED, msg = ok and "" or code }
     end

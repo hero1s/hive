@@ -31,7 +31,7 @@ function RmsgMgr:build_index()
     end
     local query    = { self.table_name, indexs }
     local ok, code = mongo_agent:create_indexes(query, 1, self.db_name)
-    if ok and check_success(code) then
+    if check_success(code, ok) then
         log_info("[RmsgMgr][build_index] rmsg table %s build due index success", self.table_name)
     end
 end
@@ -40,7 +40,7 @@ end
 function RmsgMgr:list_message(to)
     local query            = { self.table_name, { to = to, deal_time = 0 }, { _id = 0, ttl = 0 }, { time = 1 } }
     local ok, code, result = mongo_agent:find(query, to, self.db_name)
-    if ok and check_success(code) then
+    if check_success(code, ok) then
         return result
     end
 end

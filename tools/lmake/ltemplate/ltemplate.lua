@@ -179,6 +179,7 @@ local function render_file(tpl_f, tpl_out_f, tpl_env, tpl_var_f)
         error(sformat("open template file %s failed!", tpl_f))
         return
     end
+    tpl_env.NAME = tpl_f
     local content = template_file:read("*all")
     template_file:close()
     if tpl_var_f then
@@ -193,7 +194,6 @@ local function render_file(tpl_f, tpl_out_f, tpl_env, tpl_var_f)
             error(sformat("load template variable file %s failed :%s", tpl_var_f, res))
             return
         end
-        tpl_env.NAME = tpl_f
     end
     local out_file = iopen(tpl_out_f, "w")
     if not out_file then
