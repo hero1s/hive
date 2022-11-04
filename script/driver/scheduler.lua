@@ -1,6 +1,5 @@
 --scheduler.lua
 local lcodec      = require("lcodec")
-
 local pcall       = pcall
 local log_info    = logger.info
 local log_err     = logger.err
@@ -66,21 +65,13 @@ end
 --访问其他线程任务
 function Scheduler:call(name, rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    local ok         = hive.worker_call(name, lencode(session_id, rpc, ...))
-    if not ok then
-        log_err("[Scheduler][call] failed: %s,%s", name, rpc)
-        thread_mgr:response(session_id, false, "call fail")
-        return
-    end
+    hive.worker_call(name, lencode(session_id, rpc, ...))
     return thread_mgr:yield(session_id, "worker_call", RPC_TIMEOUT)
 end
 
 --访问其他线程任务
 function Scheduler:send(name, rpc, ...)
-    local ok = hive.worker_call(name, lencode(0, rpc, ...))
-    if not ok then
-        log_err("[Scheduler][send] failed: %s,%s", name, rpc)
-    end
+    hive.worker_call(name, lencode(0, rpc, ...))
 end
 
 function hive.on_scheduler(slice)

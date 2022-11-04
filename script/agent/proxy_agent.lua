@@ -1,7 +1,6 @@
 --proxy_agent.lua
 local sformat    = string.format
 local log_info   = logger.info
-local log_err    = logger.err
 local scheduler  = hive.get("scheduler")
 
 local ProxyAgent = singleton()
@@ -40,44 +39,28 @@ function ProxyAgent:get(url, querys, headers)
     if self.proxy_mgr then
         return true, self.proxy_mgr:rpc_http_get(url, querys, headers)
     end
-    local ok, code, res = scheduler:call(self.service_name, "rpc_http_get", url, querys, headers)
-    if not ok or 200 ~= code then
-        log_err("[ProxyAgent][get] call faild:url=%s, ok=%s,code=%s,res=%s", url, ok, code, res)
-    end
-    return ok, code, res
+    return scheduler:call(self.service_name, "rpc_http_get", url, querys, headers)
 end
 
 function ProxyAgent:post(url, post_data, headers, querys)
     if self.proxy_mgr then
         return true, self.proxy_mgr:rpc_http_post(url, post_data, headers, querys)
     end
-    local ok, code, res = scheduler:call(self.service_name, "rpc_http_post", url, post_data, headers, querys)
-    if not ok or 200 ~= code then
-        log_err("[ProxyAgent][post] call faild:url=%s, ok=%s, code=%s,res=%s", url, ok, code, res)
-    end
-    return ok, code, res
+    return scheduler:call(self.service_name, "rpc_http_post", url, post_data, headers, querys)
 end
 
 function ProxyAgent:put(url, post_data, headers, querys)
     if self.proxy_mgr then
         return true, self.proxy_mgr:rpc_http_put(url, post_data, headers, querys)
     end
-    local ok, code, res = scheduler:call(self.service_name, "rpc_http_put", url, post_data, headers, querys)
-    if not ok or 200 ~= code then
-        log_err("[ProxyAgent][put] call faild:url=%s, ok=%s, code=%s,res=%s", url, ok, code, res)
-    end
-    return ok, code, res
+    return scheduler:call(self.service_name, "rpc_http_put", url, post_data, headers, querys)
 end
 
 function ProxyAgent:del(url, querys, headers)
     if self.proxy_mgr then
         return true, self.proxy_mgr:rpc_http_del(url, querys, headers)
     end
-    local ok, code, res = scheduler:call(self.service_name, "rpc_http_del", url, querys, headers)
-    if not ok or 200 ~= code then
-        log_err("[ProxyAgent][del] call faild:url=%s, ok=%s,code=%s,res=%s", url, ok, code, res)
-    end
-    return ok, code, res
+    return scheduler:call(self.service_name, "rpc_http_del", url, querys, headers)
 end
 
 hive.proxy_agent = ProxyAgent()
