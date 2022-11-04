@@ -392,6 +392,7 @@ local function export_excel(input, output, recursion)
                 break
             end
 
+            --local title    = slower(sheet_name)
             local fname  = lfilename(fullname)
             local title  = get_export_file_name(fname)
             local ret    = export_sheet_to_table(sheet, output, title)

@@ -3,8 +3,8 @@
 
 namespace lcodec {
 
-    const size_t BUFFER_DEF = 64 * 1024;        //64K
-    const size_t BUFFER_MAX = 64 * 1024 * 1024; //64M
+    constexpr size_t BUFFER_DEF = 64 * 1024;        //64K
+    constexpr size_t BUFFER_MAX = 64 * 1024 * 1024; //64M
 
     class var_buffer {
     public:
@@ -126,12 +126,12 @@ namespace lcodec {
         }
 
         template<typename T>
-        void write(T value) {
-            push_data((const uint8_t*)&value, sizeof(T));
+        size_t write(T value) {
+            return push_data((const uint8_t*)&value, sizeof(T));
         }
 
-        void write(const char* src, size_t len) {
-            push_data((const uint8_t*)src, len);
+        size_t write(const char* src, size_t len) {
+            return push_data((const uint8_t*)src, len);
         }
 
     protected:

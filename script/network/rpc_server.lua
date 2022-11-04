@@ -155,12 +155,16 @@ end
 --rpc回执
 -----------------------------------------------------------------------------
 --服务器心跳协议
-function RpcServer:rpc_heartbeat(client, node_info)
+function RpcServer:rpc_heartbeat(client, node)
     self:send(client, "on_heartbeat", hive.id)
-    if node_info then
-        client.id         = node_info.id
-        client.service_id = node_info.service_id
-        self.holder:on_client_register(client, node_info)
+    if node then
+        -- 通知注册
+        client.id           = node.id
+        client.index        = node.index
+        client.service_id   = node.service_id
+        client.service_name = node.service_name
+        client.name         = node.name
+        self.holder:on_client_register(client, node)
     end
 end
 

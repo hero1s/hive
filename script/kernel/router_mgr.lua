@@ -3,13 +3,14 @@ local lcodec           = require("lcodec")
 local pairs            = pairs
 local log_err          = logger.err
 local log_info         = logger.info
+local log_debug        = logger.debug
 local mrandom          = math.random
 local signal_quit      = signal.quit
 local tunpack          = table.unpack
 local sformat          = string.format
 local sid2name         = service.id2name
 local qsuccess         = hive.success
-local hhash_code       = lcodec.hash_code
+local jumphash         = lcodec.jumphash
 
 local thread_mgr       = hive.get("thread_mgr")
 local event_mgr        = hive.get("event_mgr")
@@ -45,6 +46,7 @@ end
 
 --添加router
 function RouterMgr:add_router(router_conf, index)
+    log_debug("[RouterMgr][add_router] %s,%s", router_conf, index)
     local router_id = service.router_id(router_conf.host_id, index)
     if not self.routers[router_id] then
         local host              = router_conf.host
@@ -70,8 +72,6 @@ function RouterMgr:on_socket_connect(client, res)
     log_info("[RouterMgr][on_socket_connect] router %s:%s success!", client.ip, client.port)
     --switch master
     self:switch_master()
-    --server register
-    client:send("rpc_service_register", hive.id)
 end
 
 --切换主router
@@ -106,7 +106,7 @@ end
 function RouterMgr:hash_router(hash_key)
     local count = #self.candidates
     if count > 0 then
-        local index = hhash_code(hash_key, count)
+        local index = jumphash(hash_key, count)
         local node  = self.candidates[index]
         if node == nil then
             log_err("[RouterMgr][hash_router] the hash node nil,hashkey:%s,index:%s", hash_key, index)
@@ -197,11 +197,6 @@ function RouterMgr:send_hash(service_id, hash_key, rpc, ...)
     return self:forward_client(self:hash_router(hash_key), "call_hash", rpc, 0, service_id, hash_key, rpc, ...)
 end
 
---发送给指定service的hash
-function RouterMgr:random_hash(service_id, hash_key, rpc, ...)
-    return self:forward_client(self:random_router(hash_key), "call_hash", rpc, 0, service_id, hash_key, rpc, ...)
-end
-
 --发送给指定service的random
 function RouterMgr:call_random(service_id, rpc, ...)
     local session_id = thread_mgr:build_session_id()
@@ -242,9 +237,6 @@ function RouterMgr:build_service_method(service, service_id)
         end,
         ["send_%s_hash"]   = function(obj, hash_key, rpc, ...)
             return obj:send_hash(service_id, hash_key, rpc, ...)
-        end,
-        ["random_%s_hash"] = function(obj, hash_key, rpc, ...)
-            return obj:random_hash(service_id, hash_key, rpc, ...)
         end,
         ["call_%s_master"] = function(obj, rpc, ...)
             return obj:call_master(service_id, rpc, ...)
@@ -313,9 +305,13 @@ function RouterMgr:rpc_router_update()
     self:load_router()
 end
 
+function RouterMgr:is_master_router(router_id)
+    return self.master and self.master.router_id == router_id
+end
+
 --服务器关闭
 function RouterMgr:rpc_service_close(id, router_id)
-    if self.master and self.master.router_id == router_id then
+    if self:is_master_router(router_id) then
         local server_name  = sid2name(id)
         local listener_set = self.close_watchers[server_name]
         for listener in pairs(listener_set or {}) do
@@ -326,7 +322,7 @@ end
 
 --服务器注册
 function RouterMgr:rpc_service_ready(id, router_id)
-    if self.master and self.master.router_id == router_id then
+    if self:is_master_router(router_id) then
         local server_name  = sid2name(id)
         local listener_set = self.ready_watchers[server_name]
         for listener in pairs(listener_set or {}) do
@@ -337,7 +333,7 @@ end
 
 --服务器切换master
 function RouterMgr:rpc_service_master(id, router_id)
-    if self.master and self.master.router_id == router_id then
+    if self:is_master_router(router_id) then
         for listener in pairs(self.master_watchers or {}) do
             listener:on_service_master(id)
         end

@@ -46,6 +46,7 @@ function AdminMgr:__init()
     server:register_post("/command", "on_command", self)
     server:register_post("/monitor", "on_monitor", self)
     server:register_post("/message", "on_message", self)
+    service.make_node(server:get_port())
     self.http_server = server
     --ip白名单
     local white_ips  = environ.table("HIVE_ADMIN_LIMIT_IP")

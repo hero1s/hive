@@ -17,6 +17,7 @@
     <ClInclude Include="src\lcodec\bufqueue.h"/>
     <ClInclude Include="src\lcodec\guid.h"/>
     <ClInclude Include="src\lcodec\hash.h"/>
+    <ClInclude Include="src\lcodec\ketama.h"/>
     <ClInclude Include="src\lcodec\lcodec.h"/>
     <ClInclude Include="src\lcodec\serializer.h"/>
     <ClInclude Include="src\lcodec\shm.h"/>

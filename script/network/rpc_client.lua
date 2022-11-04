@@ -59,7 +59,6 @@ function RpcClient:on_second(clock_ms)
     local _lock<close> = thread_mgr:lock("rpc-client-second" .. self.uuid)
     if self.alive then
         self:heartbeat(false, clock_ms)
-        self:check_lost(clock_ms)
         return
     end
     if self.auto_reconnect and clock_ms >= self.next_connect_time then
@@ -78,28 +77,10 @@ function RpcClient:on_call_router(rpc, send_len, ...)
     return false
 end
 
---检测存活
-function RpcClient:check_lost(clock_ms)
-    if self.auto_reconnect and clock_ms - self.alive_time > NetwkTime.ROUTER_TIMEOUT then
-        self:close(true)
-        log_info("[RpcClient][check_lost] rpc client lost: %s:%s", self.ip, self.port)
-        return true
-    end
-    return false
-end
-
 --发送心跳
 function RpcClient:heartbeat(initial, clock_ms)
     if initial then
-        local node_info = {
-            id         = hive.id,
-            index      = hive.index,
-            deploy     = hive.deploy,
-            service    = hive.service_name,
-            service_id = hive.service_id,
-            lan_ip     = hive.lan_ip,
-        }
-        self:send("rpc_heartbeat", node_info)
+        self:send("rpc_heartbeat", hive.node_info)
         return
     end
     if clock_ms - self.last_heart_time > HEARTBEAT_TIME then

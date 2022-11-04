@@ -31,6 +31,9 @@
     <ClInclude Include="src\lcodec\hash.h">
       <Filter>lcodec</Filter>
     </ClInclude>
+    <ClInclude Include="src\lcodec\ketama.h">
+      <Filter>lcodec</Filter>
+    </ClInclude>
     <ClInclude Include="src\lcodec\lcodec.h">
       <Filter>lcodec</Filter>
     </ClInclude>

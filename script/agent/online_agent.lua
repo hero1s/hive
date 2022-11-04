@@ -73,9 +73,9 @@ end
 function OnlineAgent:on_service_ready(id, service_name)
     log_info("[OnlineAgent][on_service_ready]->id:%s, service_name:%s", id, service_name)
     local service_id    = sid2sid(id)
-    local servive_index = sid2index(id)
+    local service_index = sid2index(id)
     local service_hash  = sidhash(service_id)
-    event_mgr:notify_listener("on_rebuild_online", service_hash, servive_index)
+    event_mgr:notify_listener("on_rebuild_online", service_hash, service_index)
 end
 
 hive.online = OnlineAgent()

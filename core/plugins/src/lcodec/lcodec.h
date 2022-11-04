@@ -8,4 +8,4 @@
 #include "bufqueue.h"
 #include "guid.h"
 #include "hash.h"
-
+#include "ketama.h"

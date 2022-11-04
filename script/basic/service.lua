@@ -28,6 +28,18 @@ local SERVICE_HASHS = _ENV.SERVICE_HASHS or {}
 
 service             = {}
 
+function service.make_node(port, domain)
+    hive.node_info = {
+        id           = hive.id,
+        name         = hive.name,
+        index        = hive.index,
+        service_id   = hive.service_id,
+        service_name = hive.service_name,
+        port         = port or hive.index,
+        host         = domain or hive.host,
+    }
+end
+
 function service.init()
     --加载服务配置
     local config_mgr = hive.get("config_mgr")
@@ -48,6 +60,8 @@ function service.init()
     hive.service_id   = service_id
     hive.name         = sformat("%s_%s", name, index)
     hive.deploy       = environ.get("HIVE_DEPLOY", "develop")
+    hive.host         = environ.get("HIVE_HOST_IP")
+    service.make_node()
 end
 
 --生成节点id
@@ -56,6 +70,11 @@ function service.make_id(name, index)
         name = SERVICES[name]
     end
     return (name << 16) | index
+end
+
+--生成服务id
+function service.make_sid(service, index)
+    return (service << 16) | index
 end
 
 function service.services()

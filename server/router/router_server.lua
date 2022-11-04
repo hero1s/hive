@@ -4,10 +4,9 @@ local mhuge        = math.huge
 local log_err      = logger.err
 local log_info     = logger.info
 local log_warn     = logger.warn
+local log_debug    = logger.debug
 local signal_quit  = signal.quit
-local env_get      = environ.get
 local sidhash      = service.hash
-local sid2sid      = service.id2sid
 local sid2nick     = service.id2nick
 local sid2name     = service.id2name
 local sid2index    = service.id2index
@@ -16,7 +15,6 @@ local FlagMask     = enum("FlagMask")
 local KernCode     = enum("KernCode")
 local RpcServer    = import("network/rpc_server.lua")
 
-local event_mgr    = hive.get("event_mgr")
 local socket_mgr   = hive.get("socket_mgr")
 local config_mgr   = hive.get("config_mgr")
 
@@ -30,7 +28,7 @@ function RouterServer:__init()
 end
 
 function RouterServer:setup()
-    local host        = env_get("HIVE_HOST_IP")
+    local host        = hive.host
     local router_db   = config_mgr:init_table("router", "host")
     local router_conf = router_db:find_one(host)
     if not router_conf then
@@ -38,13 +36,12 @@ function RouterServer:setup()
         signal_quit()
         return
     end
-    --重定义routerid
+    --因为按host简化配置，可以重复index, 需要重定义routerid
     hive.id         = service.router_id(router_conf.host_id, hive.index)
     hive.name       = service.router_name(router_conf.host_id, hive.index)
     --启动server
-    self.rpc_server = RpcServer(self, host, router_conf.port, true)
-    --监听事件
-    event_mgr:add_listener(self, "rpc_service_register")
+    self.rpc_server = RpcServer(self, "0.0.0.0", router_conf.port, true)
+    service.make_node(self.rpc_server:get_port())
 end
 
 --其他服务器节点关闭
@@ -101,56 +98,55 @@ end
 --rpc事件处理
 ------------------------------------------------------------------
 --注册服务器
-function RouterServer:rpc_service_register(server, id)
-    if not server.id then
-        local service_id    = sid2sid(id)
-        local server_name   = sid2nick(id)
-        local servive_name  = sid2name(id)
-        local servive_index = sid2index(id)
-        local service_hash  = sidhash(service_id)
-        local server_token  = server.token
-        if not servive_name or not service_hash then
-            log_err("[RouterServer][rpc_service_register] the serivice is not cfg:%s", service_id)
-            return
+function RouterServer:service_register(server, id)
+    local service_id    = server.service_id
+    local server_name   = server.name
+    local service_name  = server.service_name
+    local service_index = server.index
+    local service_hash  = sidhash(service_id)
+    local server_token  = server.token
+    if not service_name or not service_hash then
+        log_err("[RouterServer][rpc_service_register] the serivice is not cfg:%s", service_id)
+        return
+    end
+    --固定hash不能超过hash值
+    if service_hash > 0 and service_index > service_hash then
+        self.kick_servers[server_token] = id
+        self.rpc_server:send(server, "rpc_service_kickout", hive.id, "service hash illegal")
+        log_warn("[RouterServer][rpc_service_register] service(%s) be kickout, index(%s) > hash(%s)!", server_name, service_index, service_hash)
+        return
+    end
+    -- 检查是否顶号
+    for exist_token, exist_server in self.rpc_server:iterator() do
+        if exist_server.id == id and exist_server.token ~= server_token then
+            self.kick_servers[exist_token] = id
+            self.rpc_server:send(exist_server, "rpc_service_kickout", hive.id, "service replace")
+            log_warn("[RouterServer][rpc_service_register] service(%s) be kickout, service replace!", server_name)
+            break
         end
-        --固定hash不能超过hash值
-        if service_hash > 0 and servive_index > service_hash then
-            self.kick_servers[server_token] = id
-            self.rpc_server:send(server, "rpc_service_kickout", hive.id, "service hash illegal")
-            log_warn("[RouterServer][rpc_service_register] service(%s) be kickout, index(%s) > hash(%s)!", server_name, servive_index, service_hash)
-            return
-        end
-        -- 检查是否顶号
-        for exist_token, exist_server in self.rpc_server:iterator() do
-            if exist_server.id == id then
-                self.kick_servers[exist_token] = id
-                self.rpc_server:send(exist_server, "rpc_service_kickout", hive.id, "service replace")
-                log_warn("[RouterServer][rpc_service_register] service(%s) be kickout, service replace!", server_name)
-                break
-            end
-        end
-        server.id           = id
-        server.name         = server_name
-        server.service_id   = service_id
-        server.servive_name = servive_name
-        socket_mgr.map_token(id, server_token, service_hash)
-        log_info("[RouterServer][rpc_service_register] service: %s,hash:%s", server_name, service_hash)
-        --switch master
-        local group_master = self.service_masters[service_id] or mhuge
-        if id < group_master then
-            self.service_masters[service_id] = id
-            socket_mgr.set_master(service_id, server_token)
-            log_info("[RouterServer][rpc_service_register] switch master --> %s", sid2index(id))
-            self:broadcast_switch_master(id)
-        end
-        --通知其他服务器
-        local router_id = hive.id
-        for _, exist_server in self.rpc_server:iterator() do
-            local exist_server_id = exist_server.id
-            if exist_server_id and exist_server_id ~= id then
-                self.rpc_server:send(exist_server, "rpc_service_ready", id, router_id)
-                self.rpc_server:send(server, "rpc_service_ready", exist_server_id, router_id)
-            end
+    end
+    socket_mgr.map_token(id, server_token, service_hash)
+    log_info("[RouterServer][rpc_service_register] service: %s,hash:%s", server_name, service_hash)
+    --switch master
+    local group_master = self.service_masters[service_id] or mhuge
+    if id < group_master then
+        self.service_masters[service_id] = id
+        socket_mgr.set_master(service_id, server_token)
+        log_info("[RouterServer][rpc_service_register] switch master --> %s", sid2index(id))
+        self:broadcast_switch_master(id)
+    end
+    --通知其他服务器
+    self:broadcast_service_ready(server, id)
+end
+
+-- 广播服务准备
+function RouterServer:broadcast_service_ready(server, id)
+    local router_id = hive.id
+    for _, exist_server in self.rpc_server:iterator() do
+        local exist_server_id = exist_server.id
+        if exist_server_id and exist_server_id ~= id then
+            self.rpc_server:send(exist_server, "rpc_service_ready", id, router_id)
+            self.rpc_server:send(server, "rpc_service_ready", exist_server_id, router_id)
         end
     end
 end
@@ -158,9 +154,9 @@ end
 -- 广播切换主从
 function RouterServer:broadcast_switch_master(server_id)
     local router_id    = hive.id
-    local servive_name = sid2name(server_id)
+    local service_name = sid2name(server_id)
     for _, server in self.rpc_server:iterator() do
-        if server.id and servive_name == sid2name(server.id) then
+        if server.id and service_name == sid2name(server.id) then
             self.rpc_server:send(server, "rpc_service_master", server_id, router_id)
         end
     end
@@ -168,6 +164,8 @@ end
 
 -- 会话信息
 function RouterServer:on_client_register(client, node_info)
+    log_debug("[RouterServer][on_client_register] %s", node_info)
+    self:service_register(client, node_info.id)
 end
 
 hive.router_server = RouterServer()

@@ -69,11 +69,14 @@ namespace lworker {
         }
 
         bool callback(slice* buf) {
-            if (buf->size() < UINT32_MAX) {
+            if (buf->size() < BUFFER_MAX) {
                 std::unique_lock<spin_mutex> lock(m_mutex);
-                m_write_buf->write<uint32_t>(buf->size());
-                m_write_buf->push_data(buf->head(), buf->size());
-                return true;
+                if (m_write_buf->write<uint32_t>(buf->size()) > 0) {
+                    if (m_write_buf->push_data(buf->head(), buf->size()) > 0) {
+                        return true;
+                    }
+                    m_write_buf->pop_size(sizeof(uint32_t));
+                }                
             }
             return false;
         }
