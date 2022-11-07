@@ -115,6 +115,9 @@ public:
 	void decrease_count() { m_count--; }
 	bool is_full() { return m_count >= m_max_count; }
 
+	const std::string& get_handshake_verify() { return m_handshake_verify; }
+	void set_handshake_verify(const std::string& verify) { m_handshake_verify = verify; }
+
 private:
 #ifdef _MSC_VER
 	LPFN_ACCEPTEX m_accept_func = nullptr;
@@ -153,4 +156,5 @@ private:
 	int m_count = 0;
 	uint32_t m_token = 0;
 	std::unordered_map<uint32_t, socket_object*> m_objects;
+	std::string m_handshake_verify = "CLBY20220816CLBY&*^%$#@!";
 };

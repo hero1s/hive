@@ -19,6 +19,7 @@ public:
 	void set_lz_threshold(size_t size);
 	void set_master(uint32_t group_idx, uint32_t token);
 	int map_token(lua_State* L);
+	void set_rpc_key(std::string key);
 
 private:
 	lua_State* m_lvm = nullptr;

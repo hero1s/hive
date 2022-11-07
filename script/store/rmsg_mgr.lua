@@ -30,7 +30,7 @@ function RmsgMgr:build_index()
         indexs[#indexs + 1] = { key = { ttl = 1 }, expireAfterSeconds = 0, name = "ttl", unique = false }
     end
     local query    = { self.table_name, indexs }
-    local ok, code = mongo_agent:create_indexes(query, 1, self.db_name)
+    local ok, code = mongo_agent:create_indexes(query, nil, self.db_name)
     if check_success(code, ok) then
         log_info("[RmsgMgr][build_index] rmsg table %s build due index success", self.table_name)
     end

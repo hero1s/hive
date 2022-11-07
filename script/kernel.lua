@@ -23,7 +23,9 @@ local update_mgr    = hive.load("update_mgr")
 local function init_network()
     local lbus      = require("luabus")
     local max_conn  = environ.number("HIVE_MAX_CONN", 64)
+    local rpc_key   = environ.get("HIVE_RPC_KEY","hive2022")
     socket_mgr      = lbus.create_socket_mgr(max_conn)
+    socket_mgr.set_rpc_key(rpc_key)
     hive.socket_mgr = socket_mgr
 end
 

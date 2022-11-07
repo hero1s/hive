@@ -131,11 +131,11 @@ function MysqlAgent:query(db_name, table_name, conditions, fields, group_by_key,
         end
 
         if order_by_key then
-            sql = sql .. " order by `" .. group_by_key .. "` " .. order_type
+            sql = sql .. " order by `" .. order_by_key .. "` " .. order_type
         end
 
         if limit_cnt then
-            if offset then
+            if not offset then
                 sql = sql .. " limit " .. limit_cnt
             else
                 sql = sql .. " limit " .. offset .. "," .. limit_cnt

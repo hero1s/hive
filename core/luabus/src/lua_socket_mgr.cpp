@@ -14,6 +14,7 @@ EXPORT_LUA_FUNCTION(set_package_size)
 EXPORT_LUA_FUNCTION(set_lz_threshold)
 EXPORT_LUA_FUNCTION(set_master)
 EXPORT_LUA_FUNCTION(map_token)
+EXPORT_LUA_FUNCTION(set_rpc_key)
 EXPORT_CLASS_END()
 
 lua_socket_mgr::~lua_socket_mgr() {
@@ -119,3 +120,6 @@ int lua_socket_mgr::map_token(lua_State* L) {
 	return 0;
 }
 
+void lua_socket_mgr::set_rpc_key(std::string key) {
+	m_mgr->set_handshake_verify(key);
+}

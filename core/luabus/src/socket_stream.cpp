@@ -7,8 +7,6 @@
 #include "socket_stream.h"
 #include "fmt/core.h"
 
-static const std::string s_handshake_verify = "CLBY20220816CLBY&*^%$#@!";
-
 #ifdef __linux
 static const int s_send_flag = MSG_NOSIGNAL;
 #endif
@@ -574,6 +572,7 @@ void socket_stream::dispatch_package() {
 }
 
 int socket_stream::handshake_rpc(BYTE* data, size_t data_len) {
+	auto s_handshake_verify = m_mgr->get_handshake_verify();
 	if (data_len < s_handshake_verify.length()) {
 		return 1;
 	}
@@ -589,6 +588,7 @@ int socket_stream::handshake_rpc(BYTE* data, size_t data_len) {
 }
 
 void socket_stream::send_handshake_rpc() {
+	auto s_handshake_verify = m_mgr->get_handshake_verify();
 	if (eproto_type::proto_rpc == m_proto_type) {
 		stream_send(s_handshake_verify.c_str(), s_handshake_verify.length());
 	}
