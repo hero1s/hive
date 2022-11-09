@@ -39,7 +39,6 @@ namespace logger {
 
 extern "C" {
     LUALIB_API int luaopen_lualog(lua_State* L) {
-        system("echo logger service init.");
         auto llog = logger::open_lualog(L);
         return llog.push_stack();
     }

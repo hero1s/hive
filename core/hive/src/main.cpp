@@ -16,7 +16,7 @@ int main(int argc, const char* argv[])
 		std::cout << "--(hive_run program_entry.lua ...)--" << std::endl;
 		return 0;
 	}
-
+	system("echo hive engine init.");
 	g_app = new hive_app();
 	g_app->setup(argc, argv);
 	delete g_app;

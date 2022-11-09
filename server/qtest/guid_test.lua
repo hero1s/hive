@@ -24,3 +24,5 @@ log_info("guid=%s --> %s -- > %s", guid, guid_code, guid_num)
 local name     = "tencent"
 local name_num = lcodec.guid_decode(name)
 log_info("guid:%s -->%s --> %s ", name, name_num, lcodec.guid_encode(name_num))
+
+log_info("jumphash value: %s,%s,%s", lcodec.jumphash("", 3),lcodec.jumphash(-1, 3),lcodec.jumphash(0, 3))

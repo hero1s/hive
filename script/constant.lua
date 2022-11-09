@@ -90,7 +90,7 @@ GMType.SYSTEM                     = 3       -- 业务相关,ID为队伍ID,房间
 GMType.DEV_OPS                    = 4       -- 开发运维相关
 GMType.TOOLS                      = 5       -- 工具相关
 
---Cache错误码
+--Cache权限
 local CacheType                   = enum("CacheType", 0)
 CacheType.READ                    = 1     -- 读
 CacheType.WRITE                   = 2     -- 写
@@ -106,3 +106,12 @@ CacheCode.CACHE_KEY_IS_NOT_EXIST  = 10004  -- key不存在
 CacheCode.CACHE_FLUSH_FAILED      = 10005  -- flush失败
 CacheCode.CACHE_KEY_LOCK_FAILD    = 10006  -- 用户锁失败
 CacheCode.CACHE_DELETE_SAVE_FAILD = 10007  -- 缓存删除失败
+
+-- robot类型
+local RobotType             = enum("RobotType", 0)
+RobotType.RANDOM            = 0       -- 随机账号
+RobotType.COMPOSE           = 1       -- 组合账号
+RobotType.PLAYER            = 2       -- 指定账号
+
+
+

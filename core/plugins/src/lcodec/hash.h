@@ -104,7 +104,7 @@ namespace lcodec {
     }
 
     static int32_t jumphash(uint64_t key, int32_t num_buckets) {
-        int32_t b = -1, j = 0;
+        int64_t b = -1, j = 0;
         while (j < num_buckets) {
             b = j;
             key = key * 2862933555777941757ULL + 1;
