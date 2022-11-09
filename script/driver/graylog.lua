@@ -1,6 +1,6 @@
 --graylog.lua
 import("network/http_client.lua")
-local lkcp        = require("lkcp")
+local luabus      = require("luabus")
 local ljson       = require("lcjson")
 
 local log_err     = logger.err
@@ -45,7 +45,7 @@ function GrayLog:__init()
         log_info("[GrayLog][setup] setup tcp (%s:%s) success!", self.ip, self.port)
         return
     end
-    self.udp = lkcp.udp()
+    self.udp = luabus.udp()
     log_info("[GrayLog][setup] setup udp (%s:%s) success!", self.ip, self.port)
 end
 
@@ -103,7 +103,7 @@ function GrayLog:write(message, level, optional)
     end
     if self.udp then
         local udpmsg = json_encode(gelf)
-        self.udp:send(udpmsg, #udpmsg, self.ip, self.port)
+        self.udp.send(udpmsg, self.ip, self.port)
     end
 end
 

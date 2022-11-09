@@ -25,6 +25,12 @@
     <ClInclude Include="src\socket_stream.h">
       <Filter>inc</Filter>
     </ClInclude>
+    <ClInclude Include="src\socket_tcp.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\socket_udp.h">
+      <Filter>inc</Filter>
+    </ClInclude>
     <ClInclude Include="src\stdafx.h">
       <Filter>inc</Filter>
     </ClInclude>
@@ -52,6 +58,12 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\socket_stream.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\socket_tcp.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\socket_udp.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\stdafx.cpp">

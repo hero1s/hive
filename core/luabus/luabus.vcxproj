@@ -15,6 +15,8 @@
     <ClInclude Include="src\socket_mgr.h"/>
     <ClInclude Include="src\socket_router.h"/>
     <ClInclude Include="src\socket_stream.h"/>
+    <ClInclude Include="src\socket_tcp.h"/>
+    <ClInclude Include="src\socket_udp.h"/>
     <ClInclude Include="src\stdafx.h"/>
   </ItemGroup>
   <ItemGroup>
@@ -26,6 +28,8 @@
     <ClCompile Include="src\socket_mgr.cpp"/>
     <ClCompile Include="src\socket_router.cpp"/>
     <ClCompile Include="src\socket_stream.cpp"/>
+    <ClCompile Include="src\socket_tcp.cpp"/>
+    <ClCompile Include="src\socket_udp.cpp"/>
     <ClCompile Include="src\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Create</PrecompiledHeader>
     </ClCompile>

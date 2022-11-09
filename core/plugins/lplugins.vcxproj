@@ -32,7 +32,6 @@
     <ClInclude Include="src\lcrypt\sha2.h"/>
     <ClInclude Include="src\lcrypt\xxtea.h"/>
     <ClInclude Include="src\lhttp\http.h"/>
-    <ClInclude Include="src\lkcp\ikcp.h"/>
     <ClInclude Include="src\lprofile\profile.h"/>
     <ClInclude Include="src\lrandom\random.hpp"/>
     <ClInclude Include="src\ltimer\croncpp.h"/>
@@ -58,8 +57,6 @@
     <ClCompile Include="src\lcrypt\sha2.c"/>
     <ClCompile Include="src\lcrypt\xxtea.c"/>
     <ClCompile Include="src\lhttp\lhttp.cpp"/>
-    <ClCompile Include="src\lkcp\ikcp.c"/>
-    <ClCompile Include="src\lkcp\lkcp.c"/>
     <ClCompile Include="src\lprofile\profile.cpp"/>
     <ClCompile Include="src\lrandom\lrandom.cpp"/>
     <ClCompile Include="src\lstdfs\lstdfs.cpp"/>

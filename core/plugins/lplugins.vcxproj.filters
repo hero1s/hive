@@ -76,9 +76,6 @@
     <ClInclude Include="src\lhttp\http.h">
       <Filter>lhttp</Filter>
     </ClInclude>
-    <ClInclude Include="src\lkcp\ikcp.h">
-      <Filter>lkcp</Filter>
-    </ClInclude>
     <ClInclude Include="src\lprofile\profile.h">
       <Filter>lprofile</Filter>
     </ClInclude>
@@ -150,12 +147,6 @@
     <ClCompile Include="src\lhttp\lhttp.cpp">
       <Filter>lhttp</Filter>
     </ClCompile>
-    <ClCompile Include="src\lkcp\ikcp.c">
-      <Filter>lkcp</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lkcp\lkcp.c">
-      <Filter>lkcp</Filter>
-    </ClCompile>
     <ClCompile Include="src\lprofile\profile.cpp">
       <Filter>lprofile</Filter>
     </ClCompile>
@@ -205,9 +196,6 @@
     </Filter>
     <Filter Include="lhttp">
       <UniqueIdentifier>{11E2E293-CF1A-0E75-B860-D3F9B4ED0407}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lkcp">
-      <UniqueIdentifier>{CADB1650-91D5-CEAE-233B-F22F72E5E0BE}</UniqueIdentifier>
     </Filter>
     <Filter Include="lprofile">
       <UniqueIdentifier>{8E8841F6-C7F8-DE1A-13D6-267C73A59A6B}</UniqueIdentifier>

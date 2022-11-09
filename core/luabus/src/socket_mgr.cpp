@@ -166,7 +166,6 @@ int socket_mgr::listen(std::string& err, const char ip[], int port, eproto_type 
 	socket_t fd = INVALID_SOCKET;
 	sockaddr_storage addr;
 	size_t addr_len = 0;
-	int one = 1;
 
 #ifdef _MSC_VER
 	auto* listener = new socket_listener(this, m_accept_func, m_addrs_func, proto_type);
@@ -183,10 +182,8 @@ int socket_mgr::listen(std::string& err, const char ip[], int port, eproto_type 
 	if (fd == INVALID_SOCKET) goto Exit0;
 
 	set_no_block(fd);
+	set_reuseaddr(fd);
 	set_close_on_exec(fd);
-
-	ret = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&one, sizeof(one));
-	if (ret == SOCKET_ERROR) goto Exit0;
 
 	// macOSX require addr_len to be the real len (ipv4/ipv6)
 	ret = ::bind(fd, (sockaddr*)&addr, (int)addr_len);
