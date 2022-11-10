@@ -10,6 +10,9 @@
     <ClInclude Include="src\lua_socket_node.h">
       <Filter>inc</Filter>
     </ClInclude>
+    <ClInclude Include="src\socket_dns.h">
+      <Filter>inc</Filter>
+    </ClInclude>
     <ClInclude Include="src\socket_helper.h">
       <Filter>inc</Filter>
     </ClInclude>

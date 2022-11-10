@@ -77,7 +77,7 @@ namespace lcodec {
 
 extern "C" {
     LUALIB_API int luaopen_lcodec(lua_State* L) {
-        auto lluabus = lcodec::open_lcodec(L);
-        return lluabus.push_stack();
+        auto lcodec = lcodec::open_lcodec(L);
+        return lcodec.push_stack();
     }
 }

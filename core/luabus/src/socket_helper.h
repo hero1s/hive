@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include <thread>
 #include <chrono>
+#include <string>
+#include <vector>
 
 using namespace std::chrono;
 
@@ -23,6 +25,18 @@ struct socket_header {
 #include <cstring>
 #include <sys/stat.h>
 #include <netinet/udp.h>
+#include <arpa/inet.h>
+#include <net/if.h>
+#include <net/if_arp.h>
+#include <netinet/in.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/sysinfo.h>
+#include <sys/resource.h>
+#include <sys/ioctl.h>
+#include <sys/time.h>
+
 using socket_t = int;
 using BYTE = unsigned char;
 const socket_t INVALID_SOCKET = -1;
@@ -49,6 +63,7 @@ bool get_ip_string(char ip[], size_t ip_size, const void* addr, size_t addr_len)
 
 // timeout: 单位ms,传入-1表示阻塞到永远
 bool check_can_write(socket_t fd, int timeout);
+bool port_is_used(int port);
 
 void set_no_block(socket_t fd);
 void set_no_delay(socket_t fd, int enable);
@@ -67,3 +82,7 @@ inline uint64_t steady_ms() {
 }
 
 void init_socket_option(socket_t fd);
+
+std::string get_lan_ip();
+
+size_t get_all_host_ip(std::vector<uint32_t>& oIPs);

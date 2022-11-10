@@ -1,9 +1,12 @@
 --mongo_agent.lua
-local tunpack    = table.unpack
+local tunpack      = table.unpack
+local check_failed = hive.failed
+local log_err      = logger.err
+local log_info     = logger.info
 
-local router_mgr = hive.get("router_mgr")
+local router_mgr   = hive.get("router_mgr")
 
-local MongoAgent = singleton()
+local MongoAgent   = singleton()
 function MongoAgent:__init()
 end
 
@@ -56,6 +59,19 @@ function MongoAgent:execute(db_query, hash_key, db_name)
     return router_mgr:call_dbsvr_hash(hash_key or hive.id, "mongo_execute", db_name or "default", tunpack(db_query))
 end
 ------------------------------------------------------------------
+
+--获取自增id
+function MongoAgent:get_inc_id(id_name, tb_name, db_name)
+    local ok, code, res = self:find_and_modify({ tb_name, { ["$inc"] = { [id_name] = 1 } }, {}, true, { _id = 0 } }, nil, db_name)
+    if check_failed(code, ok) then
+        log_err("[MongoAgent][get_inc_id] create %s failed! code: %s, res: %s", id_name, code, res)
+        return 0
+    end
+    local id = res.value[id_name]
+    log_info("[MongoAgent][get_inc_id] db_inc_id new %s:%s", id_name, id)
+    return id
+end
+
 hive.mongo_agent = MongoAgent()
 
 return MongoAgent

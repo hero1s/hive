@@ -1,5 +1,5 @@
 --socket.lua
-local lhelper         = require("lhelper")
+local luabus          = require("luabus")
 local ssub            = string.sub
 local sfind           = string.find
 local log_err         = logger.err
@@ -184,7 +184,7 @@ function Socket:real_ip(ip)
     if ip:match("^[%d%.]+$") or ip:find(":") then
         return ip
     end
-    local rip = lhelper.dns(ip)
+    local rip = luabus.dns(ip)
     log_info("[Socket][real_ip] dns:[%s]->>[%s]", ip, rip)
     return rip
 end

@@ -7,239 +7,25 @@
 
 
 #ifdef WIN32
-#include <WinSock2.h>
-#include <WS2tcpip.h>
 #include <conio.h>
 #include <windows.h>
 #include <psapi.h>  
 #include <direct.h>
 #include <process.h>
-
-#pragma comment(lib, "WS2_32.lib")
 #else
 #include <sys/types.h>
-#include <sys/socket.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/sysinfo.h>
 #include <sys/resource.h>
 #include <sys/ioctl.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <net/if.h>
-#include <net/if_arp.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <unistd.h>
 #include <sys/time.h>
-
-inline void closesocket(int fd) { close(fd); }
-
 #endif
 
 
 namespace tools
 {
-	struct stIP {
-		union {
-			uint32_t uiIP;
-			uint8_t arIP[4];
-		};
-	};
-
-	std::string CHelper::GetLanIP()
-	{
-		std::vector<uint32_t> oIPs;
-		if (GetAllHostIPs(oIPs) > 0) {
-			for (size_t i = 0; i < oIPs.size(); ++i) {
-				if (IsLanIP(oIPs[i])) {
-					struct in_addr stAddr;
-					stAddr.s_addr = oIPs[i];
-					return inet_ntoa(stAddr);
-				}
-			}
-		}
-		return "1.1.0.1";
-	}
-
-	std::string CHelper::GetNetIP()
-	{
-		uint32_t uiNetIP = 0;
-		std::vector<uint32_t> oIPs;
-		if (GetAllHostIPs(oIPs) > 0) {
-			for (size_t i = 0; i < oIPs.size(); ++i) {
-				if (!IsLanIP(oIPs[i])) {
-					if (uiNetIP == 0) {
-						uiNetIP = oIPs[i];
-					}
-					else {
-						break;
-					}
-				}
-			}
-		}
-		struct in_addr stAddr;
-		stAddr.s_addr = uiNetIP;
-		return inet_ntoa(stAddr);
-	}
-
-	bool CHelper::IsHaveNetIP()
-	{
-		std::vector<uint32_t> oIPs;
-		if (GetAllHostIPs(oIPs) > 0) {
-			for (size_t i = 0; i < oIPs.size(); ++i) {
-				if (!IsLanIP(oIPs[i])) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	bool CHelper::IsLanIP(uint32_t uiIP)
-	{
-		stIP oIP;
-		oIP.uiIP = uiIP;
-		if (oIP.arIP[0] == 10) // 10.0.0.0 - 10.255.255.255
-		{
-			return true;
-		}
-		if (oIP.arIP[0] == 172 && (oIP.arIP[1] >= 16 && oIP.arIP[1] <= 31)) {
-			return true;
-		}
-		if (oIP.arIP[0] == 192 && oIP.arIP[1] == 168) {
-			return true;
-		}
-		if (oIP.arIP[0] == 169 && oIP.arIP[1] == 254) {
-			return true;
-		}
-		return false;
-	}
-
-	size_t CHelper::GetAllHostIPs(std::vector<uint32_t>& oIPs)
-	{
-
-#ifdef WIN32
-		char hostName[128] = { 0 };
-		WSAData data;
-		if (WSAStartup(MAKEWORD(2, 1), &data) != 0)
-		{
-			std::cout << "startup WSA faild" << std::endl;
-		}
-		int32_t ret = gethostname(hostName, 128);
-
-		addrinfo hints;
-		memset(&hints, 0, sizeof(addrinfo));
-		addrinfo* addr = NULL;
-		if (ret == 0)
-		{
-			getaddrinfo(hostName, NULL, &hints, &addr);
-		}
-		addrinfo* addrInfo = addr;
-		while (addrInfo != NULL)
-		{
-			if (addrInfo->ai_family == AF_INET || addrInfo->ai_family == PF_INET)
-			{
-				sockaddr_in addrin = *((sockaddr_in*)addrInfo->ai_addr);
-				char* ip = inet_ntoa(addrin.sin_addr);
-				oIPs.push_back(IPToValue(ip));
-			}
-			addrInfo = addrInfo->ai_next;
-		}
-		freeaddrinfo(addr);
-		WSACleanup();
-#else
-		enum {
-			MAXINTERFACES = 16,
-		};
-		int fd = 0;
-		int intrface = 0;
-		struct ifreq buf[MAXINTERFACES];
-		struct ifconf ifc;
-		if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) >= 0) {
-			ifc.ifc_len = sizeof(buf);
-			ifc.ifc_buf = (caddr_t)buf;
-			if (!ioctl(fd, SIOCGIFCONF, (char*)&ifc)) {
-				intrface = ifc.ifc_len / sizeof(struct ifreq);
-				while (intrface-- > 0) {
-					if (!(ioctl(fd, SIOCGIFADDR, (char*)&buf[intrface]))) {
-						uint32_t uiIP = ((struct sockaddr_in*)(&buf[intrface].ifr_addr))->sin_addr.s_addr;
-						if (uiIP != 0 && uiIP != inet_addr("127.0.0.1")) {
-							oIPs.push_back(uiIP);
-						}
-					}
-				}
-			}
-		}
-		close(fd);
-#endif
-		std::sort(oIPs.begin(), oIPs.end(), std::greater<uint32_t>());
-		return oIPs.size();
-	}
-
-	uint32_t CHelper::IPToValue(const std::string& strIP)
-	{
-		return inet_addr(strIP.c_str());
-	}
-
-	std::string CHelper::ValueToIP(uint32_t ulAddr)
-	{
-		struct in_addr ipAddr;
-		memcpy(&ipAddr, &ulAddr, 4);
-		return inet_ntoa(ipAddr);
-	}
-
-	bool CHelper::PortIsUsed(int port)
-	{
-		int fd = socket(AF_INET, SOCK_STREAM, 0);
-		struct sockaddr_in addr;
-		addr.sin_family = AF_INET;
-		addr.sin_port = htons(port);
-		inet_pton(AF_INET, "0.0.0.0", &addr.sin_addr);
-		if (bind(fd, (struct sockaddr*)(&addr), sizeof(sockaddr_in)) < 0) {
-			closesocket(fd);
-			return true;
-		}
-		closesocket(fd);
-		return false;
-	}
-
-	std::string CHelper::GetHostByDomain(std::string& domain)
-	{
-		std::string host_ip;
-#ifdef WIN32
-		struct hostent* host = gethostbyname(domain.c_str());
-		if (host && host->h_addrtype == AF_INET && *(host->h_addr_list) != nullptr) {
-			struct in_addr addr;
-			addr.s_addr = *(u_long*)(*(host->h_addr_list));
-			char* ipAddr = inet_ntoa(addr);
-			return std::string(ipAddr);
-		}
-#else
-		struct addrinfo hints;
-		memset(&hints, 0, sizeof(struct addrinfo));
-		hints.ai_family = AF_UNSPEC;
-		hints.ai_flags = AI_CANONNAME;
-		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_protocol = 0;  /* any protocol */
-		struct addrinfo* result, * result_pointer;
-		if (getaddrinfo(domain.c_str(), NULL, &hints, &result) == 0) {
-			for (result_pointer = result; result_pointer != NULL; result_pointer = result_pointer->ai_next) {
-				if (AF_INET == result_pointer->ai_family) {
-					char ipAddr[32] = { 0 };
-					if (getnameinfo(result_pointer->ai_addr, result_pointer->ai_addrlen, ipAddr, sizeof(ipAddr), nullptr, 0, NI_NUMERICHOST) == 0) {
-						host_ip = std::string(ipAddr);
-						freeaddrinfo(result);
-						return host_ip;
-					}
-				}
-			}
-			freeaddrinfo(result);
-		}
-#endif
-		return host_ip;
-	}
-
 #ifdef WIN32
 	__int64 CompareFileTime(FILETIME time1, FILETIME time2)
 	{
@@ -372,21 +158,6 @@ namespace tools
 	luakit::lua_table open_lhelper(lua_State* L) {
 		luakit::kit_state lua(L);
 		auto helper = lua.new_table();
-		helper.set_function("get_lan_ip", []() { return CHelper::GetLanIP(); });
-		helper.set_function("get_net_ip", []() { return CHelper::GetNetIP(); });
-		helper.set_function("get_all_ips", []() { 
-			std::vector<uint32_t> oIPs; CHelper::GetAllHostIPs(oIPs); 
-			std::vector<std::string> ips;
-			for (auto ip : oIPs) {
-				ips.emplace_back(CHelper::ValueToIP(ip));
-			}
-			return ips;
-			});
-		helper.set_function("ip_to_value", [](std::string ip) { return CHelper::IPToValue(ip); });
-		helper.set_function("value_to_ip", [](uint32_t addr) { return CHelper::ValueToIP(addr); });
-		helper.set_function("is_lan_ip", [](std::string ip) { return CHelper::IsLanIP(CHelper::IPToValue(ip)); });
-		helper.set_function("port_is_used", [](int port) { return CHelper::PortIsUsed(port); });
-		helper.set_function("dns", [](std::string domain) { return CHelper::GetHostByDomain(domain); });
 
 		helper.set_function("mem_available", [](lua_State* L) {
 			luakit::kit_state kit_state(L);

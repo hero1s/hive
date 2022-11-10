@@ -1,5 +1,5 @@
 --environ.lua
-local lhelper = require("lhelper")
+local luabus      = require("luabus")
 
 local tonumber  = tonumber
 local ogetenv   = os.getenv
@@ -12,7 +12,7 @@ environ = {}
 
 function environ.init()
     hive.mode = environ.number("HIVE_MODE", 1)
-    hive.lan_ip = lhelper.get_lan_ip()
+    hive.lan_ip = luabus.lan_ip()
 end
 
 function environ.get(key, def)

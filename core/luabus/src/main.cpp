@@ -1,4 +1,5 @@
 ﻿#include "stdafx.h"
+#include "socket_dns.h"
 #include "socket_udp.h"
 #include "socket_tcp.h"
 #include "lua_socket_mgr.h"
@@ -43,6 +44,9 @@ extern "C" {
 		lua_set_table_function(L, -1, "create_socket_mgr", create_socket_mgr);
 		lua_set_table_function(L, -1, "tcp", create_tcp);
 		lua_set_table_function(L, -1, "udp", create_udp);
+		lua_set_table_function(L, -1, "dns", gethostbydomain);
+		lua_set_table_function(L, -1, "port_is_used", port_is_used);
+		lua_set_table_function(L, -1, "lan_ip", get_lan_ip);
 		return 1;
 	}
 }
