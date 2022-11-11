@@ -126,7 +126,7 @@ function ThreadMgr:on_minute(clock_ms)
     end
 end
 
-function ThreadMgr:on_second(clock_ms)
+function ThreadMgr:on_fast(clock_ms)
     --处理锁超时
     for _, queue in pairs(self.syncqueue_map) do
         local head = queue:head()

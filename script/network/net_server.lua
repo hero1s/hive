@@ -41,6 +41,7 @@ prop:reader("listener", nil)            --监听器
 prop:reader("command_cds", {})          --CMD定制CD
 prop:accessor("coder", nil)             --编解码对象
 prop:accessor("log_client_msg", nil)    --消息日志函数
+prop:accessor("timeout", NETWORK_TIMEOUT)
 
 function NetServer:__init(session_type)
     self.session_type = session_type
@@ -55,9 +56,9 @@ function NetServer:setup(ip, port, induce)
         log_err("[NetServer][setup] ip:%s or port:%s is nil", ip, port)
         signal_quit()
     end
-    local socket_mgr        = hive.get("socket_mgr")
-    local real_port         = induce and (port + hive.index - 1) or port
-    self.listener           = socket_mgr.listen(ip, real_port, self.proto_type)
+    local socket_mgr = hive.get("socket_mgr")
+    local real_port  = induce and (port + hive.index - 1) or port
+    self.listener    = socket_mgr.listen(ip, real_port, self.proto_type)
     if not self.listener then
         log_err("[NetServer][setup] failed to listen: %s:%d type=%d", ip, real_port, self.proto_type)
         signal_quit()
@@ -80,7 +81,7 @@ function NetServer:on_socket_accept(session)
     session.fc_bytes     = 0
     session.last_fc_time = hive.clock_ms
     -- 设置超时(心跳)
-    session.set_timeout(NETWORK_TIMEOUT)
+    session.set_timeout(self.timeout)
     -- 绑定call回调
     session.on_call_pack  = function(recv_len, cmd_id, flag, session_id, data)
         thread_mgr:fork(function()

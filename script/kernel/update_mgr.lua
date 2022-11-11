@@ -16,6 +16,7 @@ local timer_mgr      = hive.get("timer_mgr")
 local thread_mgr     = hive.get("thread_mgr")
 local event_mgr      = hive.get("event_mgr")
 
+local FAST_MS        = hive.enum("PeriodTime", "FAST_MS")
 local HALF_MS        = hive.enum("PeriodTime", "HALF_MS")
 local SECOND_5_MS    = hive.enum("PeriodTime", "SECOND_5_MS")
 
@@ -23,6 +24,7 @@ local UpdateMgr      = singleton()
 local prop           = property(UpdateMgr)
 prop:reader("last_day", 0)
 prop:reader("last_hour", 0)
+prop:reader("last_frame", 0)
 prop:reader("last_minute", 0)
 prop:reader("last_check_time", 0)
 prop:reader("max_mem_usage", 0)
@@ -30,6 +32,7 @@ prop:reader("max_lua_mem_usage", 0)
 prop:reader("quit_objs", {})
 prop:reader("hour_objs", {})
 prop:reader("frame_objs", {})
+prop:reader("fast_objs", {})
 prop:reader("second_objs", {})
 prop:reader("minute_objs", {})
 prop:reader("next_events", {})
@@ -38,7 +41,7 @@ prop:reader("next_handlers", {})
 function UpdateMgr:__init()
     --注册订阅
     self:attach_frame(timer_mgr)
-    self:attach_second(thread_mgr)
+    self:attach_fast(thread_mgr)
     self:attach_minute(thread_mgr)
     --注册5秒定时器
     self.open_reload = environ.number("HIVE_OPEN_RELOAD", 0)
@@ -93,8 +96,18 @@ function UpdateMgr:update(now_ms, clock_ms)
         hive.clock_ms = clock_ms
         --更新帧逻辑
         self:update_next()
+        --快帧200ms更新
+        if clock_ms < self.last_frame then
+            return
+        end
+        for obj in pairs(self.fast_objs) do
+            thread_mgr:fork(function()
+                obj:on_fast(clock_ms)
+            end)
+        end
+        self.last_frame = clock_ms + FAST_MS
         --秒更新
-        local now = now_ms // 1000
+        local now       = now_ms // 1000
         if now == hive.now then
             return
         end
@@ -198,6 +211,19 @@ end
 
 function UpdateMgr:detach_frame(obj)
     self.frame_objs[obj] = nil
+end
+
+--添加对象到快帧更新循环
+function UpdateMgr:attach_fast(obj)
+    if not obj.on_fast then
+        log_warn("[UpdateMgr][attach_fast] obj(%s) isn't on_fast method!", obj)
+        return
+    end
+    self.fast_objs[obj] = true
+end
+
+function UpdateMgr:detach_fast(obj)
+    self.fast_objs[obj] = nil
 end
 
 --下一帧执行一个函数

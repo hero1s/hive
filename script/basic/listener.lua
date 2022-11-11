@@ -85,7 +85,7 @@ function Listener:notify_trigger(event, ...)
         local callback_func = trigger[func_name]
         local ok, ret = xpcall(callback_func, dtraceback, trigger, ...)
         if not ok then
-            log_err("[Listener][notify_listener] xpcall [%s:%s] failed: %s!", trigger:source(), func_name, ret)
+            log_err("[Listener][notify_trigger] xpcall [%s:%s] failed: %s!", trigger:source(), func_name, ret)
         end
     end
 end
