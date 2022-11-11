@@ -32,7 +32,7 @@ function ThreadMgr:size()
     return co_cur_size, co_cur_max
 end
 
-function ThreadMgr:lock(key, to)
+function ThreadMgr:lock(key)
     local queue = self.syncqueue_map[key]
     if not queue then
         queue                   = QueueFIFO()
@@ -41,7 +41,7 @@ function ThreadMgr:lock(key, to)
     queue.ttl  = hive.clock_ms
     local head = queue:head()
     if not head then
-        local lock = SyncLock(self, key, to)
+        local lock = SyncLock(self, key)
         queue:push(lock)
         return lock
     else
@@ -50,7 +50,7 @@ function ThreadMgr:lock(key, to)
             head:increase()
             return head
         end
-        local lock = SyncLock(self, key, to)
+        local lock = SyncLock(self, key)
         queue:push(lock)
         co_yield()
         return lock
@@ -182,17 +182,17 @@ function ThreadMgr:build_session_id()
     return self.session_id
 end
 
-function ThreadMgr:success_call(period, success_func, try_time, delay)
+function ThreadMgr:success_call(period, success_func, delay, try_times)
     if delay and delay > 0 then
         self:sleep(delay)
     end
     self:fork(function()
-        try_time = try_time or 10
+        try_times = try_times or 10
         while true do
-            if success_func() or try_time <= 0 then
+            if success_func() or try_times <= 0 then
                 break
             end
-            try_time = try_time - 1
+            try_times = try_times - 1
             self:sleep(period)
         end
     end)

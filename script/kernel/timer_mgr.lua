@@ -105,10 +105,6 @@ function TimerMgr:unregister(timer_id)
     end
 end
 
-function TimerMgr:on_quit()
-    self.timers = {}
-end
-
 hive.timer_mgr = TimerMgr()
 
 return TimerMgr

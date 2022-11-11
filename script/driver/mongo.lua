@@ -318,7 +318,7 @@ function MongoDB:find(co_name, query, projection, sortor, limit, skip)
     if sortor and next(sortor) then
         sortor = self:sort_param(sortor)
     end
-    local succ, reply = self:runCommand("find", co_name, "filter", query, "projection", projection or {}, "sort", sortor or {}, "limit", limit or 1, "skip", skip or 0)
+    local succ, reply = self:runCommand("find", co_name, "filter", query, "projection", projection or {}, "sort", sortor or {}, "limit", limit or 100, "skip", skip or 0)
     if not succ then
         return succ, reply
     end

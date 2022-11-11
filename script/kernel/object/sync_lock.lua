@@ -4,25 +4,23 @@
     local lock<close> = thread_mgr:lock(key)
     ...
 --]]
-local co_running    = coroutine.running
+local co_running   = coroutine.running
 
-local MINUTE_5_MS   = hive.enum("PeriodTime", "MINUTE_5_MS")
+local SECOND_10_MS = hive.enum("PeriodTime", "SECOND_10_MS")
 
-local SyncLock = class()
-local prop = property(SyncLock)
-prop:reader("timeout", MINUTE_5_MS)
+local SyncLock     = class()
+local prop         = property(SyncLock)
 prop:reader("thread_mgr", nil)
+prop:reader("timeout", 0)
 prop:reader("count", 1)
 prop:reader("key", nil)
 prop:reader("co", nil)
 
-function SyncLock:__init(thread_mgr, key, to)
+function SyncLock:__init(thread_mgr, key)
     self.thread_mgr = thread_mgr
-    self.co = co_running()
-    self.key = key
-    if to then
-        self.timeout = to
-    end
+    self.timeout    = hive.clock_ms + SECOND_10_MS
+    self.co         = co_running()
+    self.key        = key
 end
 
 function SyncLock:increase()

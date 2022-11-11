@@ -11,11 +11,10 @@ local check_success = hive.success
 local check_failed  = hive.failed
 
 local event_mgr     = hive.get("event_mgr")
-local timer_mgr     = hive.get("timer_mgr")
 local config_mgr    = hive.get("config_mgr")
+local update_mgr    = hive.get("update_mgr")
 
 local RPC_FAILED    = hive.enum("KernCode", "RPC_FAILED")
-local SECOND_MS     = hive.enum("PeriodTime", "SECOND_MS")
 
 local MonitorAgent  = singleton()
 local prop          = property(MonitorAgent)
@@ -63,7 +62,7 @@ end
 function MonitorAgent:rpc_hive_quit(reason)
     -- 发个退出通知
     event_mgr:notify_trigger("evt_hive_quit", reason)
-    timer_mgr:once(SECOND_MS, function()
+    update_mgr:attach_next(self, function()
         log_warn("[MonitorAgent][on_hive_quit]->service:%s,reason:%s", hive.name, reason)
         signal_quit()
     end)

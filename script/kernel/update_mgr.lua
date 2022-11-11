@@ -4,7 +4,6 @@ local mem_usage      = lhelper.mem_usage
 
 local pairs          = pairs
 local odate          = os.date
-local otime          = os.time
 local log_info       = logger.info
 local log_warn       = logger.warn
 local log_err        = logger.err
@@ -33,10 +32,11 @@ prop:reader("hour_objs", {})
 prop:reader("frame_objs", {})
 prop:reader("second_objs", {})
 prop:reader("minute_objs", {})
+prop:reader("next_events", {})
+prop:reader("next_handlers", {})
 
 function UpdateMgr:__init()
     --注册订阅
-    self:attach_quit(timer_mgr)
     self:attach_frame(timer_mgr)
     self:attach_second(thread_mgr)
     self:attach_minute(thread_mgr)
@@ -61,6 +61,21 @@ function UpdateMgr:on_second_5s()
     end
 end
 
+function UpdateMgr:update_next()
+    for _, handler in pairs(self.next_handlers) do
+        thread_mgr:fork(handler)
+    end
+    self.next_handlers = {}
+    for key, events in pairs(self.next_events) do
+        for event, arg in pairs(events) do
+            thread_mgr:fork(function()
+                event_mgr:notify_trigger(event, key, arg)
+            end)
+        end
+    end
+    self.next_events = {}
+end
+
 function UpdateMgr:update(now_ms, clock_ms)
     --业务更新
     thread_mgr:fork(function()
@@ -76,8 +91,10 @@ function UpdateMgr:update(now_ms, clock_ms)
         hive.frame    = frame
         hive.now_ms   = now_ms
         hive.clock_ms = clock_ms
+        --更新帧逻辑
+        self:update_next()
         --秒更新
-        local now     = otime()
+        local now = now_ms // 1000
         if now == hive.now then
             return
         end
@@ -181,6 +198,21 @@ end
 
 function UpdateMgr:detach_frame(obj)
     self.frame_objs[obj] = nil
+end
+
+--下一帧执行一个函数
+function UpdateMgr:attach_next(key, func)
+    self.next_handlers[key] = func
+end
+
+--下一帧执行一个事件
+function UpdateMgr:attach_event(key, event, arg)
+    local events = self.next_events[key]
+    if not events then
+        self.next_events[key] = { [event] = arg }
+        return
+    end
+    events[event] = arg
 end
 
 --添加对象到程序退出通知列表

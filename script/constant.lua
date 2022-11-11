@@ -50,6 +50,7 @@ NetwkTime.HEARTBEAT_TIME          = 2000      --RPC连接心跳时间
 --常用时间周期
 local PeriodTime                  = enum("PeriodTime", 0)
 PeriodTime.FRAME_MS               = 100       --0.1秒（ms）
+PeriodTime.FAST_MS                = 200       --0.2秒（ms）
 PeriodTime.HALF_MS                = 500       --0.5秒（ms）
 PeriodTime.SECOND_MS              = 1000      --1秒（ms）
 PeriodTime.SECOND_2_MS            = 2000      --2秒（ms）
@@ -108,10 +109,10 @@ CacheCode.CACHE_KEY_LOCK_FAILD    = 10006  -- 用户锁失败
 CacheCode.CACHE_DELETE_SAVE_FAILD = 10007  -- 缓存删除失败
 
 -- robot类型
-local RobotType             = enum("RobotType", 0)
-RobotType.RANDOM            = 0       -- 随机账号
-RobotType.COMPOSE           = 1       -- 组合账号
-RobotType.PLAYER            = 2       -- 指定账号
+local RobotType                   = enum("RobotType", 0)
+RobotType.RANDOM                  = 0       -- 随机账号
+RobotType.COMPOSE                 = 1       -- 组合账号
+RobotType.PLAYER                  = 2       -- 指定账号
 
 
 
