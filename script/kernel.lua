@@ -11,6 +11,7 @@ local tunpack       = table.unpack
 local raw_yield     = coroutine.yield
 local raw_resume    = coroutine.resume
 local ltime         = ltimer.time
+local lclock_ms     = ltimer.clock_ms
 
 local HiveMode      = enum("HiveMode")
 local ServiceStatus = enum("ServiceStatus")
@@ -21,10 +22,10 @@ local update_mgr    = hive.load("update_mgr")
 
 --初始化网络
 local function init_network()
-    local lbus      = require("luabus")
-    local max_conn  = environ.number("HIVE_MAX_CONN", 64)
-    local rpc_key   = environ.get("HIVE_RPC_KEY","hive2022")
-    socket_mgr      = lbus.create_socket_mgr(max_conn)
+    local lbus     = require("luabus")
+    local max_conn = environ.number("HIVE_MAX_CONN", 4096)
+    local rpc_key  = environ.get("HIVE_RPC_KEY", "hive2022")
+    socket_mgr     = lbus.create_socket_mgr(max_conn)
     socket_mgr.set_rpc_key(rpc_key)
     hive.socket_mgr = socket_mgr
 end
@@ -37,7 +38,7 @@ end
 
 --协程改造
 local function init_coroutine()
-    coroutine.yield = function(...)
+    coroutine.yield  = function(...)
         if co_hookor then
             co_hookor:yield()
         end
@@ -54,7 +55,7 @@ local function init_coroutine()
         end
         return tunpack(args)
     end
-    hive.eval = function(name)
+    hive.eval        = function(name)
         if co_hookor then
             return co_hookor:eval(name)
         end
@@ -101,16 +102,19 @@ function hive.init()
         --加载协议
         import("kernel/protobuf_mgr.lua")
         --加载monotor
-        import("agent/monitor_agent.lua")
-        if not environ.get("HIVE_MONITOR_HOST") then
-            import("kernel/netlog_mgr.lua")
+        if environ.status("HIVE_JOIN_MONITOR") then
+            import("agent/monitor_agent.lua")
+            if not environ.get("HIVE_MONITOR_HOST") then
+                import("kernel/netlog_mgr.lua")
+            end
         end
+        --挂载运维附加逻辑
         import("devops/devops_mgr.lua")
     end
 end
 
 function hive.hook_coroutine(hooker)
-    co_hookor = hooker
+    co_hookor      = hooker
     hive.co_hookor = hooker
 end
 
@@ -144,13 +148,17 @@ function hive.after_start()
     end
 end
 
+local wait_ms = 10
 --底层驱动
 hive.run      = function()
     if socket_mgr then
-        socket_mgr.wait(10)
+        socket_mgr.wait(wait_ms)
     end
     --系统更新
-    update_mgr:update(ltime())
+    local now_ms, clock_ms = ltime()
+    update_mgr:update(now_ms, clock_ms)
+    local cost_time = lclock_ms() - clock_ms
+    wait_ms         = cost_time > 10 and 1 or 10 - cost_time
 end
 
 hive.exit     = function()

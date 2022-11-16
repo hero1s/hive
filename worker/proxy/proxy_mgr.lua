@@ -3,12 +3,12 @@ import("driver/webhook.lua")
 import("driver/graylog.lua")
 import("network/http_client.lua")
 
-local webhook       = hive.get("webhook")
-local graylog       = hive.get("graylog")
-local event_mgr     = hive.get("event_mgr")
-local http_client   = hive.get("http_client")
-
-local ProxyMgr = singleton()
+local webhook     = hive.get("webhook")
+local graylog     = hive.get("graylog")
+local event_mgr   = hive.get("event_mgr")
+local http_client = hive.get("http_client")
+local thread_mgr  = hive.get("thread_mgr")
+local ProxyMgr    = singleton()
 
 function ProxyMgr:__init()
     -- 注册事件
@@ -22,8 +22,12 @@ end
 
 --日志上报
 function ProxyMgr:rpc_dispatch_log(title, content, lvl)
-    webhook:notify(title, content, lvl)
-    graylog:write(content, lvl)
+    thread_mgr:fork(function()
+        webhook:notify(title, content, lvl)
+    end)
+    thread_mgr:fork(function()
+        graylog:write(content, lvl)
+    end)
 end
 
 --通用http请求

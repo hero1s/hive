@@ -1,5 +1,7 @@
 --hive.lua
-local otime      = os.time
+local ltimer     = require("ltimer")
+local lclock_ms  = ltimer.clock_ms
+
 local odate      = os.date
 local log_err    = logger.err
 local log_warn   = logger.warn
@@ -44,8 +46,8 @@ function hive.check_endless_loop()
     if check_close_loop then
         log_warn("open check_endless_loop will degrade performance!")
         local debug_hook = function()
-            local now = otime()
-            if now - hive.now >= 10 then
+            local now = lclock_ms()
+            if now - hive.clock_ms >= 10000 then
                 log_err(sformat("check_endless_loop:%s", dtraceback()))
             end
         end
@@ -135,4 +137,10 @@ end
 function hive.edition_utc(period, time, offset)
     local utime = hive.utc_time(time)
     return hive.edition(period, utime, offset)
+end
+
+local ServiceStatus_RUN = henum("ServiceStatus", "RUN")
+
+hive.is_runing          = function()
+    return hive.service_status == ServiceStatus_RUN
 end

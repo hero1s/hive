@@ -87,13 +87,13 @@ function UpdateMgr:update(now_ms, clock_ms)
             log_err("[UpdateMgr][update] last frame exec too long(%d ms)!,service:%s", diff_ms, hive.name)
         end
         --帧更新
-        local frame = hive.frame + 1
-        for obj in pairs(self.frame_objs) do
-            obj:on_frame(clock_ms, frame)
-        end
+        local frame   = hive.frame + 1
         hive.frame    = frame
         hive.now_ms   = now_ms
         hive.clock_ms = clock_ms
+        for obj in pairs(self.frame_objs) do
+            obj:on_frame(clock_ms, frame)
+        end
         --更新帧逻辑
         self:update_next()
         --快帧200ms更新

@@ -7,7 +7,7 @@ local log_warn      = logger.warn
 local log_debug     = logger.debug
 local time_str      = datetime_ext.time_str
 local ssplit        = string_ext.split
-
+local sname2sid     = service.name2sid
 local http_client   = hive.get("http_client")
 local env_get       = environ.get
 
@@ -30,7 +30,8 @@ function DevopsGmMgr:register_gm()
         { gm_type = GMType.DEV_OPS, name = "gm_set_log_level", desc = "设置日志等级", comment = "(all/全部,日志等级debug[1]-fatal[6])", args = "svr_name|string level|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_hotfix", desc = "代码热更新", args = "" },
         { gm_type = GMType.DEV_OPS, name = "gm_inject", desc = "代码注入", args = "svr_name|string file_name|string code_content|string" },
-        { gm_type = GMType.DEV_OPS, name = "gm_set_server_status", desc = "设置服务器状态", comment = "[0运行1禁开局2强退],延迟(秒)", args = "status|integer delay|integer" },
+        { gm_type = GMType.DEV_OPS, name = "gm_set_server_status", desc = "设置服务器状态", comment = "[0运行1禁开局2强退],延迟(秒),服务/index",
+          args    = "status|integer delay|integer service_name|string index|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_hive_quit", desc = "关闭服务器", comment = "[杀进程],延迟(秒)", args = "reason|integer delay|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_cfg_reload", desc = "配置表热更新", comment = "(0 本地 1 远程)", args = "is_remote|integer" },
         --工具
@@ -74,13 +75,28 @@ function DevopsGmMgr:gm_inject(svr_name, file_name, code_content)
     return { code = -1 }
 end
 
-function DevopsGmMgr:gm_set_server_status(status, delay)
-    log_warn("[DevopsGmMgr][gm_set_server_status]:%s,exe time:%s ", status, time_str(hive.now + delay))
+function DevopsGmMgr:gm_set_server_status(status, delay, service_name, index)
+    log_warn("[DevopsGmMgr][gm_set_server_status]:%s,exe time:%s,service:%s,index:%s ",
+             status, time_str(hive.now + delay), service_name, index)
     if status < ServiceStatus.RUN or status > ServiceStatus.STOP then
         return { code = 1, msg = "status is more than" }
     end
+    local service_id = 0
+    if service_name ~= "" then
+        service_id = sname2sid(service_name)
+        if not service_id then
+            return { code = 1, msg = "the service_name is error" }
+        end
+    end
+
     timer_mgr:once(delay * 1000, function()
-        monitor_mgr:broadcast("rpc_set_server_status", 0, status)
+        if service_id > 0 and index ~= 0 then
+            --指定目标
+            local target_id = service.make_sid(service_id, index)
+            return monitor_mgr:send_by_sid(target_id, "rpc_set_server_status", status)
+        else
+            monitor_mgr:broadcast("rpc_set_server_status", service_id, status)
+        end
     end)
     return { code = 0 }
 end

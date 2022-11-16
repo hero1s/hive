@@ -86,12 +86,12 @@ local function logger_output(feature, lvl, lvl_name, fmt, log_conf, ...)
         content = sformat(fmt, ...)
     end
     if not dispatching then
-        --防止重入 toney,这里有bug,待优化
-        --dispatching = true
+        --防止重入
+        dispatching = true
         for monitor in pairs(monitors) do
             monitor:dispatch_log(content, lvl_name, lvl)
         end
-        --dispatching = false
+        dispatching = false
     end
     return lvl_func(content, feature)
 end

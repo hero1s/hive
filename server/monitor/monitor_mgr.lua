@@ -33,7 +33,7 @@ function MonitorMgr:__init()
     local ip, port  = env_addr("HIVE_MONITOR_HOST")
     self.rpc_server = RpcServer(self, ip, port)
     --创建HTTP服务器
-    local server = HttpServer(env_get("HIVE_MONITOR_HTTP"))
+    local server    = HttpServer(env_get("HIVE_MONITOR_HTTP"))
     server:register_get("/", "on_log_page", self)
     server:register_get("/status", "on_monitor_status", self)
     server:register_post("/command", "on_monitor_command", self)
@@ -114,7 +114,7 @@ function MonitorMgr:on_monitor_status(url, querys, headers)
 end
 
 --call
-function MonitorMgr:call(token, rpc, ...)
+function MonitorMgr:call_by_token(token, rpc, ...)
     local client = self.rpc_server:get_client(token)
     if not client then
         return { code = 1, msg = "node not connect!" }
@@ -124,6 +124,16 @@ function MonitorMgr:call(token, rpc, ...)
         return { code = 1, msg = "call moniotor node failed!" }
     end
     return { code = code, msg = res }
+end
+
+function MonitorMgr:send_by_sid(sid, rpc, ...)
+    for _, client in self.rpc_server:iterator() do
+        if sid == client.id then
+            self.rpc_server:send(client, rpc, ...)
+            return { code = 0, msg = "send target success" }
+        end
+    end
+    return { code = 1, msg = "target is nil" }
 end
 
 --broadcast
@@ -151,7 +161,7 @@ function MonitorMgr:on_monitor_command(url, body, request)
     local function handler_cmd(jbody)
         local data_req = json_decode(jbody)
         if data_req.token then
-            return self:call(data_req.token, data_req.rpc, data_req.data)
+            return self:call_by_token(data_req.token, data_req.rpc, data_req.data)
         end
         return self:broadcast(data_req.rpc, data_req.service_id, data_req.data)
     end

@@ -9,6 +9,8 @@ local signal_quit      = signal.quit
 local tunpack          = table.unpack
 local sformat          = string.format
 local sid2name         = service.id2name
+local id2sid           = service.id2sid
+local id2nick          = service.id2nick
 local check_success    = hive.success
 local jumphash         = lcodec.jumphash
 
@@ -26,7 +28,9 @@ prop:accessor("candidates", {})
 prop:accessor("ready_watchers", {})
 prop:accessor("close_watchers", {})
 prop:accessor("master_watchers", {})
+prop:accessor("hid", 0)
 function RouterMgr:__init()
+    self.hid = hive.id
     self:setup()
 end
 
@@ -103,8 +107,9 @@ function RouterMgr:random_router()
 end
 
 --查找hash router
-function RouterMgr:hash_router(hash_key)
-    local count = #self.candidates
+function RouterMgr:hash_router(service_id)
+    local hash_key = self.hid + service_id
+    local count    = #self.candidates
     if count > 0 then
         local index = jumphash(hash_key, count)
         local node  = self.candidates[index]
@@ -152,7 +157,7 @@ function RouterMgr:call_target(target, rpc, ...)
         return tunpack(res)
     end
     local session_id = thread_mgr:build_session_id()
-    return self:forward_client(self:hash_router(target), "call_target", rpc, session_id, target, rpc, ...)
+    return self:forward_client(self:hash_router(id2sid(target)), "call_target", rpc, session_id, target, rpc, ...)
 end
 
 --发送给指定目标
@@ -161,7 +166,7 @@ function RouterMgr:send_target(target, rpc, ...)
         event_mgr:notify_listener(rpc, ...)
         return true
     end
-    return self:forward_client(self:hash_router(target), "call_target", rpc, 0, target, rpc, ...)
+    return self:forward_client(self:hash_router(id2sid(target)), "call_target", rpc, 0, target, rpc, ...)
 end
 
 --发送给指定目标
@@ -189,12 +194,12 @@ end
 --发送给指定service的hash
 function RouterMgr:call_hash(service_id, hash_key, rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    return self:forward_client(self:hash_router(hash_key), "call_hash", rpc, session_id, service_id, hash_key, rpc, ...)
+    return self:forward_client(self:hash_router(service_id), "call_hash", rpc, session_id, service_id, hash_key, rpc, ...)
 end
 
 --发送给指定service的hash
 function RouterMgr:send_hash(service_id, hash_key, rpc, ...)
-    return self:forward_client(self:hash_router(hash_key), "call_hash", rpc, 0, service_id, hash_key, rpc, ...)
+    return self:forward_client(self:hash_router(service_id), "call_hash", rpc, 0, service_id, hash_key, rpc, ...)
 end
 
 --发送给指定service的random
@@ -314,6 +319,9 @@ function RouterMgr:rpc_service_close(id, router_id)
     if self:is_master_router(router_id) then
         local server_name  = sid2name(id)
         local listener_set = self.close_watchers[server_name]
+        if listener_set then
+            log_info("[RouterMgr][rpc_service_close] %s", id2nick(id))
+        end
         for listener in pairs(listener_set or {}) do
             listener:on_service_close(id, server_name)
         end
@@ -325,6 +333,9 @@ function RouterMgr:rpc_service_ready(id, router_id)
     if self:is_master_router(router_id) then
         local server_name  = sid2name(id)
         local listener_set = self.ready_watchers[server_name]
+        if listener_set then
+            log_info("[RouterMgr][rpc_service_ready] %s", id2nick(id))
+        end
         for listener in pairs(listener_set or {}) do
             listener:on_service_ready(id, server_name)
         end
@@ -334,8 +345,11 @@ end
 --服务器切换master
 function RouterMgr:rpc_service_master(id, router_id)
     if self:is_master_router(router_id) then
+        if next(self.master_watchers) then
+            log_info("[RouterMgr][rpc_service_master] switch master self:%s,master:%s", id2nick(hive.id), id2nick(id))
+        end
         for listener in pairs(self.master_watchers or {}) do
-            listener:on_service_master(id)
+            listener:on_service_master(id, hive.id == id and true or false)
         end
     end
 end

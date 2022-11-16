@@ -21,7 +21,7 @@ local thread_mgr    = hive.load("thread_mgr")
 --初始化网络
 local function init_network()
     local lbus = require("luabus")
-    local max_conn = environ.number("HIVE_MAX_CONN", 64)
+    local max_conn = environ.number("HIVE_MAX_CONN", 4096)
     socket_mgr = lbus.create_socket_mgr(max_conn)
     hive.socket_mgr = socket_mgr
 end
