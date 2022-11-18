@@ -19,6 +19,7 @@ local LOG_LEVEL   = llog.LOG_LEVEL
 
 logger            = {}
 logfeature        = {}
+local logtag      = hive.logtag
 local monitors    = _ENV.monitors or {}
 local dispatching = false
 
@@ -93,7 +94,7 @@ local function logger_output(feature, lvl, lvl_name, fmt, log_conf, ...)
         end
         dispatching = false
     end
-    return lvl_func(content, feature)
+    return lvl_func(logtag .. content, feature)
 end
 
 local LOG_LEVEL_OPTIONS = {

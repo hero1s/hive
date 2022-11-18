@@ -36,6 +36,16 @@ local function init_router()
     import("agent/gm_agent.lua")
 end
 
+--加载monitor
+local function init_monitor()
+    if environ.status("HIVE_JOIN_MONITOR") then
+        import("agent/monitor_agent.lua")
+        if not environ.get("HIVE_MONITOR_HOST") then
+            import("kernel/netlog_mgr.lua")
+        end
+    end
+end
+
 --协程改造
 local function init_coroutine()
     coroutine.yield  = function(...)
@@ -93,21 +103,16 @@ function hive.init()
         import("kernel/perfeval_mgr.lua")
         import("kernel/statis_mgr.lua")
         init_network()
+        --加载协议
+        import("kernel/protobuf_mgr.lua")
     end
     --其他模块加载
     if hive.mode == HiveMode.SERVICE then
         init_router()
         --加载调度器
         init_scheduler()
-        --加载协议
-        import("kernel/protobuf_mgr.lua")
         --加载monotor
-        if environ.status("HIVE_JOIN_MONITOR") then
-            import("agent/monitor_agent.lua")
-            if not environ.get("HIVE_MONITOR_HOST") then
-                import("kernel/netlog_mgr.lua")
-            end
-        end
+        init_monitor()
         --挂载运维附加逻辑
         import("devops/devops_mgr.lua")
     end

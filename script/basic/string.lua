@@ -3,14 +3,16 @@ local type     = type
 local load     = load
 local pcall    = pcall
 local tostring = tostring
+local tonumber = tonumber
 local tunpack  = table.unpack
 local ssub     = string.sub
+local sgsub    = string.gsub
 local sfind    = string.find
 local supper   = string.upper
 local slower   = string.lower
 local sformat  = string.format
 
-string_ext = _ENV.string_ext or {}
+string_ext     = _ENV.string_ext or {}
 
 --------------------------------------------------------------------------------
 function string_ext.eval(str)
@@ -68,11 +70,20 @@ function string_ext.protoaddr(value)
     end
 end
 
+--移除首位空格
 function string_ext.trim(str)
     return (str:gsub("^%s*(.-)%s*$", "%1"))
 end
 
-
+--版本号转数字
+function string_ext.version_num(version)
+    if type(version) ~= "string" then
+        return 0
+    end
+    version = sgsub(version, "%.", "")
+    version = version:match("^[0]*(.-)[%s]*$")
+    return tonumber(version) or 0
+end
 
 
 

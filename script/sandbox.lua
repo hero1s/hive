@@ -1,5 +1,5 @@
 --sandbox.lua
-local llog        = require("lualog")
+local logger      = require("lualog")
 local lstdfs      = require("lstdfs")
 
 local pairs       = pairs
@@ -20,6 +20,11 @@ local is_dir      = lstdfs.is_directory
 
 local load_files  = {}
 local search_path = {}
+
+local logtag      = hive.logtag
+local log_output  = function(lvl, ctx)
+    logger[lvl](logtag .. ctx)
+end
 
 local function ssplit(str, token)
     local t = {}
@@ -72,16 +77,16 @@ end
 local function try_load(node, reload)
     local trunk_func, err = search_load(node)
     if not trunk_func then
-        llog.error(sformat("[sandbox][try_load] load file: %s ... [failed]\nerror : %s", node.filename, err))
+        log_output("error", sformat("[sandbox][try_load] load file: %s ... [failed]\nerror : %s", node.filename, err))
         return
     end
     local res = tpack(pcall(trunk_func))
     if not res[1] then
-        llog.error(sformat("[sandbox][try_load] exec file: %s ... [failed]\nerror : %s", node.filename, res[2]))
+        log_output("error", sformat("[sandbox][try_load] exec file: %s ... [failed]\nerror : %s", node.filename, res[2]))
         return
     end
     if reload then
-        llog.info(sformat("[sandbox][try_load] load file: %s ... [ok]", node.filename))
+        log_output("info", sformat("[sandbox][try_load] load file: %s ... [ok]", node.filename))
     end
     return tunpack(res, 2)
 end
@@ -161,7 +166,7 @@ function hive.reload()
                     return count
                 end
             else
-                llog.error(sformat("[hive][reload] error file:%s", node.filename))
+                log_output("error", sformat("[hive][reload] error file:%s", node.filename))
             end
         end
     end
@@ -176,7 +181,7 @@ function hive.get(name)
     local global_obj = hive[name]
     if not global_obj then
         local info = dgetinfo(2, "S")
-        llog.error(sformat("[hive][get] %s not initial! source(%s:%s)", name, info.short_src, info.linedefined))
+        log_output("error", sformat("[hive][get] %s not initial! source(%s:%s)", name, info.short_src, info.linedefined))
         return
     end
     return global_obj

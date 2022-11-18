@@ -1,7 +1,8 @@
 --main_convertor.lua
-local lcrypt = require('lcrypt')
-local lstdfs = require('lstdfs')
-local lexcel = require('luaxlsx')
+local lcrypt        = require('lcrypt')
+local lstdfs        = require('lstdfs')
+local lexcel        = require('luaxlsx')
+local GenCfgProto   = require("gen_cfg_proto")
 
 require("check_valid")
 local check_valid   = hive.check_valid
@@ -243,6 +244,13 @@ local function export_sheet_to_table(sheet, output, title)
     local header     = {}
     local field_type = {}
     local field_desc = {}
+
+    local b_act = false
+    if string.lower(string.sub(title, 1, 8)) == "activity" then
+        b_act = true
+    end 
+
+    local activity_data = {}
     for col = sheet.first_col, sheet.last_col do
         -- 读取第一行作为字段描述
         field_desc[col] = get_sheet_value(sheet, 1, col)
@@ -250,6 +258,21 @@ local function export_sheet_to_table(sheet, output, title)
         field_type[col] = get_sheet_value(sheet, type_line, col)
         -- 读取第四行作为表头
         header[col]     = get_sheet_value(sheet, head_line, col)
+        if b_act and col > 1 and field_type[col] and header[col] then
+            field_type[col] = string.gsub(field_type[col], "^%s*(.-)%s*$", "%1")
+            header[col] = string.gsub(header[col], "^%s*(.-)%s*$", "%1")
+            if GenCfgProto:need_gen(header[col]) then
+                local result, real_type, real_name = GenCfgProto:process_excel_header(title, field_type[col], header[col])
+                if not result then
+                    return false
+                end
+                field_type[col] = GenCfgProto:parse_type(field_type[col])
+                header[col] = GenCfgProto:parse_name(header[col], field_type[col])
+            else
+                field_type[col] = GenCfgProto:parse_type(field_type[col])
+                header[col] = GenCfgProto:parse_name(header[col], field_type[col])
+            end 
+        end
     end
 
     -- 如果此表不是服务器需要的,则不导出
@@ -277,7 +300,7 @@ local function export_sheet_to_table(sheet, output, title)
         end
         -- 遍历每一列
         local record, record_flag = {}, {}
-        local pos                 = 0
+        local pos = 0
         for col = 2, sheet.last_col do
             -- 过滤掉没有配置的行
             local ftype = field_type[col]
@@ -286,10 +309,10 @@ local function export_sheet_to_table(sheet, output, title)
                 local value = get_sheet_value(sheet, row, col, ftype, key)
                 if value ~= nil then
                     tinsert(record, { key, value, ftype, field_desc[col] })
-                    pos              = pos + 1
+                    pos = pos + 1
                     record_flag[key] = 1
                 elseif record_flag[key] == nil then
-                    pos              = pos + 1
+                    pos = pos + 1
                     record_flag[key] = { pos, { key, value, ftype, field_desc[col] } }
                 else
                     --多选一的列并且都没配
@@ -447,6 +470,26 @@ local function export_config()
     return input, output, recursion
 end
 
+local function gen_activity_proto(output, title)
+    if #title < 8 then
+        return
+    end
+
+    local format_str = string.lower(sformat("%8s", title))
+    if format_str ~= "activity" then
+        return
+    end
+
+    local table_name  = sformat("%s_cfg", title)
+    local filename    = lappend(output, lconcat(table_name, ".lua"))
+    local cfg_file    = require(filename)
+
+    local proto_str = sformat("// %s_cfg配置文件\nmessage %s\n\t{\n", title, title)
+    for key, value in ipairs(cfg_file) do
+        proto_str = sformat("%s\t")
+    end
+end
+
 --挂载表格校验逻辑
 local function attach_check_valid()
     local valid_file = hgetenv("HIVE_VALID_FILE")
@@ -458,6 +501,8 @@ attach_check_valid()
 print("useage: hive.exe [--input=xxx] [--output=xxx]")
 print("begin export excels to lua!")
 
+GenCfgProto:init()
+
 local input, output, recursion = export_config()
 local ok, err                  = pcall(export_excel, input, output, recursion)
 if not ok then
@@ -465,5 +510,12 @@ if not ok then
 else
     print("success export excels to lua!")
 end
+
+if not GenCfgProto:exec_gen() then
+    print("------------gen excel proto to lua failed")
+else
+    print("------------gen excel proto to lua success")
+end
+
 
 os.exit()
