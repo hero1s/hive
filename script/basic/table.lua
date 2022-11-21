@@ -246,6 +246,16 @@ local function tfilter(func, list)
     return newlist
 end
 
+--反转table
+local function treverse(arr)
+    local tmp = {}
+    for i = 1, #arr do
+        local key = #arr + 1 - i
+        tmp[i]    = arr[key]
+    end
+    return tmp
+end
+
 table_ext                   = _ENV.table_ext or {}
 
 table_ext.random            = trandom
@@ -270,6 +280,7 @@ table_ext.equals            = equals
 table_ext.indexof           = indexof
 table_ext.find_key_by_value = findKeyByValue
 table_ext.filter            = tfilter
+table_ext.reverse           = treverse
 
 -- 按哈希key排序
 --[[ 使用示例:

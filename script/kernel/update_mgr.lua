@@ -92,7 +92,9 @@ function UpdateMgr:update(now_ms, clock_ms)
         hive.now_ms   = now_ms
         hive.clock_ms = clock_ms
         for obj in pairs(self.frame_objs) do
-            obj:on_frame(clock_ms, frame)
+            thread_mgr:fork(function()
+                obj:on_frame(clock_ms, frame)
+            end)
         end
         --更新帧逻辑
         self:update_next()
@@ -113,7 +115,9 @@ function UpdateMgr:update(now_ms, clock_ms)
         end
         hive.now = now
         for obj in pairs(self.second_objs) do
-            obj:on_second(clock_ms)
+            thread_mgr:fork(function()
+                obj:on_second(clock_ms)
+            end)
         end
         --检查信号
         self:sig_check()
@@ -124,17 +128,22 @@ function UpdateMgr:update(now_ms, clock_ms)
         end
         self.last_minute = time.min
         for obj in pairs(self.minute_objs) do
-            obj:on_minute(clock_ms)
+            thread_mgr:fork(function()
+                obj:on_minute(clock_ms)
+            end)
         end
         self:check_new_day()
         self:monitor_mem()
         --时更新
-        if time.hour == self.last_hour then
+        local cur_hour = time.hour
+        if cur_hour == self.last_hour then
             return
         end
-        self.last_hour = time.hour
+        self.last_hour = cur_hour
         for obj in pairs(self.hour_objs) do
-            obj:on_hour(clock_ms, time.hour)
+            thread_mgr:fork(function()
+                obj:on_hour(clock_ms, cur_hour, time)
+            end)
         end
         --gc
         collectgarbage("collect")

@@ -75,15 +75,7 @@ function string_ext.trim(str)
     return (str:gsub("^%s*(.-)%s*$", "%1"))
 end
 
---版本号转数字
-function string_ext.version_num(version)
-    if type(version) ~= "string" then
-        return 0
-    end
-    version = sgsub(version, "%.", "")
-    version = version:match("^[0]*(.-)[%s]*$")
-    return tonumber(version) or 0
-end
+
 
 
 

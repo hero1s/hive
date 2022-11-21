@@ -83,9 +83,11 @@ function CacheMgr:on_timer_update()
     --存储脏数据
     if self.flush then
         for uuid, obj in self.dirty_map:iterator() do
-            if obj:save() then
-                self.dirty_map:set(uuid, nil)
-            end
+            thread_mgr:fork(function()
+                if obj:save() then
+                    self.dirty_map:set(uuid, nil)
+                end
+            end)
         end
         return
     end
