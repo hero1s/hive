@@ -6,7 +6,6 @@ local tostring = tostring
 local tonumber = tonumber
 local tunpack  = table.unpack
 local ssub     = string.sub
-local sgsub    = string.gsub
 local sfind    = string.find
 local supper   = string.upper
 local slower   = string.lower

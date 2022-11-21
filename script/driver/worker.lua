@@ -95,8 +95,3 @@ hive.on_worker = function(slice)
         worker_rpc(tunpack(rpc_res, 2))
     end)
 end
-
---唤醒主线程
-function hive.wakeup_main(...)
-    hive.wakeup(lencode(...))
-end

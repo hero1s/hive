@@ -266,14 +266,19 @@ end
 function UpdateMgr:monitor_mem()
     local mem     = cut_tail(mem_usage(), 1)
     local lua_mem = cut_tail(collectgarbage("count") / 1024, 1)
+    local show_flag
     if mem > self.max_mem_usage then
         self.max_mem_usage = mem
+        show_flag          = true
     end
     if lua_mem > self.max_lua_mem_usage then
         self.max_lua_mem_usage = lua_mem
+        show_flag              = true
     end
-    log_info("UpdateMgr][monitor_mem] mem:%s/%s M,lua_mem: %s/%s M,threads:%s/%s",
-             mem, self.max_mem_usage, lua_mem, self.max_lua_mem_usage, thread_mgr:size())
+    if show_flag then
+        log_info("UpdateMgr][monitor_mem] mem:%s/%s M,lua_mem: %s/%s M,threads:%s/%s",
+                 mem, self.max_mem_usage, lua_mem, self.max_lua_mem_usage, thread_mgr:size())
+    end
 end
 
 hive.update_mgr = UpdateMgr()

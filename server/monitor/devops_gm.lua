@@ -11,7 +11,6 @@ local sname2sid     = service.name2sid
 local http_client   = hive.get("http_client")
 local env_get       = environ.get
 
-local event_mgr     = hive.get("event_mgr")
 local gm_agent      = hive.get("gm_agent")
 local monitor_mgr   = hive.get("monitor_mgr")
 local timer_mgr     = hive.get("timer_mgr")
@@ -38,10 +37,7 @@ function DevopsGmMgr:register_gm()
         { gm_type = GMType.TOOLS, name = "gm_guid_view", desc = "guid信息", comment = "(拆解guid)", args = "guid|integer" },
         { gm_type = GMType.TOOLS, name = "gm_log_format", desc = "日志格式", comment = "0压缩,1格式化", args = "data|string swline|integer" },
     }
-    for _, v in ipairs(cmd_list) do
-        event_mgr:add_listener(self, v.name)
-    end
-    gm_agent:insert_command(cmd_list)
+    gm_agent:insert_command(cmd_list,self)
 end
 
 -- 设置日志等级

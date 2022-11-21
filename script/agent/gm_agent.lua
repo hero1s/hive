@@ -24,8 +24,13 @@ function GMAgent:__init()
 end
 
 --插入一条command
-function GMAgent:insert_command(command_list)
-    for _, cmd in pairs(command_list) do
+function GMAgent:insert_command(cmd_list,listener)
+    if listener then
+        for _, v in ipairs(cmd_list) do
+            event_mgr:add_listener(listener, v.name)
+        end
+    end
+    for _, cmd in pairs(cmd_list) do
         self.command_list[cmd.name] = cmd
     end
 end

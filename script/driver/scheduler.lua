@@ -31,10 +31,6 @@ function Scheduler:on_frame()
     hive.worker_update()
 end
 
-function Scheduler:suspend(timeout)
-    return hive.worker_suspend(timeout)
-end
-
 function Scheduler:setup(service)
     hive.worker_setup(service, environ.get("HIVE_SANDBOX"))
 end

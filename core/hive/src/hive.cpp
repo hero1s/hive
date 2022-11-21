@@ -190,7 +190,6 @@ void hive_app::run() {
 	hive.set_function("register_signal", [](int n) { signal(n, on_signal); });
 	//begin worker操作接口
 	hive.set_function("worker_update", [&](size_t to) { m_schedulor.update(); });
-	hive.set_function("worker_suspend", [&](size_t to) { m_schedulor.suspend(to); });
 	hive.set_function("worker_setup", [&](lua_State* L, std::string service, std::string sandbox) {
 		m_schedulor.setup(L, service, sandbox);
 		return 0;
