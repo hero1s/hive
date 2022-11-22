@@ -129,13 +129,18 @@ bool check_can_write(socket_t fd, int timeout) {
 	return select((int)fd + 1, nullptr, &wset, nullptr, timeout >= 0 ? &tv : nullptr) == 1;
 }
 
-bool port_is_used(int port) {
-	int fd = socket(AF_INET, SOCK_STREAM, 0);
-	struct sockaddr_in addr;
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(port);
-	inet_pton(AF_INET, "0.0.0.0", &addr.sin_addr);
-	if (bind(fd, (struct sockaddr*)(&addr), sizeof(sockaddr_in)) < 0) {
+bool port_is_used(int port, int is_tcp) {
+	int fd = INVALID_SOCKET;
+	if (is_tcp == 1) {
+		fd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+	}
+	else {
+		fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	}
+	size_t addr_len = 0;
+	sockaddr_storage addr;
+	make_ip_addr(&addr, &addr_len, "0.0.0.0", port);
+	if (::bind(fd, (sockaddr*)&addr, (int)addr_len) == SOCKET_ERROR) {
 		closesocket(fd);
 		return true;
 	}

@@ -63,7 +63,7 @@ bool get_ip_string(char ip[], size_t ip_size, const void* addr, size_t addr_len)
 
 // timeout: 单位ms,传入-1表示阻塞到永远
 bool check_can_write(socket_t fd, int timeout);
-bool port_is_used(int port);
+bool port_is_used(int port,int is_tcp);
 
 void set_no_block(socket_t fd);
 void set_no_delay(socket_t fd, int enable);

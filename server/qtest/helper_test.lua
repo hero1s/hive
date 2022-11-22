@@ -24,4 +24,9 @@ logger.debug("ip:%s", guess_name_type("192.168.1.13:jfdkalj"))
 logger.debug("ip:%s", guess_name_type("baidu.com"))
 logger.debug("ip:%s", guess_name_type("git.ids111.com"))
 
-logger.debug("lan ip:%s,port:8080:%s", luabus.lan_ip(), luabus.port_is_used(8080))
+local udp     = luabus.udp()
+local ok, err = udp.listen("0.0.0.0", 8080)
+logger.debug("ok:%s,err:%s",ok,err)
+
+logger.debug("lan ip:%s,udp port:8080:%s,port:20013:tcp[%s],udp:[%s]",
+             luabus.lan_ip(), luabus.port_is_used(8080,0),luabus.port_is_used(20013,1),luabus.port_is_used(20013,0))

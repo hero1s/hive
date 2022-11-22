@@ -29,10 +29,10 @@ using namespace std::filesystem;
 
 namespace logger {
     enum class log_level {
-        LOG_LEVEL_DEBUG = 1,
+        LOG_LEVEL_TRACE = 1,
+        LOG_LEVEL_DEBUG,
         LOG_LEVEL_INFO,
         LOG_LEVEL_WARN,
-        LOG_LEVEL_DUMP,
         LOG_LEVEL_ERROR,
         LOG_LEVEL_FATAL,
     };
@@ -66,7 +66,7 @@ namespace logger {
     struct level_names {};
     template <> struct level_names<log_level> {
         constexpr std::array<const char*, 7> operator()() const {
-            return { "UNKNW", "DEBUG", "INFO", "WARN", "DUMP", "ERROR","FATAL" };
+            return { "UNKNW","TRACE","DEBUG", "INFO", "WARN", "ERROR","FATAL" };
         }
     };
 
@@ -74,7 +74,7 @@ namespace logger {
     struct level_colors {};
     template <> struct level_colors<log_level> {
         constexpr std::array<const char*, 7> operator()() const {
-            return { "\x1b[32m", "\x1b[37m", "\x1b[32m", "\x1b[33m", "\x1b[32m", "\x1b[31m", "\x1b[31m", };
+            return { "\x1b[32m","\x1b[32m", "\x1b[37m", "\x1b[32m", "\x1b[33m",  "\x1b[31m", "\x1b[31m", };
         }
     };
 
@@ -573,21 +573,23 @@ namespace logger {
     }
 }
 
+#define LOG_TRACE logger::log_service::instance()->hold<logger::log_level::LOG_LEVEL_TRACE>("", __FILE__, __LINE__)
+#define LOG_DEBUG logger::log_service::instance()->hold<logger::log_level::LOG_LEVEL_DEBUG>("", __FILE__, __LINE__)
 #define LOG_WARN logger::log_service::instance()->hold<logger::log_level::LOG_LEVEL_WARN>("", __FILE__, __LINE__)
 #define LOG_INFO logger::log_service::instance()->hold<logger::log_level::LOG_LEVEL_INFO>("", __FILE__, __LINE__)
-#define LOG_DUMP logger::log_service::instance()->hold<logger::log_level::LOG_LEVEL_DUMP>("", __FILE__, __LINE__)
-#define LOG_DEBUG logger::log_service::instance()->hold<logger::log_level::LOG_LEVEL_DEBUG>("", __FILE__, __LINE__)
 #define LOG_ERROR logger::log_service::instance()->hold<logger::log_level::LOG_LEVEL_ERROR>("", __FILE__, __LINE__)
 #define LOG_FATAL logger::log_service::instance()->hold<logger::log_level::LOG_LEVEL_FATAL>("", __FILE__, __LINE__)
+
+#define PRINT_TRACE logger::log_service::instance()->print<logger::log_level::LOG_LEVEL_TRACE>("", __FILE__, __LINE__)
+#define PRINT_DEBUG logger::log_service::instance()->print<logger::log_level::LOG_LEVEL_DEBUG>("", __FILE__, __LINE__)
 #define PRINT_WARN logger::log_service::instance()->print<logger::log_level::LOG_LEVEL_WARN>("", __FILE__, __LINE__)
 #define PRINT_INFO logger::log_service::instance()->print<logger::log_level::LOG_LEVEL_INFO>("", __FILE__, __LINE__)
-#define PRINTLOG_DUMP logger::log_service::instance()->print<logger::log_level::LOG_LEVEL_DUMP>("", __FILE__, __LINE__)
-#define PRINT_DEBUG logger::log_service::instance()->print<logger::log_level::LOG_LEVEL_DEBUG>("", __FILE__, __LINE__)
 #define PRINT_ERROR logger::log_service::instance()->print<logger::log_level::LOG_LEVEL_ERROR>("", __FILE__, __LINE__)
 #define PRINT_FATAL logger::log_service::instance()->print<logger::log_level::LOG_LEVEL_FATAL>("", __FILE__, __LINE__)
+
+#define LOGF_TRACE(feature) logger::log_service::instance()->hold<logger::log_level::LOG_LEVEL_TRACE>(feature, __FILE__, __LINE__)
+#define LOGF_DEBUG(feature) logger::log_service::instance()->hold<logger::log_level::LOG_LEVEL_DEBUG>(feature, __FILE__, __LINE__)
 #define LOGF_WARN(feature) logger::log_service::instance()->hold<logger::log_level::LOG_LEVEL_WARN>(feature, __FILE__, __LINE__)
 #define LOGF_INFO(feature) logger::log_service::instance()->hold<logger::log_level::LOG_LEVEL_INFO>(feature, __FILE__, __LINE__)
-#define LOGF_DUMP(feature) logger::log_service::instance()->hold<logger::log_level::LOG_LEVEL_DUMP>(feature, __FILE__, __LINE__)
-#define LOGF_DEBUG(feature) logger::log_service::instance()->hold<logger::log_level::LOG_LEVEL_DEBUG>(feature, __FILE__, __LINE__)
 #define LOGF_ERROR(feature) logger::log_service::instance()->hold<logger::log_level::LOG_LEVEL_ERROR>(feature, __FILE__, __LINE__)
 #define LOGF_FATAL(feature) logger::log_service::instance()->hold<logger::log_level::LOG_LEVEL_FATAL>(feature, __FILE__, __LINE__)

@@ -138,11 +138,11 @@ function NetServer:broadcast(cmd_id, data, filter)
             local send_len = session.call_pack(cmd_id, pflag, 0, body)
             if send_len > 0 then
                 event_mgr:notify_listener("on_proto_send", cmd_id, send_len)
-                if self.log_client_msg then
-                    self.log_client_msg(session, cmd_id, data, 0, send_len, false)
-                end
             end
         end
+    end
+    if self.log_client_msg then
+        self.log_client_msg({}, cmd_id, data, 0, #body, false)
     end
     return true
 end
