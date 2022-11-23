@@ -74,7 +74,7 @@ namespace logger {
     struct level_colors {};
     template <> struct level_colors<log_level> {
         constexpr std::array<const char*, 7> operator()() const {
-            return { "\x1b[32m","\x1b[32m", "\x1b[37m", "\x1b[32m", "\x1b[33m",  "\x1b[31m", "\x1b[31m", };
+            return { "\x1b[32m","\x1b[36m", "\x1b[37m", "\x1b[32m", "\x1b[33m",  "\x1b[31m", "\x1b[35m", };
         }
     };
 

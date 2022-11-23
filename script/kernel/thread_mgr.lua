@@ -1,6 +1,7 @@
 --thread_mgr.lua
 local select       = select
 local tunpack      = table.unpack
+local tsort        = table.sort
 local tsize        = table_ext.size
 local sformat      = string.format
 local co_yield     = coroutine.yield
@@ -126,14 +127,18 @@ function ThreadMgr:on_minute(clock_ms)
     end
 end
 
-function ThreadMgr:on_fast(clock_ms)
+function ThreadMgr:on_second(clock_ms)
     --处理锁超时
     for _, queue in pairs(self.syncqueue_map) do
         local head = queue:head()
         if head and head.timeout <= clock_ms then
-            head:unlock()
+            --head:unlock()
+            log_err("[ThreadMgr][on_fast] the lock is timeout:%s", head.key)
         end
     end
+end
+
+function ThreadMgr:on_fast(clock_ms)
     --检查协程超时
     local timeout_coroutines = {}
     for session_id, context in pairs(self.coroutine_map) do
@@ -142,6 +147,9 @@ function ThreadMgr:on_fast(clock_ms)
         end
     end
     --处理协程超时
+    tsort(timeout_coroutines, function(a, b)
+        return a > b
+    end)
     for _, session_id in pairs(timeout_coroutines) do
         local context = self.coroutine_map[session_id]
         if context then

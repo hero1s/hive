@@ -17,7 +17,7 @@ prop:reader("notify_limit", {})     --控制同样消息的发送频率
 prop:reader("lan_ip", "")
 
 function Webhook:__init()
-    self.lvl    = environ.number("HIVE_WEBHOOK_LVL", "4")
+    self.lvl    = environ.number("HIVE_WEBHOOK_LVL", "5")
     self.lan_ip = hive.lan_ip
     if self.lvl then
         self.hooks.lark_log   = environ.get("HIVE_LARK_URL")

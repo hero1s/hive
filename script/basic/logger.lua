@@ -6,6 +6,8 @@ local lcodec      = require("lcodec")
 local pcall       = pcall
 local pairs       = pairs
 local sformat     = string.format
+local sfind       = string.find
+local ssub        = string.sub
 local dgetinfo    = debug.getinfo
 local tpack       = table.pack
 local tunpack     = table.unpack
@@ -22,6 +24,7 @@ logfeature        = {}
 local logtag      = hive.logtag
 local monitors    = _ENV.monitors or {}
 local dispatching = false
+local logshow     = 0
 
 function logger.init()
     --配置日志信息
@@ -30,6 +33,8 @@ function logger.init()
     local rolltype            = environ.number("HIVE_LOG_ROLL", 0)
     local maxline             = environ.number("HIVE_LOG_LINE", 100000)
     local maxdays             = environ.number("HIVE_LOG_DAYS", 7)
+    logshow                   = environ.number("HIVE_LOG_SHOW", 0)
+
     llog.set_max_line(maxline)
     llog.set_clean_time(maxdays * 24 * 3600)
     llog.option(path, service_name, index, rolltype);
@@ -97,6 +102,19 @@ local function logger_output(feature, lvl, lvl_name, fmt, log_conf, ...)
     return lvl_func(logtag .. content, feature)
 end
 
+local function trim_src(short_src)
+    if short_src == nil then
+        return ""
+    end
+
+    local _, j = sfind(short_src, "%.%./")
+    if j == nil then
+        return short_src
+    end
+
+    return ssub(short_src, j + 1)
+end
+
 local LOG_LEVEL_OPTIONS = {
     --lvl_func,    extend,  swline, max_depth
     [LOG_LEVEL.TRACE] = { "trace", { llog.trace, true, false, 8 } },
@@ -109,6 +127,10 @@ local LOG_LEVEL_OPTIONS = {
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl_name, log_conf = tunpack(conf)
     logger[lvl_name]         = function(fmt, ...)
+        if logshow == 1 then
+            local info = dgetinfo(2, "nSl")
+            fmt = sformat("[%s:%d(%s)]", trim_src(info.short_src), info.currentline or 0, info.name or "") .. fmt
+        end
         local ok, res = pcall(logger_output, "", lvl, lvl_name, fmt, log_conf, ...)
         if not ok then
             local info = dgetinfo(2, "S")
