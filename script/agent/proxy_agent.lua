@@ -28,9 +28,9 @@ end
 function ProxyAgent:dispatch_log(content, lvl_name, lvl)
     local title = sformat("[%s][%s]", hive.service_name, lvl_name)
     if self.run_thread then
-        scheduler:send(self.service_name, "rpc_dispatch_log", title, content, lvl)
+        return scheduler:send(self.service_name, "rpc_dispatch_log", title, content, lvl)
     end
-    self.proxy_mgr:rpc_dispatch_log(title, content, lvl)
+    return self.proxy_mgr:rpc_dispatch_log(title, content, lvl)
 end
 
 function ProxyAgent:get(url, querys, headers)
