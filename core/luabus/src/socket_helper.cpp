@@ -42,7 +42,9 @@ void set_no_block(socket_t fd) {
 	ioctlsocket(fd, FIONBIO, &opt);
 }
 
-void set_close_on_exec(socket_t fd) { }
+void set_close_on_exec(socket_t fd) {
+    SetHandleInformation ((HANDLE)fd, HANDLE_FLAG_INHERIT, 0);
+}
 
 static char s_zero = 0;
 bool wsa_send_empty(socket_t fd, WSAOVERLAPPED& ovl) {

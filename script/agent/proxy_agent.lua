@@ -15,9 +15,10 @@ function ProxyAgent:__init()
         --启动代理线程
         scheduler:startup(self.service_name, "proxy")
         log_info("[ProxyAgent][__init] open hive log report!!!")
+    else
+        import("proxy/proxy_mgr.lua")
+        self.proxy_mgr = hive.get("proxy_mgr")
     end
-    import("proxy/proxy_mgr.lua")
-    self.proxy_mgr = hive.get("proxy_mgr")
     --日志上报
     if environ.status("HIVE_LOG_REPORT") then
         logger.add_monitor(self)
