@@ -42,6 +42,7 @@ bool socket_tcp::setup() {
     }
     m_fd = fd;
     set_no_block(fd);
+    set_reuseaddr(fd);
     return true;
 }
 
@@ -77,7 +78,6 @@ int socket_tcp::listen(lua_State* L) {
     make_ip_addr(&addr, &addr_len, ip, port);
     if (::bind(m_fd, (sockaddr*)&addr, (int)addr_len) != SOCKET_ERROR) {
         set_no_block(m_fd);
-        set_reuseaddr(m_fd);
         set_close_on_exec(m_fd);
         if (::listen(m_fd, 200) != SOCKET_ERROR) {
             lua_pushboolean(L, true);

@@ -26,6 +26,7 @@ bool socket_udp::setup() {
     }
     m_fd = fd;
     set_no_block(fd);
+    set_reuseaddr(fd);
     return true;
 }
 
