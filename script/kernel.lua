@@ -89,7 +89,6 @@ end
 
 function hive.init()
     --初始化基础模块
-    lprof.init()
     signal.init()
     environ.init()
     service.init()
@@ -160,6 +159,7 @@ hive.run      = function()
         socket_mgr.wait(wait_ms)
     end
     --系统更新
+    local _prof<close> = ProfObj("hive-update")
     local now_ms, clock_ms = ltime()
     update_mgr:update(now_ms, clock_ms)
     local cost_time = lclock_ms() - clock_ms
@@ -167,11 +167,5 @@ hive.run      = function()
 end
 
 hive.exit     = function()
-    logger.warn("prof:\n %s", lprof.report())
-    lprof.shutdown()
-end
-
---性能打点
-hive.new_prof = function(key)
-    return ProfObj(lprof, key)
+    logger.warn("prof:\n %s", lprof.shutdown())
 end

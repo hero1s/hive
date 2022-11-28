@@ -227,12 +227,6 @@ namespace lprofile
 		return m_stream;
 	}
 
-	std::string ProfileManager::report()
-	{
-		saveData();
-		return m_stream;
-	}
-
 	void ProfileManager::startProfile(const char* node_name)
 	{
 		if (NULL == node_name || NULL == m_cur_node) {
@@ -300,20 +294,18 @@ namespace lprofile
 	}
 
 	thread_local ProfileManager thread_manager;
-	static void init() { thread_manager.init(); }
 	static std::string shutdown() { return thread_manager.shutdown(); }
-	static std::string report() { return thread_manager.report(); }
 	static void start_profile(const char* node_name) { return thread_manager.startProfile(node_name); }
 	static void stop_profile(const char* node_name) { return thread_manager.stopProfile(node_name); }
 
 	luakit::lua_table open_lprof(lua_State* L) {
 		luakit::kit_state lua(L);
 		auto luaprof = lua.new_table();		
-		luaprof.set_function("init", init);
 		luaprof.set_function("shutdown", shutdown);
-		luaprof.set_function("report", report);
 		luaprof.set_function("start", start_profile);
 		luaprof.set_function("stop", stop_profile);
+
+		thread_manager.init();
 		return luaprof;
 	}
 }

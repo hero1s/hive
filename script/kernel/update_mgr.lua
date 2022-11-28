@@ -1,7 +1,6 @@
 --clock_mgr.lua
 local lhelper        = require("lhelper")
 local mem_usage      = lhelper.mem_usage
-
 local pairs          = pairs
 local odate          = os.date
 local log_info       = logger.info

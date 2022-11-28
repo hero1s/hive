@@ -62,7 +62,7 @@ function MonitorMgr:register_admin()
                     return true
                 end
             end
-            log_warn("post monitor fail:%s,%s,%s", ok, status, res)
+            log_warn("post monitor:%s fail:%s,%s,%s", purl, ok, status, res)
             return false
         end)
     end

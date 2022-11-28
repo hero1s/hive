@@ -97,9 +97,6 @@ namespace lprofile
 		//@brief    结束
 		std::string shutdown();
 
-		//@brief    输出报告
-		std::string report();
-
 		//@brief    开始统计一下性能测试节点，并将其设置为当前节点
 		void startProfile(const char* node_name);
 

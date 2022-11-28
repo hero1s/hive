@@ -117,11 +117,11 @@ end
 -- 统计性能
 function StatisMgr:on_perfeval(eval_data, clock_ms)
     if self.statis_status then
-        local tital_time = clock_ms - eval_data.begin_time
+        local total_time = clock_ms - eval_data.begin_time
         local fields     = {
-            tital_time = tital_time,
+            total_time = total_time,
             yield_time = eval_data.yield_time,
-            eval_time  = tital_time - eval_data.yield_time
+            eval_time  = total_time - eval_data.yield_time
         }
         self:write("perfeval", eval_data.eval_name, nil, fields)
     end

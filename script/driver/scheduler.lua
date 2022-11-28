@@ -61,13 +61,19 @@ end
 --访问其他线程任务
 function Scheduler:call(name, rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    hive.worker_call(name, lencode(session_id, rpc, ...))
+    local ok         = hive.worker_call(name, lencode(session_id, rpc, ...))
+    if not ok then
+        log_err("[Scheduler][call] %s,%s", name, rpc)
+    end
     return thread_mgr:yield(session_id, "worker_call", RPC_TIMEOUT)
 end
 
 --访问其他线程任务
 function Scheduler:send(name, rpc, ...)
-    hive.worker_call(name, lencode(0, rpc, ...))
+    local ok = hive.worker_call(name, lencode(0, rpc, ...))
+    if not ok then
+        log_err("[Scheduler][send] %s,%s", name, rpc)
+    end
 end
 
 function hive.on_scheduler(slice)
