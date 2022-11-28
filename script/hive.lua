@@ -73,7 +73,7 @@ local function henum(ename, ekey)
 end
 
 hive.enum     = henum
-
+local FAILED  = henum("KernCode", "FAILED")
 local SUCCESS = henum("KernCode", "SUCCESS")
 local DAY_S   = henum("PeriodTime", "DAY_S")
 local HOUR_S  = henum("PeriodTime", "HOUR_S")
@@ -89,7 +89,7 @@ function hive.failed(code, ok, def_code)
     if ok == nil then
         return code ~= SUCCESS
     end
-    return not ok or code ~= SUCCESS, ok and code or def_code
+    return not ok or code ~= SUCCESS, ok and code or (def_code or FAILED)
 end
 
 ---获取utc时间戳

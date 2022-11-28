@@ -23,7 +23,7 @@ prop:reader("contexts", {})
 
 function HttpClient:__init()
     --加入帧更新
-    update_mgr:attach_frame(self)
+    update_mgr:attach_fast(self)
     --退出通知
     update_mgr:attach_quit(self)
     --创建管理器
@@ -38,7 +38,7 @@ function HttpClient:on_quit()
     curlm_mgr.destory()
 end
 
-function HttpClient:on_frame(clock_ms)
+function HttpClient:on_fast(clock_ms)
     if next(self.contexts) then
         curlm_mgr.update()
         --清除超时请求

@@ -18,7 +18,7 @@ Distributed game server framework based on CPP 17 && LUA 5.4
   - 基于nacos配置文件的更新及服务发现
   
 ## 网络协议
-  - 支持tcp,udp,kcp,websocket协议
+  - 支持tcp,udp,websocket协议
   - 支持http client,http server及ssl模式
   - 客户端协议支持protobuf,json
 
