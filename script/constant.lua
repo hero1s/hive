@@ -8,13 +8,14 @@ ServiceStatus.STOP                = 2  --立即停服
 --核心基础错误(1-1000)
 local KernCode                    = enum("KernCode", 0)
 KernCode.SUCCESS                  = 0     --成功
-KernCode.NETWORK_ERROR            = 1     --网络错误
+KernCode.FAILED                   = 1     --系统错误，请重试
 KernCode.PARAM_ERROR              = 2     --业务参数错误
 KernCode.RPC_FAILED               = 3     --RPC调用失败
 KernCode.OPERATOR_SELF            = 4     --不能对自己操作
 KernCode.PLAYER_NOT_EXIST         = 5     --玩家不存在
 KernCode.TOKEN_ERROR              = 6     --登录token错误
 KernCode.RPC_UNREACHABLE          = 7     --RPC目标不可达
+KernCode.DB_NOTINIT               = 100   --数据库没有初始化
 KernCode.LOGIC_FAILED             = 101   --业务执行失败
 KernCode.MYSQL_FAILED             = 102   --MYSQL执行失败
 KernCode.MONGO_FAILED             = 103   --MONGO执行失败

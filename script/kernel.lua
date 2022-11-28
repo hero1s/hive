@@ -4,7 +4,6 @@ import("basic/json.lua")
 
 local ltimer        = require("ltimer")
 local lprof         = require("lprof")
-local ProfObj       = import("kernel/object/prof_obj.lua")
 
 local tpack         = table.pack
 local tunpack       = table.unpack
@@ -159,7 +158,6 @@ hive.run      = function()
         socket_mgr.wait(wait_ms)
     end
     --系统更新
-    local _prof<close> = ProfObj("hive-update")
     local now_ms, clock_ms = ltime()
     update_mgr:update(now_ms, clock_ms)
     local cost_time = lclock_ms() - clock_ms
