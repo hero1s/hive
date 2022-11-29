@@ -190,7 +190,6 @@ function StatisMgr:on_minute()
         }
         self:write("system", nil, nil, fields)
         self:flush()
-        self:dump_perf()
     end
 end
 

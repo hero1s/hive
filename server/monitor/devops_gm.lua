@@ -14,6 +14,7 @@ local env_get       = environ.get
 local gm_agent      = hive.get("gm_agent")
 local monitor_mgr   = hive.get("monitor_mgr")
 local timer_mgr     = hive.get("timer_mgr")
+local thread_mgr    = hive.get("thread_mgr")
 
 local GMType        = enum("GMType")
 local ServiceStatus = enum("ServiceStatus")
@@ -37,7 +38,7 @@ function DevopsGmMgr:register_gm()
         { gm_type = GMType.TOOLS, name = "gm_guid_view", desc = "guid信息", comment = "(拆解guid)", args = "guid|integer" },
         { gm_type = GMType.TOOLS, name = "gm_log_format", desc = "日志格式", comment = "0压缩,1格式化", args = "data|string swline|integer" },
     }
-    gm_agent:insert_command(cmd_list,self)
+    gm_agent:insert_command(cmd_list, self)
 end
 
 -- 设置日志等级
@@ -122,14 +123,16 @@ function DevopsGmMgr:gm_cfg_reload(is_remote)
         local cfg_path     = current_path .. "/../server/config/"
         local cur_dirs     = lstdfs.dir(cfg_path)
         for _, file in pairs(cur_dirs) do
-            local full_file_name  = file.name
-            local split_arr       = ssplit(full_file_name, "/")
-            local file_name       = split_arr[#split_arr]
-            local remote_file_url = url .. "/" .. file_name
-            local ok, status, res = http_client:call_get(remote_file_url)
-            if ok and status == 200 then
-                io_ext.writefile(full_file_name, res)
-            end
+            thread_mgr:fork(function()
+                local full_file_name  = file.name
+                local split_arr       = ssplit(full_file_name, "/")
+                local file_name       = split_arr[#split_arr]
+                local remote_file_url = url .. "/" .. file_name
+                local ok, status, res = http_client:call_get(remote_file_url)
+                if ok and status == 200 then
+                    io_ext.writefile(full_file_name, res)
+                end
+            end)
         end
     end
     monitor_mgr:broadcast("rpc_config_reload")

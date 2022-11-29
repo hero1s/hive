@@ -19,12 +19,7 @@ local function unequal(a, b)
     if type(a) ~= "table" or type(b) ~= "table" then
         return a ~= b
     end
-    for k, v in pairs(a) do
-        if b[k] ~= v then
-            return true
-        end
-    end
-    return false
+    return true
 end
 
 local function on_prop_changed(object, name, value, ...)
