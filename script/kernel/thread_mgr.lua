@@ -8,8 +8,10 @@ local co_yield     = coroutine.yield
 local co_create    = coroutine.create
 local co_resume    = coroutine.resume
 local co_running   = coroutine.running
+local mabs         = math.abs
 local hxpcall      = hive.xpcall
 local log_err      = logger.err
+local log_info     = logger.info
 
 local QueueFIFO    = import("container/queue_fifo.lua")
 local SyncLock     = import("kernel/object/sync_lock.lua")
@@ -137,7 +139,7 @@ function ThreadMgr:on_second(clock_ms)
         end
     end
 end
-
+local MAX_DIFF_ID<const> = 100000000 --1亿
 function ThreadMgr:on_fast(clock_ms)
     --检查协程超时
     local timeout_coroutines = {}
@@ -148,14 +150,17 @@ function ThreadMgr:on_fast(clock_ms)
     end
     --处理协程超时
     tsort(timeout_coroutines, function(a, b)
-        return a > b
+        if mabs(a - b) < MAX_DIFF_ID then
+            return a > b
+        end
+        return a < b
     end)
     for _, session_id in pairs(timeout_coroutines) do
         local context = self.coroutine_map[session_id]
         if context then
             self.coroutine_map[session_id] = nil
             if context.title then
-                log_err("[ThreadMgr][on_second] session_id(%s:%s) timeout!", session_id, context.title)
+                log_info("[ThreadMgr][on_fast] session_id(%s:%s) timeout!", session_id, context.title)
             end
             self:resume(context.co, false, sformat("%s timeout", context.title), session_id)
         end
