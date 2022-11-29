@@ -1,25 +1,25 @@
 --rpc_server.lua
-local next         = next
-local pairs        = pairs
-local tunpack      = table.unpack
-local log_err      = logger.err
-local log_info     = logger.info
-local hxpcall      = hive.xpcall
-local signal_quit  = signal.quit
+local next        = next
+local pairs       = pairs
+local tunpack     = table.unpack
+local log_err     = logger.err
+local log_info    = logger.info
+local hxpcall     = hive.xpcall
+local signal_quit = signal.quit
 
-local FlagMask     = enum("FlagMask")
-local KernCode     = enum("KernCode")
-local NetwkTime    = enum("NetwkTime")
-local SUCCESS      = KernCode.SUCCESS
+local FlagMask    = enum("FlagMask")
+local KernCode    = enum("KernCode")
+local NetwkTime   = enum("NetwkTime")
+local SUCCESS     = KernCode.SUCCESS
 
-local event_mgr    = hive.get("event_mgr")
-local thread_mgr   = hive.get("thread_mgr")
-local socket_mgr   = hive.get("socket_mgr")
-local perfeval_mgr = hive.get("perfeval_mgr")
+local event_mgr   = hive.get("event_mgr")
+local thread_mgr  = hive.get("thread_mgr")
+local socket_mgr  = hive.get("socket_mgr")
+local heval       = hive.eval
 
-local RpcServer    = singleton()
+local RpcServer   = singleton()
 
-local prop         = property(RpcServer)
+local prop        = property(RpcServer)
 prop:reader("ip", "")                     --监听ip
 prop:reader("port", 0)                    --监听端口
 prop:reader("clients", {})
@@ -54,7 +54,7 @@ function RpcServer:on_socket_rpc(client, rpc, session_id, rpc_flag, source, ...)
     client.alive_time = hive.clock_ms
     if session_id == 0 or rpc_flag == FlagMask.REQ then
         local function dispatch_rpc_message(...)
-            local _<close>  = perfeval_mgr:eval(rpc)
+            local _<close>  = heval(rpc)
             local rpc_datas = event_mgr:notify_listener(rpc, client, ...)
             if session_id > 0 then
                 client.call_rpc(session_id, FlagMask.RES, rpc, tunpack(rpc_datas))

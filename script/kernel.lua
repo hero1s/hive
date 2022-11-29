@@ -3,7 +3,6 @@ import("basic/basic.lua")
 import("basic/json.lua")
 
 local ltimer        = require("ltimer")
-local lprof         = require("lprof")
 
 local tpack         = table.pack
 local tunpack       = table.unpack
@@ -165,5 +164,5 @@ hive.run      = function()
 end
 
 hive.exit     = function()
-    logger.warn("prof:\n %s", lprof.shutdown())
+
 end

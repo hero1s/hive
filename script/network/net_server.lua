@@ -12,7 +12,7 @@ local signal_quit      = signal.quit
 local event_mgr        = hive.get("event_mgr")
 local thread_mgr       = hive.get("thread_mgr")
 local protobuf_mgr     = hive.get("protobuf_mgr")
-local perfeval_mgr     = hive.get("perfeval_mgr")
+local heval            = hive.eval
 
 local FLAG_REQ         = hive.enum("FlagMask", "REQ")
 local FLAG_RES         = hive.enum("FlagMask", "RES")
@@ -227,7 +227,7 @@ function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
     end
     if session_id == 0 or (flag & FLAG_REQ == FLAG_REQ) then
         local function dispatch_rpc_message(_session, cmd, bd)
-            local _<close> = perfeval_mgr:eval(cmd_name)
+            local _<close> = heval(cmd_name)
             if self.log_client_msg then
                 self.log_client_msg(session, cmd, bd, session_id, #data, true)
             end

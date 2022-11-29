@@ -13,7 +13,7 @@ local event_mgr      = hive.get("event_mgr")
 local socket_mgr     = hive.get("socket_mgr")
 local thread_mgr     = hive.get("thread_mgr")
 local update_mgr     = hive.get("update_mgr")
-local perfeval_mgr   = hive.get("perfeval_mgr")
+local heval          = hive.eval
 
 local FlagMask       = enum("FlagMask")
 local KernCode       = enum("KernCode")
@@ -194,7 +194,7 @@ function RpcClient:on_socket_rpc(socket, session_id, rpc_flag, source, rpc, ...)
     end
     if session_id == 0 or rpc_flag == FlagMask.REQ then
         local function dispatch_rpc_message(...)
-            local _<close>  = perfeval_mgr:eval(rpc)
+            local _<close>  = heval(rpc)
             local rpc_datas = event_mgr:notify_listener(rpc, ...)
             if session_id > 0 then
                 socket.callback_target(session_id, source, rpc, tunpack(rpc_datas))

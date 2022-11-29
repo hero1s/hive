@@ -7,7 +7,7 @@ local event_mgr    = hive.get("event_mgr")
 local socket_mgr   = hive.get("socket_mgr")
 local thread_mgr   = hive.get("thread_mgr")
 local protobuf_mgr = hive.get("protobuf_mgr")
-local perfeval_mgr = hive.get("perfeval_mgr")
+local heval        = hive.eval
 
 local FlagMask     = enum("FlagMask")
 local NetwkTime    = enum("NetwkTime")
@@ -131,7 +131,7 @@ function NetClient:on_socket_rpc(socket, cmd_id, flag, session_id, data)
     if session_id == 0 or (flag & FlagMask.REQ == FlagMask.REQ) then
         -- 执行消息分发
         local function dispatch_rpc_message()
-            local _<close> = perfeval_mgr:eval(cmd_name)
+            local _<close> = heval(cmd_name)
             self.holder:on_socket_rpc(self, cmd_id, body, session_id)
         end
         thread_mgr:fork(dispatch_rpc_message)

@@ -2,28 +2,57 @@
 import("basic/basic.lua")
 import("basic/json.lua")
 import("kernel/config_mgr.lua")
-local lcodec        = require("lcodec")
-local ltimer        = require("ltimer")
+local lcodec     = require("lcodec")
+local ltimer     = require("ltimer")
 
-local pcall         = pcall
-local log_err       = logger.err
-local tpack         = table.pack
-local tunpack       = table.unpack
-local lencode       = lcodec.encode_slice
-local ldecode       = lcodec.decode_slice
-local ltime         = ltimer.time
+local pcall      = pcall
+local log_err    = logger.err
+local tpack      = table.pack
+local tunpack    = table.unpack
+local raw_yield  = coroutine.yield
+local raw_resume = coroutine.resume
+local lencode    = lcodec.encode_slice
+local ldecode    = lcodec.decode_slice
+local ltime      = ltimer.time
 
-local event_mgr     = hive.get("event_mgr")
-local socket_mgr    = hive.load("socket_mgr")
-local update_mgr    = hive.load("update_mgr")
-local thread_mgr    = hive.load("thread_mgr")
+local event_mgr  = hive.get("event_mgr")
+local co_hookor  = hive.load("co_hookor")
+local socket_mgr = hive.load("socket_mgr")
+local update_mgr = hive.load("update_mgr")
+local thread_mgr = hive.load("thread_mgr")
 
 --初始化网络
 local function init_network()
-    local lbus = require("luabus")
-    local max_conn = environ.number("HIVE_MAX_CONN", 4096)
-    socket_mgr = lbus.create_socket_mgr(max_conn)
+    local lbus      = require("luabus")
+    local max_conn  = environ.number("HIVE_MAX_CONN", 4096)
+    socket_mgr      = lbus.create_socket_mgr(max_conn)
     hive.socket_mgr = socket_mgr
+end
+
+--协程改造
+local function init_coroutine()
+    coroutine.yield  = function(...)
+        if co_hookor then
+            co_hookor:yield()
+        end
+        return raw_yield(...)
+    end
+    coroutine.resume = function(co, ...)
+        if co_hookor then
+            co_hookor:yield()
+            co_hookor:resume(co)
+        end
+        local args = tpack(raw_resume(co, ...))
+        if co_hookor then
+            co_hookor:resume()
+        end
+        return tunpack(args)
+    end
+    hive.eval        = function(name)
+        if co_hookor then
+            return co_hookor:eval(name)
+        end
+    end
 end
 
 --初始化loop
@@ -40,8 +69,10 @@ function hive.init()
     environ.init()
     service.init()
     --主循环
+    init_coroutine()
     init_mainloop()
     --加载统计
+    import("kernel/perfeval_mgr.lua")
     import("kernel/statis_mgr.lua")
     --网络
     init_network()
@@ -49,10 +80,15 @@ function hive.init()
     import("kernel/protobuf_mgr.lua")
 end
 
+function hive.hook_coroutine(hooker)
+    co_hookor      = hooker
+    hive.co_hookor = hooker
+end
+
 --启动
 function hive.startup(entry)
-    hive.now = 0
-    hive.frame = 0
+    hive.now                   = 0
+    hive.frame                 = 0
     hive.now_ms, hive.clock_ms = ltime()
     --初始化随机种子
     math.randomseed(hive.now_ms)

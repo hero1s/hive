@@ -2,9 +2,13 @@
 import("kernel/object/linux.lua")
 local InfluxDB     = import("driver/influx.lua")
 
+local tinsert      = table.insert
+local tsort        = table.sort
 local env_get      = environ.get
 local env_addr     = environ.addr
 local env_status   = environ.status
+
+local log_warn     = logger.warn
 
 local event_mgr    = hive.get("event_mgr")
 local update_mgr   = hive.get("update_mgr")
@@ -16,6 +20,7 @@ local prop         = property(StatisMgr)
 prop:reader("influx", nil)              --influx
 prop:reader("statis", {})               --statis
 prop:reader("statis_status", false)     --统计开关
+prop:reader("perfevals", {})            --性能统计
 function StatisMgr:__init()
     local statis_status = env_status("HIVE_STATIS")
     if statis_status then
@@ -38,6 +43,7 @@ function StatisMgr:__init()
         --定时处理
         update_mgr:attach_second(self)
         update_mgr:attach_minute(self)
+        update_mgr:attach_quit(self)
         --系统监控
         if hive.platform == "linux" then
             linux_statis:setup()
@@ -118,12 +124,55 @@ end
 function StatisMgr:on_perfeval(eval_data, clock_ms)
     if self.statis_status then
         local total_time = clock_ms - eval_data.begin_time
-        local fields     = {
-            total_time = total_time,
-            yield_time = eval_data.yield_time,
-            eval_time  = total_time - eval_data.yield_time
+        if total_time > 0 then
+            local fields = {
+                total_time = total_time,
+                yield_time = eval_data.yield_time,
+                eval_time  = total_time - eval_data.yield_time
+            }
+            self:write("perfeval", eval_data.eval_name, nil, fields)
+            self:write_perf(eval_data.eval_name, fields)
+        end
+    end
+end
+
+function StatisMgr:write_perf(eval_name, fields)
+    local eval = self.perfevals[eval_name]
+    if eval then
+        eval.total_time    = eval.total_time + fields.total_time
+        eval.yield_time    = eval.yield_time + fields.yield_time
+        eval.eval_time     = eval.eval_time + fields.eval_time
+        eval.max_eval_time = (fields.eval_time > eval.max_eval_time) and fields.eval_time or eval.max_eval_time
+        eval.count         = eval.count + 1
+    else
+        self.perfevals[eval_name] = {
+            total_time    = fields.total_time,
+            yield_time    = fields.yield_time,
+            eval_time     = fields.eval_time,
+            max_eval_time = fields.eval_time,
+            count         = 1
         }
-        self:write("perfeval", eval_data.eval_name, nil, fields)
+    end
+end
+
+function StatisMgr:dump_perf()
+    local sort_infos = {}
+    for i, v in pairs(self.perfevals) do
+        local info = {
+            name          = i,
+            total_time    = v.total_time / v.count,
+            yield_time    = v.yield_time / v.count,
+            eval_time     = v.eval_time / v.count,
+            max_eval_time = v.max_eval_time,
+            count         = v.count
+        }
+        tinsert(sort_infos, info)
+    end
+    tsort(sort_infos, function(a, b)
+        return a.total_time > b.total_time
+    end)
+    if next(sort_infos) then
+        log_warn("[StatisMgr][dump_perf] \n %s", sort_infos)
     end
 end
 
@@ -141,6 +190,7 @@ function StatisMgr:on_minute()
         }
         self:write("system", nil, nil, fields)
         self:flush()
+        self:dump_perf()
     end
 end
 
@@ -163,6 +213,10 @@ function StatisMgr:_calc_cpu_rate()
         return linux_statis:calc_cpu_rate()
     end
     return 0.1
+end
+
+function StatisMgr:on_quit()
+    self:dump_perf()
 end
 
 hive.statis_mgr = StatisMgr()

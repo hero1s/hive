@@ -126,11 +126,6 @@ OBJS += $(patsubst $(SRC_DIR)/lhttp/%.m, $(INT_DIR)/lhttp/%.o, $(filter-out $(EX
 OBJS += $(patsubst $(SRC_DIR)/lhttp/%.cc, $(INT_DIR)/lhttp/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lhttp/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/lhttp/%.cpp, $(INT_DIR)/lhttp/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lhttp/*.cpp)))
 #子目录
-OBJS += $(patsubst $(SRC_DIR)/lprofile/%.c, $(INT_DIR)/lprofile/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lprofile/*.c)))
-OBJS += $(patsubst $(SRC_DIR)/lprofile/%.m, $(INT_DIR)/lprofile/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lprofile/*.m)))
-OBJS += $(patsubst $(SRC_DIR)/lprofile/%.cc, $(INT_DIR)/lprofile/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lprofile/*.cc)))
-OBJS += $(patsubst $(SRC_DIR)/lprofile/%.cpp, $(INT_DIR)/lprofile/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lprofile/*.cpp)))
-#子目录
 OBJS += $(patsubst $(SRC_DIR)/lrandom/%.c, $(INT_DIR)/lrandom/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lrandom/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lrandom/%.m, $(INT_DIR)/lrandom/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lrandom/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/lrandom/%.cc, $(INT_DIR)/lrandom/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lrandom/*.cc)))
@@ -208,7 +203,6 @@ pre_build:
 	mkdir -p $(INT_DIR)/lcodec
 	mkdir -p $(INT_DIR)/lcrypt
 	mkdir -p $(INT_DIR)/lhttp
-	mkdir -p $(INT_DIR)/lprofile
 	mkdir -p $(INT_DIR)/lrandom
 	mkdir -p $(INT_DIR)/lstdfs
 	mkdir -p $(INT_DIR)/ltimer
