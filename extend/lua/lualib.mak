@@ -55,8 +55,12 @@ MYCFLAGS += -I$(SOLUTION_DIR)extend/mimalloc/mimalloc/include -include ../../mim
 LIBS += -lm -ldl -lstdc++ -lpthread
 
 #定义基础的编译选项
+ifndef CC
 CC = gcc
+endif
+ifndef CX
 CX = c++
+endif
 CFLAGS = -g -O2 -Wall -Wno-deprecated -Wextra -Wno-unknown-pragmas $(STDC) $(MYCFLAGS)
 CXXFLAGS = -g -O2 -Wall -Wno-deprecated -Wextra -Wno-unknown-pragmas $(STDCPP) $(MYCFLAGS)
 
@@ -75,9 +79,13 @@ PROJECT_PREFIX = lib
 MYCFLAGS += -fPIC
 TARGET_DIR = $(SOLUTION_DIR)bin
 TARGET_DYNAMIC =  $(TARGET_DIR)/$(PROJECT_PREFIX)$(TARGET_NAME).so
-#macos系统so链接问题
+#soname
+ifeq ($(UNAME_S), Linux)
+LDFLAGS += -Wl,-soname,$(PROJECT_PREFIX)$(TARGET_NAME).so
+endif
+#install_name
 ifeq ($(UNAME_S), Darwin)
-LDFLAGS += -install_name $(PROJECT_PREFIX)$(TARGET_NAME).so
+LDFLAGS += -Wl,-install_name,$(PROJECT_PREFIX)$(TARGET_NAME).so
 endif
 
 #link添加.so目录

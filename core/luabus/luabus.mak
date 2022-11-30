@@ -59,8 +59,12 @@ MYCFLAGS += -I$(SOLUTION_DIR)extend/mimalloc/mimalloc/include -include ../../mim
 LIBS += -lm -ldl -lstdc++ -lpthread
 
 #定义基础的编译选项
+ifndef CC
 CC = gcc
+endif
+ifndef CX
 CX = c++
+endif
 CFLAGS = -g -O2 -Wall -Wno-deprecated -Wextra -Wno-unknown-pragmas $(STDC) $(MYCFLAGS)
 CXXFLAGS = -g -O2 -Wall -Wno-deprecated -Wextra -Wno-unknown-pragmas $(STDCPP) $(MYCFLAGS)
 
