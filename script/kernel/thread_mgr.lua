@@ -135,7 +135,7 @@ function ThreadMgr:on_second(clock_ms)
         local head = queue:head()
         if head and head.timeout <= clock_ms then
             --head:unlock()
-            log_err("[ThreadMgr][on_fast] the lock is timeout:%s", head.key)
+            log_err("[ThreadMgr][on_second] the lock is timeout:%s", head.key)
         end
     end
 end

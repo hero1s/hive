@@ -62,6 +62,13 @@ function ProxyAgent:del(url, querys, headers)
     return true, self.proxy_mgr:rpc_http_del(url, querys, headers)
 end
 
+function ProxyAgent:write_statis(statis)
+    if self.run_thread then
+        return scheduler:send(self.service_name, "rpc_write_statis", statis)
+    end
+    return self.proxy_mgr:rpc_write_statis(statis)
+end
+
 hive.proxy_agent = ProxyAgent()
 
 return ProxyAgent

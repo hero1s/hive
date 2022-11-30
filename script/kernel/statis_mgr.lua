@@ -1,23 +1,19 @@
 --statis_mgr.lua
 import("kernel/object/linux.lua")
-local InfluxDB     = import("driver/influx.lua")
 
 local tinsert      = table.insert
 local tsort        = table.sort
-local env_get      = environ.get
-local env_addr     = environ.addr
 local env_status   = environ.status
 
 local log_warn     = logger.warn
 
 local event_mgr    = hive.get("event_mgr")
 local update_mgr   = hive.get("update_mgr")
-local thread_mgr   = hive.get("thread_mgr")
 local linux_statis = hive.get("linux_statis")
 
 local StatisMgr    = singleton()
 local prop         = property(StatisMgr)
-prop:reader("influx", nil)              --influx
+prop:accessor("db_agent", nil)          --数据代理
 prop:reader("statis", {})               --statis
 prop:reader("statis_status", false)     --统计开关
 prop:reader("perfevals", {})            --性能统计
@@ -25,14 +21,6 @@ function StatisMgr:__init()
     local statis_status = env_status("HIVE_STATIS")
     if statis_status then
         self.statis_status = statis_status
-        --初始化参数
-        local org          = env_get("HIVE_INFLUX_ORG")
-        local token        = env_get("HIVE_INFLUX_TOKEN")
-        local bucket       = env_get("HIVE_INFLUX_BUCKET")
-        local ip, port     = env_addr("HIVE_INFLUX_ADDR")
-        if ip and port then
-            self.influx = InfluxDB(ip, port, org, bucket, token)
-        end
         --事件监听
         event_mgr:add_listener(self, "on_rpc_send")
         event_mgr:add_listener(self, "on_rpc_recv")
@@ -53,13 +41,11 @@ end
 
 -- 发送给influx
 function StatisMgr:flush()
-    thread_mgr:fork(function()
-        local statis = self.statis
-        self.statis  = {}
-        if self.influx and next(statis) then
-            self.influx:batch(statis)
-        end
-    end)
+    local statis = self.statis
+    self.statis  = {}
+    if self.db_agent and next(statis) then
+        self.db_agent:write_statis(statis)
+    end
 end
 
 -- 发送给influx

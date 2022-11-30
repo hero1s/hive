@@ -83,6 +83,10 @@ local function init_scheduler()
     import("driver/scheduler.lua")
     hive.scheduler:setup("hive")
     import("agent/proxy_agent.lua")
+    local statis_mgr = hive.get("statis_mgr")
+    if statis_mgr then
+        statis_mgr:set_db_agent(hive.get("proxy_agent"))
+    end
 end
 
 function hive.init()

@@ -72,8 +72,8 @@ function hive.init()
     init_coroutine()
     init_mainloop()
     --加载统计
-    import("kernel/perfeval_mgr.lua")
-    import("kernel/statis_mgr.lua")
+    --import("kernel/perfeval_mgr.lua")
+    --import("kernel/statis_mgr.lua")
     --网络
     init_network()
     --加载协议
