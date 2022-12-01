@@ -37,7 +37,7 @@ Distributed game server framework based on CPP 17 && LUA 5.4
   - Influxdb + granfana 性能监控及分析(协议,消息,rpc,cpu,内存,协程,服务等)
   - monitor监控服务
   - 自带自适应的GM web页面
-  - 自带函数性能分析prof
+  - 自带函数性能分析prof,支持协程模式
 
 ## 性能
   - rpc单服务性能在4.5w次/s左右,这是计算完整的从发起到接收结果.涉及到服务的拆分,部署按这个性能去做评估
@@ -61,7 +61,7 @@ Distributed game server framework based on CPP 17 && LUA 5.4
 
 
 ## todo list 
-  - 目前应用于即将上线大型实时在线FPS项目,同步更新优化.多多关注,建议,star
+  - 目前应用于即将上线百万pcu大型实时在线FPS项目,不是实验项目,是实战项目,必须过百万pcu的压测,同步更新优化.多多关注,建议,star
   - c++ gateway服务
   - 完善文档及工具链,编写demo
   - 优化性能,完善精简代码
