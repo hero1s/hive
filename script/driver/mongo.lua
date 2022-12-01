@@ -334,7 +334,7 @@ function MongoDB:find(co_name, query, projection, sortor, limit, skip)
             break
         end
         self.cursor_id       = cursor.id
-        local msucc, moreply = self:runCommand("getMore", bson.int64(self.cursor_id), "collection", co_name, "batchSize", limit)
+        local msucc, moreply = self:runCommand("getMore", bson.int64(self.cursor_id), "collection", co_name)
         if not msucc then
             return msucc, moreply
         end

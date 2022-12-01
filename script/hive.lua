@@ -41,18 +41,15 @@ function hive.try_call(func, time, ...)
 end
 
 -- 启动死循环监控
-local check_close_loop = true
 function hive.check_endless_loop()
-    if check_close_loop then
-        log_warn("open check_endless_loop will degrade performance!")
-        local debug_hook = function()
-            local now = lclock_ms()
-            if now - hive.clock_ms >= 10000 then
-                log_err(sformat("check_endless_loop:%s", dtraceback()))
-            end
+    log_warn("open check_endless_loop will degrade performance!")
+    local debug_hook = function()
+        local now = lclock_ms()
+        if now - hive.clock_ms >= 10000 then
+            log_err(sformat("check_endless_loop:%s", dtraceback()))
         end
-        dsethook(debug_hook, "l")
     end
+    dsethook(debug_hook, "l")
 end
 
 --快速获取enum

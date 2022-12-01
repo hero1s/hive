@@ -59,7 +59,6 @@ function service.init()
     hive.service_name = name
     hive.service_id   = service_id
     hive.name         = sformat("%s_%s", name, index)
-    hive.deploy       = environ.get("HIVE_DEPLOY", "develop")
     hive.host         = environ.get("HIVE_HOST_IP")
     service.make_node()
 end

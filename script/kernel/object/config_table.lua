@@ -4,6 +4,7 @@ local pairs            = pairs
 local ipairs           = ipairs
 local sformat          = string.format
 local tconcat          = table.concat
+local tinsert          = table.insert
 local tunpack          = table.unpack
 local tointeger        = math.tointeger
 local tonumber         = tonumber
@@ -18,10 +19,12 @@ local ConfigTable      = class()
 local prop             = property(ConfigTable)
 prop:reader("name", nil)
 prop:reader("rows", {})
-prop:reader("indexs", {})
+prop:reader("indexs", nil)
 prop:reader("count", 0)
 prop:accessor("version", 0)
 prop:reader("load_time", 0)
+prop:reader("groups", {})
+prop:reader("group_keys", nil)
 
 -- 初始化一个配置表，indexs最多支持三个
 function ConfigTable:__init()
@@ -46,6 +49,7 @@ function ConfigTable:set_records(file_name)
         self:upsert(row)
     end
     self.load_time = import_file_time(file_name)
+    self:init_group()
 end
 
 function ConfigTable:name_to_filename(name)
@@ -117,12 +121,7 @@ end
 
 -- 更新一行配置表
 function ConfigTable:upsert(row)
-    if not self.name then
-        return
-    end
-    local deploy = row.hive_deploy
-    if deploy and deploy ~= hive.deploy then
-        --部署环境不一样，不加载配置
+    if not self.indexs then
         return
     end
     local row_indexs = {}
@@ -139,6 +138,33 @@ function ConfigTable:upsert(row)
             self.count = self.count + 1
         end
         self.rows[row_index] = row
+    end
+end
+
+-- 设置group组
+function ConfigTable:init_group()
+    if not self.group_keys then
+        return
+    end
+    self.groups = {}
+    for _, row in pairs(self.rows) do
+        local group_keys = {}
+        for _, index in ipairs(self.group_keys) do
+            group_keys[#group_keys + 1] = row[index]
+        end
+        if #group_keys ~= #self.group_keys then
+            log_err("[ConfigTable][upsert_group] row data index lost. row=%s, group_keys=%s", row, self.group_keys)
+            return
+        end
+        local group_index = self:build_index(tunpack(group_keys))
+        if group_index then
+            local group = self.groups[group_index]
+            if not group then
+                self.groups[group_index] = { row }
+            else
+                tinsert(group, row)
+            end
+        end
     end
 end
 
@@ -189,6 +215,33 @@ function ConfigTable:find_integer(key, ...)
     if row then
         return tointeger(row[key])
     end
+end
+
+--构建分组索引
+function ConfigTable:create_group_index(...)
+    local size = select("#", ...)
+    if size > 0 and size < TABLE_MAX_INDEX then
+        self.group_keys = { ... }
+        self:init_group()
+        return true
+    else
+        log_err("[ConfigTable][create_group_index] keys len illegal. group_index=%s", { ... })
+    end
+    return false
+end
+
+--查询分组数据
+function ConfigTable:find_group(...)
+    local group_index = self:build_index(...)
+    if not group_index then
+        log_err("[ConfigTable][find_group] table %s row group_index is nil.[%s]", self.name, { ... })
+        return
+    end
+    local group = self.groups[group_index]
+    if not group then
+        log_err("[ConfigTable][find_group] table=%s row group not found. index=%s", self.name, group_index)
+    end
+    return group
 end
 
 -- 获取所有项，参数{field1=val1,field2=val2,field3=val3}，与初始化index无关

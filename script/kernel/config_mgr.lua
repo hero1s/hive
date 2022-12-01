@@ -6,10 +6,10 @@ local tunpack     = table.unpack
 
 local ConfigTable = import("kernel/object/config_table.lua")
 
-local ConfigMgr = singleton()
+local ConfigMgr   = singleton()
 function ConfigMgr:__init()
     -- 配置对象列表
-    self.table_list = {}
+    self.table_list      = {}
     -- 配置表加载方式
     self.table_load_info = {}
 end
@@ -20,14 +20,14 @@ function ConfigMgr:reload()
         local load_info = self.table_load_info[name]
         if load_info then
             local load_func = load_info.func
-            local params = load_info.params
+            local params    = load_info.params
             ConfigMgr[load_func](self, tunpack(params))
         end
     end
 end
 
 function ConfigMgr:load_enum_table(name, ename, main_key, ...)
-    local conf_tab = self:load_table(name, main_key, ...)
+    local conf_tab = self:load_table(name, name, main_key, ...)
     if conf_tab then
         local enum_obj = enum(ename, 0)
         for _, conf in conf_tab:iterator() do
@@ -36,8 +36,8 @@ function ConfigMgr:load_enum_table(name, ename, main_key, ...)
     end
 
     self.table_load_info[name] = {
-        func    = "load_enum_table",
-        params  = tpack(name, ename, main_key, ...),
+        func   = "load_enum_table",
+        params = tpack(name, ename, main_key, ...),
     }
 
     return conf_tab
@@ -52,20 +52,20 @@ function ConfigMgr:init_enum_table(name, ename, main_key, ...)
     return conf_tab
 end
 
-function ConfigMgr:load_table(name, ...)
-    local conf_tab = self.table_list[name]
+function ConfigMgr:load_table(alias, name, ...)
+    local conf_tab = self.table_list[alias]
     if conf_tab then
         conf_tab:setup(name, ...)
     else
-        conf_tab = ConfigTable()
-        self.table_list[name] = conf_tab
+        conf_tab               = ConfigTable()
+        self.table_list[alias] = conf_tab
         conf_tab:setup(name, ...)
     end
 
     if not self.table_load_info[name] then
         self.table_load_info[name] = {
-            func    = "load_table",
-            params  = tpack(name, ...),
+            func   = "load_table",
+            params = tpack(alias, name, ...),
         }
     end
 
@@ -76,7 +76,16 @@ end
 function ConfigMgr:init_table(name, ...)
     local conf_tab = self.table_list[name]
     if not conf_tab then
-        conf_tab = self:load_table(name, ...)
+        conf_tab = self:load_table(name, name, ...)
+    end
+    return conf_tab
+end
+
+-- 初始化别名配置表(同表不同索引)
+function ConfigMgr:init_alias_table(alias, name, ...)
+    local conf_tab = self.table_list[alias]
+    if not conf_tab then
+        conf_tab = self:load_table(alias, name, ...)
     end
     return conf_tab
 end

@@ -148,8 +148,7 @@ function hive.after_start()
     end)
     update_mgr:update(ltime())
     --开启debug模式
-    local debug = environ.number("HIVE_DEBUG", 0)
-    if debug == 1 then
+    if environ.status("HIVE_DEBUG") then
         hive.check_endless_loop()
     end
 end
