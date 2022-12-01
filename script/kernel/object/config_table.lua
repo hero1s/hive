@@ -4,6 +4,9 @@ local pairs            = pairs
 local ipairs           = ipairs
 local sformat          = string.format
 local tconcat          = table.concat
+local tunpack          = table.unpack
+local tointeger        = math.tointeger
+local tonumber         = tonumber
 local log_err          = logger.err
 local log_info         = logger.info
 local trandom_array    = table_ext.random_array
@@ -74,6 +77,17 @@ function ConfigTable:setup_nil(name, ...)
     return false
 end
 
+--生成index
+function ConfigTable:build_index(...)
+    local n = select("#", ...)
+    if n == 1 then
+        return ...
+    end
+    if n > 0 then
+        return tconcat({ ... }, "@@")
+    end
+end
+
 function ConfigTable:check_index(records)
     local tmp_indexs = {}
     for _, v in pairs(records) do
@@ -88,7 +102,7 @@ function ConfigTable:check_index(records)
             row_indexs[#row_indexs + 1] = v[index]
         end
 
-        local row_index = tconcat(row_indexs, "@@")
+        local row_index = self:build_index(tunpack(row_indexs))
 
         if not tmp_indexs[row_index] then
             tmp_indexs[row_index] = true
@@ -119,7 +133,7 @@ function ConfigTable:upsert(row)
         log_err("[ConfigTable][upsert] row data index lost. row=%s, indexs=%s", row, self.indexs)
         return
     end
-    local row_index = tconcat(row_indexs, "@@")
+    local row_index = self:build_index(tunpack(row_indexs))
     if row_index then
         if not self.rows[row_index] then
             self.count = self.count + 1
@@ -131,8 +145,12 @@ end
 -- 获取一项，
 -- ...必须与初始化index对应。
 function ConfigTable:find_one(...)
-    local row_index = tconcat({ ... }, "@@")
-    local row       = self.rows[row_index]
+    local row_index = self:build_index(...)
+    if not row_index then
+        log_err("[ConfigTable][find_one] table %s row index is nil.", self.name)
+        return
+    end
+    local row = self.rows[row_index]
     if not row then
         log_err("[ConfigTable][find_one] table=%s row data not found. index=%s", self.name, row_index)
     end
@@ -142,7 +160,7 @@ end
 -- 获取一项，
 -- ...必须与初始化index对应。
 function ConfigTable:try_find_one(...)
-    local row_index = tconcat({ ... }, "@@")
+    local row_index = self:build_index(...)
     return self.rows[row_index]
 end
 
@@ -152,6 +170,24 @@ function ConfigTable:find_value(key, ...)
     local row = self:find_one(...)
     if row then
         return row[key]
+    end
+end
+
+-- 获取一项的指定key值，
+-- ...必须与初始化index对应。
+function ConfigTable:find_number(key, ...)
+    local row = self:find_one(...)
+    if row then
+        return tonumber(row[key])
+    end
+end
+
+-- 获取一项的指定key值，
+-- ...必须与初始化index对应。
+function ConfigTable:find_integer(key, ...)
+    local row = self:find_one(...)
+    if row then
+        return tointeger(row[key])
     end
 end
 
