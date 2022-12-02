@@ -27,7 +27,7 @@ function ConfigMgr:reload()
 end
 
 function ConfigMgr:load_enum_table(name, ename, main_key, ...)
-    local conf_tab = self:load_table(name, name, main_key, ...)
+    local conf_tab = self:load_table(name, main_key, ...)
     if conf_tab then
         local enum_obj = enum(ename, 0)
         for _, conf in conf_tab:iterator() do
@@ -52,20 +52,20 @@ function ConfigMgr:init_enum_table(name, ename, main_key, ...)
     return conf_tab
 end
 
-function ConfigMgr:load_table(alias, name, ...)
-    local conf_tab = self.table_list[alias]
+function ConfigMgr:load_table(name, ...)
+    local conf_tab = self.table_list[name]
     if conf_tab then
         conf_tab:setup(name, ...)
     else
         conf_tab               = ConfigTable()
-        self.table_list[alias] = conf_tab
+        self.table_list[name] = conf_tab
         conf_tab:setup(name, ...)
     end
 
     if not self.table_load_info[name] then
         self.table_load_info[name] = {
             func   = "load_table",
-            params = tpack(alias, name, ...),
+            params = tpack(name, ...),
         }
     end
 
@@ -76,16 +76,7 @@ end
 function ConfigMgr:init_table(name, ...)
     local conf_tab = self.table_list[name]
     if not conf_tab then
-        conf_tab = self:load_table(name, name, ...)
-    end
-    return conf_tab
-end
-
--- 初始化别名配置表(同表不同索引)
-function ConfigMgr:init_alias_table(alias, name, ...)
-    local conf_tab = self.table_list[alias]
-    if not conf_tab then
-        conf_tab = self:load_table(alias, name, ...)
+        conf_tab = self:load_table(name, ...)
     end
     return conf_tab
 end

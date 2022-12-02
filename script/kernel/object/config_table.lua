@@ -24,7 +24,7 @@ prop:reader("count", 0)
 prop:accessor("version", 0)
 prop:reader("load_time", 0)
 prop:reader("groups", {})
-prop:reader("group_keys", nil)
+prop:reader("group_keys", {})
 
 -- 初始化一个配置表，indexs最多支持三个
 function ConfigTable:__init()
@@ -49,7 +49,10 @@ function ConfigTable:set_records(file_name)
         self:upsert(row)
     end
     self.load_time = import_file_time(file_name)
-    self:init_group()
+    --重构组索引
+    for key_name, _ in ipairs(self.group_keys) do
+        self:init_group(key_name)
+    end
 end
 
 function ConfigTable:name_to_filename(name)
@@ -95,19 +98,11 @@ end
 function ConfigTable:check_index(records)
     local tmp_indexs = {}
     for _, v in pairs(records) do
-        local deploy = v.hive_deploy
-        if deploy and deploy ~= hive.deploy then
-            --部署环境不一样，不加载配置
-            return
-        end
-
         local row_indexs = {}
         for _, index in ipairs(self.indexs) do
             row_indexs[#row_indexs + 1] = v[index]
         end
-
         local row_index = self:build_index(tunpack(row_indexs))
-
         if not tmp_indexs[row_index] then
             tmp_indexs[row_index] = true
         else
@@ -115,7 +110,6 @@ function ConfigTable:check_index(records)
             return false
         end
     end
-
     return true
 end
 
@@ -142,25 +136,27 @@ function ConfigTable:upsert(row)
 end
 
 -- 设置group组
-function ConfigTable:init_group()
-    if not self.group_keys then
+function ConfigTable:init_group(key_name)
+    local keys = self.group_keys[key_name]
+    if not keys then
         return
     end
-    self.groups = {}
+    self.groups[key_name] = {}
+    local groups          = self.groups[key_name]
     for _, row in pairs(self.rows) do
         local group_keys = {}
-        for _, index in ipairs(self.group_keys) do
+        for _, index in ipairs(keys) do
             group_keys[#group_keys + 1] = row[index]
         end
-        if #group_keys ~= #self.group_keys then
-            log_err("[ConfigTable][upsert_group] row data index lost. row=%s, group_keys=%s", row, self.group_keys)
+        if #group_keys ~= #keys then
+            log_err("[ConfigTable][upsert_group] row data index lost. row=%s, group_keys=%s", row, keys)
             return
         end
         local group_index = self:build_index(tunpack(group_keys))
         if group_index then
-            local group = self.groups[group_index]
+            local group = groups[group_index]
             if not group then
-                self.groups[group_index] = { row }
+                groups[group_index] = { row }
             else
                 tinsert(group, row)
             end
@@ -218,11 +214,11 @@ function ConfigTable:find_integer(key, ...)
 end
 
 --构建分组索引
-function ConfigTable:create_group_index(...)
+function ConfigTable:create_group_index(key_name, ...)
     local size = select("#", ...)
     if size > 0 and size < TABLE_MAX_INDEX then
-        self.group_keys = { ... }
-        self:init_group()
+        self.group_keys[key_name] = { ... }
+        self:init_group(key_name)
         return true
     else
         log_err("[ConfigTable][create_group_index] keys len illegal. group_index=%s", { ... })
@@ -231,13 +227,18 @@ function ConfigTable:create_group_index(...)
 end
 
 --查询分组数据
-function ConfigTable:find_group(...)
+function ConfigTable:find_group(key_name, ...)
     local group_index = self:build_index(...)
     if not group_index then
         log_err("[ConfigTable][find_group] table %s row group_index is nil.[%s]", self.name, { ... })
         return
     end
-    local group = self.groups[group_index]
+    local groups = self.groups[key_name]
+    if not groups then
+        log_err("[ConfigTable][find_group] the group key is not init:%s", key_name)
+        return
+    end
+    local group = groups[group_index]
     if not group then
         log_err("[ConfigTable][find_group] table=%s row group not found. index=%s", self.name, group_index)
     end
