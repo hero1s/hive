@@ -1,6 +1,8 @@
---clock_mgr.lua
+--update_mgr.lua
+local ltimer         = require("ltimer")
 local lhelper        = require("lhelper")
 local mem_usage      = lhelper.mem_usage
+local lclock_ms      = ltimer.clock_ms
 local pairs          = pairs
 local odate          = os.date
 local log_info       = logger.info
@@ -62,6 +64,16 @@ function UpdateMgr:on_second_5s()
             config_mgr:reload()
         end
     end
+end
+
+function UpdateMgr:collect_gc()
+    local clock_ms  = lclock_ms()
+    local mem_s     = cut_tail(mem_usage(), 1)
+    local lua_mem_s = cut_tail(collectgarbage("count") / 1024, 1)
+    collectgarbage("collect")
+    local mem_e     = cut_tail(mem_usage(), 1)
+    local lua_mem_e = cut_tail(collectgarbage("count") / 1024, 1)
+    log_warn("[UpdateMgr][collect_gc] %s m --> %s m,lua:%s m --> %s m,cost time:%s", mem_s, mem_e, lua_mem_s, lua_mem_e, lclock_ms() - clock_ms)
 end
 
 function UpdateMgr:update_next()
@@ -145,8 +157,7 @@ function UpdateMgr:update(now_ms, clock_ms)
                 obj:on_hour(clock_ms, cur_hour, time)
             end)
         end
-        --gc
-        collectgarbage("collect")
+        self:collect_gc()
     end)
 end
 

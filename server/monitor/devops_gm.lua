@@ -34,6 +34,7 @@ function DevopsGmMgr:register_gm()
           args    = "status|integer delay|integer service_name|string index|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_hive_quit", desc = "关闭服务器", comment = "[杀进程],延迟(秒)", args = "reason|integer delay|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_cfg_reload", desc = "配置表热更新", comment = "(0 本地 1 远程)", args = "is_remote|integer" },
+        { gm_type = GMType.DEV_OPS, name = "gm_collect_gc", desc = "lua全量gc", comment = "", args = "" },
         --工具
         { gm_type = GMType.TOOLS, name = "gm_guid_view", desc = "guid信息", comment = "(拆解guid)", args = "guid|integer" },
         { gm_type = GMType.TOOLS, name = "gm_log_format", desc = "日志格式", comment = "0压缩,1格式化", args = "data|string swline|integer" },
@@ -137,6 +138,11 @@ function DevopsGmMgr:gm_cfg_reload(is_remote)
     end
     monitor_mgr:broadcast("rpc_config_reload")
 
+    return { code = 0 }
+end
+
+function DevopsGmMgr:gm_collect_gc()
+    monitor_mgr:broadcast("rpc_collect_gc")
     return { code = 0 }
 end
 
