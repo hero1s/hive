@@ -16,6 +16,7 @@
 #include <assert.h>
 
 #include "fmt/core.h"
+#include "thread_name.hpp"
 
 #ifdef WIN32
 #include <process.h>
@@ -405,6 +406,7 @@ namespace logger {
                 std_dest_ = std::make_shared<stdio_dest>();
                 stop_msg_ = message_pool_->allocate();
                 std::thread(&log_service::run, this).swap(thread_);
+                utility::set_thread_name(thread_, "log");
             }
         }
 

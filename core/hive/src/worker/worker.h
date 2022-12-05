@@ -6,6 +6,7 @@
 
 #include "lcodec/buffer.h"
 #include "fmt/core.h"
+#include "thread_name.hpp"
 
 using namespace lcodec;
 using namespace luakit;
@@ -99,7 +100,8 @@ namespace lworker {
 
         void startup(){            
             open_custom_libs(m_lua->L());
-            std::thread(&worker::run, this).swap(m_thread);            
+            std::thread(&worker::run, this).swap(m_thread);
+            utility::set_thread_name(m_thread, m_name);
         }
 
         void run(){
