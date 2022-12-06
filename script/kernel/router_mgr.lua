@@ -323,7 +323,9 @@ function RouterMgr:rpc_service_close(id, router_id)
             log_info("[RouterMgr][rpc_service_close] %s", id2nick(id))
         end
         for listener in pairs(listener_set or {}) do
-            listener:on_service_close(id, server_name)
+            thread_mgr:fork(function()
+                listener:on_service_close(id, server_name)
+            end)
         end
     end
 end
@@ -337,7 +339,9 @@ function RouterMgr:rpc_service_ready(id, router_id)
             log_info("[RouterMgr][rpc_service_ready] %s", id2nick(id))
         end
         for listener in pairs(listener_set or {}) do
-            listener:on_service_ready(id, server_name)
+            thread_mgr:fork(function()
+                listener:on_service_ready(id, server_name)
+            end)
         end
     end
 end
@@ -349,7 +353,9 @@ function RouterMgr:rpc_service_master(id, router_id)
             log_info("[RouterMgr][rpc_service_master] switch master self:%s,master:%s", id2nick(hive.id), id2nick(id))
         end
         for listener in pairs(self.master_watchers or {}) do
-            listener:on_service_master(id, hive.id == id and true or false)
+            thread_mgr:fork(function()
+                listener:on_service_master(id, hive.id == id and true or false)
+            end)
         end
     end
 end

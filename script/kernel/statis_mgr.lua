@@ -110,7 +110,7 @@ end
 function StatisMgr:on_perfeval(eval_data, clock_ms)
     if self.statis_status then
         local total_time = clock_ms - eval_data.begin_time
-        if total_time > 0 then
+        if total_time > 1 then
             local fields = {
                 total_time = total_time,
                 yield_time = eval_data.yield_time,

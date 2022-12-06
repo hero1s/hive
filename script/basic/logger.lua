@@ -68,7 +68,7 @@ function logger.remove_monitor(monitor)
 end
 
 function logger.filter(level)
-    for lvl = LOG_LEVEL.DEBUG, LOG_LEVEL.FATAL do
+    for lvl = LOG_LEVEL.TRACE, LOG_LEVEL.FATAL do
         --llog.filter(level, on/off)
         lfilter(lvl, lvl >= level)
     end
@@ -117,7 +117,7 @@ end
 
 local LOG_LEVEL_OPTIONS = {
     --lvl_func,    extend,  swline, max_depth
-    [LOG_LEVEL.TRACE] = { "trace", { llog.trace, true, false, 8 } },
+    [LOG_LEVEL.TRACE] = { "trace", { llog.trace, true, false, 6 } },
     [LOG_LEVEL.DEBUG] = { "debug", { llog.debug, true, false, 8 } },
     [LOG_LEVEL.INFO]  = { "info", { llog.info, false, false, 0 } },
     [LOG_LEVEL.WARN]  = { "warn", { llog.warn, true, true, 8 } },

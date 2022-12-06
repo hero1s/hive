@@ -145,6 +145,10 @@ namespace lstdfs {
 		return filesystem::path(path).replace_extension(extens).string();
 	}
 
+	std::string lstdfs_make_preferred(std::string path) {
+		return filesystem::path(path).make_preferred().string();
+	}
+
 	std::string lstdfs_stem(std::string path) {
 		return filesystem::path(path).stem().string();
 	}
@@ -260,6 +264,7 @@ namespace lstdfs {
 		lstdfs.set_function("is_directory", lstdfs_is_directory);
 		lstdfs.set_function("current_path", lstdfs_current_path);
 		lstdfs.set_function("relative_path", lstdfs_relative_path);
+		lstdfs.set_function("make_preferred", lstdfs_make_preferred);
 		lstdfs.set_function("last_write_time", lstdfs_last_write_time);
 		lstdfs.set_function("remove_filename", lstdfs_remove_filename);
 		lstdfs.set_function("replace_filename", lstdfs_replace_filename);
