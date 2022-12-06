@@ -15,12 +15,14 @@ prop:reader("timeout", 0)
 prop:reader("count", 1)
 prop:reader("key", nil)
 prop:reader("co", nil)
+prop:reader("yield",false)
 
-function SyncLock:__init(thread_mgr, key)
+function SyncLock:__init(thread_mgr, key,yield)
     self.thread_mgr = thread_mgr
     self.timeout    = hive.clock_ms + SECOND_10_MS
     self.co         = co_running()
     self.key        = key
+    self.yield      = yield
 end
 
 function SyncLock:increase()

@@ -44,7 +44,7 @@ function ThreadMgr:lock(key)
     queue.ttl  = hive.clock_ms
     local head = queue:head()
     if not head then
-        local lock = SyncLock(self, key)
+        local lock = SyncLock(self, key, false)
         queue:push(lock)
         return lock
     else
@@ -53,7 +53,7 @@ function ThreadMgr:lock(key)
             head:increase()
             return head
         end
-        local lock = SyncLock(self, key)
+        local lock = SyncLock(self, key, true)
         queue:push(lock)
         co_yield()
         return lock
@@ -63,12 +63,17 @@ end
 function ThreadMgr:unlock(key)
     local queue = self.syncqueue_map[key]
     if queue then
-        queue:pop()
-        if queue:empty() then
-            return
+        while true do
+            local lock = queue:pop()
+            if lock then
+                if lock.yield then
+                    co_resume(lock.co)
+                    return
+                end
+            else
+                break
+            end
         end
-        local lock = queue:pop()
-        co_resume(lock.co)
     end
 end
 
