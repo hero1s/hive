@@ -44,7 +44,7 @@ namespace logger {
     }; //rolling_type
 
     const size_t QUEUE_MINI = 10;
-    const size_t QUEUE_SIZE = 3000;
+    const size_t QUEUE_SIZE = 300;
     const size_t MAX_LINE   = 100000;
     const size_t CLEAN_TIME = 7 * 24 * 3600;
 
@@ -145,6 +145,7 @@ namespace logger {
             for (size_t i = 0; i < msg_size; ++i) {
                 alloc_messages_->push_back(std::make_shared<log_message>());
             }
+            pool_size_ = msg_size;
         }
         ~log_message_pool() {
             alloc_messages_->clear();
@@ -156,8 +157,12 @@ namespace logger {
                 alloc_messages_.swap(free_messages_);
             }
             if (alloc_messages_->empty()) {
-                auto logmsg = std::make_shared<log_message>();
-                logmsg->set_grow(true);
+                auto logmsg = std::make_shared<log_message>();                
+                if (pool_size_ < QUEUE_SIZE) {
+                    pool_size_++;
+                }else{
+                    logmsg->set_grow(true);
+                }
                 return logmsg;
             }
             auto logmsg = alloc_messages_->front();
@@ -173,6 +178,7 @@ namespace logger {
         }
 
     private:
+        size_t pool_size_ = 0;
         spin_mutex mutex_;
         std::shared_ptr<log_message_list> free_messages_ = std::make_shared<log_message_list>();
         std::shared_ptr<log_message_list> alloc_messages_ = std::make_shared<log_message_list>();
@@ -402,7 +408,7 @@ namespace logger {
             if (!stop_msg_ && !std_dest_) {
                 log_pid_ = ::getpid();
                 logmsgque_ = std::make_shared<log_message_queue>();
-                message_pool_ = std::make_shared<log_message_pool>(QUEUE_SIZE);
+                message_pool_ = std::make_shared<log_message_pool>(QUEUE_MINI);
                 std_dest_ = std::make_shared<stdio_dest>();
                 stop_msg_ = message_pool_->allocate();
                 std::thread(&log_service::run, this).swap(thread_);

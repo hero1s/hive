@@ -35,6 +35,14 @@ function ThreadMgr:size()
     return co_cur_size, co_cur_max
 end
 
+function ThreadMgr:lock_size()
+    local count = 0
+    for _, v in pairs(self.syncqueue_map) do
+        count = count + v:size()
+    end
+    return count
+end
+
 function ThreadMgr:lock(key)
     local queue = self.syncqueue_map[key]
     if not queue then
@@ -65,13 +73,12 @@ function ThreadMgr:unlock(key)
     if queue then
         while true do
             local lock = queue:pop()
-            if lock then
-                if lock.yield then
-                    co_resume(lock.co)
-                    return
-                end
-            else
+            if not lock then
                 break
+            end
+            if lock:is_yield() then
+                co_resume(lock.co)
+                return
             end
         end
     end

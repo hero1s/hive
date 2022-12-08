@@ -42,6 +42,7 @@ prop:reader("command_cds", {})          --CMD定制CD
 prop:accessor("coder", nil)             --编解码对象
 prop:accessor("log_client_msg", nil)    --消息日志函数
 prop:accessor("timeout", NETWORK_TIMEOUT)
+prop:accessor("buff_size", 0)
 
 function NetServer:__init(session_type)
     self.session_type = session_type
@@ -82,6 +83,11 @@ function NetServer:on_socket_accept(session)
     session.last_fc_time = hive.clock_ms
     -- 设置超时(心跳)
     session.set_timeout(self.timeout)
+    -- 设置buff长度
+    if self.buff_size > 0 then
+       session.set_send_buffer_size(self.buff_size)
+       session.set_recv_buffer_size(self.buff_size)
+    end
     -- 绑定call回调
     session.on_call_pack  = function(recv_len, cmd_id, flag, session_id, data)
         thread_mgr:fork(function()

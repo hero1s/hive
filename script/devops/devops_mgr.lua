@@ -25,7 +25,7 @@ end
 --挂载附加服务
 function DevopsMgr:attach_service()
     local service = env_get("HIVE_ATTACH_SERVICE")
-    if service then
+    if service and #service > 3 then
         import(service)
     end
 end

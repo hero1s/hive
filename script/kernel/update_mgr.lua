@@ -55,8 +55,6 @@ function UpdateMgr:__init()
 end
 
 function UpdateMgr:on_second_5s()
-    --执行gc
-    collectgarbage("step", 5)
     --检查文件更新
     if self.open_reload then
         if hive.reload() > 0 then
@@ -133,6 +131,8 @@ function UpdateMgr:update(now_ms, clock_ms)
         end
         --检查信号
         self:sig_check()
+        --执行gc
+        collectgarbage("step", 1)
         --分更新
         local time = odate("*t", now)
         if time.min == self.last_minute then
@@ -275,8 +275,8 @@ function UpdateMgr:detach_quit(obj)
 end
 
 function UpdateMgr:monitor_mem()
-    local mem     = cut_tail(mem_usage(), 1)
-    local lua_mem = cut_tail(collectgarbage("count") / 1024, 1)
+    local mem       = cut_tail(mem_usage(), 1)
+    local lua_mem   = cut_tail(collectgarbage("count") / 1024, 1)
     local show_flag
     if mem > self.max_mem_usage then
         self.max_mem_usage = mem
@@ -287,8 +287,9 @@ function UpdateMgr:monitor_mem()
         show_flag              = true
     end
     if show_flag then
-        log_info("UpdateMgr][monitor_mem] mem:%s/%s M,lua_mem: %s/%s M,threads:%s/%s",
-                 mem, self.max_mem_usage, lua_mem, self.max_lua_mem_usage, thread_mgr:size())
+        local cur_size, max_size = thread_mgr:size()
+        log_info("UpdateMgr][monitor_mem] mem:%s/%s M,lua_mem: %s/%s M,threads:%s/%s,lock size:%s",
+                 mem, self.max_mem_usage, lua_mem, self.max_lua_mem_usage, cur_size, max_size, thread_mgr:lock_size())
     end
 end
 
