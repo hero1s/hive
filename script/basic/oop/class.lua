@@ -215,6 +215,11 @@ function instanceof(object, class)
     return false
 end
 
+function is_singleton(object)
+    local class = classof(object)
+    return class and rawget(class, "__singleton")
+end
+
 function conv_class(name)
     local runtime = sformat("local obj = %s() return obj", name)
     local ok, obj = pcall(load(runtime))

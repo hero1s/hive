@@ -123,7 +123,9 @@ namespace logger {
         const log_time& get_log_time()const { return log_time_; }
         void clear() {
             stream_.clear();
-            stream_.shrink_to_fit();
+            if (stream_.capacity() > 512) {
+                stream_.shrink_to_fit();
+            }
         }
         template<class T>
         log_message& operator<<(const T& value) {

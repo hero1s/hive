@@ -80,19 +80,16 @@ local function delegate_one(class, mixin)
         class.__props[name] = value
     end
     for method in pairs(mixin.__methods) do
-        if ssub(method, 1, 1) == "_" then
-            --下划线前缀方法不代理
-            goto continue
+        --下划线前缀方法不代理
+        if ssub(method, 1, 1) ~= "_" then
+            if class[method] then
+                print(sformat("the mixin method %s has repeat defined.", method))
+            end
+            --接口代理
+            class[method] = function(...)
+                return mixin[method](...)
+            end
         end
-        if class[method] then
-            print(sformat("the mixin method %s has repeat defined.", method))
-            goto continue
-        end
-        --接口代理
-        class[method] = function(...)
-            return mixin[method](...)
-        end
-        :: continue ::
     end
     local cmixins         = class.__mixins
     cmixins[#cmixins + 1] = mixin

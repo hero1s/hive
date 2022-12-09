@@ -1,29 +1,36 @@
 --_listener.lua
-local xpcall    = xpcall
-local ipairs    = ipairs
-local tpack     = table.pack
-local tunpack   = table.unpack
-local tremove   = table.remove
-local log_err   = logger.err
-local log_warn  = logger.warn
-local dtraceback= debug.traceback
+local xpcall     = xpcall
+local ipairs     = ipairs
+local tpack      = table.pack
+local tunpack    = table.unpack
+local tremove    = table.remove
+local log_err    = logger.err
+local log_warn   = logger.warn
+local dtraceback = debug.traceback
 
-local Listener = class()
+local Listener   = class()
 function Listener:__init()
-    self._triggers = {}     -- map<event, {{listener, func_name}, ...}
+    self._triggers  = {}     -- map<event, {{listener, func_name}, ...}
     self._listeners = {}    -- map<event, listener>
-    self._commands = {}     -- map<cmd, listener>
-    self._ignores = {}       -- map<cmd, listener>
+    self._commands  = {}     -- map<cmd, listener>
+    self._ignores   = {}      -- map<cmd, bool>
+end
+
+function Listener:verify_trigger(trigger)
+    if not is_singleton(trigger) then
+        log_warn("[Listener][verify_trigger] the trigger is not singleton,dot forget remove listen:%s", tostring(trigger))
+    end
 end
 
 function Listener:add_trigger(trigger, event, handler)
-    local func_name = handler or event
+    self:verify_trigger(trigger)
+    local func_name     = handler or event
     local callback_func = trigger[func_name]
     if not callback_func or type(callback_func) ~= "function" then
-        log_warn("[Listener][add_trigger] event(%s) handler is nil!", event)
+        log_err("[Listener][add_trigger] event(%s) handler is nil!", event)
         return
     end
-    local info = { trigger, func_name }
+    local info     = { trigger, func_name }
     local triggers = self._triggers[event]
     if not triggers then
         self._triggers[event] = { info }
@@ -44,14 +51,15 @@ function Listener:remove_trigger(trigger, event)
 end
 
 function Listener:add_listener(listener, event, handler)
+    self:verify_trigger(listener)
     if self._listeners[event] then
-        log_warn("[Listener][add_listener] event(%s) repeat!", event)
+        log_err("[Listener][add_listener] event(%s) repeat!", event)
         return
     end
-    local func_name = handler or event
+    local func_name     = handler or event
     local callback_func = listener[func_name]
     if not callback_func or type(callback_func) ~= "function" then
-        log_warn("[Listener][add_listener] event(%s) callback is nil!", event)
+        log_err("[Listener][add_listener] event(%s) callback is nil!", event)
         return
     end
     self._listeners[event] = { listener, func_name }
@@ -62,14 +70,15 @@ function Listener:remove_listener(event)
 end
 
 function Listener:add_cmd_listener(listener, cmd, handler)
+    self:verify_trigger(listener)
     if self._commands[cmd] then
-        log_warn("[Listener][add_cmd_listener] cmd(%s) repeat!", cmd)
+        log_err("[Listener][add_cmd_listener] cmd(%s) repeat!", cmd)
         return
     end
-    local func_name = handler
+    local func_name     = handler
     local callback_func = listener[func_name]
     if not callback_func or type(callback_func) ~= "function" then
-        log_warn("[Listener][add_cmd_listener] cmd(%s) handler is nil!", cmd)
+        log_err("[Listener][add_cmd_listener] cmd(%s) handler is nil!", cmd)
         return
     end
     self._commands[cmd] = { listener, func_name }
@@ -82,8 +91,8 @@ end
 function Listener:notify_trigger(event, ...)
     for _, trigger_ctx in ipairs(self._triggers[event] or {}) do
         local trigger, func_name = tunpack(trigger_ctx)
-        local callback_func = trigger[func_name]
-        local ok, ret = xpcall(callback_func, dtraceback, trigger, ...)
+        local callback_func      = trigger[func_name]
+        local ok, ret            = xpcall(callback_func, dtraceback, trigger, ...)
         if not ok then
             log_err("[Listener][notify_trigger] xpcall [%s:%s] failed: %s!", trigger:source(), func_name, ret)
         end
@@ -100,8 +109,8 @@ function Listener:notify_listener(event, ...)
         return tpack(false, "event handler is nil")
     end
     local listener, func_name = tunpack(listener_ctx)
-    local callback_func = listener[func_name]
-    local result = tpack(xpcall(callback_func, dtraceback, listener, ...))
+    local callback_func       = listener[func_name]
+    local result              = tpack(xpcall(callback_func, dtraceback, listener, ...))
     if not result[1] then
         log_err("[Listener][notify_listener] xpcall [%s:%s] failed: %s", listener:source(), func_name, result[2])
     end
@@ -119,8 +128,8 @@ function Listener:notify_command(cmd, ...)
     end
     --执行事件
     local listener, func_name = tunpack(listener_ctx)
-    local callback_func = listener[func_name]
-    local result = tpack(xpcall(callback_func, dtraceback, listener, ...))
+    local callback_func       = listener[func_name]
+    local result              = tpack(xpcall(callback_func, dtraceback, listener, ...))
     if not result[1] then
         log_err("[Listener][notify_command] xpcall [%s:%s] failed: %s!", listener:source(), func_name, result[2])
     end
