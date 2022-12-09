@@ -17,7 +17,7 @@ function Listener:__init()
 end
 
 function Listener:verify_trigger(trigger)
-    if not is_singleton(trigger) then
+    if not is_singleton(trigger) and not trigger.trigger then
         log_warn("[Listener][verify_trigger] the trigger is not singleton,dot forget remove listen:%s", tostring(trigger))
     end
 end

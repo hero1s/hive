@@ -15,13 +15,6 @@ local WRITER   = 1
 local READER   = 2
 local ACCESSOR = 3
 
-local function unequal(a, b)
-    if type(a) ~= "table" or type(b) ~= "table" then
-        return a ~= b
-    end
-    return true
-end
-
 local function on_prop_changed(object, name, value, ...)
     local f_prop_changed = object.on_prop_changed
     if f_prop_changed then
@@ -41,7 +34,7 @@ local function prop_accessor(class, name, default, mode)
     end
     if (mode & WRITER) == WRITER then
         class["set_" .. name] = function(self, value, ...)
-            if unequal(self[name], value) then
+            if self[name] ~= value then
                 self[name] = value
                 local n    = select("#", ...)
                 if n > 0 then

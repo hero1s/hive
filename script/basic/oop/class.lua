@@ -216,8 +216,11 @@ function instanceof(object, class)
 end
 
 function is_singleton(object)
-    local class = classof(object)
-    return class and rawget(class, "__singleton")
+    if type(object) == "table" then
+        local class = classof(object)
+        return class and rawget(class, "__singleton")
+    end
+    return false
 end
 
 function conv_class(name)
