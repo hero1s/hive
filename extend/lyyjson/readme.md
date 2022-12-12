@@ -22,14 +22,4 @@ function yyjson.pretty_encode(t) end
 ---@return table
 function yyjson.decode(str, n) end
 
---- Concat array item to string, table type will encode to json string
----@param array any[]
----@return buffer_ptr
----@overload fun(str:string):buffer_ptr
-function yyjson.concat(array) end
-
---- concat params as redis protocol, table type will encode to json string
----@return buffer_ptr
-function yyjson.concat_resp(...) end
-
 return yyjson

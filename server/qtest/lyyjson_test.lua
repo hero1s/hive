@@ -80,6 +80,8 @@ do
     assert(t2[2]=="b")
     assert(t2[5]=="c")
     assert(t2[3]=="d")
+    local str_f = json.pretty_encode(t1)
+    print("format:",str_f)
 end
 
 do
@@ -152,18 +154,6 @@ end
 
 do
     local ok, err = xpcall(json.encode, debug.traceback, { a = function()
-    end })
-    assert(not ok, err)
-end
-
-do
-    local ok, err = xpcall(json.concat, debug.traceback, { function()
-    end })
-    assert(not ok, err)
-end
-
-do
-    local ok, err = xpcall(json.concat_resp, debug.traceback, { function()
     end })
     assert(not ok, err)
 end
