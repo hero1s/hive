@@ -1,6 +1,7 @@
 --kernel.lua
 import("basic/basic.lua")
 import("basic/json.lua")
+import("kernel/mem_monitor.lua")
 
 local ltimer        = require("ltimer")
 

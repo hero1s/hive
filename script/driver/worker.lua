@@ -1,6 +1,7 @@
 --worker.lua
 import("basic/basic.lua")
 import("basic/json.lua")
+import("kernel/mem_monitor.lua")
 import("kernel/config_mgr.lua")
 local lcodec     = require("lcodec")
 local ltimer     = require("ltimer")

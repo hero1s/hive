@@ -1,5 +1,6 @@
 #pragma once
 #include "lua_kit.h"
+#include <string.h>
 
 namespace lcodec {
 

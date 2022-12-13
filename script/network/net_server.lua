@@ -85,8 +85,8 @@ function NetServer:on_socket_accept(session)
     session.set_timeout(self.timeout)
     -- 设置buff长度
     if self.buff_size > 0 then
-       session.set_send_buffer_size(self.buff_size)
-       session.set_recv_buffer_size(self.buff_size)
+        session.set_send_buffer_size(self.buff_size)
+        session.set_recv_buffer_size(self.buff_size)
     end
     -- 绑定call回调
     session.on_call_pack  = function(recv_len, cmd_id, flag, session_id, data)
@@ -215,18 +215,20 @@ end
 
 -- 收到远程调用回调
 function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
-    local clock_ms      = hive.clock_ms
-    local cmd_cd_time   = self:get_cmd_cd(cmd_id)
-    local command_times = session.command_times
-    if command_times[cmd_id] and clock_ms - command_times[cmd_id] < cmd_cd_time then
-        log_warn("[NetServer][on_socket_recv] session(%s) trigger cmd(%s) cd ctrl, will be drop.", session.token, cmd_id)
-        --协议CD
-        return
+    local clock_ms    = hive.clock_ms
+    local cmd_cd_time = self:get_cmd_cd(cmd_id)
+    if cmd_cd_time > 0 then
+        local command_times = session.command_times
+        if command_times[cmd_id] and clock_ms - command_times[cmd_id] < cmd_cd_time then
+            log_warn("[NetServer][on_socket_recv] session(%s) trigger cmd(%s) cd ctrl, will be drop.", session.token, cmd_id)
+            --协议CD
+            return
+        end
+        command_times[cmd_id] = clock_ms
     end
-    command_times[cmd_id] = clock_ms
-    session.alive_time    = hive.clock_ms
+    session.alive_time   = hive.clock_ms
     -- 解码
-    local body, cmd_name  = self:decode(cmd_id, data, flag)
+    local body, cmd_name = self:decode(cmd_id, data, flag)
     if not body then
         log_warn("[NetServer][on_socket_recv] cmd(%s) parse failed.", cmd_id)
         return

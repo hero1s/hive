@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <string.h>
 #include <curl/curl.h>
 #include "lua_kit.h"
 #ifdef WIN32

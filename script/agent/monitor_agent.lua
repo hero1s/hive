@@ -1,23 +1,24 @@
 --monitor_agent.lua
-local RpcClient      = import("network/rpc_client.lua")
+local RpcClient     = import("network/rpc_client.lua")
 
-local tunpack        = table.unpack
-local signal_quit    = signal.quit
-local env_addr       = environ.addr
-local log_err        = logger.err
-local log_warn       = logger.warn
-local log_info       = logger.info
-local check_success  = hive.success
-local check_failed   = hive.failed
+local tunpack       = table.unpack
+local signal_quit   = signal.quit
+local env_addr      = environ.addr
+local log_err       = logger.err
+local log_warn      = logger.warn
+local log_info      = logger.info
+local check_success = hive.success
+local check_failed  = hive.failed
 
-local event_mgr      = hive.get("event_mgr")
-local config_mgr     = hive.get("config_mgr")
-local update_mgr     = hive.get("update_mgr")
+local event_mgr     = hive.get("event_mgr")
+local config_mgr    = hive.get("config_mgr")
+local update_mgr    = hive.get("update_mgr")
+local mem_monitor   = hive.get("mem_monitor")
 
-local RPC_FAILED     = hive.enum("KernCode", "RPC_FAILED")
+local RPC_FAILED    = hive.enum("KernCode", "RPC_FAILED")
 
-local MonitorAgent   = singleton()
-local prop           = property(MonitorAgent)
+local MonitorAgent  = singleton()
+local prop          = property(MonitorAgent)
 prop:reader("client", nil)
 function MonitorAgent:__init()
     --创建连接
@@ -32,6 +33,7 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "rpc_set_log_level")
     event_mgr:add_listener(self, "rpc_config_reload")
     event_mgr:add_listener(self, "rpc_collect_gc")
+    event_mgr:add_listener(self, "rpc_snapshot")
 end
 
 -- 连接关闭回调
@@ -100,6 +102,14 @@ end
 
 function MonitorAgent:rpc_collect_gc()
     update_mgr:collect_gc()
+end
+
+function MonitorAgent:rpc_snapshot(snap)
+    if snap == 0 then
+        return mem_monitor:start()
+    else
+        return mem_monitor:stop(true)
+    end
 end
 
 function MonitorAgent:rpc_inject(code_string)

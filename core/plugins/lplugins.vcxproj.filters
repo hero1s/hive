@@ -162,9 +162,6 @@
     <ClCompile Include="src\protobuf\pb.c">
       <Filter>protobuf</Filter>
     </ClCompile>
-    <ClCompile Include="src\snapshot\snapshot.c">
-      <Filter>snapshot</Filter>
-    </ClCompile>
     <ClCompile Include="src\tools\helper.cpp">
       <Filter>tools</Filter>
     </ClCompile>
@@ -208,9 +205,6 @@
     </Filter>
     <Filter Include="protobuf">
       <UniqueIdentifier>{606EAF84-6C65-7991-6354-199B45953EE2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="snapshot">
-      <UniqueIdentifier>{C322D3DE-29D2-B0C5-E2E0-11DAD5E77DF2}</UniqueIdentifier>
     </Filter>
     <Filter Include="tools">
       <UniqueIdentifier>{4A931512-CE65-BDC9-CA68-08ADF92D8783}</UniqueIdentifier>

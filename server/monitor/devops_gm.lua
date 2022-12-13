@@ -35,6 +35,8 @@ function DevopsGmMgr:register_gm()
         { gm_type = GMType.DEV_OPS, name = "gm_hive_quit", desc = "关闭服务器", comment = "[杀进程],延迟(秒)", args = "reason|integer delay|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_cfg_reload", desc = "配置表热更新", comment = "(0 本地 1 远程)", args = "is_remote|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_collect_gc", desc = "lua全量gc", comment = "", args = "" },
+        { gm_type = GMType.DEV_OPS, name = "gm_snapshot", desc = "lua内存快照", comment = "0开始1结束,服务/index", args = "snap|integer service_name|string index|integer" },
+
         --工具
         { gm_type = GMType.TOOLS, name = "gm_guid_view", desc = "guid信息", comment = "(拆解guid)", args = "guid|integer" },
         { gm_type = GMType.TOOLS, name = "gm_log_format", desc = "日志格式", comment = "0压缩,1格式化", args = "data|string swline|integer" },
@@ -146,6 +148,14 @@ function DevopsGmMgr:gm_collect_gc()
     return { code = 0 }
 end
 
+function DevopsGmMgr:gm_snapshot(snap, service_name, index)
+    local target_id = self:get_target_id(service_name, index)
+    if not target_id then
+        return { code = 1, msg = "the service_name is error" }
+    end
+    return monitor_mgr:call_by_sid(target_id, "rpc_snapshot", snap)
+end
+
 function DevopsGmMgr:gm_guid_view(guid)
     local group, index, time = lcodec.guid_source(guid)
     local group_h, group_l   = (group >> 4) & 0xf, group & 0xf
@@ -162,6 +172,15 @@ function DevopsGmMgr:gm_log_format(data, swline)
     end
     local data_t = lcodec.unserialize(data)
     return lcodec.serialize(data_t, swline)
+end
+
+function DevopsGmMgr:get_target_id(service_name, index)
+    if service_name ~= "" and index ~= 0 then
+        local service_id = sname2sid(service_name)
+        if service_id then
+            return service.make_sid(service_id, index)
+        end
+    end
 end
 
 hive.devops_gm_mgr = DevopsGmMgr()

@@ -126,6 +126,19 @@ function MonitorMgr:call_by_token(token, rpc, ...)
     return { code = code, msg = res }
 end
 
+function MonitorMgr:call_by_sid(sid, rpc, ...)
+    for _, client in self.rpc_server:iterator() do
+        if sid == client.id then
+            local ok, code, res = self.rpc_server:call(client, rpc, ...)
+            if not ok then
+                return { code = 1, msg = "call moniotor node failed!" }
+            end
+            return { code = code, msg = res }
+        end
+    end
+    return { code = 1, msg = "target is nil" }
+end
+
 function MonitorMgr:send_by_sid(sid, rpc, ...)
     for _, client in self.rpc_server:iterator() do
         if sid == client.id then

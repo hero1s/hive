@@ -1,7 +1,5 @@
-local snapshot = import("utility/snapshot.lua")
-
-local S        = snapshot()
-S:start()
+local mem_monitor        = hive.get("mem_monitor")
+mem_monitor:start()
 
 local tmp = {
     player  = {
@@ -33,6 +31,21 @@ local co  = coroutine.create(function()
     print("hello world")
 end)
 
-S:stop()
-S:print_diff()
+local author =
+{
+    Name = "yaukeywang",
+    Job = "Game Developer",
+    Hobby = "Game, Travel, Gym",
+    City = "Beijing",
+    Country = "China",
+    Ask = function (question)
+        return "My answer is for your question: " .. question .. "."
+    end
+}
+
+_G.Author = author
+
+
+mem_monitor:stop(true)
+
 
