@@ -48,10 +48,10 @@ function math_ext.region(n, min, max)
 end
 
 function math_ext.conv_integer(v)
-    return mtointeger(v) or v
+    return mtointeger(tonumber(v)) or 0
 end
 
 function math_ext.conv_number(v)
-    return mtointeger(v) or tonumber(v) or v
+    return mtointeger(v) or tonumber(v) or 0
 end
 

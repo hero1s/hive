@@ -1,25 +1,25 @@
 --cmdline.lua
-local load          = load
-local ipairs        = ipairs
-local log_err       = logger.err
-local log_info      = logger.info
-local log_warn      = logger.warn
-local tpack         = table.pack
-local smatch        = string.match
-local sgmatch       = string.gmatch
-local sformat       = string.format
-local conv_number   = math_ext.conv_number
-local conv_integer  = math_ext.conv_integer
+local load         = load
+local ipairs       = ipairs
+local log_err      = logger.err
+local log_info     = logger.info
+local log_warn     = logger.warn
+local tpack        = table.pack
+local smatch       = string.match
+local sgmatch      = string.gmatch
+local sformat      = string.format
+local conv_number  = math_ext.conv_number
+local conv_integer = math_ext.conv_integer
 
 --空白模式定义
-local blank = "[%s]+"
+local blank        = "[%s]+"
 --参数类型模式定义
 --参数支持类型：table/float/integer/string
-local patterns = {
-    table = "({.*})",
+local patterns     = {
+    table   = "({.*})",
     integer = "([%-]?%d+)",
-    float = "([%-]?%d+[%.]?%d+)",
-    string = "[\"\']?([^%s]-)[\"\']?",
+    float   = "([%-]?%d+[%.]?%d+)",
+    string  = "[\"\']?([^%s]-)[\"\']?",
 }
 
 local function conv_table(v)
@@ -49,24 +49,24 @@ end
 
 --转换参数
 local function convert_args(args, cmd_define)
-    local define_args = cmd_define.args
+    local define_args       = cmd_define.args
     local fmtargs, fmtinfos = { args[1] }, { "cmd" }
     for i = 2, #args do
-        local def_arg = define_args[i - 1]
+        local def_arg           = define_args[i - 1]
         fmtinfos[#fmtinfos + 1] = def_arg.name
-        fmtargs[#fmtargs + 1] = convert_arg(def_arg.type, args[i])
+        fmtargs[#fmtargs + 1]   = convert_arg(def_arg.type, args[i])
     end
     return {
-        args = fmtargs,
-        info = fmtinfos,
-        name = args[1],
-        type = cmd_define.type,
+        args    = fmtargs,
+        info    = fmtinfos,
+        name    = args[1],
+        type    = cmd_define.type,
         service = cmd_define.service
     }
 end
 
 local Cmdline = singleton()
-local prop = property(Cmdline)
+local prop    = property(Cmdline)
 prop:reader("command_defines", {})
 
 function Cmdline:__init()
@@ -82,12 +82,12 @@ function Cmdline:register_command(name, command, desc, comment, cmd_type, servic
         log_warn("[Cmdline][register_command] command (%s) repeat registered!", name)
         return false
     end
-    local def_args = {}
-    local cmd_define = {type = cmd_type, desc = desc, comment = comment, command = command, service = service }
+    local def_args   = {}
+    local cmd_define = { type = cmd_type, desc = desc, comment = comment, command = command, service = service }
     for arg_name, arg_type in sgmatch(command, "([%a%d%_]+)|([%a%d%_]+)") do
-        def_args[#def_args + 1] = {name = arg_name, type = arg_type}
+        def_args[#def_args + 1] = { name = arg_name, type = arg_type }
     end
-    cmd_define.args = def_args
+    cmd_define.args            = def_args
     self.command_defines[name] = cmd_define
     log_info("[Cmdline][register_command] command (%s) registered!", name)
     return true
@@ -97,13 +97,13 @@ end
 --参数解析
 --cmd_data : table参数
 function Cmdline:parser_data(cmd_data)
-    local cmd_name = cmd_data.name
+    local cmd_name   = cmd_data.name
     local cmd_define = self.command_defines[cmd_name]
     if not cmd_define then
         log_err("[Cmdline][parser_data] invalid command (%s): isn't registered!", cmd_name)
         return nil, "invalid command: isn't registered"
     end
-    local define_args = cmd_define.args
+    local define_args       = cmd_define.args
     local fmtargs, fmtinfos = { cmd_name }, { "cmd" }
     for i, def_arg in ipairs(define_args) do
         local arg = cmd_data[def_arg.name]
@@ -113,13 +113,13 @@ function Cmdline:parser_data(cmd_data)
             return nil, err
         end
         fmtinfos[#fmtinfos + 1] = def_arg.name
-        fmtargs[#fmtargs + 1] = convert_arg(def_arg.type, arg)
+        fmtargs[#fmtargs + 1]   = convert_arg(def_arg.type, arg)
     end
     return {
-        args = fmtargs,
-        info = fmtinfos,
-        name = cmd_name,
-        type = cmd_define.type,
+        args    = fmtargs,
+        info    = fmtinfos,
+        name    = cmd_name,
+        type    = cmd_define.type,
         service = cmd_define.service
     }
 end
@@ -128,7 +128,7 @@ end
 --argument : 字符串参数
 --argument = "push 123456 {dasd} dsadsad -12.36"
 function Cmdline:parser_command(argument)
-    local pattern = "([%a%d%_]+)"
+    local pattern  = "([%a%d%_]+)"
     local cmd_name = smatch(argument, pattern)
     if not cmd_name then
         log_err("[Cmdline][parser_command] invalid command (%s): name parse error!", argument)

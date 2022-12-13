@@ -61,21 +61,6 @@ static void daemon() {
 #endif
 }
 
-static void check_input(luakit::kit_state& lua) {
-#ifdef WIN32
-	if (_kbhit()) {
-		char cur = _getch();
-		if (cur == '\xE0' || cur == '\x0') {
-			if (_kbhit()) {
-				_getch();
-				return;
-			}
-		}
-		lua.run_script(fmt::format("hive.console({:d})", cur));
-	}
-#endif
-}
-
 static int lset_env(lua_State* L) {
 	const char* key = lua_tostring(L, 1);
 	const char* value = lua_tostring(L, 2);
@@ -214,7 +199,6 @@ void hive_app::run() {
 		hive.call([&](std::string err) {
 			LOG_FATAL << "hive run err: " << err;
 			});
-		//check_input(lua);
 	}
 	if (hive.get_function("exit")) {
 		hive.call([&](std::string err) {

@@ -29,7 +29,8 @@ function DevopsGmMgr:register_gm()
     local cmd_list = {
         { gm_type = GMType.DEV_OPS, name = "gm_set_log_level", desc = "设置日志等级", comment = "(all/全部,日志等级debug[1]-fatal[6])", args = "svr_name|string level|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_hotfix", desc = "代码热更新", args = "" },
-        { gm_type = GMType.DEV_OPS, name = "gm_inject", desc = "代码注入", args = "svr_name|string file_name|string code_content|string" },
+        { gm_type = GMType.DEV_OPS, name = "gm_inject", desc = "代码注入",
+          args    = "service_name|string index|integer file_name|string code_content|string" },
         { gm_type = GMType.DEV_OPS, name = "gm_set_server_status", desc = "设置服务器状态", comment = "[0运行1禁开局2强退],延迟(秒),服务/index",
           args    = "status|integer delay|integer service_name|string index|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_hive_quit", desc = "关闭服务器", comment = "[杀进程],延迟(秒)", args = "reason|integer delay|integer" },
@@ -60,8 +61,8 @@ function DevopsGmMgr:gm_hotfix()
     return { code = 0 }
 end
 
-function DevopsGmMgr:gm_inject(svr_name, file_name, code_content)
-    log_debug("[DevopsGmMgr][gm_inject] svr_name:%s, file_name:%s, code_content:%s", svr_name, file_name, code_content)
+function DevopsGmMgr:gm_inject(service_name, index, file_name, code_content)
+    log_debug("[DevopsGmMgr][gm_inject] svr_name:%s:%s, file_name:%s, code_content:%s", service_name, index, file_name, code_content)
     local func = nil
     if file_name ~= "" then
         func = loadfile(file_name)
@@ -69,7 +70,15 @@ function DevopsGmMgr:gm_inject(svr_name, file_name, code_content)
         func = load(code_content)
     end
     if func and func ~= "" then
-        return monitor_mgr:broadcast("rpc_inject", svr_name, sdump(func))
+        if index == 0 then
+            return monitor_mgr:broadcast("rpc_inject", service_name, sdump(func))
+        else
+            local target_id = self:get_target_id(service_name, index)
+            if not target_id then
+                return { code = 1, msg = "the service_name is error" }
+            end
+            return monitor_mgr:call_by_sid(target_id, "rpc_inject", sdump(func))
+        end
     end
     log_err("[DevopsGmMgr][gm_inject] error file_name:%s, code_content:%s", file_name, code_content)
     return { code = -1 }

@@ -114,7 +114,7 @@ end
 
 function MonitorAgent:rpc_inject(code_string)
     local func = load(code_string)
-    func()
+    return func()
 end
 
 function MonitorAgent:rpc_set_server_status(status)

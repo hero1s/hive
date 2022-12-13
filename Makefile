@@ -28,7 +28,6 @@ lua:
 luaext:
 	cd extend/lcurl; make -j4 SOLUTION_DIR=$(CUR_DIR) -f lcurl.mak;
 	cd extend/luaxlsx; make -j4 SOLUTION_DIR=$(CUR_DIR) -f luaxlsx.mak;
-	cd extend/lyyjson; make -j4 SOLUTION_DIR=$(CUR_DIR) -f lyyjson.mak;
 
 share:
 	cd extend/mimalloc; make -j4 SOLUTION_DIR=$(CUR_DIR) -f mimalloc.mak;
