@@ -1,4 +1,4 @@
-local mri            = import("utility/MemoryReferenceInfo.lua")
+local mri            = import("third/MemoryReferenceInfo.lua")
 local tostring       = tostring
 local pairs          = pairs
 local tinsert        = table.insert

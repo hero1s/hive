@@ -66,12 +66,11 @@ end
 
 function UpdateMgr:collect_gc()
     local clock_ms  = lclock_ms()
-    local mem_s     = cut_tail(mem_usage(), 1)
+    local mem       = cut_tail(mem_usage(), 1)
     local lua_mem_s = cut_tail(collectgarbage("count") / 1024, 1)
     collectgarbage("collect")
-    local mem_e     = cut_tail(mem_usage(), 1)
     local lua_mem_e = cut_tail(collectgarbage("count") / 1024, 1)
-    log_warn("[UpdateMgr][collect_gc] %s m --> %s m,lua:%s m --> %s m,cost time:%s", mem_s, mem_e, lua_mem_s, lua_mem_e, lclock_ms() - clock_ms)
+    log_warn("[UpdateMgr][collect_gc] %s m,lua:%s m --> %s m,cost time:%s", mem, lua_mem_s, lua_mem_e, lclock_ms() - clock_ms)
 end
 
 function UpdateMgr:update_next()
@@ -275,8 +274,8 @@ function UpdateMgr:detach_quit(obj)
 end
 
 function UpdateMgr:monitor_mem()
-    local mem       = cut_tail(mem_usage(), 1)
-    local lua_mem   = cut_tail(collectgarbage("count") / 1024, 1)
+    local mem     = cut_tail(mem_usage(), 1)
+    local lua_mem = cut_tail(collectgarbage("count") / 1024, 1)
     local show_flag
     if mem > self.max_mem_usage then
         self.max_mem_usage = mem
