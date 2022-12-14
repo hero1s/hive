@@ -6,11 +6,10 @@ local scheduler  = hive.get("scheduler")
 local ProxyAgent = singleton()
 local prop       = property(ProxyAgent)
 prop:reader("service_name", "proxy")          --地址
-prop:reader("run_thread", false) --是否启用子线程
+prop:reader("run_thread", true) --是否启用子线程
 prop:reader("proxy_mgr", nil)
 
 function ProxyAgent:__init()
-    self.run_thread = environ.status("HIVE_OPEN_WORK_THREAD")
     if self.run_thread then
         --启动代理线程
         scheduler:startup(self.service_name, "proxy")

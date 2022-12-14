@@ -4,6 +4,8 @@ local pairs          = pairs
 local tinsert        = table.insert
 local tsort          = table.sort
 local collectgarbage = collectgarbage
+local log_debug      = logger.debug
+
 local MemMonitor     = singleton()
 local prop           = property(MemMonitor)
 prop:reader("mtrack", {})
@@ -37,7 +39,7 @@ function MemMonitor:track(obj)
     self.mtrack[obj] = tostring(obj)
 end
 
-function MemMonitor:show_track()
+function MemMonitor:show_track(less_num)
     collectgarbage("collect")
     local m = {}
     for k, v in pairs(self.mtrack) do
@@ -48,11 +50,14 @@ function MemMonitor:show_track()
     end
     local l = {}
     for k, v in pairs(m) do
-        tinsert(l, { k, v })
+        if v >= less_num then
+            tinsert(l, { k, v })
+        end
     end
     tsort(l, function(a, b)
         return a[2] > b[2]
     end)
+    log_debug("show track:%s", l)
     return l
 end
 

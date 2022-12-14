@@ -34,6 +34,7 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "rpc_config_reload")
     event_mgr:add_listener(self, "rpc_collect_gc")
     event_mgr:add_listener(self, "rpc_snapshot")
+    event_mgr:add_listener(self, "rpc_count_lua_obj")
 end
 
 -- 连接关闭回调
@@ -110,6 +111,12 @@ function MonitorAgent:rpc_snapshot(snap)
     else
         return mem_monitor:stop(true)
     end
+end
+
+function MonitorAgent:rpc_count_lua_obj(less_num)
+    local obj_counts = show_class_track(less_num)
+    log_warn("rpc_count_lua_obj:%s", obj_counts)
+    return obj_counts
 end
 
 function MonitorAgent:rpc_inject(code_string)

@@ -37,7 +37,7 @@ function DevopsGmMgr:register_gm()
         { gm_type = GMType.DEV_OPS, name = "gm_cfg_reload", desc = "配置表热更新", comment = "(0 本地 1 远程)", args = "is_remote|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_collect_gc", desc = "lua全量gc", comment = "", args = "" },
         { gm_type = GMType.DEV_OPS, name = "gm_snapshot", desc = "lua内存快照", comment = "0开始1结束,服务/index", args = "snap|integer service_name|string index|integer" },
-
+        { gm_type = GMType.DEV_OPS, name = "gm_count_obj", desc = "lua对象计数", comment = "最小个数,服务/index", args = "less_num|integer service_name|string index|integer" },
         --工具
         { gm_type = GMType.TOOLS, name = "gm_guid_view", desc = "guid信息", comment = "(拆解guid)", args = "guid|integer" },
         { gm_type = GMType.TOOLS, name = "gm_log_format", desc = "日志格式", comment = "0压缩,1格式化", args = "data|string swline|integer" },
@@ -73,11 +73,7 @@ function DevopsGmMgr:gm_inject(service_name, index, file_name, code_content)
         if index == 0 then
             return monitor_mgr:broadcast("rpc_inject", service_name, sdump(func))
         else
-            local target_id = self:get_target_id(service_name, index)
-            if not target_id then
-                return { code = 1, msg = "the service_name is error" }
-            end
-            return monitor_mgr:call_by_sid(target_id, "rpc_inject", sdump(func))
+            return self:call_target_rpc(service_name, index, "rpc_inject", sdump(func))
         end
     end
     log_err("[DevopsGmMgr][gm_inject] error file_name:%s, code_content:%s", file_name, code_content)
@@ -158,11 +154,11 @@ function DevopsGmMgr:gm_collect_gc()
 end
 
 function DevopsGmMgr:gm_snapshot(snap, service_name, index)
-    local target_id = self:get_target_id(service_name, index)
-    if not target_id then
-        return { code = 1, msg = "the service_name is error" }
-    end
-    return monitor_mgr:call_by_sid(target_id, "rpc_snapshot", snap)
+    return self:call_target_rpc(service_name, index, "rpc_snapshot", snap)
+end
+
+function DevopsGmMgr:gm_count_obj(less_num, service_name, index)
+    return self:call_target_rpc(service_name, index, "rpc_count_lua_obj", less_num)
 end
 
 function DevopsGmMgr:gm_guid_view(guid)
@@ -190,6 +186,14 @@ function DevopsGmMgr:get_target_id(service_name, index)
             return service.make_sid(service_id, index)
         end
     end
+end
+
+function DevopsGmMgr:call_target_rpc(service_name, index, rpc, ...)
+    local target_id = self:get_target_id(service_name, index)
+    if not target_id then
+        return { code = 1, msg = "the service_name is error" }
+    end
+    return monitor_mgr:call_by_sid(target_id, rpc, ...)
 end
 
 hive.devops_gm_mgr = DevopsGmMgr()

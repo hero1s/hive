@@ -12,9 +12,13 @@ local sformat      = string.format
 local dgetinfo     = debug.getinfo
 local getmetatable = getmetatable
 local setmetatable = setmetatable
+local tinsert      = table.insert
+local tsort        = table.sort
 
 --类模板
 local class_tpls   = _ENV.class_tpls or {}
+--类计数
+local class_track  = setmetatable({}, { __mode = "kv" })
 
 local function deep_copy(src, dst)
     local ndst = dst or {}
@@ -117,7 +121,8 @@ local function mt_class_new(class, ...)
         end
         return object
     else
-        local object = object_constructor(class)
+        local object        = object_constructor(class)
+        class_track[object] = object.__source
         return object_init(class, object, ...)
     end
 end
@@ -231,3 +236,23 @@ function conv_class(name)
     end
 end
 
+function show_class_track(less_num)
+    collectgarbage("collect")
+    local m = {}
+    for k, v in pairs(class_track) do
+        if not m[v] then
+            m[v] = 0
+        end
+        m[v] = m[v] + 1
+    end
+    local l = {}
+    for k, v in pairs(m) do
+        if v >= less_num then
+            tinsert(l, { k, v })
+        end
+    end
+    tsort(l, function(a, b)
+        return a[2] > b[2]
+    end)
+    return l
+end
