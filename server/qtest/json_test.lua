@@ -1,8 +1,8 @@
 --json_test.lua
 local lcodec      = require("lcodec")
 local ltimer      = require("ltimer")
-local cjson       = require("lyyjson")
-local yyjson      = require("lcjson")
+local yyjson      = require("lyyjson")
+local cjson       = require("lcjson")
 
 local log_debug   = logger.debug
 local new_guid    = lcodec.guid_new
