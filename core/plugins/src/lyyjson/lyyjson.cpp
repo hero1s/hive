@@ -1,4 +1,3 @@
-#define LUA_LIB
 
 #include <string_view>
 #include <charconv>

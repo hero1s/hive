@@ -87,7 +87,7 @@ local function test_small(json_type, test_code)
     end
     local str      = jencode(t)
     local clock_ms = lclock_ms()
-    local count    = 1000
+    local count    = 10000
     for i = 1, count do
         if test_code == "decode" then
             jdecode(str)

@@ -85,6 +85,12 @@
     <ClInclude Include="src\ltimer\ltimer.h">
       <Filter>ltimer</Filter>
     </ClInclude>
+    <ClInclude Include="src\lyyjson\buffer.hpp">
+      <Filter>lyyjson</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lyyjson\yyjson.h">
+      <Filter>lyyjson</Filter>
+    </ClInclude>
     <ClInclude Include="src\lzset\zset.hpp">
       <Filter>lzset</Filter>
     </ClInclude>
@@ -153,6 +159,12 @@
     <ClCompile Include="src\ltimer\ltimer.cpp">
       <Filter>ltimer</Filter>
     </ClCompile>
+    <ClCompile Include="src\lyyjson\lyyjson.cpp">
+      <Filter>lyyjson</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lyyjson\yyjson.c">
+      <Filter>lyyjson</Filter>
+    </ClCompile>
     <ClCompile Include="src\lzset\lzset.cpp">
       <Filter>lzset</Filter>
     </ClCompile>
@@ -196,6 +208,9 @@
     </Filter>
     <Filter Include="ltimer">
       <UniqueIdentifier>{2DE9C09F-02F5-DF2B-524C-FFBEBC8DE5EE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lyyjson">
+      <UniqueIdentifier>{94B583AF-E585-F213-A47F-B933CA8C13CC}</UniqueIdentifier>
     </Filter>
     <Filter Include="lzset">
       <UniqueIdentifier>{92721C52-59F1-B176-6453-2FAB63F219E9}</UniqueIdentifier>

@@ -145,6 +145,11 @@ OBJS += $(patsubst $(SRC_DIR)/ltimer/%.m, $(INT_DIR)/ltimer/%.o, $(filter-out $(
 OBJS += $(patsubst $(SRC_DIR)/ltimer/%.cc, $(INT_DIR)/ltimer/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/ltimer/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/ltimer/%.cpp, $(INT_DIR)/ltimer/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/ltimer/*.cpp)))
 #子目录
+OBJS += $(patsubst $(SRC_DIR)/lyyjson/%.c, $(INT_DIR)/lyyjson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lyyjson/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/lyyjson/%.m, $(INT_DIR)/lyyjson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lyyjson/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/lyyjson/%.cc, $(INT_DIR)/lyyjson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lyyjson/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/lyyjson/%.cpp, $(INT_DIR)/lyyjson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lyyjson/*.cpp)))
+#子目录
 OBJS += $(patsubst $(SRC_DIR)/lzset/%.c, $(INT_DIR)/lzset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lzset/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lzset/%.m, $(INT_DIR)/lzset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lzset/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/lzset/%.cc, $(INT_DIR)/lzset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lzset/*.cc)))
@@ -205,6 +210,7 @@ pre_build:
 	mkdir -p $(INT_DIR)/lrandom
 	mkdir -p $(INT_DIR)/lstdfs
 	mkdir -p $(INT_DIR)/ltimer
+	mkdir -p $(INT_DIR)/lyyjson
 	mkdir -p $(INT_DIR)/lzset
 	mkdir -p $(INT_DIR)/mongo
 	mkdir -p $(INT_DIR)/protobuf

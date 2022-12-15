@@ -35,6 +35,8 @@
     <ClInclude Include="src\lrandom\random.hpp"/>
     <ClInclude Include="src\ltimer\croncpp.h"/>
     <ClInclude Include="src\ltimer\ltimer.h"/>
+    <ClInclude Include="src\lyyjson\buffer.hpp"/>
+    <ClInclude Include="src\lyyjson\yyjson.h"/>
     <ClInclude Include="src\lzset\zset.hpp"/>
     <ClInclude Include="src\protobuf\pb.h"/>
     <ClInclude Include="src\tools\helper.h"/>
@@ -59,6 +61,8 @@
     <ClCompile Include="src\lrandom\lrandom.cpp"/>
     <ClCompile Include="src\lstdfs\lstdfs.cpp"/>
     <ClCompile Include="src\ltimer\ltimer.cpp"/>
+    <ClCompile Include="src\lyyjson\lyyjson.cpp"/>
+    <ClCompile Include="src\lyyjson\yyjson.c"/>
     <ClCompile Include="src\lzset\lzset.cpp"/>
     <ClCompile Include="src\mongo\lua-mongo.c"/>
     <ClCompile Include="src\protobuf\pb.c"/>
