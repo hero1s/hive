@@ -18,12 +18,16 @@ function OnlineAgent:__init()
 end
 
 --执行远程rpc消息
-function OnlineAgent:cas_dispatch_lobby(open_id, req)
-    return router_mgr:call_online_hash(open_id, "rpc_cas_dispatch_lobby", req)
+function OnlineAgent:cas_dispatch_lobby(open_id, lobby_id)
+    return router_mgr:call_online_hash(open_id, "rpc_cas_dispatch_lobby", open_id, lobby_id)
 end
 
-function OnlineAgent:rm_dispatch_lobby(open_id, req)
-    return router_mgr:call_online_hash(open_id, "rpc_rm_dispatch_lobby", req)
+function OnlineAgent:login_dispatch_lobby(open_id, lobby_id)
+    return router_mgr:call_online_hash(open_id, "rpc_login_dispatch_lobby", open_id, lobby_id)
+end
+
+function OnlineAgent:rm_dispatch_lobby(open_id, lobby_id)
+    return router_mgr:call_online_hash(open_id, "rpc_rm_dispatch_lobby", open_id, lobby_id)
 end
 
 function OnlineAgent:login_player(player_id)
@@ -31,7 +35,7 @@ function OnlineAgent:login_player(player_id)
 end
 
 function OnlineAgent:logout_player(player_id)
-    return router_mgr:call_online_hash(player_id, "rpc_logout_player", player_id)
+    return router_mgr:call_online_hash(player_id, "rpc_logout_player", player_id, hive.id)
 end
 
 function OnlineAgent:query_player(player_id)

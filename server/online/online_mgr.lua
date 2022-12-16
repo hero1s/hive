@@ -3,18 +3,22 @@
 --本模块维护了所有在线玩家的索引,即: player_id --> lobbysvr-id
 --当然,不在线的玩家查询结果就是nil:)
 --这里维护的在线状态仅供一般性消息中转用,登录状态判定以数据库中记录为准
-local pairs      = pairs
-local tunpack    = table.unpack
-local tpack      = table.pack
-local tremove    = table.remove
-local log_info   = logger.info
-local KernCode   = enum("KernCode")
-local SUCCESS    = KernCode.SUCCESS
+local pairs            = pairs
+local tunpack          = table.unpack
+local tpack            = table.pack
+local tremove          = table.remove
+local log_info         = logger.info
+local log_warn         = logger.warn
+local log_err          = logger.err
+local KernCode         = enum("KernCode")
+local SUCCESS          = KernCode.SUCCESS
+local id2nick          = service.id2nick
+local event_mgr        = hive.get("event_mgr")
+local router_mgr       = hive.get("router_mgr")
+local update_mgr       = hive.get("update_mgr")
+local due_time <const> = 3600
 
-local event_mgr  = hive.get("event_mgr")
-local router_mgr = hive.get("router_mgr")
-
-local OnlineMgr  = singleton()
+local OnlineMgr        = singleton()
 function OnlineMgr:__init()
     self.lobbys        = {}     --在线玩家
     self.lobby_players = {}     --lobby玩家索引
@@ -22,6 +26,7 @@ function OnlineMgr:__init()
 
     --初始化，注册事件
     event_mgr:add_listener(self, "rpc_cas_dispatch_lobby")
+    event_mgr:add_listener(self, "rpc_login_dispatch_lobby")
     event_mgr:add_listener(self, "rpc_rm_dispatch_lobby")
     event_mgr:add_listener(self, "rpc_login_player")
     event_mgr:add_listener(self, "rpc_logout_player")
@@ -33,6 +38,18 @@ function OnlineMgr:__init()
     event_mgr:add_listener(self, "rpc_send_transfer_message")
 
     router_mgr:watch_service_close(self, "lobby")
+
+    update_mgr:attach_minute(self)
+end
+
+function OnlineMgr:on_minute()
+    local cur_time = hive.now
+    for k, v in pairs(self.oid2lobby) do
+        if not v.login_time and cur_time > v.dtime then
+            self.oid2lobby[k] = nil
+            log_warn("[OnlineMgr][on_minute] remove due open_id:%s", k)
+        end
+    end
 end
 
 --rpc协议处理
@@ -46,8 +63,8 @@ function OnlineMgr:on_service_close(id, service_name)
         end
         self.lobby_players[id] = {}
         -- 清理lobby分配信息 存在bug,需要处理 toney
-        for oid, lobby_id in pairs(self.oid2lobby) do
-            if lobby_id == id then
+        for oid, lobby in pairs(self.oid2lobby) do
+            if lobby.lobby_id == id then
                 self.oid2lobby[oid] = nil
             end
         end
@@ -56,53 +73,73 @@ end
 
 --角色分配lobby
 --类cas操作，如果lobby_id一致或者为nill返回lobby_id，否则返回indexsvr上的原值
-function OnlineMgr:rpc_cas_dispatch_lobby(rpc_req)
-    local lobby_id = self:find_lobby_dispatch(rpc_req.open_id)
-    if not lobby_id then
-        self:update_lobby_dispatch(rpc_req.open_id, rpc_req.lobby_id)
-        lobby_id = rpc_req.lobby_id
+function OnlineMgr:rpc_cas_dispatch_lobby(open_id, lobby_id)
+    local lid = self:find_lobby_dispatch(open_id)
+    if not lid then
+        self.oid2lobby[open_id] = { lobby_id = lobby_id, dtime = hive.now + due_time }
+        lid                     = lobby_id
     end
-    return SUCCESS, lobby_id
+    log_info("[OnlineMgr][rpc_cas_dispatch_lobby] open_id:%s,%s-->%s", open_id, id2nick(lobby_id), id2nick(lid))
+    return SUCCESS, lid
+end
+
+-- 分配的lobby登录成功
+function OnlineMgr:rpc_login_dispatch_lobby(open_id, lobby_id)
+    local lobby = self.oid2lobby[open_id]
+    if not lobby then
+        self.oid2lobby[open_id] = { lobby_id = lobby_id, login_time = hive.now }
+        return SUCCESS
+    end
+    if lobby.lobby_id ~= lobby_id then
+        log_err("[OnlineMgr][rpc_login_dispatch_lobby] the lobby is error:%s,%s--%s", open_id, id2nick(lobby_id), lobby)
+        return
+    end
+    lobby.login_time = hive.now
+    log_info("[OnlineMgr][rpc_login_dispatch_lobby] open_id:%s,%s", open_id, id2nick(lobby_id))
+    return SUCCESS
 end
 
 -- 移除lobby分配
-function OnlineMgr:rpc_rm_dispatch_lobby(rpc_req)
-    self:update_lobby_dispatch(rpc_req.open_id, nil)
+function OnlineMgr:rpc_rm_dispatch_lobby(open_id, lobby_id)
+    local lobby = self.oid2lobby[open_id]
+    if not lobby or lobby.lobby_id ~= lobby_id then
+        log_err("[OnlineMgr][rpc_rm_dispatch_lobby] the lobby is error:%s,%s--%s", open_id, lobby_id, lobby)
+        return
+    end
+    self.oid2lobby[open_id] = nil
+    log_info("[OnlineMgr][rpc_rm_dispatch_lobby] open_id:%s,%s", open_id, id2nick(lobby_id))
     return SUCCESS
 end
 
 -- 获取玩家当前的小区分配信息
 function OnlineMgr:find_lobby_dispatch(open_id)
-    local pid2lid = self.oid2lobby[open_id]
-    if not pid2lid then
+    local lobby = self.oid2lobby[open_id]
+    if not lobby then
         return nil
     end
-    return pid2lid
-end
-
--- 设置玩家当前的小区分配信息
-function OnlineMgr:update_lobby_dispatch(open_id, lobby_id)
-    self.oid2lobby[open_id] = lobby_id
+    return lobby.lobby_id
 end
 
 --角色登陆
-function OnlineMgr:rpc_login_player(player_id, lobby)
-    log_info("[OnlineMgr][rpc_login_player]: %s, %s", player_id, lobby)
-    self.lobbys[player_id] = lobby
-    if not self.lobby_players[lobby] then
-        self.lobby_players[lobby] = {}
+function OnlineMgr:rpc_login_player(player_id, lobby_id)
+    log_info("[OnlineMgr][rpc_login_player]: %s, %s", player_id, id2nick(lobby_id))
+    self.lobbys[player_id] = lobby_id
+    if not self.lobby_players[lobby_id] then
+        self.lobby_players[lobby_id] = {}
     end
-    self.lobby_players[lobby][player_id] = true
+    self.lobby_players[lobby_id][player_id] = true
     return SUCCESS
 end
 
 --角色登出
-function OnlineMgr:rpc_logout_player(player_id)
-    log_info("[OnlineMgr][rpc_logout_player]: %s", player_id)
-    local lobby = self.lobbys[player_id]
-    if lobby then
-        self.lobbys[player_id] = nil
-        self.lobby_players[lobby][player_id] = nil
+function OnlineMgr:rpc_logout_player(player_id, lobby_id)
+    log_info("[OnlineMgr][rpc_logout_player]: %s,%s", player_id, id2nick(lobby_id))
+    local lid = self.lobbys[player_id]
+    if lid == lobby_id then
+        self.lobbys[player_id]                  = nil
+        self.lobby_players[lobby_id][player_id] = nil
+    else
+        log_err("[OnlineMgr][rpc_logout_player] the lobb_id is error:%s,%s--%s", player_id, lobby_id, lid)
     end
     return SUCCESS
 end
@@ -119,8 +156,8 @@ function OnlineMgr:rpc_transfer_message(player_id, rpc, ...)
     if not lobby then
         return KernCode.PLAYER_NOT_EXIST, "player not online!"
     end
-    local res   = tpack(router_mgr:call_target(lobby, rpc, ...))
-    local ok    = tremove(res, 1)
+    local res = tpack(router_mgr:call_target(lobby, rpc, ...))
+    local ok  = tremove(res, 1)
     if not ok then
         local code = #res > 0 and res[1] or nil
         return KernCode.RPC_FAILED, code

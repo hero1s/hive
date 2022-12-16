@@ -84,8 +84,11 @@ end
 function ProtobufMgr:decode(cmd_id, pb_str)
     local proto_name = self.pb_indexs[cmd_id]
     if not proto_name then
-        log_err("[ProtobufMgr][decode] find proto name failed! cmd_id:%s", cmd_id)
-        return nil
+        if type(cmd_id) ~= "string" then
+            log_err("[ProtobufMgr][decode] find proto name failed! cmd_id:%s", cmd_id)
+            return
+        end
+        proto_name = cmd_id
     end
     local ok, pb_data = pcall(pb_decode, proto_name, pb_str)
     if ok then
@@ -97,7 +100,7 @@ local function pbenum(full_name)
     return function(_, enum_name)
         local enum_val = pb_enum_id(full_name, enum_name)
         if not enum_val then
-            log_err("[pbenum] no enum %s.%s", full_name, enum_name)
+            log_err("[ProtobufMgr][pbenum] no enum %s.%s", full_name, enum_name)
         end
         return enum_val
     end

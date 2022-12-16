@@ -240,7 +240,7 @@ function ConfigTable:find_group(key_name, ...)
     end
     local group = groups[group_index]
     if not group then
-        log_err("[ConfigTable][find_group] table=%s row group not found. index=%s", self.name, group_index)
+        log_info("[ConfigTable][find_group] table=%s row group not found. index=%s", self.name, group_index)
     end
     return group
 end

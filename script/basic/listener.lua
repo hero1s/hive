@@ -11,9 +11,9 @@ local dtraceback = debug.traceback
 local Listener   = class()
 function Listener:__init()
     self._triggers  = {}     -- map<event, {{listener, func_name}, ...}
-    self._listeners = {}    -- map<event, listener>
+    self._listeners = {}     -- map<event, listener>
     self._commands  = {}     -- map<cmd, listener>
-    self._ignores   = {}      -- map<cmd, bool>
+    self._ignores   = {}     -- map<cmd, bool>
 end
 
 function Listener:verify_trigger(trigger)

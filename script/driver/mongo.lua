@@ -124,7 +124,7 @@ function MongoDB:sort_param(param)
             end
         end
     else
-        log_err("sort_param is not table:%s", param)
+        log_err("[MongoDB][sort_param]sort_param is not table:%s", param)
     end
     return bson_encode_o(tunpack(dst))
 end
@@ -176,7 +176,7 @@ function MongoDB:auth(username, password)
     local server_key = lhmac_sha1(salted_pass, "Server Key")
     local server_sig = lb64encode(lhmac_sha1(server_key, auth_msg))
     if payload_continue['v'] ~= server_sig then
-        log_err("Server returned an invalid signature.")
+        log_err("[MongoDB][auth] Server returned an invalid signature.")
         return false
     end
     if not cdoc.done then

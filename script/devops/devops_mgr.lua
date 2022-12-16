@@ -45,7 +45,7 @@ function DevopsMgr:file_pid_oper(is_create)
         end
         local file = io.open(filename, "w")
         if not file then
-            log_err(sformat("open pid file %s failed!", filename))
+            log_err(sformat("[DevopsMgr][file_pid_oper]open pid file %s failed!", filename))
             return
         end
         file:write(hive.pid)
