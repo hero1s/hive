@@ -72,8 +72,11 @@ end
 function ProtobufMgr:encode(cmd_id, data)
     local proto_name = self.pb_indexs[cmd_id]
     if not proto_name then
-        log_err("[ProtobufMgr][encode] find proto name failed! cmd_id:%s", cmd_id)
-        return nil
+        if type(cmd_id) ~= "string" then
+            log_err("[ProtobufMgr][encode] find proto name failed! cmd_id:%s", cmd_id)
+            return
+        end
+        proto_name = cmd_id
     end
     local ok, pb_str = pcall(pb_encode, proto_name, data or {})
     if ok then

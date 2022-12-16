@@ -122,6 +122,8 @@ namespace tools
 		uint64_t mem = 0;
 		PROCESS_MEMORY_COUNTERS pmc;
 		HANDLE process = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+		if (process == NULL)return 0;
+
 		if (GetProcessMemoryInfo(process, &pmc, sizeof(pmc))) {
 			mem = pmc.WorkingSetSize;
 		}

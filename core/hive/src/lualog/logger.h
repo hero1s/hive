@@ -154,8 +154,8 @@ namespace logger {
             free_messages_->clear();
         }
         std::shared_ptr<log_message> allocate() {
-            if (alloc_messages_->empty()) {
-                std::unique_lock<spin_mutex> lock(mutex_);
+            std::unique_lock<spin_mutex> lock(mutex_);
+            if (alloc_messages_->empty()) {                
                 alloc_messages_.swap(free_messages_);
             }
             if (alloc_messages_->empty()) {
