@@ -5,7 +5,6 @@ local log_err      = logger.err
 local log_info     = logger.info
 local log_warn     = logger.warn
 local log_debug    = logger.debug
-local signal_quit  = signal.quit
 local sidhash      = service.hash
 local sid2nick     = service.id2nick
 local sid2name     = service.id2name
@@ -16,7 +15,6 @@ local KernCode     = enum("KernCode")
 local RpcServer    = import("network/rpc_server.lua")
 
 local socket_mgr   = hive.get("socket_mgr")
-local config_mgr   = hive.get("config_mgr")
 
 local RouterServer = singleton()
 local prop         = property(RouterServer)
@@ -28,19 +26,9 @@ function RouterServer:__init()
 end
 
 function RouterServer:setup()
-    local host        = hive.host
-    local router_db   = config_mgr:init_table("router", "host")
-    local router_conf = router_db:find_one(host)
-    if not router_conf then
-        log_err("[RouterServer][setup] router_conf is nil host:%s", host)
-        signal_quit()
-        return
-    end
-    --因为按host简化配置，可以重复index, 需要重定义routerid
-    hive.id         = service.router_id(router_conf.host_id, hive.index)
-    hive.name       = service.router_name(router_conf.host_id, hive.index)
+    local port      = environ.number("HIVE_ROUTER_PORT", 9001)
     --启动server
-    self.rpc_server = RpcServer(self, "0.0.0.0", router_conf.port, true)
+    self.rpc_server = RpcServer(self, "0.0.0.0", port, true)
     service.make_node(self.rpc_server:get_port())
 end
 

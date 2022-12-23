@@ -56,6 +56,7 @@ function NetServer:setup(ip, port, induce)
     if not ip or not port then
         log_err("[NetServer][setup] ip:%s or port:%s is nil", ip, port)
         signal_quit()
+        return
     end
     local socket_mgr = hive.get("socket_mgr")
     local real_port  = induce and (port + hive.index - 1) or port
@@ -63,6 +64,7 @@ function NetServer:setup(ip, port, induce)
     if not self.listener then
         log_err("[NetServer][setup] failed to listen: %s:%d type=%d", ip, real_port, self.proto_type)
         signal_quit()
+        return
     end
     self.ip, self.port = ip, real_port
     log_info("[NetServer][setup] start listen at: %s:%d type=%d", ip, real_port, self.proto_type)

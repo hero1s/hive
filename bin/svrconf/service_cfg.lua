@@ -89,6 +89,31 @@ return {
         hash = 0, --[[ 服务固定hash ]]
     },
     {
+        id = 18, --[[ 服务id ]]
+        name = 'web', --[[ 服务名字 ]]
+        hash = 0, --[[ 服务固定hash ]]
+    },
+    {
+        id = 19, --[[ 服务id ]]
+        name = 'rank', --[[ 服务名字 ]]
+        hash = 0, --[[ 服务固定hash ]]
+    },
+    {
+        id = 20, --[[ 服务id ]]
+        name = 'login', --[[ 服务名字 ]]
+        hash = 0, --[[ 服务固定hash ]]
+    },
+    {
+        id = 21, --[[ 服务id ]]
+        name = 'idip', --[[ 服务名字 ]]
+        hash = 0, --[[ 服务固定hash ]]
+    },
+    {
+        id = 22, --[[ 服务id ]]
+        name = 'tlog_client', --[[ 服务名字 ]]
+        hash = 0, --[[ 服务固定hash ]]
+    },
+    {
         id = 50, --[[ 服务id ]]
         name = 'tencent_sdk', --[[ 服务名字 ]]
         hash = 1, --[[ 服务固定hash ]]
@@ -96,11 +121,11 @@ return {
     {
         id = 51, --[[ 服务id ]]
         name = 'cachesvr', --[[ 服务名字 ]]
-        hash = 2, --[[ 服务固定hash ]]
+        hash = 1, --[[ 服务固定hash ]]
     },
     {
         id = 52, --[[ 服务id ]]
         name = 'online', --[[ 服务名字 ]]
-        hash = 2, --[[ 服务固定hash ]]
+        hash = 1, --[[ 服务固定hash ]]
     },
 }

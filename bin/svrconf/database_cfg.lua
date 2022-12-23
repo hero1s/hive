@@ -24,6 +24,16 @@ return {
         passwd = '', --[[ 密码 ]]
     },
     {
+        driver = 'mongo', --[[ 类型 ]]
+        name = 'activity', --[[ 别名 ]]
+        db = 'klbq_activity', --[[ 数据库名 ]]
+        default = false, --[[ 默认数据库 ]]
+        host = '10.100.0.48', --[[ ip地址 ]]
+        port = 27019, --[[ 端口 ]]
+        user = '', --[[ 账号 ]]
+        passwd = '', --[[ 密码 ]]
+    },
+    {
         driver = 'redis', --[[ 类型 ]]
         name = 'redis', --[[ 别名 ]]
         db = 'redis', --[[ 数据库名 ]]

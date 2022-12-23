@@ -20,7 +20,7 @@ void set_keepalive(socket_t fd, int enable) {
 void set_reuseaddr(socket_t fd) {
 	int one = 1;
 #ifdef _MSC_VER
-	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&one, sizeof(one));
+	//setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&one, sizeof(one)); win不开启
 #else
 	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
 #endif

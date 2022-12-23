@@ -25,6 +25,7 @@ function MonitorAgent:__init()
     local ip, port = env_addr("HIVE_MONITOR_ADDR")
     self.client    = RpcClient(self, ip, port)
     --注册事件
+    event_mgr:add_listener(self, "rpc_update_router_nodes")
     event_mgr:add_listener(self, "rpc_hive_quit")
     event_mgr:add_listener(self, "on_remote_message")
     event_mgr:add_listener(self, "rpc_reload")
@@ -39,7 +40,7 @@ end
 
 -- 连接关闭回调
 function MonitorAgent:on_socket_error(client, token, err)
-    --log_err("[MonitorAgent][on_socket_error] disconnect monitor fail!:[%s:%s],err:%s", self.client.ip, self.client.port,err)
+    log_info("[MonitorAgent][on_socket_error] disconnect monitor fail!:[%s:%s],err:%s", self.client.ip, self.client.port,err)
 end
 
 -- 连接成回调
@@ -60,6 +61,17 @@ function MonitorAgent:service_request(api_name, data)
         return tunpack(res)
     end
     return false
+end
+
+-- 更新路由
+function MonitorAgent:rpc_update_router_nodes(router_nodes)
+    local router_mgr = hive.get("router_mgr")
+    if router_mgr then
+        for id, node in pairs(router_nodes) do
+            log_info("[MonitorAgent][rpc_update_router_nodes] %s,%s:%s", service.id2nick(id), node.host, node.port)
+            router_mgr:add_router(id, node.host, node.port)
+        end
+    end
 end
 
 -- 处理Monitor通知退出消息

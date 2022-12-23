@@ -31,12 +31,14 @@ function RpcServer:__init(holder, ip, port, induce)
     if not ip or not port then
         log_err("[RpcServer][setup] ip:%s or port:%s is nil", ip, port)
         signal_quit()
+        return
     end
     local real_port = induce and (port + hive.index - 1) or port
     self.listener   = socket_mgr.listen(ip, real_port)
     if not self.listener then
         log_err("[RpcServer][setup] now listen %s:%s failed", ip, real_port)
         signal_quit()
+        return
     end
     self.holder        = holder
     self.ip, self.port = ip, real_port

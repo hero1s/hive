@@ -74,6 +74,9 @@ function string_ext.trim(str)
     return (str:gsub("^%s*(.-)%s*$", "%1"))
 end
 
+function string_ext.usplit(str, token)
+    return tunpack(ssplit(str, token))
+end
 
 
 

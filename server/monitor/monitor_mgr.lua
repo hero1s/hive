@@ -13,6 +13,7 @@ local log_debug   = logger.debug
 local log_err     = logger.err
 local readfile    = io_ext.readfile
 local sformat     = string.format
+local id2nick     = service.id2nick
 
 local PeriodTime  = enum("PeriodTime")
 
@@ -27,6 +28,7 @@ prop:reader("rpc_server", nil)
 prop:reader("http_server", nil)
 prop:reader("monitor_nodes", {})
 prop:reader("monitor_lost_nodes", {})
+prop:reader("router_nodes", {})
 
 function MonitorMgr:__init()
     --创建rpc服务器
@@ -74,15 +76,24 @@ end
 
 -- 会话信息
 function MonitorMgr:on_client_register(client, node_info)
-    log_info("[MonitorMgr][on_client_register] node token:%s,%s", client.token, node_info.name)
+    log_debug("[MonitorMgr][on_client_register] node token:%s,%s,%s", client.token, id2nick(node_info.id), node_info)
     node_info.token                       = client.token
     self.monitor_nodes[client.token]      = node_info
     self.monitor_lost_nodes[node_info.id] = nil
+    --路由服节点
+    if node_info.service_name == "router" then
+        self.router_nodes[node_info.id] = { id = node_info.id, host = node_info.host, port = node_info.port }
+        for token, cli in self.rpc_server:iterator() do
+            self.rpc_server:send(cli, "rpc_update_router_nodes", self.router_nodes)
+        end
+    else
+        self.rpc_server:send(client, "rpc_update_router_nodes", self.router_nodes)
+    end
 end
 
 -- 会话关闭回调
 function MonitorMgr:on_client_error(client, token, err)
-    log_warn("[MonitorMgr][on_client_error] node name:%s, id:%s, token:%s,err:%s", service.id2nick(client.id), client.id, token, err)
+    log_warn("[MonitorMgr][on_client_error] node name:%s, id:%s, token:%s,err:%s", id2nick(client.id), client.id, token, err)
     if client.id then
         self.monitor_lost_nodes[client.id] = self.monitor_nodes[token]
         self.monitor_nodes[token]          = nil

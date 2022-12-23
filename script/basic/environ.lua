@@ -4,11 +4,16 @@ local luabus      = require("luabus")
 local tonumber  = tonumber
 local ogetenv   = os.getenv
 local tunpack   = table.unpack
+local sgsub     = string.gsub
+local sgmatch   = string.gmatch
 local saddr     = string_ext.addr
 local ssplit    = string_ext.split
+local usplit    = string_ext.usplit
 local protoaddr = string_ext.protoaddr
 
 environ = {}
+
+local pattern = "(%a+)://([^:]+):([^@]+)@([^/]+)/?([^?]*)[%?]?(.*)"
 
 function environ.init()
     hive.mode = environ.number("HIVE_MODE", 1)
@@ -50,4 +55,54 @@ end
 
 function environ.table(key, str)
     return ssplit(ogetenv(key) or "", str or ",")
+end
+
+local function parse_hosts(value)
+    local hosts = {}
+    local strs = ssplit(value, ",")
+    for _, str in pairs(strs) do
+        local k, v = usplit(str, ":")
+        if k then
+            hosts[k] = v
+        end
+    end
+    return hosts
+end
+
+local function parse_options(value)
+    local opts = {}
+    local strs = ssplit(value, "&")
+    for _, str in pairs(strs) do
+        local k, v = usplit(str, "=")
+        if k and v then
+            opts[k] = v
+        end
+    end
+    return opts
+end
+
+local function parse_driver(value)
+    local driver, usn, psd, hosts, db, opts = sgmatch(value, pattern)()
+    if driver then
+        return {
+            db = db, user = usn,
+            passwd = psd, driver = driver,
+            opts = parse_options(opts),
+            hosts = parse_hosts(hosts)
+        }
+    end
+end
+--标准化url驱动配置
+function environ.driver(key)
+    local value = ogetenv(key)
+    if value then
+        local drivers = {}
+        local value1 = sgsub(value, " ", "")
+        local value2 = sgsub(value1, "\n", "")
+        local strs = ssplit(value2, ";")
+        for i, str in ipairs(strs) do
+            drivers[i] = parse_driver(str)
+        end
+        return drivers
+    end
 end

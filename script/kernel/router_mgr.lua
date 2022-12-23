@@ -36,8 +36,6 @@ end
 
 --初始化
 function RouterMgr:setup()
-    --router配置
-    self:load_router()
     --router接口
     self:build_service()
     --注册事件
@@ -49,13 +47,9 @@ function RouterMgr:setup()
 end
 
 --添加router
-function RouterMgr:add_router(router_conf, index)
-    log_debug("[RouterMgr][add_router] %s,%s", router_conf, index)
-    local router_id = service.router_id(router_conf.host_id, index)
+function RouterMgr:add_router(router_id, host, port)
     if not self.routers[router_id] then
-        local host              = router_conf.host
-        --端口推导
-        local port              = router_conf.port + (index - 1)
+        log_debug("[RouterMgr][add_router] %s,%s:%s", id2nick(router_id), host, port)
         local RpcClient         = import("network/rpc_client.lua")
         self.routers[router_id] = {
             addr      = host,
@@ -222,16 +216,6 @@ end
 --发送给指定service的master
 function RouterMgr:send_master(service_id, rpc, ...)
     return self:forward_client(self:hash_router(service_id), "call_master", rpc, 0, service_id, rpc, ...)
-end
-
---router加载
-function RouterMgr:load_router()
-    local router_db = config_mgr:init_table("router", "host")
-    for _, router_conf in router_db:iterator() do
-        for index = 1, router_conf.count do
-            self:add_router(router_conf, index)
-        end
-    end
 end
 
 --生成针对服务的访问接口
