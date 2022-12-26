@@ -52,7 +52,7 @@ namespace lworker {
             return false;
         }
 
-        bool callback(slice* buf) {
+        bool call(slice* buf) {
             if (buf->size() < BUFFER_MAX) {
                 std::unique_lock<spin_mutex> lock(m_mutex);
                 if (m_write_buf->write<uint32_t>(buf->size()) > 0) {

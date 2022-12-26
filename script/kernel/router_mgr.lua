@@ -16,7 +16,6 @@ local jumphash         = lcodec.jumphash
 
 local thread_mgr       = hive.get("thread_mgr")
 local event_mgr        = hive.get("event_mgr")
-local config_mgr       = hive.get("config_mgr")
 
 local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 

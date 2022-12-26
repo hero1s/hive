@@ -3,24 +3,29 @@ import("basic/basic.lua")
 import("basic/json.lua")
 import("kernel/mem_monitor.lua")
 import("kernel/config_mgr.lua")
-local lcodec     = require("lcodec")
-local ltimer     = require("ltimer")
+local lcodec      = require("lcodec")
+local ltimer      = require("ltimer")
 
-local pcall      = pcall
-local log_err    = logger.err
-local tpack      = table.pack
-local tunpack    = table.unpack
-local raw_yield  = coroutine.yield
-local raw_resume = coroutine.resume
-local lencode    = lcodec.encode_slice
-local ldecode    = lcodec.decode_slice
-local ltime      = ltimer.time
+local pcall       = pcall
+local log_err     = logger.err
+local tpack       = table.pack
+local tunpack     = table.unpack
+local raw_yield   = coroutine.yield
+local raw_resume  = coroutine.resume
+local lencode     = lcodec.encode_slice
+local ldecode     = lcodec.decode_slice
+local ltime       = ltimer.time
 
-local event_mgr  = hive.get("event_mgr")
-local co_hookor  = hive.load("co_hookor")
-local socket_mgr = hive.load("socket_mgr")
-local update_mgr = hive.load("update_mgr")
-local thread_mgr = hive.load("thread_mgr")
+local event_mgr   = hive.get("event_mgr")
+local co_hookor   = hive.load("co_hookor")
+local socket_mgr  = hive.load("socket_mgr")
+local update_mgr  = hive.load("update_mgr")
+local thread_mgr  = hive.load("thread_mgr")
+
+local TITLE       = hive.get_title()
+local FLAG_REQ    = hive.enum("FlagMask", "REQ")
+local FLAG_RES    = hive.enum("FlagMask", "RES")
+local RPC_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 
 --初始化网络
 local function init_network()
@@ -102,7 +107,7 @@ end
 --底层驱动
 hive.run = function()
     if socket_mgr then
-        socket_mgr.wait(10)
+        socket_mgr.wait(20)
     end
     hive.update()
     --系统更新
@@ -110,14 +115,23 @@ hive.run = function()
 end
 
 --事件分发
-local function worker_rpc(session_id, rpc, ...)
+local function notify_rpc(session_id, rpc, ...)
     if rpc == "stop" then
         hive.stop()
         return
     end
     local rpc_datas = event_mgr:notify_listener(rpc, ...)
     if session_id > 0 then
-        hive.callback(lencode(session_id, tunpack(rpc_datas)))
+        hive.call(lencode(session_id, FLAG_RES, tunpack(rpc_datas)))
+    end
+end
+
+--事件分发
+local function worker_rpc(session_id, flag, ...)
+    if flag == FLAG_REQ then
+        notify_rpc(session_id, ...)
+    else
+        thread_mgr:response(session_id, ...)
     end
 end
 
@@ -131,4 +145,16 @@ hive.on_worker = function(slice)
     thread_mgr:fork(function()
         worker_rpc(tunpack(rpc_res, 2))
     end)
+end
+
+--访问主线程任务
+hive.call_master = function(rpc, ...)
+    local session_id = thread_mgr:build_session_id()
+    hive.call(lencode(session_id, FLAG_REQ, TITLE, rpc, ...))
+    return thread_mgr:yield(session_id, "call_master", RPC_TIMEOUT)
+end
+
+--访问其他线程任务
+hive.send_master = function(rpc, ...)
+    hive.call(lencode(0, FLAG_REQ, "", rpc, ...))
 end
