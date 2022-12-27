@@ -19,12 +19,13 @@ prop:reader("mode", "text")         --发送类型(text/binary)
 prop:reader("clients", {})          --clients
 prop:reader("handlers", {})         --get_handlers
 
-function WSServer:__init(ws_addr)
-    self:setup(ws_addr)
+function WSServer:__init(ws_addr, induce)
+    self:setup(ws_addr,induce)
 end
 
-function WSServer:setup(ws_addr)
+function WSServer:setup(ws_addr, induce)
     self.ip, self.port = saddr(ws_addr)
+    self.port          = induce and (self.port + hive.index - 1) or self.port
     local socket       = WebSocket(self)
     if not socket:listen(self.ip, self.port) then
         log_info("[WSServer][setup] now listen %s failed", ws_addr)

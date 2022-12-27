@@ -28,12 +28,13 @@ prop:reader("del_handlers", {})     --del_handlers
 prop:reader("post_handlers", {})    --post_handlers
 prop:accessor("limit_ips", nil)
 
-function HttpServer:__init(http_addr)
-    self:setup(http_addr)
+function HttpServer:__init(http_addr, induce)
+    self:setup(http_addr, induce)
 end
 
-function HttpServer:setup(http_addr)
+function HttpServer:setup(http_addr, induce)
     self.ip, self.port = saddr(http_addr)
+    self.port          = induce and (self.port + hive.index - 1) or self.port
     local socket       = Socket(self)
     if not socket:listen(self.ip, self.port) then
         log_info("[HttpServer][setup] now listen %s failed", http_addr)

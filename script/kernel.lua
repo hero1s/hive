@@ -37,11 +37,9 @@ end
 
 --加载monitor
 local function init_monitor()
-    if environ.status("HIVE_JOIN_MONITOR") then
-        import("agent/monitor_agent.lua")
-        if not environ.get("HIVE_MONITOR_HOST") then
-            import("kernel/netlog_mgr.lua")
-        end
+    import("agent/monitor_agent.lua")
+    if not environ.get("HIVE_MONITOR_HOST") then
+        import("kernel/netlog_mgr.lua")
     end
 end
 
