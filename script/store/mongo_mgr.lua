@@ -31,13 +31,17 @@ end
 --初始化
 function MongoMgr:setup()
     local MongoDB  = import("driver/mongo.lua")
-    local database = config_mgr:init_table("database", "db", "driver")
+    local database = config_mgr:init_table("database", "name")
     for _, conf in database:iterator() do
-        if conf.driver == "mongo" then
-            local mongo_db            = MongoDB(conf)
-            self.mongo_dbs[conf.name] = mongo_db
-            if conf.default then
-                self.default_db = mongo_db
+        local drivers = environ.driver(conf.url)
+        if drivers and #drivers > 0 then
+            local dconf = drivers[1]
+            if dconf.driver == "mongodb" then
+                local mongo_db            = MongoDB(dconf)
+                self.mongo_dbs[conf.name] = mongo_db
+                if conf.default then
+                    self.default_db = mongo_db
+                end
             end
         end
     end

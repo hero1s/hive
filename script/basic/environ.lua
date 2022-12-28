@@ -1,5 +1,5 @@
 --environ.lua
-local luabus      = require("luabus")
+local luabus    = require("luabus")
 
 local tonumber  = tonumber
 local ogetenv   = os.getenv
@@ -11,12 +11,12 @@ local ssplit    = string_ext.split
 local usplit    = string_ext.usplit
 local protoaddr = string_ext.protoaddr
 
-environ = {}
+environ         = {}
 
-local pattern = "(%a+)://([^:]+):([^@]+)@([^/]+)/?([^?]*)[%?]?(.*)"
+local pattern   = "(%a+)://([^:]+):([^@]+)@([^/]+)/?([^?]*)[%?]?(.*)"
 
 function environ.init()
-    hive.mode = environ.number("HIVE_MODE", 1)
+    hive.mode   = environ.number("HIVE_MODE", 1)
     hive.lan_ip = luabus.lan_ip()
 end
 
@@ -59,7 +59,7 @@ end
 
 local function parse_hosts(value)
     local hosts = {}
-    local strs = ssplit(value, ",")
+    local strs  = ssplit(value, ",")
     for _, str in pairs(strs) do
         local k, v = usplit(str, ":")
         if k then
@@ -85,21 +85,20 @@ local function parse_driver(value)
     local driver, usn, psd, hosts, db, opts = sgmatch(value, pattern)()
     if driver then
         return {
-            db = db, user = usn,
+            db     = db, user = usn,
             passwd = psd, driver = driver,
-            opts = parse_options(opts),
-            hosts = parse_hosts(hosts)
+            opts   = parse_options(opts),
+            hosts  = parse_hosts(hosts)
         }
     end
 end
 --标准化url驱动配置
-function environ.driver(key)
-    local value = ogetenv(key)
-    if value then
+function environ.driver(url)
+    if url then
         local drivers = {}
-        local value1 = sgsub(value, " ", "")
-        local value2 = sgsub(value1, "\n", "")
-        local strs = ssplit(value2, ";")
+        local value1  = sgsub(url, " ", "")
+        local value2  = sgsub(value1, "\n", "")
+        local strs    = ssplit(value2, ";")
         for i, str in ipairs(strs) do
             drivers[i] = parse_driver(str)
         end

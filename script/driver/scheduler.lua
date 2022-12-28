@@ -51,11 +51,11 @@ end
 
 function Scheduler:stop(name)
     if name then
-        self:call(name, "stop")
+        self:send(name, "stop")
         self.services[name] = nil
     else
         for _, v in pairs(self.services) do
-            self:call(v, "stop")
+            self:send(v, "stop")
             self.services[v] = nil
         end
     end

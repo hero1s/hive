@@ -22,13 +22,17 @@ end
 --初始化
 function ClickHouseMgr:setup()
     local MysqlDB = import("driver/mysql.lua")
-    local database = config_mgr:init_table("database", "db", "driver")
+    local database = config_mgr:init_table("database", "name")
     for _, conf in database:iterator() do
-        if conf.driver == "clickhouse" then
-            local clickhouse_db = MysqlDB(conf)
-            self.clickhouse_dbs[conf.name] = clickhouse_db
-            if conf.default then
-                self.default_db = clickhouse_db
+        local drivers = environ.driver(conf.url)
+        if drivers and #drivers > 0 then
+            local dconf = drivers[1]
+            if dconf.driver == "clickhouse" then
+                local clickhouse_db = MysqlDB(dconf)
+                self.clickhouse_dbs[conf.name] = clickhouse_db
+                if conf.default then
+                    self.default_db = clickhouse_db
+                end
             end
         end
     end

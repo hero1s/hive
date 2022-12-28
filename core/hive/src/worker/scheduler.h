@@ -96,6 +96,15 @@ namespace lworker {
             }
         }
 
+        void shut_down() {
+            std::unique_lock<spin_mutex> lock(m_mutex);
+            for (auto it:m_worker_map) {               
+                for (auto it2 = it.second.begin(); it2 != it.second.end(); ++it2) {
+                    (*it2)->stop();
+                }              
+            }
+        }
+
     private:
         spin_mutex m_mutex;
         std::string m_service, m_sandbox;

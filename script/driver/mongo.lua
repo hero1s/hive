@@ -45,15 +45,16 @@ prop:reader("user", nil)        --user
 prop:reader("passwd", nil)      --passwd
 prop:reader("cursor_id", nil)   --cursor_id
 prop:reader("sessions", {})     --sessions
+prop:reader("readpref", nil)    --readPreference
 
 function MongoDB:__init(conf)
-    self.ip        = conf.host
-    self.port      = conf.port
     self.user      = conf.user
     self.passwd    = conf.passwd
     self.name      = conf.db
     self.sock      = Socket(self)
     self.cursor_id = bson.int64(0)
+    self:choose_mongos(conf.hosts)
+    self:set_options(conf.opts)
     --attach_second
     update_mgr:attach_minute(self)
     update_mgr:attach_second(self)
@@ -66,6 +67,21 @@ end
 function MongoDB:close()
     if self.sock then
         self.sock:close()
+    end
+end
+
+function MongoDB:choose_mongos(hosts)
+    for host, port in pairs(hosts) do
+        self.ip, self.port = host, port
+        break
+    end
+end
+
+function MongoDB:set_options(opts)
+    for key, value in pairs(opts) do
+        if key == "readPreference" then
+            self.readpref = { mode = value }
+        end
     end
 end
 
@@ -303,7 +319,7 @@ function MongoDB:count(co_name, query, limit, skip)
 end
 
 function MongoDB:find_one(co_name, query, projection)
-    local succ, reply = self:runCommand("find", co_name, "filter", query, "projection" or {}, projection, "limit", 1)
+    local succ, reply = self:runCommand("find", co_name, "$readPreference", self.readpref, "filter", query, "projection" or {}, projection, "limit", 1)
     if not succ then
         return succ, reply
     end
@@ -318,7 +334,7 @@ function MongoDB:find(co_name, query, projection, sortor, limit, skip)
     if sortor and next(sortor) then
         sortor = self:sort_param(sortor)
     end
-    local succ, reply = self:runCommand("find", co_name, "filter", query, "projection", projection or {}, "sort", sortor or {}, "limit", limit or 100, "skip", skip or 0)
+    local succ, reply = self:runCommand("find", co_name, "$readPreference", self.readpref, "filter", query, "projection", projection or {}, "sort", sortor or {}, "limit", limit or 100, "skip", skip or 0)
     if not succ then
         return succ, reply
     end

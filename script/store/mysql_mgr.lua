@@ -21,13 +21,17 @@ end
 --初始化
 function MysqlMgr:setup()
     local MysqlDB  = import("driver/mysql.lua")
-    local database = config_mgr:init_table("database", "db", "driver")
+    local database = config_mgr:init_table("database", "name")
     for _, conf in database:iterator() do
-        if conf.driver == "mysql" then
-            local mysql_db          = MysqlDB(conf)
-            self.mysql_dbs[conf.name] = mysql_db
-            if conf.default then
-                self.default_db = mysql_db
+        local drivers = environ.driver(conf.url)
+        if drivers and #drivers > 0 then
+            local dconf = drivers[1]
+            if dconf.driver == "mysql" then
+                local mysql_db          = MysqlDB(dconf)
+                self.mysql_dbs[conf.name] = mysql_db
+                if conf.default then
+                    self.default_db = mysql_db
+                end
             end
         end
     end

@@ -316,8 +316,6 @@ prop:reader("subscribe_sessions", nil)  --subscribe_sessions
 prop:reader("subscribe_context", nil)  --subscribe_sessions
 
 function RedisDB:__init(conf)
-    self.ip                 = conf.host
-    self.port               = conf.port
     self.index              = conf.index
     self.passwd             = conf.passwd
     self.command_sock       = Socket(self)
@@ -325,6 +323,8 @@ function RedisDB:__init(conf)
     self.command_sessions   = QueueFIFO()
     self.subscribe_sessions = QueueFIFO()
     self.subscribe_context  = { name = "subcribe_monitor" }
+    self:choose_rediss(conf.hosts)
+    self:set_options(conf.opts)
     --update
     update_mgr:attach_second(self)
     --setup
@@ -361,6 +361,17 @@ function RedisDB:close()
         self:clear_session(self.subscribe_sock, "action-close")
         self.subscribe_sock:close()
     end
+end
+
+function RedisDB:choose_rediss(hosts)
+    for host, port in pairs(hosts) do
+        self.ip, self.port = host, port
+        break
+    end
+end
+
+function RedisDB:set_options(opts)
+
 end
 
 function RedisDB:login(socket, title)

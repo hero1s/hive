@@ -117,8 +117,14 @@ function UpdateMgr:update(now_ms, clock_ms)
             end)
         end
         self.last_frame = clock_ms + FAST_MS
+
+        --检查信号
+        if self:sig_check() then
+            return
+        end
+
         --秒更新
-        local now       = now_ms // 1000
+        local now = now_ms // 1000
         if now == hive.now then
             return
         end
@@ -128,8 +134,6 @@ function UpdateMgr:update(now_ms, clock_ms)
                 obj:on_second(clock_ms)
             end)
         end
-        --检查信号
-        self:sig_check()
         --执行gc
         collectgarbage("step", 1)
         --分更新
@@ -162,12 +166,18 @@ end
 
 function UpdateMgr:sig_check()
     if sig_check and sig_check() then
-        log_info("[UpdateMgr][sig_check]service quit for signal !")
-        for obj in pairs(self.quit_objs) do
-            obj:on_quit()
+        if hive.run then
+            hive.run = nil
+            log_info("[UpdateMgr][sig_check]service quit for signal !")
+            for obj in pairs(self.quit_objs) do
+                thread_mgr:fork(function()
+                    obj:on_quit()
+                end)
+            end
         end
-        hive.run = nil
+        return true
     end
+    return false
 end
 
 function UpdateMgr:check_new_day()

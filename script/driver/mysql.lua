@@ -609,13 +609,13 @@ prop:accessor("charset", "_default")        --charset
 prop:accessor("max_packet_size", 1024 * 1024) --max_packet_size,1mb
 
 function MysqlDB:__init(conf)
-    self.ip       = conf.host
     self.db       = conf.db
-    self.port     = conf.port
     self.user     = conf.user
     self.passwd   = conf.passwd
     self.sessions = QueueFIFO()
     self.sock     = Socket(self)
+    self:choose_mysqls(conf.hosts)
+    self:set_options(conf.opts)
     --update
     update_mgr:attach_minute(self)
     update_mgr:attach_second(self)
@@ -630,6 +630,17 @@ function MysqlDB:close()
         self.sessions:clear()
         self.sock:close()
     end
+end
+
+function MysqlDB:choose_mysqls(hosts)
+    for host, port in pairs(hosts) do
+        self.ip, self.port = host, port
+        break
+    end
+end
+
+function MysqlDB:set_options(opts)
+
 end
 
 function MysqlDB:on_minute()

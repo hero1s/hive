@@ -205,6 +205,7 @@ void hive_app::run() {
 			LOG_FATAL << "hive exit err: " << err;
 			});
 	}
+	m_schedulor.shut_down();
 	lua.close();
 	log_service::instance()->stop();
 }
