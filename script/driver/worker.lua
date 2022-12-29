@@ -107,7 +107,7 @@ end
 --底层驱动
 hive.run = function()
     if socket_mgr then
-        socket_mgr.wait(20)
+        socket_mgr.wait(10)
     end
     hive.update()
     --系统更新
@@ -116,10 +116,6 @@ end
 
 --事件分发
 local function notify_rpc(session_id, rpc, ...)
-    if rpc == "stop" then
-        hive.stop()
-        return
-    end
     local rpc_datas = event_mgr:notify_listener(rpc, ...)
     if session_id > 0 then
         hive.call(lencode(session_id, FLAG_RES, tunpack(rpc_datas)))

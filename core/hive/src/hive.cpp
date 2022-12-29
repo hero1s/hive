@@ -206,6 +206,7 @@ void hive_app::run() {
 			});
 	}
 	m_schedulor.shut_down();
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	lua.close();
 	log_service::instance()->stop();
 }

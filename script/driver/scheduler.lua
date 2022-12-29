@@ -27,7 +27,7 @@ function Scheduler:__init()
 end
 
 function Scheduler:on_quit()
-    self:stop()
+
 end
 
 function Scheduler:on_frame()
@@ -47,18 +47,6 @@ function Scheduler:startup(name, entry)
     self.services[name] = name
     log_info("[Scheduler][startup] startup %s: %s", name, entry)
     return ok
-end
-
-function Scheduler:stop(name)
-    if name then
-        self:send(name, "stop")
-        self.services[name] = nil
-    else
-        for _, v in pairs(self.services) do
-            self:send(v, "stop")
-            self.services[v] = nil
-        end
-    end
 end
 
 --访问其他线程任务

@@ -30,13 +30,23 @@ function DevopsMgr:attach_service()
     end
 end
 
+--pid文件名
+function DevopsMgr:pid_file_name(no_index)
+    local no_index = environ.status("HIVE_PID_NOINDEX")
+    if no_index then
+        return sformat("./pid/%s.txt", env_get("HIVE_SERVICE"))
+    else
+        return sformat("./pid/%s_%s.txt", env_get("HIVE_SERVICE"), hive.index)
+    end
+end
+
 --写入pid文件
 function DevopsMgr:file_pid_oper(is_create)
     if hive.platform == "windows" then
         return
     end
     local lstdfs   = require("lstdfs")
-    local filename = sformat("./pid/%s_%s.txt", env_get("HIVE_SERVICE"), hive.index)
+    local filename = self:pid_file_name()
     if is_create then
         local is_dir = lstdfs.is_directory("./pid")
         if is_dir ~= true then

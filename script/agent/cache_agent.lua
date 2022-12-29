@@ -7,14 +7,16 @@ local router_mgr   = hive.get("router_mgr")
 
 local RPC_FAILED   = hive.enum("KernCode", "RPC_FAILED")
 local CACHE_BOTH   = hive.enum("CacheType", "BOTH")
+local CACHE_READ   = hive.enum("CacheType", "READ")
 
 local CacheAgent   = singleton()
 function CacheAgent:__init()
 end
 
 -- 加载
-function CacheAgent:load(primary_key, cache_name, cache_type)
-    local req_data           = { cache_name, primary_key, cache_type or CACHE_BOTH }
+function CacheAgent:load(primary_key, cache_name, read_only)
+    local cache_type         = read_only and CACHE_READ or CACHE_BOTH
+    local req_data           = { cache_name, primary_key, cache_type }
     local ok, code, row_data = router_mgr:call_cachesvr_hash(primary_key, "rpc_cache_load", hive.id, req_data)
     if check_failed(code, ok) then
         log_err("[CacheAgent][load] code=%s,pkey=%s,cache=%s", code, primary_key, cache_name)

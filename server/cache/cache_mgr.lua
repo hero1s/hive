@@ -173,7 +173,7 @@ function CacheMgr:rpc_cache_load(hive_id, req_data)
     local cache_name, primary_key, cache_type = tunpack(req_data)
     local code, cache_obj                     = self:get_cache_obj(hive_id, cache_name, primary_key, cache_type or CacheType.READ)
     if SUCCESS ~= code then
-        log_err("[CacheMgr][rpc_cache_load] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
+        log_err("[CacheMgr][rpc_cache_load] cache obj not find! cache_name=%s,primary=%s,cache_type=%s", cache_name, primary_key, cache_type)
         return code
     end
     log_info("[CacheMgr][rpc_cache_load] hive_id=%s,cache=%s,primary=%s,cache_type=%s", hive_id, cache_name, primary_key, cache_type)
