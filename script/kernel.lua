@@ -97,25 +97,25 @@ function hive.init()
     --主循环
     init_coroutine()
     init_mainloop()
-    --网络
-    if hive.mode < HiveMode.TINY then
-        --加载统计
+    if hive.mode <= HiveMode.TOOL then
         import("kernel/perfeval_mgr.lua")
         import("kernel/statis_mgr.lua")
         init_network()
         --加载协议
         import("kernel/protobuf_mgr.lua")
     end
-    --其他模块加载
-    if hive.mode == HiveMode.SERVICE then
-        init_router()
+    if hive.mode <= HiveMode.ROUTER then
         --加载调度器
         init_scheduler()
         --加载monotor
         init_monitor()
-        --挂载运维附加逻辑
-        import("devops/devops_mgr.lua")
     end
+    --其他模块加载
+    if hive.mode == HiveMode.SERVICE then
+        init_router()
+    end
+    --挂载运维附加逻辑
+    import("devops/devops_mgr.lua")
 end
 
 function hive.hook_coroutine(hooker)

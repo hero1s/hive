@@ -25,9 +25,9 @@ KernCode.REDIS_FAILED             = 104   --REDIS执行失败
 local HiveMode                    = enum("HiveMode", 0)
 HiveMode.STANDLONE                = 0     --独立模式(不加载lua框架,此处仅列举,配置无效)
 HiveMode.SERVICE                  = 1     --服务模式(加载全量)
-HiveMode.TOOL                     = 2     --工具模式(加载基础和网络)
-HiveMode.TINY                     = 3     --精简模式(加载基础)
-HiveMode.ROUTER                   = 4     --路由模式(加载路由)
+HiveMode.ROUTER                   = 2     --路由模式(加载路由)
+HiveMode.TOOL                     = 3     --工具模式(加载基础和网络)
+HiveMode.TINY                     = 4     --精简模式(加载基础)
 
 --协议投flag掩码
 local FlagMask                    = enum("FlagMask", 0)
