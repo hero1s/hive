@@ -27,7 +27,7 @@ function Scheduler:__init()
 end
 
 function Scheduler:on_quit()
-
+    hive.worker_shutdown()
 end
 
 function Scheduler:on_frame()

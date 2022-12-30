@@ -9,6 +9,7 @@ local log_info       = logger.info
 local log_warn       = logger.warn
 local log_err        = logger.err
 local sig_check      = signal.check
+local tunpack        = table.unpack
 local collectgarbage = collectgarbage
 local cut_tail       = math_ext.cut_tail
 local is_same_day    = datetime_ext.is_same_day
@@ -17,6 +18,7 @@ local timer_mgr      = hive.get("timer_mgr")
 local thread_mgr     = hive.get("thread_mgr")
 local event_mgr      = hive.get("event_mgr")
 
+local WTITLE         = hive.worker_title
 local FAST_MS        = hive.enum("PeriodTime", "FAST_MS")
 local HALF_MS        = hive.enum("PeriodTime", "HALF_MS")
 local SECOND_5_MS    = hive.enum("PeriodTime", "SECOND_5_MS")
@@ -78,10 +80,10 @@ function UpdateMgr:update_next()
         thread_mgr:fork(handler)
     end
     self.next_handlers = {}
-    for key, events in pairs(self.next_events) do
-        for event, arg in pairs(events) do
+    for _, events in pairs(self.next_events) do
+        for event, args in pairs(events) do
             thread_mgr:fork(function()
-                event_mgr:notify_trigger(event, key, arg)
+                event_mgr:notify_trigger(event, tunpack(args))
             end)
         end
     end
@@ -119,7 +121,7 @@ function UpdateMgr:update(now_ms, clock_ms)
         self.last_frame = clock_ms + FAST_MS
 
         --检查信号
-        if self:sig_check() then
+        if not WTITLE and self:check_signal() then
             return
         end
 
@@ -164,11 +166,11 @@ function UpdateMgr:update(now_ms, clock_ms)
     end)
 end
 
-function UpdateMgr:sig_check()
-    if sig_check and sig_check() then
+function UpdateMgr:check_signal()
+    if sig_check() then
         if hive.run then
             hive.run = nil
-            log_info("[UpdateMgr][sig_check]service quit for signal !")
+            log_info("[UpdateMgr][check_signal]service quit for signal !")
             for obj in pairs(self.quit_objs) do
                 thread_mgr:fork(function()
                     obj:on_quit()
@@ -261,13 +263,13 @@ function UpdateMgr:attach_next(key, func)
 end
 
 --下一帧执行一个事件
-function UpdateMgr:attach_event(key, event, arg)
+function UpdateMgr:attach_event(key, event, ...)
     local events = self.next_events[key]
     if not events then
-        self.next_events[key] = { [event] = arg }
+        self.next_events[key] = { [event] = { ... } }
         return
     end
-    events[event] = arg
+    events[event] = { ... }
 end
 
 --添加对象到程序退出通知列表

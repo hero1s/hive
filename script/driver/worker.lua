@@ -22,7 +22,7 @@ local socket_mgr  = hive.load("socket_mgr")
 local update_mgr  = hive.load("update_mgr")
 local thread_mgr  = hive.load("thread_mgr")
 
-local TITLE       = hive.get_title()
+local WTITLE      = hive.worker_title
 local FLAG_REQ    = hive.enum("FlagMask", "REQ")
 local FLAG_RES    = hive.enum("FlagMask", "RES")
 local RPC_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
@@ -132,7 +132,7 @@ local function worker_rpc(session_id, flag, ...)
 end
 
 --rpc调用
-hive.on_worker = function(slice)
+hive.on_worker   = function(slice)
     local rpc_res = tpack(pcall(ldecode, slice))
     if not rpc_res[1] then
         log_err("[hive][on_worker] decode failed %s!", rpc_res[2])
@@ -146,7 +146,7 @@ end
 --访问主线程任务
 hive.call_master = function(rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    hive.call(lencode(session_id, FLAG_REQ, TITLE, rpc, ...))
+    hive.call(lencode(session_id, FLAG_REQ, WTITLE, rpc, ...))
     return thread_mgr:yield(session_id, "call_master", RPC_TIMEOUT)
 end
 

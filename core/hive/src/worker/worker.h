@@ -106,10 +106,10 @@ namespace lworker {
 
         void run(){
             auto hive = m_lua->new_table(m_service.c_str());
+            hive.set("worker_title", m_name);
             hive.set("logtag", fmt::format("[{}]", m_name));
             hive.set_function("stop", [&]() { stop(); });
             hive.set_function("update", [&]() { update(); });
-            hive.set_function("get_title", [&]() { return m_name; });
             hive.set_function("getenv", [&](const char* key) { return get_env(key); });
             hive.set_function("call", [&](slice* buf) { return m_schedulor->call(buf); });
             m_lua->run_script(fmt::format("require '{}'", m_sandbox), [&](std::string err) {

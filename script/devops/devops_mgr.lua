@@ -31,7 +31,7 @@ function DevopsMgr:attach_service()
 end
 
 --pid文件名
-function DevopsMgr:pid_file_name(no_index)
+function DevopsMgr:pid_file_name()
     local no_index = environ.status("HIVE_PID_NOINDEX")
     if no_index then
         return sformat("./pid/%s.txt", env_get("HIVE_SERVICE"))

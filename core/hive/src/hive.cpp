@@ -185,6 +185,7 @@ void hive_app::run() {
 	hive.set_function("worker_call", [&](std::string name, slice* buf, size_t hash) {
 		return m_schedulor.call(name, buf, hash);
 		});
+	hive.set_function("worker_shutdown", [&]() { m_schedulor.shut_down(); });
 	//end worker接口
 
 	if (getenv("HIVE_SANDBOX") != NULL) {

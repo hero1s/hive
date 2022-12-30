@@ -12,6 +12,7 @@ local log_warn         = logger.warn
 local log_err          = logger.err
 local KernCode         = enum("KernCode")
 local SUCCESS          = KernCode.SUCCESS
+local FAILED           = KernCode.FAILED
 local id2nick          = service.id2nick
 local event_mgr        = hive.get("event_mgr")
 local router_mgr       = hive.get("router_mgr")
@@ -92,7 +93,7 @@ function OnlineMgr:rpc_login_dispatch_lobby(open_id, lobby_id)
     end
     if lobby.lobby_id ~= lobby_id then
         log_err("[OnlineMgr][rpc_login_dispatch_lobby] the lobby is error:%s,%s--%s", open_id, id2nick(lobby_id), lobby)
-        return
+        return FAILED
     end
     lobby.login_time = hive.now
     log_info("[OnlineMgr][rpc_login_dispatch_lobby] open_id:%s,%s", open_id, id2nick(lobby_id))
@@ -104,7 +105,7 @@ function OnlineMgr:rpc_rm_dispatch_lobby(open_id, lobby_id)
     local lobby = self.oid2lobby[open_id]
     if not lobby or lobby.lobby_id ~= lobby_id then
         log_err("[OnlineMgr][rpc_rm_dispatch_lobby] the lobby is error:%s,%s--%s", open_id, lobby_id, lobby)
-        return
+        return SUCCESS
     end
     self.oid2lobby[open_id] = nil
     log_info("[OnlineMgr][rpc_rm_dispatch_lobby] open_id:%s,%s", open_id, id2nick(lobby_id))
