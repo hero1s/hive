@@ -20,6 +20,7 @@ local thread_mgr   = hive.get("thread_mgr")
 local event_mgr    = hive.get("event_mgr")
 local timer_mgr    = hive.get("timer_mgr")
 local config_mgr   = hive.get("config_mgr")
+local update_mgr   = hive.get("update_mgr")
 
 local obj_table    = config_mgr:init_table("cache_obj", "cache_table")
 local row_table    = config_mgr:init_table("cache_row", "cache_table")
@@ -50,6 +51,12 @@ function CacheMgr:__init()
     timer_mgr:loop(PeriodTime.SECOND_10_MS, function(ms)
         self:on_timer_expire(ms)
     end)
+    -- 退出通知
+    update_mgr:attach_quit(self)
+end
+
+function CacheMgr:on_quit()
+    self:save_all()
 end
 
 function CacheMgr:setup()
@@ -82,20 +89,18 @@ end
 function CacheMgr:on_timer_update()
     --存储脏数据
     if self.flush then
-        for uuid, obj in self.dirty_map:iterator() do
-            thread_mgr:fork(function()
-                if obj:save() then
-                    self.dirty_map:set(uuid, nil)
-                end
-            end)
-        end
+        self:save_all()
         return
     end
     local now_tick = hive.clock_ms
     for uuid, obj in self.dirty_map:wheel_iterator() do
-        if obj:check_store(now_tick) then
+        thread_mgr:fork(function()
             self.dirty_map:set(uuid, nil)
-        end
+            if not obj:check_store(now_tick) then
+                log_err("[CacheMgr][on_timer_update] save faild:%s,add dirty map", uuid)
+                self.dirty_map:set(uuid, obj)
+            end
+        end)
     end
 end
 
@@ -245,6 +250,16 @@ function CacheMgr:rpc_cache_flush(hive_id, req_data)
     end
     log_err("[CacheMgr][rpc_cache_flush] save failed: cache=%s,primary=%s", cache_name, primary_key)
     return CacheCode.CACHE_DELETE_SAVE_FAILD
+end
+
+--全部存档
+function CacheMgr:save_all()
+    for uuid, obj in self.dirty_map:iterator() do
+        thread_mgr:fork(function()
+            self.dirty_map:set(uuid, nil)
+            obj:save()
+        end)
+    end
 end
 
 hive.cache_mgr = CacheMgr()

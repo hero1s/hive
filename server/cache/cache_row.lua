@@ -1,38 +1,39 @@
 -- cache_row.lua
 -- cache单行
-local log_err       = logger.err
-local check_failed  = hive.failed
+local log_err      = logger.err
+local check_failed = hive.failed
 
-local KernCode      = enum("KernCode")
-local CacheCode     = enum("CacheCode")
-local SUCCESS       = KernCode.SUCCESS
+local KernCode     = enum("KernCode")
+local CacheCode    = enum("CacheCode")
+local SUCCESS      = KernCode.SUCCESS
 
-local mongo_mgr     = hive.get("mongo_mgr")
+local mongo_mgr    = hive.get("mongo_mgr")
 
-local CacheRow = class()
-local prop = property(CacheRow)
+local CacheRow     = class()
+local prop         = property(CacheRow)
 prop:accessor("cache_table", nil)       -- cache table
 prop:accessor("cache_key", "")          -- cache key
 prop:accessor("primary_value", nil)     -- primary value
 prop:accessor("total_table", nil)       -- total table
 prop:accessor("db_name", "default")     -- database name
 prop:accessor("dirty", false)           -- dirty
+prop:accessor("first_save", false)      -- first_save
 prop:accessor("data", {})               -- data
 
 --构造函数
 function CacheRow:__init(row_conf, primary_value, total_table, data)
-    self.total_table    = total_table
-    self.primary_value  = primary_value
-    self.cache_table    = row_conf.cache_table
-    self.cache_key      = row_conf.cache_key
-    self.data = data or {}
+    self.total_table   = total_table
+    self.primary_value = primary_value
+    self.cache_table   = row_conf.cache_table
+    self.cache_key     = row_conf.cache_key
+    self.data          = data or {}
 end
 
 --从数据库加载
 function CacheRow:load(db_name)
-    self.db_name = db_name
-    local query = { [self.cache_key] = self.primary_value }
-    local code, res = mongo_mgr:find_one(self.db_name, self.cache_table, query, {_id = 0})
+    self.db_name    = db_name
+    local query     = { [self.cache_key] = self.primary_value }
+    local code, res = mongo_mgr:find_one(self.db_name, self.cache_table, query, { _id = 0 })
     if check_failed(code) then
         log_err("[CacheRow][load] failed: %s=> db: %s, table: %s", res, self.db_name, self.cache_table)
         return code
@@ -46,8 +47,8 @@ function CacheRow:save()
     if self.dirty then
         local selector = { [self.cache_key] = self.primary_value }
         if self.total_table then
-            local update_obj = {["$set"] = { [self.cache_table] = self.data }}
-            local code, res = mongo_mgr:update(self.db_name, self.total_table, update_obj, selector)
+            local update_obj = { ["$set"] = { [self.cache_table] = self.data } }
+            local code, res  = mongo_mgr:update(self.db_name, self.total_table, update_obj, selector)
             if check_failed(code) then
                 log_err("[CacheRow][save] failed: %s=> db: %s, table: %s", res, self.db_name, self.cache_table)
                 return code
@@ -69,14 +70,15 @@ end
 
 --更新数据
 function CacheRow:update(data, flush)
-    self.data = data
+    self.data  = data
     self.dirty = true
-    if flush then
+    if flush or not self.first_save then
         local code = self:save()
         if check_failed(code) then
             log_err("[CacheRow][update] flush failed: db: %s, table: %s", self.db_name, self.cache_table)
             return CacheCode.CACHE_FLUSH_FAILED
         end
+        self.first_save = true
     end
     return SUCCESS
 end

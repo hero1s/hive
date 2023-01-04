@@ -32,6 +32,8 @@ function OnlineMgr:__init()
     event_mgr:add_listener(self, "rpc_login_player")
     event_mgr:add_listener(self, "rpc_logout_player")
     event_mgr:add_listener(self, "rpc_query_player")
+    event_mgr:add_listener(self, "rpc_sync_openid_info")
+    event_mgr:add_listener(self, "rpc_sync_player_info")
     event_mgr:add_listener(self, "rpc_router_message")
     event_mgr:add_listener(self, "rpc_forward_message")
     event_mgr:add_listener(self, "rpc_transfer_message")
@@ -85,10 +87,14 @@ function OnlineMgr:rpc_cas_dispatch_lobby(open_id, lobby_id)
 end
 
 -- 分配的lobby登录成功
-function OnlineMgr:rpc_login_dispatch_lobby(open_id, lobby_id)
+function OnlineMgr:rpc_login_dispatch_lobby(open_id, lobby_id, sync)
     local lobby = self.oid2lobby[open_id]
     if not lobby then
         self.oid2lobby[open_id] = { lobby_id = lobby_id, login_time = hive.now }
+        if not sync then
+            self:sync_openid_info(open_id, lobby_id, true)
+        end
+        log_info("[OnlineMgr][rpc_login_dispatch_lobby] open_id:%s,%s", open_id, id2nick(lobby_id))
         return SUCCESS
     end
     if lobby.lobby_id ~= lobby_id then
@@ -97,17 +103,23 @@ function OnlineMgr:rpc_login_dispatch_lobby(open_id, lobby_id)
     end
     lobby.login_time = hive.now
     log_info("[OnlineMgr][rpc_login_dispatch_lobby] open_id:%s,%s", open_id, id2nick(lobby_id))
+    if not sync then
+        self:sync_openid_info(open_id, lobby_id, true)
+    end
     return SUCCESS
 end
 
 -- 移除lobby分配
-function OnlineMgr:rpc_rm_dispatch_lobby(open_id, lobby_id)
+function OnlineMgr:rpc_rm_dispatch_lobby(open_id, lobby_id, sync)
     local lobby = self.oid2lobby[open_id]
     if not lobby or lobby.lobby_id ~= lobby_id then
         log_err("[OnlineMgr][rpc_rm_dispatch_lobby] the lobby is error:%s,%s--%s", open_id, lobby_id, lobby)
         return SUCCESS
     end
     self.oid2lobby[open_id] = nil
+    if not sync then
+        self:sync_openid_info(open_id, lobby_id, false)
+    end
     log_info("[OnlineMgr][rpc_rm_dispatch_lobby] open_id:%s,%s", open_id, id2nick(lobby_id))
     return SUCCESS
 end
@@ -122,18 +134,21 @@ function OnlineMgr:find_lobby_dispatch(open_id)
 end
 
 --角色登陆
-function OnlineMgr:rpc_login_player(player_id, lobby_id)
+function OnlineMgr:rpc_login_player(player_id, lobby_id, sync)
     log_info("[OnlineMgr][rpc_login_player]: %s, %s", player_id, id2nick(lobby_id))
     self.lobbys[player_id] = lobby_id
     if not self.lobby_players[lobby_id] then
         self.lobby_players[lobby_id] = {}
     end
     self.lobby_players[lobby_id][player_id] = true
+    if not sync then
+        self:sync_player_info(player_id, lobby_id, true)
+    end
     return SUCCESS
 end
 
 --角色登出
-function OnlineMgr:rpc_logout_player(player_id, lobby_id)
+function OnlineMgr:rpc_logout_player(player_id, lobby_id, sync)
     log_info("[OnlineMgr][rpc_logout_player]: %s,%s", player_id, id2nick(lobby_id))
     local lid = self.lobbys[player_id]
     if lid == lobby_id then
@@ -142,12 +157,49 @@ function OnlineMgr:rpc_logout_player(player_id, lobby_id)
     else
         log_err("[OnlineMgr][rpc_logout_player] the lobb_id is error:%s,%s--%s", player_id, lobby_id, lid)
     end
+    if not sync then
+        self:sync_player_info(player_id, lobby_id, false)
+    end
     return SUCCESS
 end
 
 --获取玩家所在的lobby
 function OnlineMgr:rpc_query_player(player_id)
     return SUCCESS, self.lobbys[player_id] or 0
+end
+
+--同步open_id数据到其它online
+function OnlineMgr:sync_openid_info(open_id, lobby_id, online)
+    log_info("[OnlineMgr][sync_openid_info] %s,%s,%s", open_id, lobby_id, online)
+    router_mgr:send_online_all("rpc_sync_openid_info", open_id, lobby_id, online, hive.id)
+end
+
+function OnlineMgr:rpc_sync_openid_info(open_id, lobby_id, online, sid)
+    if sid == hive.id then
+        return
+    end
+    if online then
+        self:rpc_login_dispatch_lobby(open_id, lobby_id, true)
+    else
+        self:rpc_rm_dispatch_lobby(open_id, lobby_id, true)
+    end
+end
+
+--同步player_id数据到其它online
+function OnlineMgr:sync_player_info(player_id, lobby_id, online)
+    log_info("[OnlineMgr][sync_player_info] %s,%s,%s", player_id, lobby_id, online)
+    router_mgr:send_online_all("rpc_sync_player_info", player_id, lobby_id, online, hive.id)
+end
+
+function OnlineMgr:rpc_sync_player_info(player_id, lobby_id, online, sid)
+    if sid == hive.id then
+        return
+    end
+    if online then
+        self:rpc_login_player(player_id, lobby_id, true)
+    else
+        self:rpc_logout_player(player_id, lobby_id, true)
+    end
 end
 
 -------------------------------------------------------------------

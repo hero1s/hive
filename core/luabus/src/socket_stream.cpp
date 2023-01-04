@@ -22,6 +22,9 @@ socket_stream::socket_stream(socket_mgr* mgr, LPFN_CONNECTEX connect_func, eprot
 	m_mgr = mgr;
 	m_connect_func = connect_func;
 	m_ip[0] = 0;
+	if (m_proto_type == eproto_type::proto_pack || m_proto_type == eproto_type::proto_rpc) {
+		m_delay_send = true;
+	}
 }
 #endif
 
@@ -31,6 +34,9 @@ socket_stream::socket_stream(socket_mgr* mgr, eproto_type proto_type, elink_type
 	m_proto_type = proto_type;
 	m_mgr = mgr;
 	m_ip[0] = 0;
+	if (m_proto_type == eproto_type::proto_pack || m_proto_type == eproto_type::proto_rpc) {
+		m_delay_send = true;
+	}
 }
 
 socket_stream::~socket_stream() {
@@ -292,10 +298,6 @@ int socket_stream::stream_send(const char* data, size_t data_len)
 	int send_len = data_len;
 	if (m_link_status != elink_status::link_connected)
 		return 0;
-	if (m_send_buffer.data_len() >= IO_BUFFER_SEND)
-	{
-		do_send(UINT_MAX, false);
-	}
 	while (data_len > 0) {
 		size_t space_len;
 		m_send_buffer.peek_space(&space_len,data_len);
@@ -310,6 +312,10 @@ int socket_stream::stream_send(const char* data, size_t data_len)
 		}
 		data_len -= try_len;
 		data += try_len;
+	}
+	if (m_send_buffer.data_len() >= IO_BUFFER_SEND || !m_delay_send)
+	{
+		do_send(UINT_MAX, false);
 	}
 #if _MSC_VER
 	if (!wsa_send_empty(m_socket, m_send_ovl)) {
