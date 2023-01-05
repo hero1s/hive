@@ -299,14 +299,15 @@ void lua_socket_node::on_recv(char* data, size_t data_len) {
 		if (!m_router->do_forward_hash(&header, data, data_len, m_error_msg))
 			on_forward_error(&header);
 		break;
-	case msg_id::forward_broadcast: {
+	case msg_id::forward_broadcast: 
+		{
 		size_t broadcast_num = 0;
 		if (m_router->do_forward_broadcast(&header, m_token, data, data_len, broadcast_num))
 			on_forward_broadcast(&header, broadcast_num);
 		else
 			on_forward_error(&header);
-	}
-								  break;
+		}
+		break;
 	default:
 		break;
 	}

@@ -160,13 +160,10 @@ end
 
 --同步open_id数据到其它online
 function OnlineMgr:sync_openid_info(open_id, lobby_id, online)
-    router_mgr:send_online_all("rpc_sync_openid_info", open_id, lobby_id, online, hive.id)
+    router_mgr:send_online_all("rpc_sync_openid_info", open_id, lobby_id, online)
 end
 
-function OnlineMgr:rpc_sync_openid_info(open_id, lobby_id, online, sid)
-    if sid == hive.id then
-        return
-    end
+function OnlineMgr:rpc_sync_openid_info(open_id, lobby_id, online)
     log_info("[OnlineMgr][rpc_sync_openid_info] open_id:%s,lobby:%s,%s", open_id, id2nick(lobby_id), online)
     if online then
         self.oid2lobby[open_id] = { lobby_id = lobby_id, login_time = hive.now }
@@ -177,13 +174,10 @@ end
 
 --同步player_id数据到其它online
 function OnlineMgr:sync_player_info(player_id, lobby_id, online)
-    router_mgr:send_online_all("rpc_sync_player_info", player_id, lobby_id, online, hive.id)
+    router_mgr:send_online_all("rpc_sync_player_info", player_id, lobby_id, online)
 end
 
-function OnlineMgr:rpc_sync_player_info(player_id, lobby_id, online, sid)
-    if sid == hive.id then
-        return
-    end
+function OnlineMgr:rpc_sync_player_info(player_id, lobby_id, online)
     log_info("[OnlineMgr][rpc_sync_player_info] player_id:%s,lobby:%s,%s", player_id, id2nick(lobby_id), online)
     if online then
         self.lobbys[player_id] = lobby_id
