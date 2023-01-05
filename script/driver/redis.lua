@@ -323,7 +323,7 @@ function RedisDB:__init(conf)
     self.command_sessions   = QueueFIFO()
     self.subscribe_sessions = QueueFIFO()
     self.subscribe_context  = { name = "subcribe_monitor" }
-    self:choose_rediss(conf.hosts)
+    self:choose_host(conf.hosts)
     self:set_options(conf.opts)
     --update
     update_mgr:attach_second(self)
@@ -363,7 +363,7 @@ function RedisDB:close()
     end
 end
 
-function RedisDB:choose_rediss(hosts)
+function RedisDB:choose_host(hosts)
     for host, port in pairs(hosts) do
         self.ip, self.port = host, port
         break

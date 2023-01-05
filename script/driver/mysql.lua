@@ -614,7 +614,7 @@ function MysqlDB:__init(conf)
     self.passwd   = conf.passwd
     self.sessions = QueueFIFO()
     self.sock     = Socket(self)
-    self:choose_mysqls(conf.hosts)
+    self:choose_host(conf.hosts)
     self:set_options(conf.opts)
     --update
     update_mgr:attach_minute(self)
@@ -632,7 +632,7 @@ function MysqlDB:close()
     end
 end
 
-function MysqlDB:choose_mysqls(hosts)
+function MysqlDB:choose_host(hosts)
     for host, port in pairs(hosts) do
         self.ip, self.port = host, port
         break

@@ -10,7 +10,7 @@ Distributed game server framework based on CPP 17 && LUA 5.4
 * 基于行为树的机器人/单元测试一体化
 * GM命令快速验证
 * 路由协议支持有序及无序模式,支持服务的动态扩容/容灾/hash扩容
-* 支持服务线程模式(不接入集群,只受主线程服务调度)
+* 支持服务线程模式(不接入集群,只与主线程交互)
 
 ## 数据库
   - mysql,clickhouse,mongodb,redis,etcd,influxdb
@@ -61,7 +61,8 @@ Distributed game server framework based on CPP 17 && LUA 5.4
 
 
 ## todo list 
-  - 目前应用于即将上线百万pcu大型实时在线FPS项目,不是实验项目,是实战项目,必须过百万pcu的压测,同步更新优化.多多关注,建议,star
+  - 目前应用于即将上线百万pcu大型实时在线FPS项目,不是实验项目,是实战项目,必须过百万pcu的压测,同步更新优化(部分功能会延迟或简化).多多关注,建议,star
+  - 相互交流&学习&借鉴(个人QQ:8242117)
   - c++ gateway服务
   - 完善文档及工具链,编写demo
   - 优化性能,完善精简代码
