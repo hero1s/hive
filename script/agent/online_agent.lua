@@ -1,8 +1,6 @@
 --online_agent.lua
 local log_info     = logger.info
 local tunpack      = table.unpack
-local sidhash      = service.hash
-local sid2sid      = service.id2sid
 local sid2index    = service.id2index
 
 local event_mgr    = hive.get("event_mgr")
@@ -76,10 +74,8 @@ end
 -- Online服务已经ready
 function OnlineAgent:on_service_ready(id, service_name)
     log_info("[OnlineAgent][on_service_ready]->id:%s, service_name:%s", id, service_name)
-    local service_id    = sid2sid(id)
     local service_index = sid2index(id)
-    local service_hash  = sidhash(service_id)
-    event_mgr:notify_listener("on_rebuild_online", service_hash, service_index)
+    event_mgr:notify_listener("on_rebuild_online", service_index)
 end
 
 hive.online = OnlineAgent()

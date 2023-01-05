@@ -33,7 +33,7 @@ function DevopsGmMgr:register_gm()
           args    = "service_name|string index|integer file_name|string code_content|string" },
         { gm_type = GMType.DEV_OPS, name = "gm_set_server_status", desc = "设置服务器状态", comment = "[0运行1禁开局2强退],延迟(秒),服务/index",
           args    = "status|integer delay|integer service_name|string index|integer" },
-        { gm_type = GMType.DEV_OPS, name = "gm_hive_quit", desc = "关闭服务器", comment = "[杀进程],延迟(秒)", args = "reason|integer delay|integer" },
+        { gm_type = GMType.DEV_OPS, name = "gm_hive_quit", desc = "关闭服务器", comment = "强踢玩家并停服", args = "reason|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_cfg_reload", desc = "配置表热更新", comment = "(0 本地 1 远程)", args = "is_remote|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_collect_gc", desc = "lua全量gc", comment = "", args = "" },
         { gm_type = GMType.DEV_OPS, name = "gm_snapshot", desc = "lua内存快照", comment = "0开始1结束,服务/index", args = "snap|integer service_name|string index|integer" },
@@ -106,11 +106,11 @@ function DevopsGmMgr:gm_set_server_status(status, delay, service_name, index)
     return { code = 0 }
 end
 
-function DevopsGmMgr:gm_hive_quit(reason, delay)
-    log_warn("[DevopsGmMgr][gm_hive_quit] exit hive exe time:%s ", time_str(hive.now + delay))
-    timer_mgr:once(delay * 1000, function()
-        monitor_mgr:broadcast("rpc_hive_quit", 0, reason)
-    end)
+function DevopsGmMgr:gm_hive_quit(reason)
+    log_warn("[DevopsGmMgr][gm_hive_quit] exit hive exe time:%s ", time_str(hive.now))
+    monitor_mgr:broadcast("rpc_set_server_status", 0, ServiceStatus.STOP)
+    thread_mgr:sleep(3000)
+    monitor_mgr:broadcast("rpc_hive_quit", 0, reason)
     return { code = 0 }
 end
 

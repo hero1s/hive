@@ -97,13 +97,6 @@ function RouterServer:service_register(server, id)
         log_err("[RouterServer][rpc_service_register] the serivice is not cfg:%s", service_id)
         return
     end
-    --固定hash不能超过hash值
-    if service_hash > 0 and service_index > service_hash then
-        self.kick_servers[server_token] = id
-        self.rpc_server:send(server, "rpc_service_kickout", hive.id, "service hash illegal")
-        log_warn("[RouterServer][rpc_service_register] service(%s) be kickout, index(%s) > hash(%s)!", server_name, service_index, service_hash)
-        return
-    end
     -- 检查是否顶号
     for exist_token, exist_server in self.rpc_server:iterator() do
         if exist_server.id == id and exist_server.token ~= server_token then
@@ -113,7 +106,9 @@ function RouterServer:service_register(server, id)
             break
         end
     end
-    socket_mgr.map_token(id, server_token, service_hash)
+    --固定hash自动设置为最大index服务[约定固定hash服务的index为连续的1-n,且运行过程中不能扩容]
+    local hash_value = service_hash > 0 and service_index or 0
+    socket_mgr.map_token(id, server_token, hash_value)
     log_info("[RouterServer][rpc_service_register] service: %s,hash:%s", server_name, service_hash)
     --switch master
     local group_master = self.service_masters[service_id] or mhuge
