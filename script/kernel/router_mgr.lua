@@ -302,9 +302,12 @@ function RouterMgr:rpc_service_close(id, router_id)
     if self:is_master_router(router_id) then
         local server_name  = sid2name(id)
         local listener_set = self.close_watchers[server_name]
-        if listener_set then
-            log_info("[RouterMgr][rpc_service_close] %s", id2nick(id))
+        for listener in pairs(listener_set or {}) do
+            thread_mgr:fork(function()
+                listener:on_service_close(id, server_name)
+            end)
         end
+        listener_set = self.close_watchers["*"]
         for listener in pairs(listener_set or {}) do
             thread_mgr:fork(function()
                 listener:on_service_close(id, server_name)
@@ -318,9 +321,12 @@ function RouterMgr:rpc_service_ready(id, router_id)
     if self:is_master_router(router_id) then
         local server_name  = sid2name(id)
         local listener_set = self.ready_watchers[server_name]
-        if listener_set then
-            log_info("[RouterMgr][rpc_service_ready] %s", id2nick(id))
+        for listener in pairs(listener_set or {}) do
+            thread_mgr:fork(function()
+                listener:on_service_ready(id, server_name)
+            end)
         end
+        listener_set = self.ready_watchers["*"]
         for listener in pairs(listener_set or {}) do
             thread_mgr:fork(function()
                 listener:on_service_ready(id, server_name)

@@ -17,7 +17,6 @@ local CacheRow      = import("cache/cache_row.lua")
 local CacheObj      = class()
 local prop          = property(CacheObj)
 prop:accessor("uuid", 0)                -- uuid
-prop:accessor("flush", false)           -- flush status
 prop:accessor("holding", true)          -- holding status
 prop:accessor("cache_total", false)     -- cache total
 prop:accessor("lock_node_id", 0)        -- lock node id
@@ -91,7 +90,6 @@ function CacheObj:load()
 end
 
 function CacheObj:active()
-    self.flush       = false
     self.active_tick = hive.clock_ms
 end
 
@@ -112,13 +110,13 @@ function CacheObj:expired(tick)
         return false
     end
     local escape_time = tick - self.active_tick
-    if self.flush_time > 0 then
-        return escape_time > self.flush_time
+    if self.flush_time > 0 and escape_time > self.flush_time then
+        return true
     end
-    if not self.flush then
-        return false
+    if self.lock_node_id == 0 and escape_time > self.expire_time then
+        return true
     end
-    return escape_time > self.expire_time
+    return false
 end
 
 function CacheObj:need_save(now)

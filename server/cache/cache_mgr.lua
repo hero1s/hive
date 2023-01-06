@@ -22,6 +22,7 @@ local event_mgr    = hive.get("event_mgr")
 local timer_mgr    = hive.get("timer_mgr")
 local config_mgr   = hive.get("config_mgr")
 local update_mgr   = hive.get("update_mgr")
+local router_mgr   = hive.get("router_mgr")
 
 local obj_table    = config_mgr:init_table("cache_obj", "cache_table")
 local row_table    = config_mgr:init_table("cache_row", "cache_table")
@@ -54,6 +55,8 @@ function CacheMgr:__init()
     end)
     -- 退出通知
     update_mgr:attach_quit(self)
+
+    router_mgr:watch_service_close(self, "*")
 end
 
 function CacheMgr:on_quit()
@@ -85,6 +88,18 @@ end
 function CacheMgr:evt_set_server_status(status)
     log_err("[CacheMgr][evt_set_server_status] enter flush mode,wait stop service:%s", hive.index)
     self.flush = (status ~= 0)
+end
+
+function CacheMgr:on_service_close(id, service_name)
+    log_info("[CacheMgr][on_service_close] disconnect:%s", sid2nick(id))
+    for cache_name, obj_list in pairs(self.cache_lists) do
+        for primary_key, obj in pairs(obj_list) do
+            if obj:get_lock_node_id() == id then
+                log_info("[CacheMgr][on_service_close] %s unlock by service close!", obj:info())
+                obj:set_lock_node_id(0)
+            end
+        end
+    end
 end
 
 function CacheMgr:on_timer_update()
@@ -255,7 +270,6 @@ function CacheMgr:rpc_cache_flush(hive_id, req_data)
     end
     self:set_dirty(cache_obj, false)
     if cache_obj:save() then
-        cache_obj:set_flush(true)
         cache_obj:set_lock_node_id(0)
         log_info("[CacheMgr][rpc_cache_flush] cache=%s,primary=%s", cache_name, primary_key)
         return SUCCESS
