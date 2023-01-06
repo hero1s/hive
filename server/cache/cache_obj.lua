@@ -121,9 +121,9 @@ function CacheObj:expired(tick)
     return escape_time > self.expire_time
 end
 
-function CacheObj:check_store(now)
+function CacheObj:need_save(now)
     if self.store_count <= self.update_count or self.update_time + self.store_time < now then
-        return self:save()
+        return true
     end
     return false
 end

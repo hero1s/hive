@@ -94,13 +94,14 @@ function CacheMgr:on_timer_update()
     end
     local now_tick = hive.clock_ms
     for uuid, obj in self.dirty_map:wheel_iterator() do
-        thread_mgr:fork(function()
+        if obj:need_save(now_tick) then
             self:set_dirty(obj, false)
-            if not obj:check_store(now_tick) then
-                log_err("[CacheMgr][on_timer_update] save faild:%s,add dirty map", obj:info())
-                self:set_dirty(obj, true)
-            end
-        end)
+            thread_mgr:fork(function()
+                if not obj:save() then
+                    self:set_dirty(obj, true)
+                end
+            end)
+        end
     end
 end
 
