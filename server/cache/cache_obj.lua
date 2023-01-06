@@ -51,6 +51,10 @@ function CacheObj:__init(cache_conf, primary_value)
     self.flush_time    = cache_conf.flush_time * 1000
 end
 
+function CacheObj:info()
+    return string.format("%s:%s,%s", self.cache_table, self.cache_key, self.primary_value)
+end
+
 function CacheObj:load()
     self.active_tick = hive.clock_ms
     self.update_time = hive.clock_ms

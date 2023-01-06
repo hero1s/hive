@@ -6,6 +6,7 @@ local log_err      = logger.err
 local log_info     = logger.info
 local tunpack      = table.unpack
 local check_failed = hive.failed
+local sid2nick     = service.id2nick
 
 local KernCode     = enum("KernCode")
 local CacheCode    = enum("CacheCode")
@@ -87,7 +88,6 @@ function CacheMgr:evt_set_server_status(status)
 end
 
 function CacheMgr:on_timer_update()
-    --存储脏数据
     if self.flush then
         self:save_all()
         return
@@ -95,17 +95,17 @@ function CacheMgr:on_timer_update()
     local now_tick = hive.clock_ms
     for uuid, obj in self.dirty_map:wheel_iterator() do
         thread_mgr:fork(function()
-            self.dirty_map:set(uuid, nil)
+            self:set_dirty(obj, false)
             if not obj:check_store(now_tick) then
-                log_err("[CacheMgr][on_timer_update] save faild:%s,add dirty map", uuid)
-                self.dirty_map:set(uuid, obj)
+                log_err("[CacheMgr][on_timer_update] save faild:%s,add dirty map", obj:info())
+                self:set_dirty(obj, true)
             end
         end)
     end
 end
 
+--清理超时的记录
 function CacheMgr:on_timer_expire()
-    --清理超时的记录
     local now_tick = hive.clock_ms
     for cache_name, obj_list in pairs(self.cache_lists) do
         for primary_key, obj in pairs(obj_list) do
@@ -114,6 +114,15 @@ function CacheMgr:on_timer_expire()
                 obj_list[primary_key] = nil
             end
         end
+    end
+end
+
+--设置标记
+function CacheMgr:set_dirty(cache_obj, is_dirty)
+    if is_dirty then
+        self.dirty_map:set(cache_obj:get_uuid(), cache_obj)
+    else
+        self.dirty_map:set(cache_obj:get_uuid(), nil)
     end
 end
 
@@ -146,11 +155,11 @@ function CacheMgr:get_cache_obj(hive_id, cache_name, primary_key, cache_type)
         if cache_type & CAWRITE == CAWRITE then
             local lock_node_id = cache_obj:get_lock_node_id()
             if lock_node_id == 0 then
-                log_info("[CacheMgr][get_cache_obj] set lock node id:%s, cache_name=%s,primary=%s,cache_type=:%s", hive_id, cache_name, primary_key, cache_type)
+                log_info("[CacheMgr][get_cache_obj] set lock node id:%s, cache_name=%s,primary=%s,cache_type=:%s", sid2nick(hive_id), cache_name, primary_key, cache_type)
                 cache_obj:set_lock_node_id(hive_id)
             else
                 if hive_id ~= lock_node_id then
-                    log_err("[CacheMgr][get_cache_obj] cache node not match! %s != %s, cache_name=%s,primary=%s", hive_id, lock_node_id, cache_name, primary_key)
+                    log_err("[CacheMgr][get_cache_obj] cache node not match! %s != %s, cache_name=%s,primary=%s", sid2nick(hive_id), sid2nick(lock_node_id), cache_name, primary_key)
                     return CacheCode.CACHE_KEY_LOCK_FAILD
                 end
             end
@@ -165,7 +174,7 @@ function CacheMgr:get_cache_obj(hive_id, cache_name, primary_key, cache_type)
             return code
         end
         if cache_type & CAWRITE == CAWRITE then
-            log_info("[CacheMgr][get_cache_obj] init set lock node id:%s, cache_name=%s,primary=%s,cache_type=:%s", hive_id, cache_name, primary_key, cache_type)
+            log_info("[CacheMgr][get_cache_obj] init set lock node id:%s, cache_name=%s,primary=%s,cache_type=:%s", sid2nick(hive_id), cache_name, primary_key, cache_type)
             cobj:set_lock_node_id(hive_id)
         end
         return SUCCESS, cobj
@@ -181,7 +190,7 @@ function CacheMgr:rpc_cache_load(hive_id, req_data)
         log_err("[CacheMgr][rpc_cache_load] cache obj not find! cache_name=%s,primary=%s,cache_type=%s", cache_name, primary_key, cache_type)
         return code
     end
-    log_info("[CacheMgr][rpc_cache_load] hive_id=%s,cache=%s,primary=%s,cache_type=%s", hive_id, cache_name, primary_key, cache_type)
+    log_info("[CacheMgr][rpc_cache_load] from=%s,cache=%s,primary=%s,cache_type=%s", sid2nick(hive_id), cache_name, primary_key, cache_type)
     return SUCCESS, cache_obj:pack()
 end
 
@@ -195,7 +204,7 @@ function CacheMgr:rpc_cache_update(hive_id, req_data)
     end
     local ucode = cache_obj:update(table_name, table_data, self.flush or flush)
     if cache_obj:is_dirty() then
-        self.dirty_map:set(cache_obj:get_uuid(), cache_obj)
+        self:set_dirty(cache_obj, true)
     end
     return ucode
 end
@@ -210,7 +219,7 @@ function CacheMgr:rpc_cache_update_key(hive_id, req_data)
     end
     local ucode = cache_obj:update_key(table_name, table_kvs, self.flush or flush)
     if cache_obj:is_dirty() then
-        self.dirty_map:set(cache_obj:get_uuid(), cache_obj)
+        self:set_dirty(cache_obj, true)
     end
     return ucode
 end
@@ -223,11 +232,13 @@ function CacheMgr:rpc_cache_delete(hive_id, req_data)
         log_err("[CacheMgr][rpc_cache_delete] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return code
     end
+    self:set_dirty(cache_obj, false)
     if cache_obj:save() then
         self.cache_lists[cache_name][primary_key] = nil
-        self.dirty_map:set(cache_obj:get_uuid(), nil)
         log_info("[CacheMgr][rpc_cache_delete] cache=%s,primary=%s", cache_name, primary_key)
         return SUCCESS
+    else
+        self:set_dirty(cache_obj, true)
     end
     log_err("[CacheMgr][rpc_cache_delete] save failed: cache=%s,primary=%s", cache_name, primary_key)
     return CacheCode.CACHE_DELETE_SAVE_FAILD
@@ -241,12 +252,14 @@ function CacheMgr:rpc_cache_flush(hive_id, req_data)
         log_err("[CacheMgr][rpc_cache_flush] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return code
     end
+    self:set_dirty(cache_obj, false)
     if cache_obj:save() then
         cache_obj:set_flush(true)
         cache_obj:set_lock_node_id(0)
-        self.dirty_map:set(cache_obj:get_uuid(), nil)
         log_info("[CacheMgr][rpc_cache_flush] cache=%s,primary=%s", cache_name, primary_key)
         return SUCCESS
+    else
+        self:set_dirty(cache_obj, true)
     end
     log_err("[CacheMgr][rpc_cache_flush] save failed: cache=%s,primary=%s", cache_name, primary_key)
     return CacheCode.CACHE_DELETE_SAVE_FAILD
