@@ -92,7 +92,10 @@ function MongoDB:on_minute()
 end
 
 function MongoDB:on_second()
-    local _lock<close> = thread_mgr:lock("mongo-second" .. self.name)
+    local _lock<close> = thread_mgr:lock("mongo-second" .. self.name, true)
+    if not _lock then
+        return
+    end
     if not self.sock:is_alive() then
         local ok, err = self.sock:connect(self.ip, self.port)
         if not ok then

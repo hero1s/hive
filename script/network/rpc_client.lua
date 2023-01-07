@@ -56,7 +56,10 @@ function RpcClient:setup()
 end
 
 function RpcClient:on_second(clock_ms)
-    local _lock<close> = thread_mgr:lock("rpc-client-second" .. self.uuid)
+    local _lock<close> = thread_mgr:lock("rpc-client-second" .. self.uuid, true)
+    if not _lock then
+        return
+    end
     if self.alive then
         self:heartbeat(false, clock_ms)
         return

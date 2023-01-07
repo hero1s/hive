@@ -43,7 +43,7 @@ function ThreadMgr:lock_size()
     return count
 end
 
-function ThreadMgr:lock(key)
+function ThreadMgr:lock(key, no_reentry)
     local queue = self.syncqueue_map[key]
     if not queue then
         queue                   = QueueFIFO()
@@ -56,6 +56,9 @@ function ThreadMgr:lock(key)
         queue:push(lock)
         return lock
     else
+        if no_reentry then
+            return nil
+        end
         if head.co == co_running() then
             --防止重入
             head:increase()
