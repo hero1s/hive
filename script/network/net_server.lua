@@ -266,14 +266,17 @@ function NetServer:check_serial(session, cserial)
         -- 达到检测周期
         local cur_time    = hive.clock_ms
         local escape_time = cur_time - session.last_fc_time
-        -- 检查是否超过配置
-        if session.fc_packet / escape_time > fc_package or session.fc_bytes / escape_time > fc_bytes then
-            log_warn("[NetServer][check_serial] session trigger package or bytes flowctrl line, will be closed.")
-            self:close_session(session)
+        if escape_time > 10000 then
+            -- 检查是否超过配置
+            if session.fc_packet / escape_time > fc_package or session.fc_bytes / escape_time > fc_bytes then
+                log_warn("[NetServer][check_serial] session trigger package:%s/%s or bytes:%s/%s,escape_time:%s flowctrl line, will be closed.",
+                         session.fc_packet, fc_package, session.fc_bytes, fc_bytes, escape_time)
+                self:close_session(session)
+            end
+            session.fc_packet    = 0
+            session.fc_bytes     = 0
+            session.last_fc_time = cur_time
         end
-        session.fc_packet    = 0
-        session.fc_bytes     = 0
-        session.last_fc_time = cur_time
     end
     return sserial
 end
