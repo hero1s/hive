@@ -8,13 +8,17 @@ local log_debug     = logger.debug
 local time_str      = datetime_ext.time_str
 local ssplit        = string_ext.split
 local sname2sid     = service.name2sid
-local http_client   = hive.get("http_client")
+
 local env_get       = environ.get
+local check_failed  = hive.failed
+local json_decode   = hive.json_decode
 
 local gm_agent      = hive.get("gm_agent")
 local monitor_mgr   = hive.get("monitor_mgr")
 local timer_mgr     = hive.get("timer_mgr")
 local thread_mgr    = hive.get("thread_mgr")
+local mongo_agent   = hive.get("mongo_agent")
+local http_client   = hive.get("http_client")
 
 local GMType        = enum("GMType")
 local ServiceStatus = enum("ServiceStatus")
@@ -41,6 +45,10 @@ function DevopsGmMgr:register_gm()
         --工具
         { gm_type = GMType.TOOLS, name = "gm_guid_view", desc = "guid信息", comment = "(拆解guid)", args = "guid|integer" },
         { gm_type = GMType.TOOLS, name = "gm_log_format", desc = "日志格式", comment = "0压缩,1格式化", args = "data|string swline|integer" },
+        { gm_type = GMType.TOOLS, name = "gm_db_get", desc = "数据库查询",
+          args    = "db_name|string table_name|string key_name|string key_value|string" },
+        { gm_type = GMType.TOOLS, name = "gm_db_set", desc = "数据库更新",
+          args    = "db_name|string table_name|string key_name|string key_value|string json_value|string" },
     }
     gm_agent:insert_command(cmd_list, self)
 end
@@ -181,6 +189,32 @@ function DevopsGmMgr:gm_log_format(data, swline)
     end
     local data_t = lcodec.unserialize(data)
     return lcodec.serialize(data_t, swline)
+end
+
+function DevopsGmMgr:gm_db_get(db_name, table_name, key_name, key_value)
+    log_debug("[DevopsGmMgr][gm_db_get] db_name:%s, table_name:%s, key_name:%s, key_value:%s", db_name, table_name, key_name, key_value)
+    local ok, code, result = mongo_agent:find_one({ table_name, { [key_name] = key_value }, { _id = 0 } }, nil, db_name)
+    if check_failed(code, ok) then
+        log_err("[DevopsGmMgr][gm_db_get] failed: %s", code)
+        return { code = -1 }
+    else
+        return { code = 0, data = result }
+    end
+end
+
+function DevopsGmMgr:gm_db_set(db_name, table_name, key_name, key_value, json_str)
+    log_debug("[DevopsGmMgr][gm_db_set] db_name:%s, table_name:%s, key_name:%s key_value:%s, json_str:%s",
+              db_name, table_name, key_name, key_value, json_str)
+    local ok1, value = json_decode(json_str, true)
+    if not ok1 then
+        return false
+    end
+    local ok, code, result = mongo_agent:update({ table_name, value, { [key_name] = key_value }, true }, nil, db_name)
+    if check_failed(code, ok) then
+        log_err("[DevopsGmMgr][gm_db_set] failed: code: %s, result: %s", code, result)
+        return false
+    end
+    return true
 end
 
 function DevopsGmMgr:get_target_id(service_name, index)

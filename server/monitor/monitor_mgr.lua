@@ -1,6 +1,7 @@
 --monitor_mgr.lua
 local log_page = nil
 import("network/http_client.lua")
+import("agent/mongo_agent.lua")
 local RpcServer   = import("network/rpc_server.lua")
 local HttpServer  = import("network/http_server.lua")
 
