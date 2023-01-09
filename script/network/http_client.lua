@@ -39,6 +39,10 @@ function HttpClient:on_quit()
 end
 
 function HttpClient:on_fast(clock_ms)
+    local _lock<close> = thread_mgr:lock("httpclient-tick", true)
+    if not _lock then
+        return
+    end
     if next(self.contexts) then
         curlm_mgr.update()
         --清除超时请求
@@ -51,18 +55,20 @@ function HttpClient:on_fast(clock_ms)
 end
 
 function HttpClient:on_respond(curl_handle, result)
-    local context = self.contexts[curl_handle]
-    if context then
-        local request            = context.request
-        local session_id         = context.session_id
-        local content, code, err = request.get_respond()
-        if result == 0 then
-            thread_mgr:response(session_id, true, code, content)
-        else
-            thread_mgr:response(session_id, false, code, err)
+    thread_mgr:fork(function()
+        local context = self.contexts[curl_handle]
+        if context then
+            local request            = context.request
+            local session_id         = context.session_id
+            local content, code, err = request.get_respond()
+            if result == 0 then
+                thread_mgr:response(session_id, true, code, content)
+            else
+                thread_mgr:response(session_id, false, code, err)
+            end
+            self.contexts[curl_handle] = nil
         end
-        self.contexts[curl_handle] = nil
-    end
+    end)
 end
 
 function HttpClient:format_url(url, query)
