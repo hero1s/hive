@@ -7,7 +7,8 @@ local log_info    = logger.info
 local hxpcall     = hive.xpcall
 local signal_quit = signal.quit
 
-local FlagMask    = enum("FlagMask")
+local FLAG_REQ    = hive.enum("FlagMask", "REQ")
+local FLAG_RES    = hive.enum("FlagMask", "RES")
 local KernCode    = enum("KernCode")
 local NetwkTime   = enum("NetwkTime")
 local SUCCESS     = KernCode.SUCCESS
@@ -54,12 +55,12 @@ end
 --rpc事件
 function RpcServer:on_socket_rpc(client, rpc, session_id, rpc_flag, source, ...)
     client.alive_time = hive.clock_ms
-    if session_id == 0 or rpc_flag == FlagMask.REQ then
+    if session_id == 0 or rpc_flag == FLAG_REQ then
         local function dispatch_rpc_message(...)
             local _<close>  = heval(rpc)
             local rpc_datas = event_mgr:notify_listener(rpc, client, ...)
             if session_id > 0 then
-                client.call_rpc(session_id, FlagMask.RES, rpc, tunpack(rpc_datas))
+                client.call_rpc(session_id, FLAG_RES, rpc, tunpack(rpc_datas))
             end
         end
         thread_mgr:fork(dispatch_rpc_message, ...)
@@ -109,7 +110,7 @@ end
 --send接口
 function RpcServer:call(client, rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    if client.call_rpc(session_id, FlagMask.REQ, rpc, ...) then
+    if client.call_rpc(session_id, FLAG_REQ, rpc, ...) then
         return thread_mgr:yield(session_id, rpc, NetwkTime.RPC_CALL_TIMEOUT)
     end
     return false, "rpc server send failed"
@@ -117,13 +118,22 @@ end
 
 --send接口
 function RpcServer:send(client, rpc, ...)
-    return client.call_rpc(0, FlagMask.REQ, rpc, ...)
+    return client.call_rpc(0, FLAG_REQ, rpc, ...)
 end
 
 --broadcast接口
 function RpcServer:broadcast(rpc, ...)
     for _, client in pairs(self.clients) do
-        client.call_rpc(0, FlagMask.REQ, rpc, ...)
+        client.call_rpc(0, FLAG_REQ, rpc, ...)
+    end
+end
+
+--servicecast接口
+function RpcServer:servicecast(service_id, rpc, ...)
+    for _, client in pairs(self.clients) do
+        if service_id == 0 or client.service_id == service_id then
+            client.call_rpc(0, FLAG_REQ, rpc, ...)
+        end
     end
 end
 

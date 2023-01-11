@@ -84,9 +84,7 @@ function MonitorMgr:on_client_register(client, node_info)
     --路由服节点
     if node_info.service_name == "router" then
         self.router_nodes[node_info.id] = { id = node_info.id, host = node_info.host, port = node_info.port }
-        for token, cli in self.rpc_server:iterator() do
-            self.rpc_server:send(cli, "rpc_update_router_nodes", self.router_nodes)
-        end
+        self.rpc_server:broadcast("rpc_update_router_nodes", self.router_nodes)
     else
         self.rpc_server:send(client, "rpc_update_router_nodes", self.router_nodes)
     end
@@ -139,24 +137,22 @@ function MonitorMgr:call_by_token(token, rpc, ...)
 end
 
 function MonitorMgr:call_by_sid(sid, rpc, ...)
-    for _, client in self.rpc_server:iterator() do
-        if sid == client.id then
-            local ok, code, res = self.rpc_server:call(client, rpc, ...)
-            if not ok then
-                return { code = 1, msg = "call moniotor node failed!" }
-            end
-            return { code = code, msg = res }
+    local client = self.rpc_server:get_client_by_id(sid)
+    if client then
+        local ok, code, res = self.rpc_server:call(client, rpc, ...)
+        if not ok then
+            return { code = 1, msg = "call moniotor node failed!" }
         end
+        return { code = code, msg = res }
     end
     return { code = 1, msg = "target is nil" }
 end
 
 function MonitorMgr:send_by_sid(sid, rpc, ...)
-    for _, client in self.rpc_server:iterator() do
-        if sid == client.id then
-            self.rpc_server:send(client, rpc, ...)
-            return { code = 0, msg = "send target success" }
-        end
+    local client = self.rpc_server:get_client_by_id(sid)
+    if client then
+        self.rpc_server:send(client, rpc, ...)
+        return { code = 0, msg = "send target success" }
     end
     return { code = 1, msg = "target is nil" }
 end
@@ -171,11 +167,7 @@ function MonitorMgr:broadcast(rpc, target, ...)
             service_id = service.name2sid(target)
         end
     end
-    for token, client in self.rpc_server:iterator() do
-        if service_id == 0 or service_id == client.service_id then
-            self.rpc_server:send(client, rpc, ...)
-        end
-    end
+    self.rpc_server:servicecast(service_id, rpc, ...)
     return { code = 0, msg = "broadcast all nodes server!" }
 end
 

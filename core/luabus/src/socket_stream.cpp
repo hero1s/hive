@@ -25,6 +25,9 @@ socket_stream::socket_stream(socket_mgr* mgr, LPFN_CONNECTEX connect_func, eprot
 	if (m_proto_type == eproto_type::proto_pack || m_proto_type == eproto_type::proto_rpc) {
 		m_delay_send = true;
 	}
+	if (m_proto_type == eproto_type::proto_pack) {
+		m_tick_dispatch_pkg = 5;
+	}
 }
 #endif
 
@@ -36,6 +39,9 @@ socket_stream::socket_stream(socket_mgr* mgr, eproto_type proto_type, elink_type
 	m_ip[0] = 0;
 	if (m_proto_type == eproto_type::proto_pack || m_proto_type == eproto_type::proto_rpc) {
 		m_delay_send = true;
+	}
+	if (m_proto_type == eproto_type::proto_pack) {
+		m_tick_dispatch_pkg = 5;
 	}
 }
 
@@ -506,6 +512,7 @@ void socket_stream::dispatch_package() {
 	m_need_dispatch_pkg = false;
 
 	int64_t now = steady_ms();
+	auto max_dispatch_pkg = m_tick_dispatch_pkg;
 	while (m_link_status == elink_status::link_connected) {
 		uint64_t package_size = 0;
 		size_t data_len = 0, header_len = 0;
@@ -568,9 +575,10 @@ void socket_stream::dispatch_package() {
 		// 接收缓冲读游标调整
 		m_recv_buffer.pop_data(header_len + (size_t)package_size);
 		m_last_recv_time = steady_ms();
+		max_dispatch_pkg--;
 
 		// 防止单个连接处理太久，不能大于20ms
-		if (m_last_recv_time - now > 20) {
+		if (m_last_recv_time - now > 20 || max_dispatch_pkg < 0) {
 			m_need_dispatch_pkg = true;
 			break;
 		}

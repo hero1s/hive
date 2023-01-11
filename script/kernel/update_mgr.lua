@@ -12,6 +12,7 @@ local sig_check      = signal.check
 local tunpack        = table.unpack
 local collectgarbage = collectgarbage
 local cut_tail       = math_ext.cut_tail
+local mregion        = math_ext.region
 local is_same_day    = datetime_ext.is_same_day
 
 local timer_mgr      = hive.get("timer_mgr")
@@ -30,7 +31,7 @@ prop:reader("last_hour", 0)
 prop:reader("last_frame", 0)
 prop:reader("last_minute", 0)
 prop:reader("last_check_time", 0)
-prop:reader("max_mem_usage", 0)
+prop:reader("last_lua_mem_usage", 0)
 prop:reader("max_lua_mem_usage", 0)
 prop:reader("quit_objs", {})
 prop:reader("hour_objs", {})
@@ -40,6 +41,8 @@ prop:reader("second_objs", {})
 prop:reader("minute_objs", {})
 prop:reader("next_events", {})
 prop:reader("next_handlers", {})
+
+local gc_step = 1
 
 function UpdateMgr:__init()
     --注册订阅
@@ -90,6 +93,47 @@ function UpdateMgr:update_next()
     self.next_events = {}
 end
 
+function UpdateMgr:update_second(clock_ms)
+    for obj in pairs(self.second_objs) do
+        thread_mgr:fork(function()
+            obj:on_second(clock_ms)
+        end)
+    end
+    --增加增量gc步长
+    collectgarbage("step", gc_step)
+end
+
+function UpdateMgr:update_fast(clock_ms)
+    for obj in pairs(self.fast_objs) do
+        thread_mgr:fork(function()
+            obj:on_fast(clock_ms)
+        end)
+    end
+    self.last_frame = clock_ms + FAST_MS
+end
+
+function UpdateMgr:update_minute(clock_ms)
+    for obj in pairs(self.minute_objs) do
+        thread_mgr:fork(function()
+            obj:on_minute(clock_ms)
+        end)
+    end
+    self:check_new_day()
+    self:monitor_mem()
+end
+
+function UpdateMgr:update_hour(clock_ms, cur_hour, time)
+    for obj in pairs(self.hour_objs) do
+        thread_mgr:fork(function()
+            obj:on_hour(clock_ms, cur_hour, time)
+        end)
+    end
+    --每日4点执行一次全量更新
+    if cur_hour == 4 then
+        self:collect_gc()
+    end
+end
+
 function UpdateMgr:update(now_ms, clock_ms)
     --业务更新
     thread_mgr:fork(function()
@@ -113,56 +157,32 @@ function UpdateMgr:update(now_ms, clock_ms)
         if clock_ms < self.last_frame then
             return
         end
-        for obj in pairs(self.fast_objs) do
-            thread_mgr:fork(function()
-                obj:on_fast(clock_ms)
-            end)
-        end
-        self.last_frame = clock_ms + FAST_MS
-
+        self:update_fast(clock_ms)
         --检查信号
         if not WTITLE and self:check_signal() then
             return
         end
-
         --秒更新
         local now = now_ms // 1000
         if now == hive.now then
             return
         end
         hive.now = now
-        for obj in pairs(self.second_objs) do
-            thread_mgr:fork(function()
-                obj:on_second(clock_ms)
-            end)
-        end
-        --执行gc
-        collectgarbage("step", 1)
+        self:update_second(clock_ms)
         --分更新
         local time = odate("*t", now)
         if time.min == self.last_minute then
             return
         end
         self.last_minute = time.min
-        for obj in pairs(self.minute_objs) do
-            thread_mgr:fork(function()
-                obj:on_minute(clock_ms)
-            end)
-        end
-        self:check_new_day()
-        self:monitor_mem()
+        self:update_minute(clock_ms)
         --时更新
         local cur_hour = time.hour
         if cur_hour == self.last_hour then
             return
         end
         self.last_hour = cur_hour
-        for obj in pairs(self.hour_objs) do
-            thread_mgr:fork(function()
-                obj:on_hour(clock_ms, cur_hour, time)
-            end)
-        end
-        self:collect_gc()
+        self:update_hour(clock_ms, cur_hour, time)
     end)
 end
 
@@ -286,21 +306,24 @@ function UpdateMgr:detach_quit(obj)
 end
 
 function UpdateMgr:monitor_mem()
-    local mem     = cut_tail(mem_usage(), 1)
-    local lua_mem = cut_tail(collectgarbage("count") / 1024, 1)
-    local show_flag
-    if mem > self.max_mem_usage then
-        self.max_mem_usage = mem
-        show_flag          = true
+    local lua_mem           = cut_tail(collectgarbage("count") / 1024, 1)
+    local diff_mem          = lua_mem - self.last_lua_mem_usage
+    self.last_lua_mem_usage = lua_mem
+    if diff_mem > 1 then
+        gc_step = gc_step + 1
+    else
+        if diff_mem < 0 then
+            gc_step = gc_step - 1
+        end
     end
+    gc_step = mregion(gc_step, 1, 10)
     if lua_mem > self.max_lua_mem_usage then
         self.max_lua_mem_usage = lua_mem
-        show_flag              = true
     end
-    if show_flag then
+    if gc_step > 5 and diff_mem > 1 then
         local cur_size, max_size = thread_mgr:size()
-        log_info("UpdateMgr][monitor_mem] mem:%s/%s M,lua_mem: %s/%s M,threads:%s/%s,lock size:%s",
-                 mem, self.max_mem_usage, lua_mem, self.max_lua_mem_usage, cur_size, max_size, thread_mgr:lock_size())
+        log_warn("UpdateMgr][monitor_mem] lua_mem: %s/%s M,threads:%s/%s,lock size:%s,gc_step:%s",
+                 lua_mem, self.max_lua_mem_usage, cur_size, max_size, thread_mgr:lock_size(), gc_step)
     end
 end
 

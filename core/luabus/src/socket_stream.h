@@ -66,7 +66,9 @@ struct socket_stream : public socket_object
 	int m_timeout = -1;
 
 	bool    m_need_dispatch_pkg = true;
+	int16_t m_tick_dispatch_pkg = 1000;
 	bool    m_delay_send = false; //大包发送
+	
 	uint8_t m_seq_id = 0;
 	int64_t m_last_recv_time = 0;
 	int64_t m_connecting_time = 0;

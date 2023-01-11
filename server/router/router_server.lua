@@ -102,7 +102,7 @@ function RouterServer:service_register(server, id)
         if exist_server.id == id and exist_server.token ~= server_token then
             self.kick_servers[exist_token] = id
             self.rpc_server:send(exist_server, "rpc_service_kickout", hive.id, "service replace")
-            log_warn("[RouterServer][rpc_service_register] service(%s) be kickout, service replace!", server_name)
+            log_err("[RouterServer][rpc_service_register] service(%s) be kickout, service replace!", server_name)
             break
         end
     end
@@ -112,7 +112,7 @@ function RouterServer:service_register(server, id)
     log_info("[RouterServer][rpc_service_register] service: %s,hash:%s", server_name, service_hash)
     --switch master
     local group_master = self.service_masters[service_id] or mhuge
-    if id < group_master then
+    if id <= group_master then
         self.service_masters[service_id] = id
         socket_mgr.set_master(service_id, server_token)
         log_info("[RouterServer][rpc_service_register] switch master --> %s", sid2index(id))
