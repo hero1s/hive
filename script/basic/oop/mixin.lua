@@ -68,16 +68,28 @@ local function collect(class, object, method, ...)
     return true
 end
 
+--是否有属性定义
+local function has_prop(oopo, name)
+    if oopo.__props[name] then
+        return true
+    end
+    for _, omixin in ipairs(oopo.__mixins or {}) do
+        if has_prop(omixin, name) then
+            return true
+        end
+    end
+    return false
+end
+
+--代理一个组件
 local function delegate_one(class, mixin)
     if mixin.__delegate then
         mixin.__delegate()
     end
-    for name, value in pairs(mixin.__props) do
-        --属性处理
-        if class.__props[name] then
+    for name in pairs(mixin.__props) do
+        if has_prop(class, name) then
             print(sformat("the mixin default %s has repeat defined.", name))
         end
-        class.__props[name] = value
     end
     for method in pairs(mixin.__methods) do
         --下划线前缀方法不代理
@@ -92,14 +104,29 @@ local function delegate_one(class, mixin)
         end
     end
     local cmixins         = class.__mixins
+    local mowners         = mixin.__owners
     cmixins[#cmixins + 1] = mixin
+    mowners[#mowners + 1] = class
+end
+
+--判定是否已经被代理
+local function has_mixin(class, mixin)
+    local cmixins = class.__mixins
+    for _, omixin in ipairs(cmixins) do
+        if omixin == mixin then
+            return true
+        end
+    end
+    return false
 end
 
 --委托一个mixin给class
 local function delegate(class, ...)
     local mixins = { ... }
     for _, mixin in ipairs(mixins) do
-        delegate_one(class, mixin)
+        if not has_mixin(class, mixin) then
+            delegate_one(class, mixin)
+        end
     end
 end
 
@@ -125,6 +152,14 @@ end
 
 local function newindex(mixin, field, value)
     mixin.__methods[field] = value
+    --新增方法代理
+    for _, class in pairs(mixin.__owners) do
+        if not class[field] then
+            class[field] = function(...)
+                return mixin[field](...)
+            end
+        end
+    end
 end
 
 local mixinMT = {
@@ -144,6 +179,7 @@ function mixin(super)
     if not mixin_tpl then
         local mixino = {
             __props    = {},
+            __owners   = {},
             __methods  = {},
             __super    = super,
             __source   = source,

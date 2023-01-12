@@ -7,8 +7,6 @@ local log_warn     = logger.warn
 local log_debug    = logger.debug
 local sidhash      = service.hash
 local sid2nick     = service.id2nick
-local sid2name     = service.id2name
-local sid2index    = service.id2index
 
 local FlagMask     = enum("FlagMask")
 local KernCode     = enum("KernCode")
@@ -67,7 +65,7 @@ function RouterServer:on_client_error(server, server_token, err)
         self.service_masters[service_id] = new_master
         socket_mgr.set_master(service_id, new_master_token)
         log_info("[RouterServer][on_socket_error] switch master --> %s", sid2nick(new_master))
-        self:broadcast_switch_master(new_master)
+        self:broadcast_switch_master(new_master,service_id)
     end
 end
 
@@ -94,7 +92,7 @@ function RouterServer:service_register(server, id)
     local service_hash  = sidhash(service_id)
     local server_token  = server.token
     if not service_name or not service_hash then
-        log_err("[RouterServer][rpc_service_register] the serivice is not cfg:%s", service_id)
+        log_err("[RouterServer][service_register] the serivice is not cfg:%s", service_id)
         return
     end
     -- 检查是否顶号
@@ -102,21 +100,21 @@ function RouterServer:service_register(server, id)
         if exist_server.id == id and exist_server.token ~= server_token then
             self.kick_servers[exist_token] = id
             self.rpc_server:send(exist_server, "rpc_service_kickout", hive.id, "service replace")
-            log_err("[RouterServer][rpc_service_register] service(%s) be kickout, service replace!", server_name)
+            log_err("[RouterServer][service_register] service(%s) be kickout, service replace!", server_name)
             break
         end
     end
     --固定hash自动设置为最大index服务[约定固定hash服务的index为连续的1-n,且运行过程中不能扩容]
     local hash_value = service_hash > 0 and service_index or 0
     socket_mgr.map_token(id, server_token, hash_value)
-    log_info("[RouterServer][rpc_service_register] service: %s,hash:%s", server_name, service_hash)
+    log_info("[RouterServer][service_register] service: %s,hash:%s", server_name, service_hash)
     --switch master
     local group_master = self.service_masters[service_id] or mhuge
     if id <= group_master then
         self.service_masters[service_id] = id
         socket_mgr.set_master(service_id, server_token)
-        log_info("[RouterServer][rpc_service_register] switch master --> %s", sid2index(id))
-        self:broadcast_switch_master(id)
+        log_info("[RouterServer][service_register] switch master --> %s", sid2nick(id))
+        self:broadcast_switch_master(id,service_id)
     end
     --通知其他服务器
     self:broadcast_service_ready(server, id)
@@ -135,14 +133,8 @@ function RouterServer:broadcast_service_ready(server, id)
 end
 
 -- 广播切换主从
-function RouterServer:broadcast_switch_master(server_id)
-    local router_id    = hive.id
-    local service_name = sid2name(server_id)
-    for _, server in self.rpc_server:iterator() do
-        if server.id and service_name == sid2name(server.id) then
-            self.rpc_server:send(server, "rpc_service_master", server_id, router_id)
-        end
-    end
+function RouterServer:broadcast_switch_master(server_id, service_id)
+    self.rpc_server:servicecast(service_id, "rpc_service_master", server_id, hive.id)
 end
 
 -- 会话信息

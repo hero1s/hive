@@ -79,9 +79,15 @@ local function object_props(class, object)
     if class.__super then
         object_props(class.__super, object)
     end
-    local props = deep_copy(class.__props)
-    for name, param in pairs(props) do
+    for name, args in pairs(class.__props) do
+        local param  = deep_copy(args)
         object[name] = param[1]
+    end
+    for _, mixin in ipairs(class.__mixins) do
+        for name, args in pairs(mixin.__props) do
+            local param  = deep_copy(args)
+            object[name] = param[1]
+        end
     end
 end
 

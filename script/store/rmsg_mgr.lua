@@ -8,6 +8,7 @@ local log_info      = logger.info
 local new_guid      = lcodec.guid_new
 local mongo_agent   = hive.get("mongo_agent")
 local check_success = hive.success
+local check_failed  = hive.failed
 local PeriodTime    = enum("PeriodTime")
 local RmsgMgr       = class()
 local prop          = property(RmsgMgr)
@@ -60,7 +61,7 @@ end
 
 -- 发送消息
 function RmsgMgr:send_message(from, to, typ, body, id)
-    local uuid = id or new_guid()
+    local uuid = id or new_guid(hive.service_id, hive.index)
     local doc  = {
         uuid      = uuid,
         from      = from, to = to,
@@ -72,13 +73,15 @@ function RmsgMgr:send_message(from, to, typ, body, id)
     if self.ttl then
         doc.ttl = bdate(hive.now + self.ttl)
     end
-    local ok = mongo_agent:insert({ self.table_name, doc }, to, self.db_name)
-    if not ok then
-        log_err("[RmsgMgr][send_message] send message failed: uuid:%s, from:%s, to:%s, doc:%s", uuid, from, to, doc)
+    local ok, code, res = mongo_agent:insert({ self.table_name, doc }, to, self.db_name)
+    if check_failed(code, ok) then
+        log_err("[RmsgMgr][send_message] send message failed: uuid:%s, from:%s, to:%s, doc:%s,code:%s,res:%s",
+                uuid, from, to, doc, code, res)
+        return false
     else
         log_info("[RmsgMgr][send_message] send message succeed: uuid:%s, from:%s, to:%s, type:%s", uuid, from, to, typ)
     end
-    return ok
+    return true
 end
 
 return RmsgMgr
