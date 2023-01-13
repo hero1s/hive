@@ -154,7 +154,7 @@ function DevopsGmMgr:gm_cfg_reload(is_remote)
 
     local notify_time = flag and 10000 or 1
     timer_mgr:once(notify_time, function()
-        monitor_mgr:broadcast("rpc_config_reload")
+        monitor_mgr:broadcast("rpc_reload")
     end)
 
     return { code = 0 }

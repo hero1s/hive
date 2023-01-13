@@ -241,11 +241,8 @@ function MongoDB:on_socket_recv(sock, token)
         end
         sock:pop(4 + length)
         local reply, session_id, documents = mreply(bdata)
+        self.sessions[session_id]          = nil
         local succ, doc                    = self:decode_reply(reply, documents)
-        if not succ then
-            thread_mgr:response(session_id, succ, doc)
-            return
-        end
         thread_mgr:response(session_id, succ, doc)
     end
 end

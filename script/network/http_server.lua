@@ -144,7 +144,6 @@ end
 
 --http post 回调
 function HttpServer:on_http_request(handlers, socket, url, ...)
-    log_info("[HttpServer][on_http_request] request %s process!", url)
     local handler_info = handlers[url] or handlers["*"]
     if handler_info then
         local handler, target = tunpack(handler_info)

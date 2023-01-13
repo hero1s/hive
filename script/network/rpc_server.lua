@@ -164,6 +164,19 @@ function RpcServer:iterator()
     return iter
 end
 
+--选主
+function RpcServer:find_master(service_id)
+    local new_master = nil
+    for _, client in pairs(self.clients) do
+        if service_id == client.service_id then
+            if not new_master or client.id < new_master.id then
+                new_master = client
+            end
+        end
+    end
+    return new_master
+end
+
 --rpc回执
 -----------------------------------------------------------------------------
 --服务器心跳协议

@@ -153,7 +153,7 @@ function UpdateMgr:update(now_ms, clock_ms)
         end
         --更新帧逻辑
         self:update_next()
-        --快帧200ms更新
+        --快帧更新
         if clock_ms < self.last_frame then
             return
         end
@@ -320,10 +320,10 @@ function UpdateMgr:monitor_mem()
     if lua_mem > self.max_lua_mem_usage then
         self.max_lua_mem_usage = lua_mem
     end
-    if gc_step > 5 and diff_mem > 1 then
+    if diff_mem > 1 and diff_mem / lua_mem > 0.01 then
         local cur_size, max_size = thread_mgr:size()
-        log_warn("UpdateMgr][monitor_mem] lua_mem: %s/%s M,threads:%s/%s,lock size:%s,gc_step:%s",
-                 lua_mem, self.max_lua_mem_usage, cur_size, max_size, thread_mgr:lock_size(), gc_step)
+        log_warn("UpdateMgr][monitor_mem] lua_mem: +%s -> %s/%s M,threads:%s/%s,lock size:%s,gc_step:%s",
+                 diff_mem, lua_mem, self.max_lua_mem_usage, cur_size, max_size, thread_mgr:lock_size(), gc_step)
     end
 end
 

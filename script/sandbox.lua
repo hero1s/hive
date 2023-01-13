@@ -153,22 +153,24 @@ function hive.reload()
     local count = 0
     for path, node in pairs(load_files) do
         if node.can_reload then
-            local filetime = file_time(node.fullpath)
+            local filetime, err = file_time(node.fullpath)
+            if filetime == 0 then
+                log_output("error", sformat("[hive][reload] %s get_time failed(%s)", node.fullpath, err))
+                goto continue
+            end
             if node.time then
-                if mabs(node.time - filetime) > 3 then
+                if mabs(node.time - filetime) > 1 then
                     local res = try_load(node, true)
                     if res then
                         node.res = res
                     end
                     count = count + 1
                 end
-                if count > 20 then
-                    return count
-                end
             else
                 log_output("error", sformat("[hive][reload] error file:%s", node.filename))
             end
         end
+        ::continue::
     end
     return count
 end

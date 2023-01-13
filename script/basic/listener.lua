@@ -23,7 +23,6 @@ function Listener:verify_trigger(trigger)
 end
 
 function Listener:add_trigger(trigger, event, handler)
-    self:verify_trigger(trigger)
     local func_name     = handler or event
     local callback_func = trigger[func_name]
     if not callback_func or type(callback_func) ~= "function" then
@@ -40,12 +39,20 @@ function Listener:add_trigger(trigger, event, handler)
 end
 
 function Listener:remove_trigger(trigger, event)
-    local trigger_array = self._triggers[event]
-    if trigger_array then
-        for i, context in pairs(trigger_array or {}) do
-            if context[1] == trigger then
-                tremove(trigger_array, i)
+    local remove_array = function(trigger_array)
+        if trigger_array then
+            for i, context in pairs(trigger_array or {}) do
+                if context[1] == trigger then
+                    tremove(trigger_array, i)
+                end
             end
+        end
+    end
+    if event then
+        remove_array(self._triggers[event])
+    else
+        for _, trigger_array in pairs(self._triggers or {}) do
+            remove_array(trigger_array)
         end
     end
 end
