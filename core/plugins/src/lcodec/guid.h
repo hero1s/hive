@@ -25,7 +25,7 @@ namespace lcodec {
     const uint32_t MAX_GROUP    = ((1 << GROUP_BITS) - 1);   //1024 - 1
     const uint32_t MAX_INDEX    = ((1 << INDEX_BITS) - 1);   //1024 - 1
     const uint32_t MAX_SNUM     = ((1 << SNUM_BITS-3) - 1);  //1024 - 1
-    const uint32_t MAX_RAND_NUM = ((1 << 3) - 1);            //1024 - 1
+    const uint32_t MAX_RAND_NUM = ((1 << 3) - 1);            //8    - 1
 
     //每一group独享一个id生成种子
     static thread_local time_t last_time = 0;
