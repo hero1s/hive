@@ -12,7 +12,7 @@ local lclock_ms   = ltimer.clock_ms
 
 local test        = {
     tid       = 3.1415926,
-    player_id = new_guid()
+    player_id = new_guid(hive.service_id, hive.index)
 }
 
 print(test.tid)

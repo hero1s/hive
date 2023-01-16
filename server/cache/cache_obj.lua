@@ -37,7 +37,7 @@ prop:accessor("records", {})            -- records
 prop:accessor("dirty_records", {})      -- dirty records
 
 function CacheObj:__init(cache_conf, primary_value)
-    self.uuid          = new_guid()
+    self.uuid          = new_guid(hive.service_id, hive.index)
     self.primary_value = primary_value
     self.cache_rows    = cache_conf.rows
     self.db_name       = cache_conf.cache_db

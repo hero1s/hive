@@ -24,13 +24,14 @@ namespace lcodec {
 
     const uint32_t MAX_GROUP    = ((1 << GROUP_BITS) - 1);   //1024 - 1
     const uint32_t MAX_INDEX    = ((1 << INDEX_BITS) - 1);   //1024 - 1
-    const uint32_t MAX_SNUM     = ((1 << SNUM_BITS) - 1);    //8912 - 1
+    const uint32_t MAX_SNUM     = ((1 << SNUM_BITS-3) - 1);  //1024 - 1
+    const uint32_t MAX_RAND_NUM = ((1 << 3) - 1);            //1024 - 1
 
     //每一group独享一个id生成种子
-    static time_t last_time = 0;
-    static size_t serial_inedx_table[(1 << GROUP_BITS)] = { 0 };
+    static thread_local time_t last_time = 0;
+    static thread_local size_t serial_inedx_table[(1 << GROUP_BITS)] = { 0 };
 
-    static char letter[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    static const char letter[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
     static uint64_t guid_new(uint32_t group, uint32_t index){
         if (group == 0) {
@@ -56,6 +57,7 @@ namespace lcodec {
                 last_time = ++now_time;
                 serial_index = 0;
             }
+            serial_index = serial_index << 3 | rand() % MAX_RAND_NUM;
         }
         return ((last_time - BASE_TIME) << (SNUM_BITS + GROUP_BITS + INDEX_BITS)) |
                 (serial_index << (GROUP_BITS + INDEX_BITS)) | (index << GROUP_BITS) | group;

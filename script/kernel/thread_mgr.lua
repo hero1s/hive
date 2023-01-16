@@ -61,6 +61,7 @@ function ThreadMgr:lock(key, no_reentry)
         end
         if head.co == co_running() then
             --防止重入
+            log_err("[ThreadMgr][lock] the lock repeat lock:%s", key)
             head:increase()
             return head
         end
@@ -150,7 +151,7 @@ function ThreadMgr:on_second(clock_ms)
         local head = queue:head()
         if head and head.timeout <= clock_ms then
             --head:unlock()
-            log_err("[ThreadMgr][on_second] the lock is timeout:%s", head.key)
+            log_err("[ThreadMgr][on_second] the lock is timeout:%s,count:%s,cost:%s", head.key, head.count, head:cost_time(clock_ms))
         end
     end
 end

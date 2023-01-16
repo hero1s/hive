@@ -38,7 +38,7 @@ function RpcClient:__init(holder, ip, port)
     self.holder = holder
     self.port   = port
     self.ip     = ip
-    self.uuid   = new_guid()
+    self.uuid   = new_guid(hive.service_id, hive.index)
     self:setup()
 end
 
