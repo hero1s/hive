@@ -144,7 +144,7 @@ end
 
 --获取client
 function RpcServer:get_client_by_id(hive_id)
-    for token, client in pairs(self.client) do
+    for token, client in pairs(self.clients) do
         if client.id == hive_id then
             return client
         end

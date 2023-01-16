@@ -139,7 +139,7 @@ function UpdateMgr:update(now_ms, clock_ms)
     thread_mgr:fork(function()
         local diff_ms = clock_ms - hive.clock_ms
         if diff_ms > HALF_MS and hive.frame > 1 then
-            log_err("[UpdateMgr][update] last frame exec too long(%d ms)!,service:%s", diff_ms, hive.name)
+            log_err("[UpdateMgr][update] last frame exec too long(%d ms)!,service:%s,mem:%s M", diff_ms, hive.name, self.last_lua_mem_usage)
         end
         --帧更新
         local frame   = hive.frame + 1

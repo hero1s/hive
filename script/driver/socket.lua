@@ -23,6 +23,7 @@ prop:reader("session", nil)          --连接成功对象
 prop:reader("listener", nil)
 prop:reader("recvbuf", "")
 prop:reader("port", 0)
+prop:accessor("timeout", NETWORK_TIMEOUT)
 
 function Socket:__init(host)
     self.host = host
@@ -107,6 +108,7 @@ end
 
 function Socket:on_socket_accept(session)
     local socket = Socket(self.host)
+    socket:set_timeout(self.timeout)
     socket:accept(session, session.ip, self.port)
 end
 
@@ -127,7 +129,7 @@ function Socket:on_socket_error(token, err)
 end
 
 function Socket:accept(session, ip, port)
-    session.set_timeout(NETWORK_TIMEOUT)
+    session.set_timeout(self.timeout)
     session.on_call_text = function(recv_len, data)
         thread_mgr:fork(function()
             hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, data)

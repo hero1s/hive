@@ -104,9 +104,9 @@ function AdminMgr:on_gm_page(url, querys, request)
     local user = querys["user"]
     local pwd  = querys["pwd"]
     if user ~= self.user or pwd ~= self.pwd then
-        return self.http_server:build_response(404, "this http request hasn't process!")
+        return "this http request hasn't process!"
     end
-    return self.http_server:build_response(200, gm_page)
+    return gm_page, {["Access-Control-Allow-Origin"] = "*"}
 end
 
 --gm列表

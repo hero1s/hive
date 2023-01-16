@@ -1,22 +1,22 @@
 --http_server.lua
-local lhttp       = require("lhttp")
-local Socket      = import("driver/socket.lua")
+local lhttp             = require("lhttp")
+local Socket            = import("driver/socket.lua")
 
-local type        = type
-local tostring    = tostring
-local log_err     = logger.err
-local log_warn    = logger.warn
-local log_info    = logger.info
-local log_debug   = logger.debug
-local json_encode = hive.json_encode
-local tunpack     = table.unpack
-local signal_quit = signal.quit
-local saddr       = string_ext.addr
+local type              = type
+local tostring          = tostring
+local log_warn          = logger.warn
+local log_info          = logger.info
+local log_debug         = logger.debug
+local json_encode       = hive.json_encode
+local tunpack           = table.unpack
+local signal_quit       = signal.quit
+local saddr             = string_ext.addr
 
-local thread_mgr  = hive.get("thread_mgr")
+local HTTP_CALL_TIMEOUT = hive.enum("NetwkTime", "HTTP_CALL_TIMEOUT")
+local thread_mgr        = hive.get("thread_mgr")
 
-local HttpServer  = class()
-local prop        = property(HttpServer)
+local HttpServer        = class()
+local prop              = property(HttpServer)
 prop:reader("listener", nil)        --网络连接对象
 prop:reader("ip", nil)              --http server地址
 prop:reader("port", 8080)           --http server端口
@@ -36,6 +36,7 @@ function HttpServer:setup(http_addr, induce)
     self.ip, self.port = saddr(http_addr)
     self.port          = induce and (self.port + hive.index - 1) or self.port
     local socket       = Socket(self)
+    socket:set_timeout(HTTP_CALL_TIMEOUT)
     if not socket:listen(self.ip, self.port) then
         log_info("[HttpServer][setup] now listen %s failed", http_addr)
         signal_quit(1)
@@ -43,6 +44,12 @@ function HttpServer:setup(http_addr, induce)
     end
     log_info("[HttpServer][setup] listen(%s:%s) success!", self.ip, self.port)
     self.listener = socket
+end
+
+function HttpServer:close(token, socket)
+    self.clients[token]  = nil
+    self.requests[token] = nil
+    socket:close()
 end
 
 function HttpServer:on_socket_error(socket, token, err)
@@ -74,12 +81,11 @@ function HttpServer:on_socket_recv(socket, token)
     end
     local request = self.requests[token]
     if not request then
-        request = lhttp.create_request()
-        log_debug("[HttpServer][on_socket_recv] create_request(token:%s)!", token)
+        request              = lhttp.create_request()
         self.requests[token] = request
     end
     local buf = socket:get_recvbuf()
-    if #buf == 0 or not request.parse(buf) then
+    if not request.parse(buf) then
         return
     end
     socket:pop(#buf)
@@ -124,24 +130,6 @@ function HttpServer:register_del(url, handler, target)
     self.del_handlers[url] = { handler, target }
 end
 
---生成response
-function HttpServer:build_response(status, content, headers)
-    local response = lhttp.create_response()
-    response.set_header("Access-Control-Allow-Origin", "*")
-    response.set_header("connection", "close")
-    if type(content) == "table" then
-        response.set_header("Content-Type", "application/json")
-        response.content = json_encode(content)
-    else
-        response.content = (type(content) == "string") and content or tostring(content)
-    end
-    response.status = status
-    for name, value in pairs(headers or {}) do
-        response.set_header(name, value)
-    end
-    return response
-end
-
 --http post 回调
 function HttpServer:on_http_request(handlers, socket, url, ...)
     local handler_info = handlers[url] or handlers["*"]
@@ -149,11 +137,11 @@ function HttpServer:on_http_request(handlers, socket, url, ...)
         local handler, target = tunpack(handler_info)
         if not target then
             if type(handler) == "function" then
-                local ok, response = pcall(handler, url, ...)
+                local ok, response, headers = pcall(handler, url, ...)
                 if not ok then
                     response = { code = 1, msg = response }
                 end
-                self:response(socket, 200, response)
+                self:response(socket, 200, response, headers)
                 return
             end
         else
@@ -161,11 +149,11 @@ function HttpServer:on_http_request(handlers, socket, url, ...)
                 handler = target[handler]
             end
             if type(handler) == "function" then
-                local ok, response = pcall(handler, target, url, ...)
+                local ok, response, headers = pcall(handler, target, url, ...)
                 if not ok then
                     response = { code = 1, msg = response }
                 end
-                self:response(socket, 200, response)
+                self:response(socket, 200, response, headers)
                 return
             end
         end
@@ -174,34 +162,30 @@ function HttpServer:on_http_request(handlers, socket, url, ...)
     self:response(socket, 404, "this http request hasn't process!")
 end
 
-function HttpServer:response(socket, status, response)
+function HttpServer:response(socket, status, response, headers)
     local token = socket:get_token()
-    if not token then
+    if not token or not response then
         return
     end
-    self.requests[token] = nil
-    if type(response) == "table" and response.__pointer__ then
-        if response.serialize then
-            socket:send(response.serialize())
-            socket:close()
-            return
-        else
-            log_err("[HttpServer][response] the unknow table:%s", response)
-        end
-    end
     local new_resp = lhttp.create_response()
-    new_resp.set_header("Access-Control-Allow-Origin", "*")
+    for key, value in pairs(headers or {}) do
+        new_resp.set_header(key, value)
+    end
     new_resp.set_header("connection", "close")
     if type(response) == "table" then
         new_resp.set_header("Content-Type", "application/json")
         new_resp.content = json_encode(response)
+    elseif type(response) == "string" then
+        new_resp.content = response
+        local html       = response:find("<html")
+        new_resp.set_header("Content-Type", html and "text/html" or "text/plain")
     else
         new_resp.set_header("Content-Type", "text/plain")
-        new_resp.content = (type(response) == "string") and response or tostring(response)
+        new_resp.content = tostring(response)
     end
     new_resp.status = status
     socket:send(new_resp.serialize())
-    socket:close()
+    self:close(token, socket)
 end
 
 return HttpServer

@@ -34,6 +34,7 @@ prop:reader("recvbuf", "")
 prop:reader("context", nil)         --context
 prop:reader("url", "")
 prop:reader("port", 0)
+prop:accessor("timeout", NETWORK_TIMEOUT)
 
 function WebSocket:__init(host)
     self.host = host
@@ -56,7 +57,7 @@ function WebSocket:listen(ip, port)
     if self.listener then
         return true
     end
-    self.listener    = socket_mgr.listen(ip, port, self.proto_type)
+    self.listener = socket_mgr.listen(ip, port, self.proto_type)
     if not self.listener then
         log_err("[WebSocket][listen] failed to listen: %s:%d type=%d", ip, port, self.proto_type)
         return false
@@ -135,7 +136,7 @@ end
 --accept
 function WebSocket:accept(session, ip, port)
     self.ip, self.port = ip, port
-    session.set_timeout(NETWORK_TIMEOUT)
+    session.set_timeout(self.timeout)
     session.on_call_text = function(recv_len, data)
         thread_mgr:fork(function()
             hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, data)
@@ -143,7 +144,7 @@ function WebSocket:accept(session, ip, port)
     end
     session.on_error     = function(token, err)
         thread_mgr:fork(function()
-            hxpcall(self.on_socket_error,"on_socket_error: %s", self, token, err)
+            hxpcall(self.on_socket_error, "on_socket_error: %s", self, token, err)
         end)
     end
 end

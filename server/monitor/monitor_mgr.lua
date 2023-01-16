@@ -115,7 +115,7 @@ function MonitorMgr:on_log_page(url, querys, request)
             log_err("[MonitorMgr][on_log_page] load html faild:%s", html_path)
         end
     end
-    return self.http_server:build_response(200, log_page)
+    return log_page, { ["Access-Control-Allow-Origin"] = "*" }
 end
 
 -- status查询

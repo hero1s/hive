@@ -6,7 +6,6 @@
     <meta name="description" content="hive log">
     <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <title>Log Console</title>
     <link rel="icon" href="http://kyrieliu.cn/kyrie.ico">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css">
@@ -128,7 +127,7 @@
                     for (var token in result) {
                         var node = result[token];
                         if (node) {
-                            var svr_name = node.service + "-" + node.index;
+                            var svr_name = node.name;
                             svr_names.push(svr_name);
                             svr_tokens.set(svr_name, token);
                         }
@@ -173,7 +172,7 @@
                 if (node) {
                     that.node = node;
                     that.logging = false;
-                    var msg = "<pre>service: " + node.service + "  index: " + node.index + "</pre>";
+                    var msg = "<pre>service: " + node.service_name + "  index: " + node.index + "</pre>";
                     that._displayNewMsg("historyMsg", msg, "myMsg");
                     that._updateBtn();
                 }
