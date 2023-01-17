@@ -62,7 +62,7 @@ end
 
 --获取自增id
 function MongoAgent:get_inc_id(id_name, tb_name, db_name, inc_value)
-    local ok, code, res = self:find_and_modify({ tb_name, { ["$inc"] = { [id_name] = inc_value or 1 } }, {}, true, { _id = 0 } }, nil, db_name)
+    local ok, code, res = self:find_and_modify({ tb_name, { ["$inc"] = { [id_name] = inc_value or 1 } }, {}, true, { _id = 0 }, true }, nil, db_name)
     if check_failed(code, ok) then
         log_err("[MongoAgent][get_inc_id] create %s failed! code: %s, res: %s", id_name, code, res)
         return 0

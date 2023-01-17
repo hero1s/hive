@@ -461,7 +461,7 @@ function RedisDB:on_socket_recv(sock, token)
                     ok, res, cb_session_id = prefix_func(context, body)
                 end
                 if ok and sock == self.subscribe_sock then
-                    self:on_suncribe_reply(res)
+                    self:on_subcribe_reply(res)
                 end
                 if session_id then
                     if session_id == context.commit_id then
@@ -476,7 +476,7 @@ function RedisDB:on_socket_recv(sock, token)
     end
 end
 
-function RedisDB:on_suncribe_reply(res)
+function RedisDB:on_subcribe_reply(res)
     if type(res) == "table" then
         local ttype, channel, data, data2 = res[1], res[2], res[3], res[4]
         local reply_func                  = _redis_subscribe_replys[ttype]

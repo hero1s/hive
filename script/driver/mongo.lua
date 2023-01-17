@@ -360,7 +360,7 @@ function MongoDB:find(co_name, query, projection, sortor, limit, skip)
 end
 
 function MongoDB:find_and_modify(co_name, update, selector, upsert, fields, new)
-    return self:runCommand("findAndModify", co_name, "query", selector, "update", update, "fields", fields, "upsert", upsert, "new", new or true)
+    return self:runCommand("findAndModify", co_name, "query", selector, "update", update, "fields", fields, "upsert", upsert, "new", new)
 end
 
 return MongoDB
