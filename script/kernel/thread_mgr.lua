@@ -1,22 +1,23 @@
 --thread_mgr.lua
-local select     = select
-local tunpack    = table.unpack
-local tsort      = table.sort
-local tsize      = table_ext.size
-local sformat    = string.format
-local co_yield   = coroutine.yield
-local co_create  = coroutine.create
-local co_resume  = coroutine.resume
-local co_running = coroutine.running
-local mabs       = math.abs
-local hxpcall    = hive.xpcall
-local log_err    = logger.err
-local log_info   = logger.info
+local select       = select
+local tunpack      = table.unpack
+local tsort        = table.sort
+local tsize        = table_ext.size
+local sformat      = string.format
+local co_yield     = coroutine.yield
+local co_create    = coroutine.create
+local co_resume    = coroutine.resume
+local co_running   = coroutine.running
+local mabs         = math.abs
+local setmetatable = setmetatable
+local hxpcall      = hive.xpcall
+local log_err      = logger.err
+local log_info     = logger.info
 
-local QueueFIFO  = import("container/queue_fifo.lua")
+local QueueFIFO    = import("container/queue_fifo.lua")
 
-local ThreadMgr  = singleton()
-local prop       = property(ThreadMgr)
+local ThreadMgr    = singleton()
+local prop         = property(ThreadMgr)
 prop:reader("session_id", 1)
 prop:reader("coroutine_map", {})
 prop:reader("syncqueue_map", {})
@@ -136,7 +137,6 @@ end
 function ThreadMgr:on_minute(clock_ms)
     for key, queue in pairs(self.syncqueue_map) do
         if queue(true) == 0 then
-            log_info("[ThreadMgr][on_minute] remove lock:%s", key)
             self.syncqueue_map[key] = nil
         end
     end
