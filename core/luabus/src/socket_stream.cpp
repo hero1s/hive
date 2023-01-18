@@ -24,10 +24,8 @@ socket_stream::socket_stream(socket_mgr* mgr, LPFN_CONNECTEX connect_func, eprot
 	m_ip[0] = 0;
 	if (m_proto_type == eproto_type::proto_pack || m_proto_type == eproto_type::proto_rpc) {
 		m_delay_send = true;
-	}
-	if (m_proto_type == eproto_type::proto_pack) {
-		m_tick_dispatch_pkg = 5;
-	}
+	}	
+	m_tick_dispatch_pkg = DISPATCH_PKG[int(m_proto_type)];
 }
 #endif
 
@@ -40,9 +38,7 @@ socket_stream::socket_stream(socket_mgr* mgr, eproto_type proto_type, elink_type
 	if (m_proto_type == eproto_type::proto_pack || m_proto_type == eproto_type::proto_rpc) {
 		m_delay_send = true;
 	}
-	if (m_proto_type == eproto_type::proto_pack) {
-		m_tick_dispatch_pkg = 5;
-	}
+	m_tick_dispatch_pkg = DISPATCH_PKG[int(m_proto_type)];
 }
 
 socket_stream::~socket_stream() {
@@ -578,7 +574,7 @@ void socket_stream::dispatch_package() {
 		max_dispatch_pkg--;
 
 		// 防止单个连接处理太久，不能大于20ms
-		if (m_last_recv_time - now > 20 || max_dispatch_pkg < 0) {
+		if (m_last_recv_time - now > 20 || max_dispatch_pkg < 1) {
 			m_need_dispatch_pkg = true;
 			break;
 		}

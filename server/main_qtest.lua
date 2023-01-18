@@ -1,7 +1,8 @@
 --main_qtest.lua
 import("kernel.lua")
 
-hive.startup(function() --初始化test
+hive.startup(function()
+    --初始化test
     --import("qtest/oop_test.lua")
     --import("qtest/etcd_test.lua")
     --import("qtest/json_test.lua")
@@ -27,12 +28,12 @@ hive.startup(function() --初始化test
     --import("qtest/zset_test.lua")
     --import("qtest/prof_test.lua")
     --import("qtest/lrandom_test.lua")
-    import("qtest/nacos_test.lua")
+    --import("qtest/nacos_test.lua")
     --import("qtest/bitarray_test.lua")
-    --import("qtest/snapshot_test.lua")
     --import("qtest/guid_test.lua")
     --import("qtest/helper_test.lua")
     --import("qtest/tcp_test.lua")
     --import("qtest/udp_test.lua")
     --import("qtest/lyyjson_test.lua")
+    import("qtest/sync_lock_test.lua")
 end)

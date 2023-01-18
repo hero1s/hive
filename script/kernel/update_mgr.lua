@@ -42,7 +42,7 @@ prop:reader("minute_objs", {})
 prop:reader("next_events", {})
 prop:reader("next_handlers", {})
 
-local gc_step = 1
+local gc_step = 5
 
 function UpdateMgr:__init()
     --注册订阅

@@ -14,9 +14,6 @@ local log_err    = logger.err
 local log_info   = logger.info
 
 local QueueFIFO  = import("container/queue_fifo.lua")
-local SyncLock   = import("kernel/object/sync_lock.lua")
-
-local MINUTE_MS  = hive.enum("PeriodTime", "MINUTE_MS")
 
 local ThreadMgr  = singleton()
 local prop       = property(ThreadMgr)
@@ -24,6 +21,37 @@ prop:reader("session_id", 1)
 prop:reader("coroutine_map", {})
 prop:reader("syncqueue_map", {})
 prop:reader("coroutine_pool", nil)
+
+local function sync_queue()
+    local current_thread
+    local ref          = 0
+    local thread_queue = QueueFIFO()
+
+    local scope        = setmetatable({}, { __close = function()
+        ref = ref - 1
+        if ref == 0 then
+            current_thread = thread_queue:pop()
+            if current_thread then
+                co_resume(current_thread)
+            end
+        end
+    end })
+
+    return function(refcount)
+        if refcount then
+            return ref
+        end
+        local thread = co_running()
+        if current_thread and current_thread ~= thread then
+            thread_queue:push(thread)
+            co_yield()
+            assert(ref == 0)    -- current_thread == thread
+        end
+        current_thread = thread
+        ref            = ref + 1
+        return scope
+    end
+end
 
 function ThreadMgr:__init()
     self.coroutine_pool = QueueFIFO()
@@ -38,7 +66,7 @@ end
 function ThreadMgr:lock_size()
     local count = 0
     for _, v in pairs(self.syncqueue_map) do
-        count = count + v:size()
+        count = count + v(true)
     end
     return count
 end
@@ -46,46 +74,14 @@ end
 function ThreadMgr:lock(key, no_reentry)
     local queue = self.syncqueue_map[key]
     if not queue then
-        queue                   = QueueFIFO()
+        queue                   = sync_queue()
         self.syncqueue_map[key] = queue
     end
-    queue.ttl  = hive.clock_ms
-    local head = queue:head()
-    if not head then
-        local lock = SyncLock(self, key, false)
-        queue:push(lock)
-        return lock
-    else
-        if no_reentry then
-            return nil
-        end
-        if head.co == co_running() then
-            --防止重入
-            log_err("[ThreadMgr][lock] the lock repeat lock:%s", key)
-            head:increase()
-            return head
-        end
-        local lock = SyncLock(self, key, true)
-        queue:push(lock)
-        co_yield()
-        return lock
+    if no_reentry and queue(true) > 0 then
+        log_err("[ThreadMgr][lock] the function is repeat call,please check is right!:%s", key)
+        return nil
     end
-end
-
-function ThreadMgr:unlock(key)
-    local queue = self.syncqueue_map[key]
-    if queue then
-        while true do
-            local lock = queue:pop()
-            if not lock then
-                break
-            end
-            if lock:is_yield() then
-                co_resume(lock.co)
-                return
-            end
-        end
-    end
+    return queue()
 end
 
 function ThreadMgr:co_create(f)
@@ -139,22 +135,17 @@ end
 
 function ThreadMgr:on_minute(clock_ms)
     for key, queue in pairs(self.syncqueue_map) do
-        if queue:empty() and clock_ms - queue.ttl > MINUTE_MS then
+        if queue(true) == 0 then
+            log_info("[ThreadMgr][on_minute] remove lock:%s", key)
             self.syncqueue_map[key] = nil
         end
     end
 end
 
 function ThreadMgr:on_second(clock_ms)
-    --处理锁超时
-    for _, queue in pairs(self.syncqueue_map) do
-        local head = queue:head()
-        if head and head.timeout <= clock_ms then
-            --head:unlock()
-            log_err("[ThreadMgr][on_second] the lock is timeout:%s,count:%s,cost:%s", head.key, head.count, head:cost_time(clock_ms))
-        end
-    end
+
 end
+
 local MAX_DIFF_ID<const> = 100000000 --1亿
 function ThreadMgr:on_fast(clock_ms)
     --检查协程超时

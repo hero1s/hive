@@ -27,11 +27,13 @@ enum elink_type : uint8_t
 // 协议类型
 enum class eproto_type : int
 {
-	proto_rpc = 0,  // rpc协议
+	proto_rpc = 0,   // rpc协议
 	proto_pack = 1,  // pack协议
 	proto_text = 2,  // text协议
-	proto_max = 3,  // max 
+	proto_max = 3,   // max 
 };
+
+static const int16_t DISPATCH_PKG[int(eproto_type::proto_max)] = { 1000,10,100 };
 
 struct sendv_item
 {

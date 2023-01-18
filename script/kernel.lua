@@ -10,7 +10,6 @@ local tunpack       = table.unpack
 local raw_yield     = coroutine.yield
 local raw_resume    = coroutine.resume
 local ltime         = ltimer.time
-local lclock_ms     = ltimer.clock_ms
 
 local HiveMode      = enum("HiveMode")
 local ServiceStatus = enum("ServiceStatus")
@@ -152,17 +151,13 @@ function hive.after_start()
     end
 end
 
-local wait_ms = 10
 --底层驱动
 hive.run      = function()
     if socket_mgr then
-        socket_mgr.wait(wait_ms)
+        socket_mgr.wait(10)
     end
     --系统更新
-    local now_ms, clock_ms = ltime()
-    update_mgr:update(now_ms, clock_ms)
-    local cost_time = lclock_ms() - clock_ms
-    wait_ms         = cost_time > 10 and 1 or 10 - cost_time
+    update_mgr:update(ltime())
 end
 
 hive.exit     = function()
