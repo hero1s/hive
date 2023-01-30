@@ -45,20 +45,6 @@ function logger.init()
     llog.add_lvl_dest(LOG_LEVEL.ERROR)
 end
 
-function logger.feature(name)
-    if not logfeature.features then
-        logfeature.features = {}
-    end
-    if not logfeature.features[name] then
-        logfeature.features[name] = true
-        llog.add_dest(name)
-    end
-end
-
-function logger.set_webhook(webhook)
-    logger.webhook = webhook
-end
-
 function logger.add_monitor(monitor)
     monitors[monitor] = true
 end
@@ -148,7 +134,7 @@ for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
             local info = dgetinfo(2, "S")
             feature    = fsstem(info.short_src)
         end
-        logger.feature(feature)
+        llog.add_dest(feature)
         return function(fmt, ...)
             local ok, res = pcall(logger_output, feature, lvl, lvl_name, fmt, log_conf, ...)
             if not ok then
