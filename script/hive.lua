@@ -40,6 +40,11 @@ function hive.try_call(func, time, ...)
     return false
 end
 
+function hive.where_call()
+    local info = dgetinfo(3, "nSl")
+    return sformat("[%s:%d]", info.short_src, info.currentline or 0)
+end
+
 -- 启动死循环监控
 function hive.check_endless_loop()
     log_warn("open check_endless_loop will degrade performance!")

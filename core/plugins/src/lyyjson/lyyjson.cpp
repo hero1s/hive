@@ -15,7 +15,7 @@ static constexpr std::string_view json_true = "true"sv;
 static constexpr std::string_view json_false = "false"sv;
 
 static constexpr int EMPTY_AS_ARRAY = 1;
-
+static constexpr size_t CONCAT_BUFFER_SIZE = 512;
 static constexpr int MAX_DEPTH = 64;
 
 static const char char2escape[256] = {
@@ -35,6 +35,8 @@ static const char char2escape[256] = {
 };
 
 static const char hex_digits[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+
+static thread_local buffer thread_encode_buffer{ CONCAT_BUFFER_SIZE };
 
 template <bool format>
 static void format_new_line(buffer* writer)
@@ -298,17 +300,18 @@ static int encode(lua_State* L)
     try
     {
         luaL_checkany(L, 1);
-        buffer writer(512);
+        buffer* writer = &thread_encode_buffer;
+        writer->clear();
         bool empty_as_array = (bool)luaL_opt(L, lua_toboolean, 2, true);
         if (empty_as_array)
-            writer.set_flag(EMPTY_AS_ARRAY);
+            writer->set_flag(EMPTY_AS_ARRAY);
         bool format = lua_toboolean(L, 3);
         lua_settop(L, 1);
         if (!format)
-            encode_one<false>(L, &writer, 1);
+            encode_one<false>(L, writer, 1);
         else
-            encode_one<true>(L, &writer, 1);
-        lua_pushlstring(L, writer.data(), writer.size());
+            encode_one<true>(L, writer, 1);
+        lua_pushlstring(L, writer->data(), writer->size());
         return 1;
     }
     catch (const std::exception& ex)
@@ -448,10 +451,11 @@ static int pretty_encode(lua_State *L)
     try
     {
         luaL_checkany(L, 1);
-        buffer writer(512);
+        buffer* writer = &thread_encode_buffer;
+        writer->clear();
         lua_settop(L, 1);
-        encode_one<true>(L, &writer, 1);
-        lua_pushlstring(L, writer.data(), writer.size());
+        encode_one<true>(L, writer, 1);
+        lua_pushlstring(L, writer->data(), writer->size());
         return 1;
     }
     catch (const std::exception& ex)
