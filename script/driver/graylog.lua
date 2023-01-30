@@ -13,7 +13,6 @@ local protoaddr   = string_ext.protoaddr
 
 local update_mgr  = hive.get("update_mgr")
 local http_client = hive.get("http_client")
-local thread_mgr  = hive.get("thread_mgr")
 
 local Socket      = import("driver/socket.lua")
 
@@ -57,10 +56,6 @@ function GrayLog:close()
 end
 
 function GrayLog:on_second()
-    local _lock<close> = thread_mgr:lock("graylog-second", true)
-    if not _lock then
-        return
-    end
     if not self.tcp:is_alive() then
         if not self.tcp:connect(self.ip, self.port) then
             log_err("[GrayLog][on_second] connect (%s:%s) failed!", self.ip, self.port, self.name)

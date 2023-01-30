@@ -103,7 +103,7 @@ function CacheMgr:on_service_close(id, service_name)
 end
 
 function CacheMgr:on_timer_update()
-    local _lock<close> = thread_mgr:lock("cache-update", true)
+    local _lock<close> = thread_mgr:lock("cache-update", false)
     if not _lock then
         return
     end

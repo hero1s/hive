@@ -39,10 +39,6 @@ function HttpClient:on_quit()
 end
 
 function HttpClient:on_fast(clock_ms)
-    local _lock<close> = thread_mgr:lock("httpclient-tick", true)
-    if not _lock then
-        return
-    end
     if next(self.contexts) then
         curlm_mgr.update()
         --清除超时请求

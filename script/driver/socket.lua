@@ -66,7 +66,10 @@ end
 
 function Socket:connect(ip, port, ptype)
     if self.session then
-        return true
+        if self.alive then
+            return true
+        end
+        return false, "socket in connecting"
     end
     if ptype then
         self.proto_type = ptype

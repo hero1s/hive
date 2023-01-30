@@ -398,10 +398,6 @@ function RedisDB:login(socket, title)
 end
 
 function RedisDB:on_second()
-    local _lock<close> = thread_mgr:lock("redis-second", true)
-    if not _lock then
-        return
-    end
     local command_sock   = self.command_sock
     local subscribe_sock = self.subscribe_sock
     if not command_sock:is_alive() then

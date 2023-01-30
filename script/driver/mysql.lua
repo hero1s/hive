@@ -650,10 +650,6 @@ function MysqlDB:on_minute()
 end
 
 function MysqlDB:on_second()
-    local _lock<close> = thread_mgr:lock("mysql-second" .. self.db, true)
-    if not _lock then
-        return
-    end
     if not self.sock:is_alive() then
         if not self.sock:connect(self.ip, self.port) then
             log_err("[MysqlDB][on_second] connect db(%s:%s:%s) failed!", self.ip, self.port, self.db)

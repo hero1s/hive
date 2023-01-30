@@ -1,88 +1,95 @@
 --thread_mgr.lua
 local select       = select
 local tunpack      = table.unpack
-local tsort        = table.sort
-local tsize        = table_ext.size
 local sformat      = string.format
 local co_yield     = coroutine.yield
 local co_create    = coroutine.create
 local co_resume    = coroutine.resume
 local co_running   = coroutine.running
-local mabs         = math.abs
-local setmetatable = setmetatable
+
+local mrandom      = math_ext.random
+local tsize        = table_ext.size
 local hxpcall      = hive.xpcall
 local log_err      = logger.err
 local log_info     = logger.info
 
 local QueueFIFO    = import("container/queue_fifo.lua")
+local SyncLock     = import("kernel/object/sync_lock.lua")
+
+local MINUTE_10_MS = hive.enum("PeriodTime", "MINUTE_10_MS")
 
 local ThreadMgr    = singleton()
 local prop         = property(ThreadMgr)
 prop:reader("session_id", 1)
-prop:reader("coroutine_map", {})
 prop:reader("syncqueue_map", {})
+prop:reader("coroutine_waitings", {})
+prop:reader("coroutine_yields", {})
 prop:reader("coroutine_pool", nil)
 
-local function sync_queue()
-    local current_thread
-    local ref          = 0
-    local thread_queue = QueueFIFO()
-
-    local scope        = setmetatable({}, { __close = function()
-        ref = ref - 1
-        if ref == 0 then
-            current_thread = thread_queue:pop()
-            if current_thread then
-                co_resume(current_thread)
-            end
-        end
-    end })
-
-    return function(refcount)
-        if refcount then
-            return ref
-        end
-        local thread = co_running()
-        if current_thread and current_thread ~= thread then
-            thread_queue:push(thread)
-            co_yield()
-            assert(ref == 0)    -- current_thread == thread
-        end
-        current_thread = thread
-        ref            = ref + 1
-        return scope
-    end
-end
-
 function ThreadMgr:__init()
+    self.session_id     = mrandom()
     self.coroutine_pool = QueueFIFO()
 end
 
 function ThreadMgr:size()
-    local co_cur_max  = self.coroutine_pool:size()
-    local co_cur_size = tsize(self.coroutine_map) + 1
-    return co_cur_size, co_cur_max
+    local co_idle_size  = self.coroutine_pool:size()
+    local co_yield_size = tsize(self.coroutine_yields)
+    local co_wait_size  = tsize(self.coroutine_waitings)
+    return co_yield_size + co_wait_size + 1, co_idle_size
 end
 
 function ThreadMgr:lock_size()
     local count = 0
     for _, v in pairs(self.syncqueue_map) do
-        count = count + v(true)
+        count = count + v:size()
     end
     return count
 end
 
-function ThreadMgr:lock(key, no_reentry)
+function ThreadMgr:lock(key, waiting)
     local queue = self.syncqueue_map[key]
     if not queue then
-        queue                   = sync_queue()
+        queue                   = QueueFIFO()
         self.syncqueue_map[key] = queue
     end
-    if no_reentry and queue(true) > 0 then
-        log_err("[ThreadMgr][lock] the function is repeat call,please check is right!:%s", key)
-        return nil
+    queue.ttl  = hive.clock_ms + MINUTE_10_MS
+    local head = queue:head()
+    if not head then
+        local lock = SyncLock(self, key)
+        queue:push(lock)
+        return lock
+    else
+        if head.co == co_running() then
+            --防止重入
+            log_info("[ThreadMgr][lock] the lock repeat lock:[%s],count:%s", key, head:get_count())
+            head:increase()
+            return head
+        end
+        if waiting or waiting == nil then
+            --等待则挂起
+            local lock = SyncLock(self, key)
+            queue:push(lock)
+            co_yield()
+            return lock
+        end
+        log_err("[ThreadMgr][lock] the func is runing and try lock:[%s],check it's right", key)
     end
-    return queue()
+end
+
+function ThreadMgr:unlock(key, force)
+    local queue = self.syncqueue_map[key]
+    if queue then
+        local head = queue:head()
+        if head then
+            if head.co == co_running() or force then
+                queue:pop()
+                local next = queue:head()
+                if next then
+                    self.coroutine_waitings[next.co] = 0
+                end
+            end
+        end
+    end
 end
 
 function ThreadMgr:co_create(f)
@@ -107,12 +114,12 @@ function ThreadMgr:co_create(f)
 end
 
 function ThreadMgr:response(session_id, ...)
-    local context = self.coroutine_map[session_id]
+    local context = self.coroutine_yields[session_id]
     if not context then
         log_err("[ThreadMgr][response] unknown session_id(%s) response!", session_id)
         return
     end
-    self.coroutine_map[session_id] = nil
+    self.coroutine_yields[session_id] = nil
     self:resume(context.co, ...)
 end
 
@@ -121,13 +128,13 @@ function ThreadMgr:resume(co, ...)
 end
 
 function ThreadMgr:yield(session_id, title, ms_to, ...)
-    local context                  = { co = co_running(), title = title, to = hive.clock_ms + ms_to }
-    self.coroutine_map[session_id] = context
+    local context                     = { co = co_running(), title = title, to = hive.clock_ms + ms_to }
+    self.coroutine_yields[session_id] = context
     return co_yield(...)
 end
 
 function ThreadMgr:get_title(session_id)
-    local context = self.coroutine_map[session_id]
+    local context = self.coroutine_yields[session_id]
     if context then
         return context.title
     end
@@ -136,41 +143,50 @@ end
 
 function ThreadMgr:on_minute(clock_ms)
     for key, queue in pairs(self.syncqueue_map) do
-        if queue(true) == 0 then
+        if queue:empty() and clock_ms > queue.ttl then
             self.syncqueue_map[key] = nil
         end
     end
 end
 
 function ThreadMgr:on_second(clock_ms)
-
-end
-
-local MAX_DIFF_ID<const> = 100000000 --1亿
-function ThreadMgr:on_fast(clock_ms)
+    --处理锁超时
+    for key, queue in pairs(self.syncqueue_map) do
+        local head = queue:head()
+        if head and head.timeout <= clock_ms then
+            self:unlock(key, true)
+            log_err("[ThreadMgr][on_second] the lock is timeout:%s,count:%s,cost:%s", head.key, head.count, head:cost_time(clock_ms))
+        end
+    end
     --检查协程超时
     local timeout_coroutines = {}
-    for session_id, context in pairs(self.coroutine_map) do
+    for session_id, context in pairs(self.coroutine_yields) do
         if context.to <= clock_ms then
-            timeout_coroutines[#timeout_coroutines + 1] = session_id
+            timeout_coroutines[session_id] = context
         end
     end
     --处理协程超时
-    tsort(timeout_coroutines, function(a, b)
-        if mabs(a - b) < MAX_DIFF_ID then
-            return a > b
+    for session_id, context in pairs(timeout_coroutines) do
+        self.coroutine_yields[session_id] = nil
+        if context.title then
+            log_err("[ThreadMgr][on_fast] session_id(%s:%s) timeout!", session_id, context.title)
         end
-        return a < b
-    end)
-    for _, session_id in pairs(timeout_coroutines) do
-        local context = self.coroutine_map[session_id]
-        if context then
-            self.coroutine_map[session_id] = nil
-            if context.title then
-                log_info("[ThreadMgr][on_fast] session_id(%s:%s) timeout!", session_id, context.title)
-            end
-            self:resume(context.co, false, sformat("%s timeout", context.title), session_id)
+        self:resume(context.co, false, sformat("%s timeout", context.title), session_id)
+    end
+end
+
+function ThreadMgr:on_frame(clock_ms)
+    --检查协程超时
+    local timeout_coroutines = {}
+    for co, ms_to in pairs(self.coroutine_waitings) do
+        if ms_to <= clock_ms then
+            timeout_coroutines[#timeout_coroutines + 1] = co
         end
+    end
+    --处理协程超时
+    for _, co in pairs(timeout_coroutines) do
+        self.coroutine_waitings[co] = nil
+        co_resume(co)
     end
 end
 
@@ -190,8 +206,9 @@ function ThreadMgr:fork(f, ...)
 end
 
 function ThreadMgr:sleep(ms)
-    local session_id = self:build_session_id()
-    self:yield(session_id, nil, ms)
+    local co                    = co_running()
+    self.coroutine_waitings[co] = hive.clock_ms + ms
+    co_yield()
 end
 
 function ThreadMgr:build_session_id()

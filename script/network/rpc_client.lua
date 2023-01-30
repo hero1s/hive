@@ -7,7 +7,6 @@ local log_err        = logger.err
 local log_info       = logger.info
 local hxpcall        = hive.xpcall
 local hhash_code     = lcodec.hash_code
-local new_guid       = lcodec.guid_new
 
 local event_mgr      = hive.get("event_mgr")
 local socket_mgr     = hive.get("socket_mgr")
@@ -38,7 +37,6 @@ function RpcClient:__init(holder, ip, port)
     self.holder = holder
     self.port   = port
     self.ip     = ip
-    self.uuid   = new_guid(hive.service_id, hive.index)
     self:setup()
 end
 
@@ -56,10 +54,6 @@ function RpcClient:setup()
 end
 
 function RpcClient:on_second(clock_ms)
-    local _lock<close> = thread_mgr:lock("rpc-client-second" .. self.uuid, true)
-    if not _lock then
-        return
-    end
     if self.alive then
         self:heartbeat(false, clock_ms)
         return
