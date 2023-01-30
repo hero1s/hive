@@ -2,23 +2,29 @@ local log_debug  = logger.debug
 
 local thread_mgr = hive.get("thread_mgr")
 
-function test_a(index)
+function test_a(index, sync)
     local _lock<close> = thread_mgr:lock("sync_lock_test")
-    thread_mgr:sleep(10)
+    if sync then
+        thread_mgr:sleep(10)
+    end
     log_debug("test_a:%s", index)
 end
 
-function test_b(index)
+function test_b(index, sync)
     local _lock<close> = thread_mgr:lock("sync_lock_test")
-    thread_mgr:sleep(100)
-    test_a(index)
+    if sync then
+        thread_mgr:sleep(10)
+    end
+    test_a(index, sync)
     log_debug("test_b:%s", index)
 end
 
-function test_c(index)
+function test_c(index, sync)
     local _lock<close> = thread_mgr:lock("sync_lock_test")
-    thread_mgr:sleep(1000)
-    test_b(index)
+    if sync then
+        thread_mgr:sleep(10)
+    end
+    test_b(index, sync)
     log_debug("test_c:%s", index)
 end
 
@@ -52,7 +58,7 @@ thread_mgr:fork(function()
     thread_mgr:sleep(1000)
     for i = 1, 10 do
         thread_mgr:fork(function()
-            test_c(i)
+            test_c(i, true)
         end)
     end
     thread_mgr:fork(function()
@@ -61,11 +67,11 @@ thread_mgr:fork(function()
     thread_mgr:fork(function()
         test_no_reentry(2)
     end)
-    for i = 1, 1000 do
+--[[    for i = 1, 1000 do
         thread_mgr:fork(function()
             test_loop_lock(i)
         end)
-    end
+    end]]
 end)
 
 

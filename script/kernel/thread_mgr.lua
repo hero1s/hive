@@ -61,7 +61,7 @@ function ThreadMgr:lock(key, waiting)
     else
         if head.co == co_running() then
             --防止重入
-            log_info("[ThreadMgr][lock] the lock repeat lock:[%s],count:%s", key, head:get_count())
+            log_info("[ThreadMgr][lock] the lock repeat lock:[%s],count:%s,queue:%s", key, head:get_count(), queue:size())
             head:increase()
             return head
         end
@@ -155,7 +155,8 @@ function ThreadMgr:on_second(clock_ms)
         local head = queue:head()
         if head and head.timeout <= clock_ms then
             self:unlock(key, true)
-            log_err("[ThreadMgr][on_second] the lock is timeout:%s,count:%s,cost:%s", head.key, head.count, head:cost_time(clock_ms))
+            log_err("[ThreadMgr][on_second] the lock is timeout:%s,count:%s,cost:%s,queue:%s",
+                    head.key, head.count, head:cost_time(clock_ms), queue:size())
         end
     end
     --检查协程超时
@@ -177,17 +178,23 @@ end
 
 function ThreadMgr:on_frame(clock_ms)
     --检查协程超时
-    local timeout_coroutines = {}
-    for co, ms_to in pairs(self.coroutine_waitings) do
-        if ms_to <= clock_ms then
-            timeout_coroutines[#timeout_coroutines + 1] = co
+    repeat
+        local timeout_coroutines = {}
+        for co, ms_to in pairs(self.coroutine_waitings) do
+            if ms_to <= clock_ms then
+                timeout_coroutines[#timeout_coroutines + 1] = co
+            end
         end
-    end
-    --处理协程超时
-    for _, co in pairs(timeout_coroutines) do
-        self.coroutine_waitings[co] = nil
-        co_resume(co)
-    end
+        --处理协程超时
+        if next(timeout_coroutines) then
+            for _, co in pairs(timeout_coroutines) do
+                self.coroutine_waitings[co] = nil
+                co_resume(co)
+            end
+        else
+            break
+        end
+    until(false)
 end
 
 function ThreadMgr:fork(f, ...)
