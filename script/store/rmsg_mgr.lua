@@ -1,11 +1,9 @@
 --rmsg_mgr.lua
 import("agent/mongo_agent.lua")
 local bson          = require("bson")
-local lcodec        = require("lcodec")
 local bdate         = bson.date
 local log_err       = logger.err
 local log_info      = logger.info
-local new_guid      = lcodec.guid_new
 local mongo_agent   = hive.get("mongo_agent")
 local check_success = hive.success
 local check_failed  = hive.failed
@@ -61,7 +59,7 @@ end
 
 -- 发送消息
 function RmsgMgr:send_message(from, to, typ, body, id)
-    local uuid = id or new_guid(hive.service_id, hive.index)
+    local uuid = id or hive.new_guid()
     local doc  = {
         uuid      = uuid,
         from      = from, to = to,

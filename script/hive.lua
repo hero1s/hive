@@ -1,6 +1,8 @@
 --hive.lua
 local ltimer     = require("ltimer")
+local lcodec     = require("lcodec")
 local lclock_ms  = ltimer.clock_ms
+local guid_new   = lcodec.guid_new
 
 local odate      = os.date
 local log_err    = logger.err
@@ -143,6 +145,10 @@ end
 
 local ServiceStatus_RUN = henum("ServiceStatus", "RUN")
 
-hive.is_runing          = function()
+function hive.is_runing()
     return hive.service_status == ServiceStatus_RUN
+end
+
+function hive.new_guid()
+    return guid_new(hive.service_id, hive.index)
 end

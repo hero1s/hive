@@ -1,25 +1,26 @@
 --thread_mgr.lua
-local select       = select
-local tunpack      = table.unpack
-local sformat      = string.format
-local co_yield     = coroutine.yield
-local co_create    = coroutine.create
-local co_resume    = coroutine.resume
-local co_running   = coroutine.running
+local select        = select
+local tunpack       = table.unpack
+local sformat       = string.format
+local co_yield      = coroutine.yield
+local co_create     = coroutine.create
+local co_resume     = coroutine.resume
+local co_running    = coroutine.running
 
-local mrandom      = math_ext.random
-local tsize        = table_ext.size
-local hxpcall      = hive.xpcall
-local log_err      = logger.err
-local log_info     = logger.info
+local mrandom       = math_ext.random
+local tsize         = table_ext.size
+local hxpcall       = hive.xpcall
+local log_err       = logger.err
+local log_info      = logger.info
 
-local QueueFIFO    = import("container/queue_fifo.lua")
-local SyncLock     = import("kernel/object/sync_lock.lua")
+local QueueFIFO     = import("container/queue_fifo.lua")
+local SyncLock      = import("kernel/object/sync_lock.lua")
 
-local MINUTE_10_MS = hive.enum("PeriodTime", "MINUTE_10_MS")
+local MINUTE_10_MS  = hive.enum("PeriodTime", "MINUTE_10_MS")
+local SYNC_PERFRAME = 10
 
-local ThreadMgr    = singleton()
-local prop         = property(ThreadMgr)
+local ThreadMgr     = singleton()
+local prop          = property(ThreadMgr)
 prop:reader("session_id", 1)
 prop:reader("syncqueue_map", {})
 prop:reader("coroutine_waitings", {})
@@ -50,6 +51,7 @@ function ThreadMgr:lock(key, waiting)
     local queue = self.syncqueue_map[key]
     if not queue then
         queue                   = QueueFIFO()
+        queue.sync_num          = 0
         self.syncqueue_map[key] = queue
     end
     queue.ttl  = hive.clock_ms + MINUTE_10_MS
@@ -78,17 +80,26 @@ end
 
 function ThreadMgr:unlock(key, force)
     local queue = self.syncqueue_map[key]
-    if queue then
-        local head = queue:head()
-        if head then
-            if head.co == co_running() or force then
-                queue:pop()
-                local next = queue:head()
-                if next then
-                    self.coroutine_waitings[next.co] = 0
-                end
+    if not queue then
+        return
+    end
+    local head = queue:head()
+    if not head then
+        return
+    end
+    if head.co == co_running() or force then
+        queue:pop()
+        local next = queue:head()
+        if next then
+            local sync_num = queue.sync_num
+            if sync_num < SYNC_PERFRAME and queue:size() > SYNC_PERFRAME then
+                queue.sync_num = sync_num + 1
+                co_resume(next.co)
+                return
             end
+            self.coroutine_waitings[next.co] = 0
         end
+        queue.sync_num = 0
     end
 end
 
@@ -178,23 +189,19 @@ end
 
 function ThreadMgr:on_frame(clock_ms)
     --检查协程超时
-    repeat
-        local timeout_coroutines = {}
-        for co, ms_to in pairs(self.coroutine_waitings) do
-            if ms_to <= clock_ms then
-                timeout_coroutines[#timeout_coroutines + 1] = co
-            end
+    local timeout_coroutines = {}
+    for co, ms_to in pairs(self.coroutine_waitings) do
+        if ms_to <= clock_ms then
+            timeout_coroutines[#timeout_coroutines + 1] = co
         end
-        --处理协程超时
-        if next(timeout_coroutines) then
-            for _, co in pairs(timeout_coroutines) do
-                self.coroutine_waitings[co] = nil
-                co_resume(co)
-            end
-        else
-            break
+    end
+    --处理协程超时
+    if next(timeout_coroutines) then
+        for _, co in pairs(timeout_coroutines) do
+            self.coroutine_waitings[co] = nil
+            co_resume(co)
         end
-    until(false)
+    end
 end
 
 function ThreadMgr:fork(f, ...)

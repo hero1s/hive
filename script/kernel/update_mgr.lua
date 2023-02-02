@@ -55,8 +55,6 @@ function UpdateMgr:__init()
     timer_mgr:loop(SECOND_5_MS, function()
         self:on_second_5s()
     end)
-    --开启分代gc
-    collectgarbage("generational")
 end
 
 function UpdateMgr:on_second_5s()
@@ -139,7 +137,9 @@ function UpdateMgr:update(now_ms, clock_ms)
     thread_mgr:fork(function()
         local diff_ms = clock_ms - hive.clock_ms
         if diff_ms > HALF_MS and hive.frame > 1 then
-            log_err("[UpdateMgr][update] last frame exec too long(%d ms)!,service:%s,mem:%s M", diff_ms, hive.name, self.last_lua_mem_usage)
+            local cur_size, idle_size = thread_mgr:size()
+            log_err("[UpdateMgr][update] last frame exec too long(%d ms)!,service:%s,mem:%s M,threads:%s/%s,lock size:%s,gc_step:%s",
+                    diff_ms, hive.name, self.last_lua_mem_usage, cur_size, idle_size, thread_mgr:lock_size(), gc_step)
         end
         --帧更新
         local frame   = hive.frame + 1

@@ -1,8 +1,6 @@
 -- cache_obj.lua
 -- cache的实体类
-local lcodec        = require("lcodec")
 local log_err       = logger.err
-local new_guid      = lcodec.guid_new
 local check_failed  = hive.failed
 local check_success = hive.success
 
@@ -37,7 +35,7 @@ prop:accessor("records", {})            -- records
 prop:accessor("dirty_records", {})      -- dirty records
 
 function CacheObj:__init(cache_conf, primary_value)
-    self.uuid          = new_guid(hive.service_id, hive.index)
+    self.uuid          = hive.new_guid()
     self.primary_value = primary_value
     self.cache_rows    = cache_conf.rows
     self.db_name       = cache_conf.cache_db

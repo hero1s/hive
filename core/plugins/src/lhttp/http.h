@@ -130,7 +130,7 @@ namespace lhttp {
             size_t pos = str.find(":");
             if (pos != string::npos) {
                 string key = str.substr(0, pos);
-                string value = str.substr(pos + 2);
+                string value = str.substr(pos + 1);
                 value.erase(0, value.find_first_not_of(" "));
                 headers.insert(make_pair(key, value));
                 if (!strcasecmp(key.c_str(), "Content-Length")) {

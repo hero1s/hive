@@ -132,7 +132,7 @@ end
 
 --monitor上报
 function AdminMgr:on_monitor(url, body, request)
-    log_debug("[AdminMgr][on_monitor] body: %s", body)
+    log_debug("[AdminMgr][on_monitor] body: %s,headers:%s", body, request.get_headers())
     local ok, cmd_req = json_decode(body, true)
     if ok then
         self.monitors[cmd_req.addr] = true
