@@ -106,7 +106,7 @@ function AdminMgr:on_gm_page(url, querys, request)
     if user ~= self.user or pwd ~= self.pwd then
         return "this http request hasn't process!"
     end
-    return gm_page, {["Access-Control-Allow-Origin"] = "*"}
+    return gm_page, { ["Access-Control-Allow-Origin"] = "*" }
 end
 
 --gm列表
@@ -144,11 +144,11 @@ end
 --monitor拉取
 function AdminMgr:on_monitors(url, querys, request)
     log_debug("[AdminMgr][on_monitors] body: %s", querys)
-    local monitors = {  }
+    local nodes = {  }
     for addr in pairs(self.monitors) do
-        monitors[#monitors + 1] = addr
+        nodes[#nodes + 1] = addr
     end
-    return monitors
+    return nodes
 end
 
 -------------------------------------------------------------------------

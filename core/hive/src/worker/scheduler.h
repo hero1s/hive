@@ -8,7 +8,6 @@ using namespace std::chrono;
 
 namespace lworker {
 
-    typedef std::vector<std::shared_ptr<worker>> worker_list;
     class scheduler : public ischeduler
     {
     public:
@@ -18,34 +17,29 @@ namespace lworker {
             m_lua = std::make_shared<kit_state>(L);
         }
 
-        std::shared_ptr<worker> find_worker(std::string& name, size_t hash) {
+        std::shared_ptr<worker> find_worker(std::string& name) {
             std::unique_lock<spin_mutex> lock(m_mutex);
             auto it = m_worker_map.find(name);
-            if (it != m_worker_map.end()){
-                worker_list& wlist = it->second;
-                size_t count = wlist.size();
-                if (count > 0) {
-                    return wlist[hash % count];
-                }
+            if (it != m_worker_map.end()) {
+                return it->second;
             }
             return nullptr;
         }
 
-        void startup(std::string& name, std::string& entry) {
-            auto workor = std::make_shared<worker>(this, name, entry, m_service, m_sandbox);
+        bool startup(std::string& name, std::string& entry) {
             std::unique_lock<spin_mutex> lock(m_mutex);
             auto it = m_worker_map.find(name);
-            if (it == m_worker_map.end()){
-                worker_list wlist = { workor };
-                m_worker_map.insert(std::make_pair(name, wlist));
-            } else {
-                it->second.push_back(workor);
+            if (it == m_worker_map.end()) {
+                auto workor = std::make_shared<worker>(this, name, entry, m_service, m_sandbox);
+                m_worker_map.insert(std::make_pair(name, workor));
+                workor->startup();
+                return true;
             }
-            workor->startup();
+            return false;
         }
         
-        bool call(std::string& name, slice* buf, size_t hash) {
-            auto workor = find_worker(name, hash);
+        bool call(std::string& name, slice* buf) {
+            auto workor = find_worker(name);
             if (workor) {
                 return workor->call(buf);
             }
@@ -87,21 +81,14 @@ namespace lworker {
             std::unique_lock<spin_mutex> lock(m_mutex);
             auto it = m_worker_map.find(name);
             if (it != m_worker_map.end()) {
-                for (auto it2 = it->second.begin(); it2 != it->second.end(); ++it2) {
-                    if (*it2 == workor) {
-                        it->second.erase(it2);
-                        break;
-                    }
-                }
+                m_worker_map.erase(it);
             }
         }
 
-        void shut_down() {
+        void shutdown() {
             std::unique_lock<spin_mutex> lock(m_mutex);
-            for (auto it:m_worker_map) {               
-                for (auto it2 = it.second.begin(); it2 != it.second.end(); ++it2) {
-                    (*it2)->stop();
-                }              
+            for (auto it : m_worker_map) {
+                it.second->stop();
             }
         }
 
@@ -109,7 +96,7 @@ namespace lworker {
         spin_mutex m_mutex;
         std::string m_service, m_sandbox;
         std::shared_ptr<kit_state> m_lua = nullptr;
-        std::map<std::string, worker_list> m_worker_map;
+        std::map<std::string, std::shared_ptr<worker>> m_worker_map;
         std::shared_ptr<var_buffer> m_slice = std::make_shared<var_buffer>();
         std::shared_ptr<var_buffer> m_read_buf = std::make_shared<var_buffer>();
         std::shared_ptr<var_buffer> m_write_buf = std::make_shared<var_buffer>();

@@ -35,6 +35,12 @@ local function init_network()
     hive.socket_mgr = socket_mgr
 end
 
+--初始化统计
+local function init_statis()
+    --import("kernel/perfeval_mgr.lua")
+    --import("kernel/statis_mgr.lua")
+end
+
 --协程改造
 local function init_coroutine()
     coroutine.yield  = function(...)
@@ -78,8 +84,7 @@ function hive.init()
     init_coroutine()
     init_mainloop()
     --加载统计
-    --import("kernel/perfeval_mgr.lua")
-    --import("kernel/statis_mgr.lua")
+    init_statis()
     --网络
     init_network()
     --加载协议

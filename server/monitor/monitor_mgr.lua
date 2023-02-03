@@ -58,7 +58,7 @@ function MonitorMgr:register_admin()
         local purl      = sformat("%s/monitor", admin_url)
         local http_addr = sformat("%s:%d", host, self.http_server:get_port())
         thread_mgr:success_call(PeriodTime.SECOND_MS, function()
-            local ok, status, res = proxy_agent:post(purl, { addr = http_addr })
+            local ok, status, res = proxy_agent:http_post(purl, { addr = http_addr })
             if ok and status == 200 then
                 ok, res = json_decode(res, true)
                 if ok and res.code == 0 then

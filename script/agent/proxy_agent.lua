@@ -12,7 +12,7 @@ prop:reader("proxy_mgr", nil)
 function ProxyAgent:__init()
     if self.run_thread then
         --启动代理线程
-        scheduler:startup(self.service_name, "proxy")
+        scheduler:startup(self.service_name, "worker.proxy")
     else
         import("proxy/proxy_mgr.lua")
         self.proxy_mgr = hive.get("proxy_mgr")
@@ -33,28 +33,28 @@ function ProxyAgent:dispatch_log(content, lvl_name, lvl)
     return self.proxy_mgr:rpc_dispatch_log(title, content, lvl)
 end
 
-function ProxyAgent:get(url, querys, headers)
+function ProxyAgent:http_get(url, querys, headers)
     if self.run_thread then
         return scheduler:call(self.service_name, "rpc_http_get", url, querys, headers)
     end
     return true, self.proxy_mgr:rpc_http_get(url, querys, headers)
 end
 
-function ProxyAgent:post(url, post_data, headers, querys)
+function ProxyAgent:http_post(url, post_data, headers, querys)
     if self.run_thread then
         return scheduler:call(self.service_name, "rpc_http_post", url, post_data, headers, querys)
     end
     return true, self.proxy_mgr:rpc_http_post(url, post_data, headers, querys)
 end
 
-function ProxyAgent:put(url, post_data, headers, querys)
+function ProxyAgent:http_put(url, post_data, headers, querys)
     if self.run_thread then
         return scheduler:call(self.service_name, "rpc_http_put", url, post_data, headers, querys)
     end
     return true, self.proxy_mgr:rpc_http_put(url, post_data, headers, querys)
 end
 
-function ProxyAgent:del(url, querys, headers)
+function ProxyAgent:http_del(url, querys, headers)
     if self.run_thread then
         return scheduler:call(self.service_name, "rpc_http_del", url, querys, headers)
     end

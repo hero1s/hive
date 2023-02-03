@@ -80,6 +80,10 @@ end
 local function init_scheduler()
     import("driver/scheduler.lua")
     hive.scheduler:setup("hive")
+end
+
+--初始化统计
+local function init_statis()
     import("agent/proxy_agent.lua")
     local statis_mgr = hive.get("statis_mgr")
     if statis_mgr then
@@ -106,6 +110,7 @@ function hive.init()
     if hive.mode <= HiveMode.ROUTER then
         --加载调度器
         init_scheduler()
+        init_statis()
         --加载monotor
         init_monitor()
     end

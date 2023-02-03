@@ -180,12 +180,12 @@ void hive_app::run() {
 		return 0;
 		});
 	hive.set_function("worker_startup", [&](std::string name, std::string entry) {
-		m_schedulor.startup(name, entry);
+		return m_schedulor.startup(name, entry);
 		});
-	hive.set_function("worker_call", [&](std::string name, slice* buf, size_t hash) {
-		return m_schedulor.call(name, buf, hash);
+	hive.set_function("worker_call", [&](std::string name, slice* buf) {
+		return m_schedulor.call(name, buf);
 		});
-	hive.set_function("worker_shutdown", [&]() { m_schedulor.shut_down(); });
+	hive.set_function("worker_shutdown", [&]() { m_schedulor.shutdown(); });
 	//end worker接口
 
 	if (getenv("HIVE_SANDBOX") != NULL) {
@@ -206,7 +206,7 @@ void hive_app::run() {
 			LOG_FATAL << "hive exit err: " << err;
 			});
 	}
-	m_schedulor.shut_down();
+	m_schedulor.shutdown();
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	lua.close();
 	log_service::instance()->stop();
