@@ -34,7 +34,6 @@ logger.info("test xxtea:%s --> %s --> %s", md5, teaStr, lcrypt.xxtea_decode("123
 local mongodb = import("driver/mongo.lua")
 mongodb({ db = "admin", host = "10.100.0.48", port = 27017, user = "admin", passwd = "admin123456" })
 
-local ljson = require("lcjson")
 local str   = [[{
     "data":{
         "name":"gm_send_global_mail",
@@ -44,6 +43,6 @@ local str   = [[{
         "attach":[{"item_id":19001,"item_count":1}]
     }
 }]]
-local jstr = ljson.decode(str)
+local jstr = hive.json_decode(str)
 logger.warn("json decode jstr:%s",jstr)
 

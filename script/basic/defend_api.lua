@@ -1,5 +1,4 @@
-﻿--local ljson      = require("lcjson")
-local ljson      = require("lyyjson")
+﻿local ljson      = require("lyyjson")
 local xpcall_ret = hive.xpcall_ret
 
 function hive.json_decode(json_str, result)
