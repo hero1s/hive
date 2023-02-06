@@ -1,7 +1,7 @@
 --proxy_agent.lua
 local sformat    = string.format
 local tunpack    = table.unpack
-local log_info   = logger.info
+local log_warn   = logger.warn
 
 local event_mgr  = hive.get("event_mgr")
 local scheduler  = hive.load("scheduler")
@@ -11,6 +11,7 @@ local prop       = property(ProxyAgent)
 prop:reader("service_name", "proxy")          --地址
 prop:reader("ignore_statistics", {})
 prop:reader("statis_status", false)
+prop:reader("dispatch_log_lv", 5)
 
 function ProxyAgent:__init()
     if scheduler then
@@ -19,10 +20,14 @@ function ProxyAgent:__init()
         --日志上报
         if environ.status("HIVE_LOG_REPORT") then
             logger.add_monitor(self)
-            log_info("[ProxyAgent:__init] open report log")
+            log_warn("[ProxyAgent:__init] open report log !!!,it will degrade performance")
+            self.dispatch_log_lv = math.max(4, environ.number("HIVE_WEBHOOK_LVL", "5"))
         end
         --开启统计
-        self.statis_status = environ.status("HIVE_STATIS")
+        if environ.status("HIVE_STATIS") then
+            self.statis_status = true
+            log_warn("[ProxyAgent:__init] open statis !!!,it will degrade performance")
+        end
     end
     --添加忽略的rpc统计事件
     self:ignore_statis("rpc_heartbeat")
@@ -30,8 +35,11 @@ end
 
 --日志分发
 function ProxyAgent:dispatch_log(content, lvl_name, lvl)
+    if lvl < self.dispatch_log_lv then
+        return
+    end
     local title = sformat("[%s][%s]", hive.service_name, lvl_name)
-    return self:send("rpc_dispatch_log", title, content, lvl)
+    return self:send("rpc_fire_webhook", title, content, lvl)
 end
 
 function ProxyAgent:http_get(url, querys, headers)

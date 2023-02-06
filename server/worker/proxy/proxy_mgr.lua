@@ -1,18 +1,16 @@
 --proxy_mgr.lua
 import("driver/webhook.lua")
-import("driver/graylog.lua")
 import("network/http_client.lua")
 
 local webhook     = hive.get("webhook")
-local graylog     = hive.get("graylog")
 local event_mgr   = hive.get("event_mgr")
 local http_client = hive.get("http_client")
+
 local ProxyMgr    = singleton()
-local prop        = property(ProxyMgr)
-prop:reader("influx", nil)              --influx
+
 function ProxyMgr:__init()
     -- 注册事件
-    event_mgr:add_listener(self, "rpc_dispatch_log")
+    event_mgr:add_listener(self, "rpc_fire_webhook")
     -- 通用http请求
     event_mgr:add_listener(self, "rpc_http_post")
     event_mgr:add_listener(self, "rpc_http_get")
@@ -27,8 +25,7 @@ function ProxyMgr:setup()
 end
 
 --日志上报
-function ProxyMgr:rpc_dispatch_log(title, content, lvl)
-    graylog:write(content, lvl)
+function ProxyMgr:rpc_fire_webhook(title, content, lvl)
     webhook:notify(title, content, lvl)
 end
 
