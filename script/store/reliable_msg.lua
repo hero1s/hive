@@ -1,4 +1,4 @@
---rmsg_mgr.lua
+
 import("agent/mongo_agent.lua")
 local bson          = require("bson")
 local bdate         = bson.date
@@ -8,19 +8,19 @@ local mongo_agent   = hive.get("mongo_agent")
 local check_success = hive.success
 local check_failed  = hive.failed
 local PeriodTime    = enum("PeriodTime")
-local RmsgMgr       = class()
-local prop          = property(RmsgMgr)
+local ReliableMsg       = class()
+local prop          = property(ReliableMsg)
 prop:reader("db_name", "")
 prop:reader("table_name", "")
 prop:reader("ttl", nil)
 
-function RmsgMgr:__init(db_name, table_name, due_day)
+function ReliableMsg:__init(db_name, table_name, due_day)
     self.ttl        = (due_day or 1) * PeriodTime.DAY_S
     self.db_name    = db_name
     self.table_name = table_name
 end
 
-function RmsgMgr:build_index()
+function ReliableMsg:build_index()
     local indexs = {
         { key = { to = 1 }, name = "to", unique = false },
         { key = { uuid = 1 }, name = "uuid", unique = true },
@@ -36,7 +36,7 @@ function RmsgMgr:build_index()
 end
 
 -- 查询未处理消息列表
-function RmsgMgr:list_message(to)
+function ReliableMsg:list_message(to)
     local query            = { self.table_name, { to = to, deal_time = 0 }, { _id = 0, ttl = 0 }, { time = 1 } }
     local ok, code, result = mongo_agent:find(query, to, self.db_name)
     if check_success(code, ok) then
@@ -45,20 +45,20 @@ function RmsgMgr:list_message(to)
 end
 
 -- 设置信息为已处理
-function RmsgMgr:deal_message(to, uuid)
+function ReliableMsg:deal_message(to, uuid)
     log_info("[RmsgMgr][deal_message] deal message: %s", uuid)
     local query = { self.table_name, { ["$set"] = { deal_time = hive.now } }, { uuid = uuid } }
     return mongo_agent:update(query, to, self.db_name)
 end
 
 -- 删除消息
-function RmsgMgr:delete_message(to, uuid)
+function ReliableMsg:delete_message(to, uuid)
     log_info("[RmsgMgr][delete_message] delete message: %s", uuid)
     return mongo_agent:delete({ self.table_name, { uuid = uuid } }, to, self.db_name)
 end
 
 -- 发送消息
-function RmsgMgr:send_message(from, to, typ, body, id)
+function ReliableMsg:send_message(from, to, typ, body, id)
     local uuid = id or hive.new_guid()
     local doc  = {
         uuid      = uuid,
@@ -82,4 +82,4 @@ function RmsgMgr:send_message(from, to, typ, body, id)
     return true
 end
 
-return RmsgMgr
+return ReliableMsg
