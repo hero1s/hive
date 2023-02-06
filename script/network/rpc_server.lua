@@ -16,6 +16,7 @@ local SUCCESS     = KernCode.SUCCESS
 local event_mgr   = hive.get("event_mgr")
 local thread_mgr  = hive.get("thread_mgr")
 local socket_mgr  = hive.get("socket_mgr")
+local proxy_agent = hive.get("proxy_agent")
 local heval       = hive.eval
 
 local RpcServer   = singleton()
@@ -88,14 +89,14 @@ function RpcServer:on_socket_accept(client)
     client.call_rpc            = function(session_id, rpc_flag, rpc, ...)
         local send_len = client.call(session_id, rpc_flag, 0, rpc, ...)
         if send_len < 0 then
-            event_mgr:notify_listener("on_rpc_send", rpc, send_len)
+            proxy_agent:statistics("on_rpc_send", rpc, send_len)
             log_err("[RpcServer][call_rpc] call failed! code:%s", send_len)
             return false
         end
         return true, SUCCESS
     end
     client.on_call             = function(recv_len, session_id, rpc_flag, source, rpc, ...)
-        event_mgr:notify_listener("on_rpc_recv", rpc, recv_len)
+        proxy_agent:statistics("on_rpc_recv", rpc, recv_len)
         hxpcall(self.on_socket_rpc, "on_socket_rpc: %s", self, client, rpc, session_id, rpc_flag, source, ...)
     end
     client.on_error            = function(token, err)

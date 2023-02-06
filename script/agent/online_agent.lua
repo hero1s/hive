@@ -1,15 +1,19 @@
 --online_agent.lua
-local log_info     = logger.info
-local tunpack      = table.unpack
-local sid2index    = service.id2index
+local log_info      = logger.info
+local tunpack       = table.unpack
 
-local event_mgr    = hive.get("event_mgr")
-local router_mgr   = hive.get("router_mgr")
+local event_mgr     = hive.get("event_mgr")
+local router_mgr    = hive.get("router_mgr")
 
-local SUCCESS      = hive.enum("KernCode", "SUCCESS")
-local LOGIC_FAILED = hive.enum("KernCode", "LOGIC_FAILED")
+local SUCCESS       = hive.enum("KernCode", "SUCCESS")
+local LOGIC_FAILED  = hive.enum("KernCode", "LOGIC_FAILED")
+local check_success = hive.success
 
-local OnlineAgent  = singleton()
+local OnlineAgent   = singleton()
+local prop          = property(OnlineAgent)
+prop:reader("open_ids", {})
+prop:reader("player_ids", {})
+
 function OnlineAgent:__init()
     event_mgr:add_listener(self, "rpc_forward_client")
     router_mgr:watch_service_ready(self, "online")
@@ -20,20 +24,36 @@ function OnlineAgent:cas_dispatch_lobby(open_id, lobby_id)
     return router_mgr:call_online_hash(open_id, "rpc_cas_dispatch_lobby", open_id, lobby_id)
 end
 
-function OnlineAgent:login_dispatch_lobby(open_id, lobby_id)
-    return router_mgr:call_online_hash(open_id, "rpc_login_dispatch_lobby", open_id, lobby_id)
+function OnlineAgent:login_dispatch_lobby(open_id)
+    local ok, code = router_mgr:call_online_hash(open_id, "rpc_login_dispatch_lobby", open_id, hive.id)
+    if check_success(code, ok) then
+        self.open_ids[open_id] = true
+    end
+    return ok, code
 end
 
-function OnlineAgent:rm_dispatch_lobby(open_id, lobby_id)
-    return router_mgr:call_online_hash(open_id, "rpc_rm_dispatch_lobby", open_id, lobby_id)
+function OnlineAgent:rm_dispatch_lobby(open_id)
+    local ok, code = router_mgr:call_online_hash(open_id, "rpc_rm_dispatch_lobby", open_id, hive.id)
+    if check_success(code, ok) then
+        self.open_ids[open_id] = nil
+    end
+    return ok, code
 end
 
 function OnlineAgent:login_player(player_id)
-    return router_mgr:call_online_hash(player_id, "rpc_login_player", player_id, hive.id)
+    local ok, code = router_mgr:call_online_hash(player_id, "rpc_login_player", player_id, hive.id)
+    if check_success(code, ok) then
+        self.player_ids[player_id] = true
+    end
+    return ok, code
 end
 
 function OnlineAgent:logout_player(player_id)
-    return router_mgr:call_online_hash(player_id, "rpc_logout_player", player_id, hive.id)
+    local ok, code = router_mgr:call_online_hash(player_id, "rpc_logout_player", player_id, hive.id)
+    if check_success(code, ok) then
+        self.player_ids[player_id] = nil
+    end
+    return ok, code
 end
 
 function OnlineAgent:query_player(player_id)
@@ -73,11 +93,20 @@ end
 
 -- Online服务已经ready
 function OnlineAgent:on_service_ready(id, service_name)
-    log_info("[OnlineAgent][on_service_ready]->id:%s, service_name:%s", id, service_name)
-    local service_index = sid2index(id)
-    event_mgr:notify_listener("on_rebuild_online", service_index)
+    log_info("[OnlineAgent][on_service_ready]->service_name:%s", service.id2nick(id))
+    self:on_rebuild_online()
 end
 
-hive.online = OnlineAgent()
+-- online数据恢复
+function OnlineAgent:on_rebuild_online()
+    for open_id, _ in pairs(self.open_ids) do
+        router_mgr:send_online_hash(open_id, "rpc_login_dispatch_lobby", open_id, hive.id)
+    end
+    for player_id, _ in pairs(self.player_ids) do
+        router_mgr:send_online_hash(player_id, "rpc_login_player", player_id, hive.id)
+    end
+end
+
+hive.online_agent = OnlineAgent()
 
 return OnlineAgent

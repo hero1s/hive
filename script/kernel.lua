@@ -85,10 +85,7 @@ end
 --初始化统计
 local function init_statis()
     import("agent/proxy_agent.lua")
-    local statis_mgr = hive.get("statis_mgr")
-    if statis_mgr then
-        statis_mgr:set_db_agent(hive.get("proxy_agent"))
-    end
+    import("kernel/perfeval_mgr.lua")
 end
 
 function hive.init()
@@ -100,17 +97,17 @@ function hive.init()
     --主循环
     init_coroutine()
     init_mainloop()
+    if hive.mode <= HiveMode.TINY then
+        --加载调度器
+        init_scheduler()
+        init_statis()
+    end
     if hive.mode <= HiveMode.TOOL then
-        import("kernel/perfeval_mgr.lua")
-        import("kernel/statis_mgr.lua")
         init_network()
         --加载协议
         import("kernel/protobuf_mgr.lua")
     end
     if hive.mode <= HiveMode.ROUTER then
-        --加载调度器
-        init_scheduler()
-        init_statis()
         --加载monotor
         init_monitor()
     end

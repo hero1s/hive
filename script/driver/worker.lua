@@ -37,8 +37,8 @@ end
 
 --初始化统计
 local function init_statis()
-    --import("kernel/perfeval_mgr.lua")
-    --import("kernel/statis_mgr.lua")
+    import("agent/proxy_agent.lua")
+    import("kernel/perfeval_mgr.lua")
 end
 
 --协程改造
@@ -112,7 +112,7 @@ end
 --底层驱动
 hive.run = function()
     if socket_mgr then
-        socket_mgr.wait(10)
+        socket_mgr.wait(20)
     end
     hive.update()
     --系统更新

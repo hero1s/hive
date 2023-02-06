@@ -1,19 +1,21 @@
 --statis_mgr.lua
 import("kernel/object/linux.lua")
+local InfluxDB     = import("driver/influx.lua")
 
-local env_status   = environ.status
+local env_get      = environ.get
+local env_addr     = environ.addr
 local event_mgr    = hive.get("event_mgr")
 local update_mgr   = hive.get("update_mgr")
 local linux_statis = hive.get("linux_statis")
 
 local StatisMgr    = singleton()
 local prop         = property(StatisMgr)
-prop:accessor("db_agent", nil)          --数据代理
+prop:reader("influx", nil)              --influx
 prop:reader("statis", {})               --statis
 prop:reader("statis_status", false)     --统计开关
 
 function StatisMgr:__init()
-    local statis_status = env_status("HIVE_STATIS")
+    local statis_status = environ.status("HIVE_STATIS")
     if statis_status then
         self.statis_status = statis_status
         --事件监听
@@ -31,6 +33,19 @@ function StatisMgr:__init()
         if hive.platform == "linux" then
             linux_statis:setup()
         end
+        --influx
+        self:init_influx()
+    end
+end
+
+function StatisMgr:init_influx()
+    --初始化参数
+    local org      = env_get("HIVE_INFLUX_ORG")
+    local token    = env_get("HIVE_INFLUX_TOKEN")
+    local bucket   = env_get("HIVE_INFLUX_BUCKET")
+    local ip, port = env_addr("HIVE_INFLUX_ADDR")
+    if ip and port then
+        self.influx = InfluxDB(ip, port, org, bucket, token)
     end
 end
 
@@ -38,8 +53,8 @@ end
 function StatisMgr:flush()
     local statis = self.statis
     self.statis  = {}
-    if self.db_agent and next(statis) then
-        self.db_agent:write_statis(statis)
+    if self.influx and next(statis) then
+        self.influx:batch(statis)
     end
 end
 

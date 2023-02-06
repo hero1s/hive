@@ -14,7 +14,7 @@
 #include <thread>
 #include <strstream>
 
-//µØÍ¼Êı¾İ
+//åœ°å›¾æ•°æ®
 class MapGrid
 {
 public:

@@ -12,6 +12,7 @@ local event_mgr      = hive.get("event_mgr")
 local socket_mgr     = hive.get("socket_mgr")
 local thread_mgr     = hive.get("thread_mgr")
 local update_mgr     = hive.get("update_mgr")
+local proxy_agent    = hive.get("proxy_agent")
 local heval          = hive.eval
 
 local FlagMask       = enum("FlagMask")
@@ -67,7 +68,7 @@ end
 --调用rpc后续处理
 function RpcClient:on_call_router(rpc, send_len, ...)
     if send_len > 0 then
-        event_mgr:notify_listener("on_rpc_send", rpc, send_len)
+        proxy_agent:statistics("on_rpc_send", rpc, send_len)
         return true, send_len
     end
     log_err("[RpcClient][on_call_router] rpc %s call [%s] failed! code:%s", rpc, tpack(...), send_len)
@@ -99,7 +100,7 @@ function RpcClient:connect()
         return false, cerr
     end
     socket.on_call         = function(recv_len, session_id, rpc_flag, source, rpc, ...)
-        event_mgr:notify_listener("on_rpc_recv", rpc, recv_len)
+        proxy_agent:statistics("on_rpc_recv", rpc, recv_len)
         hxpcall(self.on_socket_rpc, "on_socket_rpc: %s", self, socket, session_id, rpc_flag, source, rpc, ...)
     end
     socket.call_rpc        = function(session_id, rpc_flag, rpc, ...)

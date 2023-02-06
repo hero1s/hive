@@ -20,6 +20,8 @@ local update_mgr       = hive.get("update_mgr")
 local due_time <const> = 3600
 
 local OnlineMgr        = singleton()
+local prop             = property(OnlineMgr)
+prop:reader("sync_status", true)
 function OnlineMgr:__init()
     self.lobbys        = {}     --在线玩家
     self.lobby_players = {}     --lobby玩家索引
@@ -160,7 +162,9 @@ end
 
 --同步open_id数据到其它online
 function OnlineMgr:sync_openid_info(open_id, lobby_id, online)
-    router_mgr:send_online_all("rpc_sync_openid_info", open_id, lobby_id, online)
+    if self.sync_status then
+        router_mgr:send_online_all("rpc_sync_openid_info", open_id, lobby_id, online)
+    end
 end
 
 function OnlineMgr:rpc_sync_openid_info(open_id, lobby_id, online)
@@ -174,7 +178,9 @@ end
 
 --同步player_id数据到其它online
 function OnlineMgr:sync_player_info(player_id, lobby_id, online)
-    router_mgr:send_online_all("rpc_sync_player_info", player_id, lobby_id, online)
+    if self.sync_status then
+        router_mgr:send_online_all("rpc_sync_player_info", player_id, lobby_id, online)
+    end
 end
 
 function OnlineMgr:rpc_sync_player_info(player_id, lobby_id, online)

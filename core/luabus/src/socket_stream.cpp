@@ -24,8 +24,10 @@ socket_stream::socket_stream(socket_mgr* mgr, LPFN_CONNECTEX connect_func, eprot
 	m_ip[0] = 0;
 	if (m_proto_type == eproto_type::proto_pack || m_proto_type == eproto_type::proto_rpc) {
 		m_delay_send = true;
-	}	
-	m_tick_dispatch_pkg = DISPATCH_PKG[int(m_proto_type)];
+	}
+	if (link_type == elink_type::elink_tcp_accept) {
+		m_tick_dispatch_pkg = DISPATCH_PKG[int(m_proto_type)];
+	}
 }
 #endif
 
@@ -38,7 +40,9 @@ socket_stream::socket_stream(socket_mgr* mgr, eproto_type proto_type, elink_type
 	if (m_proto_type == eproto_type::proto_pack || m_proto_type == eproto_type::proto_rpc) {
 		m_delay_send = true;
 	}
-	m_tick_dispatch_pkg = DISPATCH_PKG[int(m_proto_type)];
+	if (link_type == elink_type::elink_tcp_accept) {
+		m_tick_dispatch_pkg = DISPATCH_PKG[int(m_proto_type)];
+	}
 }
 
 socket_stream::~socket_stream() {

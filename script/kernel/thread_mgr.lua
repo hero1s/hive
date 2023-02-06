@@ -17,7 +17,7 @@ local QueueFIFO     = import("container/queue_fifo.lua")
 local SyncLock      = import("kernel/object/sync_lock.lua")
 
 local MINUTE_10_MS  = hive.enum("PeriodTime", "MINUTE_10_MS")
-local SYNC_PERFRAME = 10
+local SYNC_PERFRAME = 5
 
 local ThreadMgr     = singleton()
 local prop          = property(ThreadMgr)
@@ -92,7 +92,7 @@ function ThreadMgr:unlock(key, force)
         local next = queue:head()
         if next then
             local sync_num = queue.sync_num
-            if sync_num < SYNC_PERFRAME and queue:size() > SYNC_PERFRAME then
+            if sync_num < SYNC_PERFRAME then
                 queue.sync_num = sync_num + 1
                 co_resume(next.co)
                 return

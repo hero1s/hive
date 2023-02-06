@@ -23,7 +23,7 @@ local SUCCESS      = KernCode.SUCCESS
 local cmdline      = hive.get("cmdline")
 local event_mgr    = hive.get("event_mgr")
 local router_mgr   = hive.get("router_mgr")
-local online_agent = hive.get("online")
+local online_agent = hive.get("online_agent")
 
 local AdminMgr     = singleton()
 local prop         = property(AdminMgr)

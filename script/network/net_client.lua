@@ -1,9 +1,8 @@
 local lcrypt       = require("lcrypt")
 local log_err      = logger.err
 local hxpcall      = hive.xpcall
-local env_status   = environ.status
 
-local event_mgr    = hive.get("event_mgr")
+local proxy_agent  = hive.get("proxy_agent")
 local socket_mgr   = hive.get("socket_mgr")
 local thread_mgr   = hive.get("thread_mgr")
 local protobuf_mgr = hive.get("protobuf_mgr")
@@ -12,8 +11,8 @@ local heval        = hive.eval
 local FlagMask     = enum("FlagMask")
 local NetwkTime    = enum("NetwkTime")
 
-local out_press    = env_status("HIVE_OUT_PRESS")
-local out_encrypt  = env_status("HIVE_OUT_ENCRYPT")
+local out_press    = environ.status("HIVE_OUT_PRESS")
+local out_encrypt  = environ.status("HIVE_OUT_ENCRYPT")
 
 local NetClient    = class()
 local prop         = property(NetClient)
@@ -63,7 +62,7 @@ function NetClient:connect(block)
     end
     socket.on_call_pack = function(recv_len, cmd_id, flag, session_id, data)
         thread_mgr:fork(function()
-            event_mgr:notify_listener("on_proto_recv", cmd_id, recv_len)
+            proxy_agent:statistics("on_proto_recv", cmd_id, recv_len)
             hxpcall(self.on_socket_rpc, "on_socket_rpc: %s", self, socket, cmd_id, flag, session_id, data)
         end)
     end

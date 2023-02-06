@@ -5,13 +5,13 @@ local log_err          = logger.err
 local log_info         = logger.info
 local log_warn         = logger.warn
 local hxpcall          = hive.xpcall
-local env_status       = environ.status
 local env_number       = environ.number
 local signal_quit      = signal.quit
 
 local event_mgr        = hive.get("event_mgr")
 local thread_mgr       = hive.get("thread_mgr")
 local protobuf_mgr     = hive.get("protobuf_mgr")
+local proxy_agent      = hive.get("proxy_agent")
 local heval            = hive.eval
 
 local FLAG_REQ         = hive.enum("FlagMask", "REQ")
@@ -21,9 +21,9 @@ local FLAG_ENCRYPT     = hive.enum("FlagMask", "ENCRYPT")
 local NETWORK_TIMEOUT  = hive.enum("NetwkTime", "NETWORK_TIMEOUT")
 local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 
-local out_press        = env_status("HIVE_OUT_PRESS")
-local out_encrypt      = env_status("HIVE_OUT_ENCRYPT")
-local flow_ctrl        = env_status("HIVE_FLOW_CTRL")
+local out_press        = environ.status("HIVE_OUT_PRESS")
+local out_encrypt      = environ.status("HIVE_OUT_ENCRYPT")
+local flow_ctrl        = environ.status("HIVE_FLOW_CTRL")
 local flow_cd          = env_number("HIVE_FLOW_CTRL_CD")
 local fc_package       = env_number("HIVE_FLOW_CTRL_PACKAGE") / 1000
 local fc_bytes         = env_number("HIVE_FLOW_CTRL_BYTES") / 1000
@@ -95,7 +95,7 @@ function NetServer:on_socket_accept(session)
         thread_mgr:fork(function()
             session.fc_packet = session.fc_packet + 1
             session.fc_bytes  = session.fc_bytes + recv_len
-            event_mgr:notify_listener("on_proto_recv", cmd_id, recv_len)
+            proxy_agent:statistics("on_proto_recv", cmd_id, recv_len)
             hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, cmd_id, flag, session_id, data)
         end)
     end
@@ -123,7 +123,7 @@ function NetServer:write(session, cmd_id, data, session_id, flag)
     -- call lbus
     local send_len = session.call_pack(cmd_id, pflag, session_id or 0, body)
     if send_len > 0 then
-        event_mgr:notify_listener("on_proto_send", cmd_id, send_len)
+        proxy_agent:statistics("on_proto_send", cmd_id, send_len)
         if self.log_client_msg then
             self.log_client_msg(session, cmd_id, data, session_id, send_len, false)
         end
@@ -145,7 +145,7 @@ function NetServer:broadcast(cmd_id, data, filter)
             session.serial = session.serial + 1
             local send_len = session.call_pack(cmd_id, pflag, 0, body)
             if send_len > 0 then
-                event_mgr:notify_listener("on_proto_send", cmd_id, send_len)
+                proxy_agent:statistics("on_proto_send", cmd_id, send_len)
             end
         end
     end
@@ -310,7 +310,7 @@ function NetServer:add_session(session)
     if not self.sessions[token] then
         self.sessions[token] = session
         self.session_count   = self.session_count + 1
-        event_mgr:notify_listener("on_conn_update", self.session_type, self.session_count)
+        proxy_agent:statistics("on_conn_update", self.session_type, self.session_count)
     end
 end
 
@@ -320,7 +320,7 @@ function NetServer:remove_session(token)
     if session then
         self.sessions[token] = nil
         self.session_count   = self.session_count - 1
-        event_mgr:notify_listener("on_conn_update", self.session_type, self.session_count)
+        proxy_agent:statistics("on_conn_update", self.session_type, self.session_count)
         return session
     end
 end

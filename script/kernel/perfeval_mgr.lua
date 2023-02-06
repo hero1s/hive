@@ -6,11 +6,10 @@ local tinsert     = table.insert
 local tsort       = table.sort
 local pairs       = pairs
 local co_running  = coroutine.running
-local env_status  = environ.status
 local log_warn    = logger.warn
 
 local EvalSlot    = import("kernel/object/eval_slot.lua")
-local event_mgr   = hive.get("event_mgr")
+local proxy_agent = hive.get("proxy_agent")
 local update_mgr  = hive.get("update_mgr")
 
 local PerfevalMgr = singleton()
@@ -21,7 +20,7 @@ prop:reader("eval_list", {})    --协程评估表
 prop:reader("perfevals", {})    --性能统计
 
 function PerfevalMgr:__init()
-    self.perfeval = env_status("HIVE_PERFEVAL")
+    self.perfeval = environ.status("HIVE_PERFEVAL")
     if self.perfeval then
         hive.hook_coroutine(self)
     end
@@ -92,7 +91,7 @@ function PerfevalMgr:stop(eval_data)
         yield_time = eval_data.yield_time,
         eval_time  = total_time - eval_data.yield_time
     }
-    event_mgr:notify_listener("on_perfeval", eval_data.eval_name, fields)
+    proxy_agent:statistics("on_perfeval", eval_data.eval_name, fields)
     if total_time > 1 then
         self:write_perf(eval_data.eval_name, fields)
     end
