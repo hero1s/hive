@@ -1,13 +1,16 @@
 --proxy_agent.lua
-local sformat    = string.format
-local tunpack    = table.unpack
-local log_warn   = logger.warn
+local sformat     = string.format
+local tunpack     = table.unpack
+local log_warn    = logger.warn
+local send_worker = hive.send_worker
+local call_worker = hive.call_worker
 
-local event_mgr  = hive.get("event_mgr")
-local scheduler  = hive.load("scheduler")
+local WTITLE      = hive.worker_title
+local event_mgr   = hive.get("event_mgr")
+local scheduler   = hive.load("scheduler")
 
-local ProxyAgent = singleton()
-local prop       = property(ProxyAgent)
+local ProxyAgent  = singleton()
+local prop        = property(ProxyAgent)
 prop:reader("service", "proxy")          --地址
 prop:reader("ignore_statistics", {})
 prop:reader("statis_status", false)
@@ -76,12 +79,18 @@ function ProxyAgent:send(rpc, ...)
     if scheduler then
         return scheduler:send(self.service, rpc, ...)
     end
+    if WTITLE ~= self.service then
+        return send_worker(self.service, rpc, ...)
+    end
     event_mgr:notify_listener(rpc, ...)
 end
 
 function ProxyAgent:call(rpc, ...)
     if scheduler then
         return scheduler:call(self.service, rpc, ...)
+    end
+    if WTITLE ~= self.service then
+        return call_worker(self.service, rpc, ...)
     end
     local rpc_datas = event_mgr:notify_listener(rpc, ...)
     return tunpack(rpc_datas)
