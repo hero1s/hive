@@ -10,6 +10,7 @@ local log_warn       = logger.warn
 local log_err        = logger.err
 local sig_check      = signal.check
 local tunpack        = table.unpack
+local tinsert        = table.insert
 local collectgarbage = collectgarbage
 local cut_tail       = math_ext.cut_tail
 local mregion        = math_ext.region
@@ -40,6 +41,7 @@ prop:reader("fast_objs", {})
 prop:reader("second_objs", {})
 prop:reader("minute_objs", {})
 prop:reader("next_events", {})
+prop:reader("next_seconds", {})
 prop:reader("next_handlers", {})
 
 local gc_step = 5
@@ -77,18 +79,20 @@ function UpdateMgr:collect_gc()
 end
 
 function UpdateMgr:update_next()
-    for _, handler in pairs(self.next_handlers) do
+    local next_events = self.next_events
+    local next_handlers = self.next_handlers
+    self.next_events = {}
+    self.next_handlers = {}
+    for _, handler in pairs(next_handlers) do
         thread_mgr:fork(handler)
     end
-    self.next_handlers = {}
-    for _, events in pairs(self.next_events) do
+    for _, events in pairs(next_events) do
         for event, args in pairs(events) do
             thread_mgr:fork(function()
                 event_mgr:notify_trigger(event, tunpack(args))
             end)
         end
     end
-    self.next_events = {}
 end
 
 function UpdateMgr:update_second(clock_ms)
@@ -96,6 +100,15 @@ function UpdateMgr:update_second(clock_ms)
         thread_mgr:fork(function()
             obj:on_second(clock_ms)
         end)
+    end
+    local next_seconds = self.next_seconds
+    self.next_seconds  = {}
+    for _, events in pairs(next_seconds) do
+        for event, args in pairs(events) do
+            thread_mgr:fork(function()
+                event_mgr:notify_trigger(event, tunpack(args))
+            end)
+        end
     end
     --增加增量gc步长
     collectgarbage("step", gc_step)
@@ -278,15 +291,25 @@ function UpdateMgr:detach_fast(obj)
 end
 
 --下一帧执行一个函数
-function UpdateMgr:attach_next(key, func)
-    self.next_handlers[key] = func
+function UpdateMgr:attach_next(func)
+    tinsert(self.next_handlers, func)
 end
 
 --下一帧执行一个事件
-function UpdateMgr:attach_event(key, event, ...)
-    local events = self.next_events[key]
+function UpdateMgr:attach_event(eid, event, ...)
+    local events = self.next_events[eid]
     if not events then
-        self.next_events[key] = { [event] = { ... } }
+        self.next_events[eid] = { [event] = { ... } }
+        return
+    end
+    events[event] = { ... }
+end
+
+--下一秒执行一个事件
+function UpdateMgr:attach_second_event(eid, event, ...)
+    local events = self.next_seconds[eid]
+    if not events then
+        self.next_seconds[eid] = { [event] = { ... } }
         return
     end
     events[event] = { ... }
