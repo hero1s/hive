@@ -1,5 +1,6 @@
 --nacos.lua
 import("network/http_client.lua")
+local ljson          = require("lyyjson")
 local lcrypt         = require("lcrypt")
 
 local log_err        = logger.err
@@ -7,8 +8,8 @@ local log_info       = logger.info
 local lmd5           = lcrypt.md5
 local tconcat        = table.concat
 local sformat        = string.format
-local json_decode    = hive.json_decode
-local json_encode    = hive.json_encode
+local json_decode    = ljson.decode
+local json_encode    = ljson.encode
 local mtointeger     = math.tointeger
 
 local thread_mgr     = hive.get("thread_mgr")
@@ -23,7 +24,7 @@ local prop           = property(Nacos)
 prop:reader("host", nil)            --host
 prop:reader("enable", false)        --enable
 prop:reader("config_url", nil)      --config url
-prop:reader("switches_url", nil)      --switch url
+prop:reader("switches_url", nil)    --switch url
 prop:reader("listen_url", nil)      --listen url
 prop:reader("service_url", nil)     --services url
 prop:reader("instance_url", nil)    --instance url
@@ -32,16 +33,19 @@ prop:reader("inst_beat_url", nil)   --instance beat url
 prop:reader("instances_url", nil)   --instance list url
 prop:reader("services_url", nil)    --services list url
 prop:reader("cluster", "")          --service cluster name
-prop:reader("namespace", "")        --service namespace id
-prop:reader("listen_configs", {})   --service namespace id
+prop:reader("nacos_ns", "")         --service namespace id
+prop:reader("config_ns", "")        --config namespace id
+prop:reader("listen_configs", {})   --listen configs
 
 function Nacos:__init()
     local ip, port  = environ.addr("HIVE_NACOS_ADDR")
-    local namespace = environ.get("HIVE_NACOS_NAMESPACE")
-    if ip and port and namespace then
+    local nacos_ns  = environ.get("HIVE_NACOS_NAMESPACE")
+    local config_ns = environ.get("HIVE_CONFIG_NAMESPACE")
+    if ip and port and nacos_ns then
         self.enable        = true
-        self.namespace     = namespace
+        self.nacos_ns      = nacos_ns
         self.cluster       = hive.cluster
+        self.config_ns     = config_ns or nacos_ns
         self.config_url    = sformat("http://%s:%s/nacos/v1/cs/configs", ip, port)
         self.service_url   = sformat("http://%s:%s/nacos/v1/ns/service", ip, port)
         self.instance_url  = sformat("http://%s:%s/nacos/v1/ns/instance", ip, port)
@@ -61,7 +65,7 @@ end
 function Nacos:get_config(data_id, group)
     local query           = {
         dataId = data_id,
-        tenant = self.namespace,
+        tenant = self.config_ns,
         group  = group or "DEFAULT_GROUP"
     }
     local ok, status, res = http_client:call_get(self.config_url, query)
@@ -77,7 +81,7 @@ function Nacos:modify_config(data_id, content, group)
     local query           = {
         dataId  = data_id,
         content = content,
-        tenant  = self.namespace,
+        tenant  = self.config_ns,
         group   = group or "DEFAULT_GROUP"
     }
     local ok, status, res = http_client:call_post(self.config_url, nil, nil, query)
@@ -97,7 +101,7 @@ function Nacos:listen_config(data_id, group, md5, on_changed)
     self.listen_configs[lkey] = on_changed
     thread_mgr:fork(function()
         while self.listen_configs[lkey] do
-            local datas           = { data_id, rgroup, md5, self.namespace }
+            local datas           = { data_id, rgroup, md5, self.config_ns }
             local lisfmt          = sformat("Listening-Configs=%s%s", tconcat(datas, WORD_SEPARATOR), LINE_SEPARATOR)
             local ok, status, res = http_client:call_post(self.listen_url, lisfmt, headers, nil, LISTEN_TIMEOUT + 1000)
             if not ok or status ~= 200 then
@@ -121,7 +125,7 @@ end
 function Nacos:del_config(data_id, group)
     local query           = {
         dataId = data_id,
-        tenant = self.namespace,
+        tenant = self.config_ns,
         group  = group or "DEFAULT_GROUP"
     }
     local ok, status, res = http_client:call_del(self.config_url, query)
@@ -203,7 +207,7 @@ end
 function Nacos:query_instances(service_name, group_name)
     local query           = {
         clusters    = self.cluster,
-        namespaceId = self.namespace,
+        namespaceId = self.nacos_ns,
         serviceName = service_name,
         groupName   = group_name or ""
     }
@@ -236,7 +240,7 @@ end
 function Nacos:query_instance(service_name, host, port, group_name)
     local query           = {
         cluster     = self.cluster,
-        namespaceId = self.namespace,
+        namespaceId = self.nacos_ns,
         serviceName = service_name,
         groupName   = group_name or "",
         ip          = host, port = port
@@ -268,7 +272,7 @@ function Nacos:regi_instance(service_name, host, port, group_name, metadata)
         ip          = host, port = port,
         serviceName = service_name,
         clusterName = self.cluster,
-        namespaceId = self.namespace,
+        namespaceId = self.nacos_ns,
         groupName   = group_name or "",
         ephemeral   = false, enabled = false, healthy = true
     }
@@ -299,7 +303,7 @@ function Nacos:sent_beat(service_name, host, port, group_name)
     local query           = {
         serviceName = service_name,
         groupName   = group_name or "",
-        namespaceId = self.namespace,
+        namespaceId = self.nacos_ns,
         beat        = json_encode(beat_info)
     }
     local ok, status, res = http_client:call_put(self.inst_beat_url, nil, nil, query)
@@ -327,7 +331,7 @@ function Nacos:modify_instance(service_name, host, port, group_name)
     local query           = {
         ip          = host, port = port,
         clusterName = self.cluster,
-        namespaceId = self.namespace,
+        namespaceId = self.nacos_ns,
         serviceName = service_name,
         groupName   = group_name or "",
     }
@@ -344,7 +348,7 @@ function Nacos:del_instance(service_name, host, port, group_name)
     local query           = {
         ip          = host, port = port,
         clusterName = self.cluster,
-        namespaceId = self.namespace,
+        namespaceId = self.nacos_ns,
         serviceName = service_name,
         groupName   = group_name or "",
     }
@@ -369,7 +373,7 @@ function Nacos:create_service(service_name, group_name)
     local query           = {
         serviceName      = service_name,
         groupName        = group_name or "",
-        namespaceId      = self.namespace,
+        namespaceId      = self.nacos_ns,
         protectThreshold = 0,
     }
     local ok, status, res = http_client:call_post(self.service_url, nil, nil, query)
@@ -391,7 +395,7 @@ function Nacos:modify_service(service_name, group_name)
     local query           = {
         serviceName      = service_name,
         groupName        = group_name or "",
-        namespaceId      = self.namespace,
+        namespaceId      = self.nacos_ns,
         protectThreshold = 0,
     }
     local ok, status, res = http_client:call_put(self.service_url, nil, nil, query)
@@ -407,7 +411,7 @@ function Nacos:del_service(service_name, group_name)
     local query           = {
         serviceName = service_name,
         groupName   = group_name or "",
-        namespaceId = self.namespace,
+        namespaceId = self.nacos_ns,
     }
     local ok, status, res = http_client:call_del(self.service_url, query)
     if not ok or status ~= 200 then
@@ -422,7 +426,7 @@ function Nacos:query_service(service_name, group_name)
     local query           = {
         serviceName = service_name,
         groupName   = group_name or "",
-        namespaceId = self.namespace,
+        namespaceId = self.nacos_ns,
     }
     local ok, status, res = http_client:call_get(self.service_url, query)
     if not ok or status ~= 200 then
@@ -442,7 +446,7 @@ function Nacos:query_services(page, size, group_name)
         pageNo      = page or 1,
         pageSize    = size or 50,
         group_name  = group_name or "",
-        namespaceId = self.namespace,
+        namespaceId = self.nacos_ns,
     }
     local ok, status, res = http_client:call_get(self.services_url, query)
     if not ok or status ~= 200 then

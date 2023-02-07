@@ -37,6 +37,7 @@ function AdminMgr:__init()
     event_mgr:add_listener(self, "rpc_register_command")
     event_mgr:add_listener(self, "rpc_execute_command")
     event_mgr:add_listener(self, "rpc_execute_message")
+    event_mgr:add_listener(self, "rpc_register_monitor")
 
     --创建HTTP服务器
     local server = HttpServer(env_get("HIVE_ADMIN_HTTP"))
@@ -44,7 +45,6 @@ function AdminMgr:__init()
     server:register_get("/gmlist", "on_gmlist", self)
     server:register_get("/monitors", "on_monitors", self)
     server:register_post("/command", "on_command", self)
-    server:register_post("/monitor", "on_monitor", self)
     server:register_post("/message", "on_message", self)
     service.make_node(server:get_port())
     self.http_server = server
@@ -90,6 +90,12 @@ function AdminMgr:rpc_execute_message(message)
     return SUCCESS, res
 end
 
+--注册monitor
+function AdminMgr:rpc_register_monitor(addr)
+    self.monitors[addr] = true
+    return SUCCESS
+end
+
 --http 回调
 ----------------------------------------------------------------------
 --gm_page
@@ -128,17 +134,6 @@ function AdminMgr:on_message(url, body, request)
     local cmd_req = json_decode(body)
     local data    = cmd_req.data
     return self:exec_message(data)
-end
-
---monitor上报
-function AdminMgr:on_monitor(url, body, request)
-    log_debug("[AdminMgr][on_monitor] body: %s,headers:%s", body, request.get_headers())
-    local ok, cmd_req = json_decode(body, true)
-    if ok then
-        self.monitors[cmd_req.addr] = true
-        return { code = 0 }
-    end
-    return { code = 1 }
 end
 
 --monitor拉取

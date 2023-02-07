@@ -51,24 +51,16 @@ function MonitorMgr:__init()
 end
 
 function MonitorMgr:register_admin()
-    --上报自己
-    local admin_url = env_get("HIVE_ADMIN_HTTP")
-    if admin_url then
-        local host      = env_get("HIVE_HOST_IP")
-        local purl      = sformat("%s/monitor", admin_url)
-        local http_addr = sformat("%s:%d", host, self.http_server:get_port())
-        thread_mgr:success_call(PeriodTime.SECOND_MS, function()
-            local ok, status, res = proxy_agent:http_post(purl, { addr = http_addr })
-            if ok and status == 200 then
-                ok, res = json_decode(res, true)
-                if ok and res.code == 0 then
-                    return true
-                end
-            end
-            log_warn("post monitor:%s fail:%s,%s,%s", purl, ok, status, res)
-            return false
-        end)
-    end
+    local host      = env_get("HIVE_HOST_IP")
+    local http_addr = sformat("%s:%d", host, self.http_server:get_port())
+    thread_mgr:success_call(PeriodTime.SECOND_MS, function()
+        local ok, code = router_mgr:call_admin_master("rpc_register_monitor", http_addr)
+        if hive.success(code, ok) then
+            return ok
+        end
+        log_warn("rpc_register_monitor fail:%s,%s", ok, code)
+        return false
+    end)
 end
 
 function MonitorMgr:on_client_accept(client)

@@ -2,15 +2,13 @@
 import("driver/nacos.lua")
 local lcrypt      = require("lcrypt")
 
+local log_debug   = logger.debug
 local lhex_encode = lcrypt.hex_encode
 local lrandomkey  = lcrypt.randomkey
 
-local qget        = hive.get
-local log_debug   = logger.debug
-
-local nacos       = qget("nacos")
-local timer_mgr   = qget("timer_mgr")
-local thread_mgr  = qget("thread_mgr")
+local nacos       = hive.get("nacos")
+local timer_mgr   = hive.get("timer_mgr")
+local thread_mgr  = hive.get("thread_mgr")
 
 thread_mgr:fork(function()
     local cres = nacos:create_namespace("1234567", "hive", "test create_namespace")
@@ -18,7 +16,8 @@ thread_mgr:fork(function()
     local nss = nacos:query_namespaces()
     log_debug("query_namespaces: %s", nss)
 
---[[    local mres = nacos:modify_namespace("1234567", "hive", "test create_namespace2")
+    --[[
+    local mres = nacos:modify_namespace("1234567", "hive", "test create_namespace2")
     log_debug("modify_namespace: %s", mres)
     local nss3 = nacos:query_namespaces()
     log_debug("query_namespaces3: %s", nss3)
@@ -27,7 +26,7 @@ thread_mgr:fork(function()
     log_debug("del_namespace: %s", dres)
     local nss4 = nacos:query_namespaces()
     log_debug("query_namespaces4: %s", nss4)
-    nacos:set_namespace("1234567")]]
+    ]]
 
     local value = lhex_encode(lrandomkey())
     local pfres = nacos:modify_config("test2", value)
@@ -51,14 +50,14 @@ thread_mgr:fork(function()
     local dres = nacos:del_service("lobby2", "hive")
     log_debug("del_service: hive-> %s", dres)
 
---[[    local rres = nacos:regi_instance("lobby2", 1, "hive")
+    local rres = nacos:regi_instance("lobby2", hive.host, 1, "hive")
     log_debug("regi_instance: lobby2-> %s", rres)
     local ilres = nacos:query_instances("lobby2", "hive")
     log_debug("query_instances: lobby2-> %s", ilres)
-    local ires = nacos:query_instance("lobby2", 1, "hive")
+    local ires = nacos:query_instance("lobby2", hive.host, 1, "hive")
     log_debug("query_instance: lobby2-> %s", ires)
-    local dires = nacos:del_instance("lobby2", 1, "hive")
-    log_debug("del_instance: lobby2-> %s", dires)]]
+    local dires = nacos:del_instance("lobby2", hive.host, 1, "hive")
+    log_debug("del_instance: lobby2-> %s", dires)
 
     nacos:listen_config("test", nil, nil, function(data_id, group, md5, cvalue)
         log_debug("listen_config: test-> %s", cvalue)
