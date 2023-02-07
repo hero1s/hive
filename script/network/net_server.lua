@@ -105,9 +105,6 @@ function NetServer:on_socket_accept(session)
             hxpcall(self.on_socket_error, "on_socket_error: %s", self, token, err)
         end)
     end
-    --初始化序号
-    session.serial        = 0
-    session.serial_sync   = 0
     session.command_times = {}
     --通知链接成功
     event_mgr:notify_listener("on_socket_accept", session)
@@ -119,7 +116,6 @@ function NetServer:write(session, cmd_id, data, session_id, flag)
         log_err("[NetServer][write] encode failed! cmd_id:%s,data:%s", cmd_id, data)
         return false
     end
-    session.serial = session.serial + 1
     -- call lbus
     local send_len = session.call_pack(cmd_id, pflag, session_id or 0, body)
     if send_len > 0 then
@@ -142,7 +138,6 @@ function NetServer:broadcast(cmd_id, data, filter)
     end
     for _, session in pairs(self.sessions) do
         if not filter or filter(session) then
-            session.serial = session.serial + 1
             local send_len = session.call_pack(cmd_id, pflag, 0, body)
             if send_len > 0 then
                 proxy_agent:statistics("on_proto_send", cmd_id, send_len)
@@ -254,13 +249,7 @@ function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
 end
 
 --检查序列号
-function NetServer:check_serial(session, cserial)
-    local sserial = session.serial
-    if cserial and cserial ~= session.serial_sync then
-        event_mgr:notify_listener("on_session_sync", session)
-    end
-    session.serial_sync = sserial
-
+function NetServer:check_serial(session)
     -- 流量控制检测
     if flow_ctrl then
         -- 达到检测周期
@@ -278,7 +267,6 @@ function NetServer:check_serial(session, cserial)
             session.last_fc_time = cur_time
         end
     end
-    return sserial
 end
 
 -- 关闭会话
