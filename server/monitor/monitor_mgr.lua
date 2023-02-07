@@ -20,7 +20,6 @@ local PeriodTime  = enum("PeriodTime")
 
 local router_mgr  = hive.get("router_mgr")
 local thread_mgr  = hive.get("thread_mgr")
-local proxy_agent = hive.get("proxy_agent")
 local timer_mgr   = hive.get("timer_mgr")
 
 local MonitorMgr  = singleton()

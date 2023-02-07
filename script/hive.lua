@@ -1,63 +1,11 @@
 --hive.lua
-local ltimer     = require("ltimer")
-local lcodec     = require("lcodec")
-local lclock_ms  = ltimer.clock_ms
-local guid_new   = lcodec.guid_new
+local lcodec   = require("lcodec")
+local guid_new = lcodec.guid_new
 
-local odate      = os.date
-local log_err    = logger.err
-local log_warn   = logger.warn
-local sformat    = string.format
-local tpack      = table.pack
-local tunpack    = table.unpack
-local dgetinfo   = debug.getinfo
-local dsethook   = debug.sethook
-local dtraceback = debug.traceback
-
---函数装饰器: 保护性的调用指定函数,如果出错则写日志
---主要用于一些C回调函数,它们本身不写错误日志
---通过这个装饰器,方便查错
-function hive.xpcall(func, format, ...)
-    local ok, err = xpcall(func, dtraceback, ...)
-    if not ok then
-        log_err(sformat(format, err))
-    end
-end
-
-function hive.xpcall_ret(func, format, ...)
-    local result = tpack(xpcall(func, dtraceback, ...))
-    if not result[1] then
-        log_err(sformat(format, result[2]))
-    end
-    return tunpack(result)
-end
-
-function hive.try_call(func, time, ...)
-    while time > 0 do
-        time = time - 1
-        if func(...) then
-            return true
-        end
-    end
-    return false
-end
-
-function hive.where_call()
-    local info = dgetinfo(3, "nSl")
-    return sformat("[%s:%d]", info.short_src, info.currentline or 0)
-end
-
--- 启动死循环监控
-function hive.check_endless_loop()
-    log_warn("open check_endless_loop will degrade performance!")
-    local debug_hook = function()
-        local now = lclock_ms()
-        if now - hive.clock_ms >= 10000 then
-            log_err(sformat("check_endless_loop:%s", dtraceback()))
-        end
-    end
-    dsethook(debug_hook, "l")
-end
+local odate    = os.date
+local log_err  = logger.err
+local sformat  = string.format
+local dgetinfo = debug.getinfo
 
 --快速获取enum
 local function henum(ename, ekey)

@@ -1,10 +1,67 @@
 ﻿local ljson      = require("lyyjson")
+local ltimer     = require("ltimer")
+local lclock_ms  = ltimer.clock_ms
+
+local log_err    = logger.err
+local log_warn   = logger.warn
+local sformat    = string.format
+local tpack      = table.pack
+local tunpack    = table.unpack
+local dgetinfo   = debug.getinfo
+local dsethook   = debug.sethook
+local dtraceback = debug.traceback
+
+--函数装饰器: 保护性的调用指定函数,如果出错则写日志
+--主要用于一些C回调函数,它们本身不写错误日志
+--通过这个装饰器,方便查错
+function hive.xpcall(func, format, ...)
+    local ok, err = xpcall(func, dtraceback, ...)
+    if not ok then
+        log_err(sformat(format, err))
+    end
+end
+
+function hive.xpcall_ret(func, format, ...)
+    local result = tpack(xpcall(func, dtraceback, ...))
+    if not result[1] then
+        log_err(sformat(format, result[2]))
+    end
+    return tunpack(result)
+end
+
+function hive.try_call(func, time, ...)
+    while time > 0 do
+        time = time - 1
+        if func(...) then
+            return true
+        end
+    end
+    return false
+end
+
+function hive.where_call()
+    local info = dgetinfo(3, "nSl")
+    return sformat("[%s:%d]", info.short_src, info.currentline or 0)
+end
+
+-- 启动死循环监控
+function hive.check_endless_loop()
+    log_warn("open check_endless_loop will degrade performance!")
+    local debug_hook = function()
+        local now = lclock_ms()
+        if now - hive.clock_ms >= 10000 then
+            log_err(sformat("check_endless_loop:%s", dtraceback()))
+        end
+    end
+    dsethook(debug_hook, "l")
+end
+
 local xpcall_ret = hive.xpcall_ret
 
 function hive.json_decode(json_str, result)
     local ok, res = xpcall_ret(ljson.decode, "[hive.json_decode] error:%s", json_str)
     if not ok then
-        logger.err("[hive][json_decode] err json_str:[%s]", json_str)
+        log_err("[hive][json_decode] err json_str:[%s]", json_str)
     end
     if result then
         return ok, ok and res or nil
@@ -16,7 +73,7 @@ end
 function hive.json_encode(body)
     local ok, jstr = xpcall_ret(ljson.encode, "[hive.json_encode] error:%s", body)
     if not ok then
-        logger.err("[hive][json_encode] err body:[%s]", body)
+        log_err("[hive][json_encode] err body:[%s]", body)
     end
     return ok and jstr or ""
 end
