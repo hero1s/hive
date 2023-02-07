@@ -120,10 +120,10 @@ hive.run = function()
 end
 
 --事件分发
-local function notify_rpc(session_id, rpc, ...)
+local function notify_rpc(session_id, title, rpc, ...)
     local rpc_datas = event_mgr:notify_listener(rpc, ...)
     if session_id > 0 then
-        hive.call(lencode(session_id, FLAG_RES, tunpack(rpc_datas)))
+        hive.call(title, lencode(session_id, FLAG_RES, tunpack(rpc_datas)))
     end
 end
 
@@ -137,7 +137,7 @@ local function worker_rpc(session_id, flag, ...)
 end
 
 --rpc调用
-hive.on_worker   = function(slice)
+hive.on_worker = function(slice)
     local rpc_res = tpack(pcall(ldecode, slice))
     if not rpc_res[1] then
         log_err("[hive][on_worker] decode failed %s!", rpc_res[2])
@@ -148,14 +148,26 @@ hive.on_worker   = function(slice)
     end)
 end
 
---访问主线程任务
+--访问主线程
 hive.call_master = function(rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    hive.call(lencode(session_id, FLAG_REQ, WTITLE, rpc, ...))
+    hive.call("master", lencode(session_id, FLAG_REQ, WTITLE, rpc, ...))
     return thread_mgr:yield(session_id, "call_master", RPC_TIMEOUT)
 end
 
---访问其他线程任务
+--通知主线程
 hive.send_master = function(rpc, ...)
-    hive.call(lencode(0, FLAG_REQ, "", rpc, ...))
+    hive.call("master", lencode(0, FLAG_REQ, WTITLE, rpc, ...))
+end
+
+--访问其他线程
+hive.call_worker = function(name, rpc, ...)
+    local session_id = thread_mgr:build_session_id()
+    hive.call(name, lencode(session_id, FLAG_REQ, WTITLE, rpc, ...))
+    return thread_mgr:yield(session_id, "call_master", RPC_TIMEOUT)
+end
+
+--通知其他线程
+hive.send_worker = function(name, rpc, ...)
+    hive.call(name, lencode(0, FLAG_REQ, WTITLE, rpc, ...))
 end

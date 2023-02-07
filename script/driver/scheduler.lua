@@ -1,29 +1,30 @@
 --scheduler.lua
-local lcodec      = require("lcodec")
-local pcall       = pcall
-local log_info    = logger.info
-local log_err     = logger.err
-local tpack       = table.pack
-local tunpack     = table.unpack
+local lcodec        = require("lcodec")
+local pcall         = pcall
+local log_info      = logger.info
+local log_err       = logger.err
+local tpack         = table.pack
+local tunpack       = table.unpack
 
-local lencode     = lcodec.encode_slice
-local ldecode     = lcodec.decode_slice
+local lencode       = lcodec.encode_slice
+local ldecode       = lcodec.decode_slice
+local worker_call   = hive.worker_call
+local worker_update = hive.worker_update
 
-local FLAG_REQ    = hive.enum("FlagMask", "REQ")
-local FLAG_RES    = hive.enum("FlagMask", "RES")
-local RPC_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
+local FLAG_REQ      = hive.enum("FlagMask", "REQ")
+local FLAG_RES      = hive.enum("FlagMask", "RES")
+local RPC_TIMEOUT   = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 
-local event_mgr   = hive.get("event_mgr")
-local update_mgr  = hive.get("update_mgr")
-local thread_mgr  = hive.get("thread_mgr")
+local event_mgr     = hive.get("event_mgr")
+local update_mgr    = hive.get("update_mgr")
+local thread_mgr    = hive.get("thread_mgr")
 
-local Scheduler   = singleton()
-local prop        = property(Scheduler)
-prop:reader("services", {})          --全部服务
+local Scheduler     = singleton()
 
 function Scheduler:__init()
     update_mgr:attach_frame(self)
     update_mgr:attach_quit(self)
+    hive.worker_setup("hive", environ.get("HIVE_SANDBOX"))
 end
 
 function Scheduler:on_quit()
@@ -31,7 +32,7 @@ function Scheduler:on_quit()
 end
 
 function Scheduler:on_frame()
-    hive.worker_update()
+    worker_update()
 end
 
 function Scheduler:setup(service)
@@ -44,7 +45,6 @@ function Scheduler:startup(name, entry)
         log_err("[Scheduler][startup] startup failed: %s", err)
         return ok
     end
-    self.services[name] = name
     log_info("[Scheduler][startup] startup %s: %s", name, entry)
     return ok
 end
@@ -52,20 +52,20 @@ end
 --访问其他线程任务
 function Scheduler:call(name, rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    hive.worker_call(name, lencode(session_id, FLAG_REQ, rpc, ...))
+    worker_call(name, lencode(session_id, FLAG_REQ, "master", rpc, ...))
     return thread_mgr:yield(session_id, "worker_call", RPC_TIMEOUT)
 end
 
 --访问其他线程任务
 function Scheduler:send(name, rpc, ...)
-    hive.worker_call(name, lencode(0, FLAG_REQ, rpc, ...))
+    worker_call(name, lencode(0, FLAG_REQ, "master", rpc, ...))
 end
 
 --事件分发
 local function notify_rpc(session_id, title, rpc, ...)
     local rpc_datas = event_mgr:notify_listener(rpc, ...)
     if session_id > 0 then
-        hive.worker_call(title, lencode(session_id, FLAG_RES, tunpack(rpc_datas)))
+        worker_call(title, lencode(session_id, FLAG_RES, tunpack(rpc_datas)))
     end
 end
 

@@ -8,7 +8,7 @@ local scheduler  = hive.load("scheduler")
 
 local ProxyAgent = singleton()
 local prop       = property(ProxyAgent)
-prop:reader("service_name", "proxy")          --地址
+prop:reader("service", "proxy")          --地址
 prop:reader("ignore_statistics", {})
 prop:reader("statis_status", false)
 prop:reader("dispatch_log_lv", 5)
@@ -16,7 +16,7 @@ prop:reader("dispatch_log_lv", 5)
 function ProxyAgent:__init()
     if scheduler then
         --启动代理线程
-        scheduler:startup("proxy", "worker.proxy")
+        scheduler:startup(self.service, "worker.proxy")
         --日志上报
         if environ.status("HIVE_LOG_REPORT") then
             logger.add_monitor(self)
@@ -74,14 +74,14 @@ end
 
 function ProxyAgent:send(rpc, ...)
     if scheduler then
-        return scheduler:send(self.service_name, rpc, ...)
+        return scheduler:send(self.service, rpc, ...)
     end
     event_mgr:notify_listener(rpc, ...)
 end
 
 function ProxyAgent:call(rpc, ...)
     if scheduler then
-        return scheduler:call(self.service_name, rpc, ...)
+        return scheduler:call(self.service, rpc, ...)
     end
     local rpc_datas = event_mgr:notify_listener(rpc, ...)
     return tunpack(rpc_datas)

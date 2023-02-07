@@ -46,7 +46,7 @@ namespace lworker {
     class worker;
     class ischeduler {
     public:
-        virtual bool call(slice* buf) = 0;
+        virtual bool call(std::string& name, slice* buf) = 0;
         virtual void destory(std::string& name, std::shared_ptr<worker> workor) = 0;
     };
 
@@ -111,7 +111,7 @@ namespace lworker {
             hive.set_function("stop", [&]() { stop(); });
             hive.set_function("update", [&]() { update(); });
             hive.set_function("getenv", [&](const char* key) { return get_env(key); });
-            hive.set_function("call", [&](slice* buf) { return m_schedulor->call(buf); });
+            hive.set_function("call", [&](std::string name, slice* buf) { return m_schedulor->call(name,buf); });
             m_lua->run_script(fmt::format("require '{}'", m_sandbox), [&](std::string err) {
                 printf("worker load %s failed, because: %s", m_sandbox.c_str(), err.c_str());
                 m_schedulor->destory(m_name, shared_from_this());

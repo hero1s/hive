@@ -10,7 +10,7 @@ Distributed game server framework based on CPP 17 && LUA 5.4
 * 基于行为树的机器人/单元测试一体化
 * GM命令快速验证
 * 路由协议支持有序及无序模式,支持服务的动态扩容/容灾/hash扩容
-* 支持服务线程模式(不接入集群,只与本进程线程服务交互)
+* 支持服务线程模式(不接入集群,所有线程服务间可以相互rpc,master线程可以访问集群rpc)
 
 ## 数据库
   - mysql,clickhouse,mongodb,redis,etcd,influxdb

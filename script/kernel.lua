@@ -79,7 +79,6 @@ end
 --初始化调度器
 local function init_scheduler()
     import("driver/scheduler.lua")
-    hive.scheduler:setup("hive")
 end
 
 --初始化统计

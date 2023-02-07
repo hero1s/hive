@@ -39,6 +39,9 @@ namespace lworker {
         }
         
         bool call(std::string& name, slice* buf) {
+            if (name == "master") {
+                return call(buf);
+            }
             auto workor = find_worker(name);
             if (workor) {
                 return workor->call(buf);
