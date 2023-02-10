@@ -1,16 +1,29 @@
 --random.lua
-local mrandom       = math.random
-local tinsert       = table.insert
-local tunpack       = table.unpack
-local tremove       = table.remove
+local mrandom = math.random
+local tcopy   = table_ext.copy
+local tinsert = table.insert
+local tunpack = table.unpack
+local tremove = table.remove
 
-local Random = class()
-local prop = property(Random)
+local Random  = class()
+local prop    = property(Random)
 prop:reader("weight", 0)            --权重
 prop:reader("childs", {})           --childs
 prop:reader("stand_alone", false)   --是否独立随机
 
 function Random:__init()
+end
+
+function Random:size()
+    return #self.childs
+end
+
+function Random:clone()
+    local rand       = Random()
+    rand.weight      = self.weight
+    rand.stand_alone = self.stand_alone
+    rand.child       = tcopy(self.child)
+    return rand
 end
 
 --轮盘随机添加子对象
@@ -24,7 +37,7 @@ end
 --excl：命中后是否淘汰，可以用于控制保底策略
 function Random:add_wheel(obj, wght, excl)
     self.stand_alone = false
-    self.weight = self.weight + wght
+    self.weight      = self.weight + wght
     tinsert(self.childs, { obj, wght, excl })
 end
 
@@ -56,8 +69,9 @@ function Random:rand_wheel()
         if wght > weight then
             if excl then
                 tremove(self.childs, i)
+                self.weight = self.weight - wght
             end
-            return { obj }
+            return obj
         end
         weight = weight - wght
     end
@@ -68,7 +82,10 @@ function Random:execute()
     if self.stand_alone then
         return self:rand_alone()
     end
-    return self:rand_wheel()
+    local val = self:rand_wheel()
+    if val then
+        return { val }
+    end
 end
 
 return Random

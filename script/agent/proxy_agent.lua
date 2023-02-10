@@ -11,7 +11,7 @@ local scheduler   = hive.load("scheduler")
 
 local ProxyAgent  = singleton()
 local prop        = property(ProxyAgent)
-prop:reader("service", "proxy")          --地址
+prop:reader("service", "proxy")
 prop:reader("ignore_statistics", {})
 prop:reader("statis_status", false)
 prop:reader("dispatch_log_lv", 5)

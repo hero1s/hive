@@ -174,7 +174,7 @@ function ConfigTable:find_one(...)
     end
     local row = self.rows[row_index]
     if not row then
-        log_err("[ConfigTable][find_one] table=%s row data not found. index=%s", self.name, row_index)
+        log_err("[ConfigTable][find_one] table=%s row data not found. index=%s,ref:%s", self.name, row_index, hive.where_call())
     end
     return row
 end

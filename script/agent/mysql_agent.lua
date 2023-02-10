@@ -3,11 +3,23 @@ local sformat     = string.format
 local assert      = assert
 local readfile    = io_ext.readfile
 local router_mgr  = hive.get("router_mgr")
-
+local scheduler   = hive.load("scheduler")
 local PARAM_ERROR = hive.enum("KernCode", "PARAM_ERROR")
 
 local MysqlAgent  = singleton()
+local prop        = property(MysqlAgent)
+prop:reader("service", "mysql")
+prop:reader("local_run", false) --本地线程服务
+
 function MysqlAgent:__init()
+end
+
+function MysqlAgent:start_local_run()
+    if self.local_run then
+        return
+    end
+    --启动代理线程
+    self.local_run = scheduler:startup(self.service, "worker.mysql")
 end
 
 function MysqlAgent:gen_condition_str(conditions)
@@ -186,6 +198,9 @@ end
 
 --发送数据库请求
 function MysqlAgent:execute(sql, db_name, hash_key)
+    if self.local_run then
+        return scheduler:call(self.service, "mysql_execute", db_name or "default", sql)
+    end
     return router_mgr:call_dbsvr_hash(hash_key or hive.id, "mysql_execute", db_name or "default", sql)
 end
 

@@ -67,6 +67,10 @@ function TimerMgr:loop(period, cb, ...)
     return self:register(period, period, -1, cb, ...)
 end
 
+function TimerMgr:loop_interval(interval, period, cb, ...)
+    return self:register(interval, period, -1, cb, ...)
+end
+
 function TimerMgr:cron(cex, cb, ...)
     local time, time_str = lcron_next(cex)
     if time < 0 then

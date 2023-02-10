@@ -6,6 +6,11 @@ local mrandom    = math.random
 
 math_ext         = _ENV.math_ext or {}
 
+--四舍五入
+function math_ext.round(n)
+    return mfloor(0.5 + n)
+end
+
 --随机函数
 function math_ext.rand(a, b)
     return mrandom(a, b)
