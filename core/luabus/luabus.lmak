@@ -7,16 +7,6 @@ TARGET_NAME = "luabus"
 ----工程类型: static/dynamic/exe
 PROJECT_TYPE = "static"
 
---需要的FLAGS
-FLAGS = {
-	"Wno-unused-variable",
-	"Wno-unused-parameter",
-	"Wno-unused-but-set-parameter",
-    "Wno-unused-function",
-    "Wno-unused-result",
-    "Wno-sign-compare",
-}
-
 --需要定义的选项
 DEFINES = {
 	"FMT_HEADER_ONLY"

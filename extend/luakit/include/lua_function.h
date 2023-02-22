@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "lua_stack.h"
 
 namespace luakit {
@@ -290,5 +290,16 @@ namespace luakit {
     bool call_object_function(lua_State* L, T* o, const char* function, exception_handler handler, std::tuple<ret_types&...>&& rets, arg_types... args) {
         if (!get_object_function(L, o, function)) return false;
         return lua_call_function(L, handler, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
+    }
+
+    template <typename T>
+    int args_return(lua_State* L, T v) {
+        return native_to_lua(L, std::move(v));
+    }
+
+    template<typename... arg_types>
+    static int variadic_return(lua_State* L, arg_types... args) {
+        int _[] = { args_return<arg_types>(L, std::move(args))... };
+        return sizeof...(arg_types);
     }
 }

@@ -18,6 +18,9 @@ MYCFLAGS =
 {{% for _, flag in ipairs(FLAGS) do %}}
 MYCFLAGS += -{{%= flag %}}
 {{% end %}}
+{{% for _, flag in ipairs(EX_FLAGS) do %}}
+MYCFLAGS += -{{%= flag %}}
+{{% end %}}
 
 {{% if STDC then %}}
 #c标准库版本
@@ -145,8 +148,8 @@ endif
 ifndef CX
 CX = c++
 endif
-CFLAGS = -g -O2 -Wall -Wno-deprecated -Wextra -Wno-unknown-pragmas $(STDC) $(MYCFLAGS)
-CXXFLAGS = -g -O2 -Wall -Wno-deprecated -Wextra -Wno-unknown-pragmas $(STDCPP) $(MYCFLAGS)
+CFLAGS = -g -O2 -Wall -Wno-deprecated -Wextra $(STDC) $(MYCFLAGS)
+CXXFLAGS = -g -O2 -Wall -Wno-deprecated -Wextra $(STDCPP) $(MYCFLAGS)
 
 #项目目录
 ifndef SOLUTION_DIR

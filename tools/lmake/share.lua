@@ -12,6 +12,19 @@ ENABLE = true
 
 --需要的FLAGS
 FLAGS = {
+    "Wsign-compare",
+    "Wno-sign-compare",
+    "Wno-unused-variable",
+    "Wno-unused-parameter",
+    "Wno-unknown-pragmas",
+    "Wno-unused-but-set-parameter",
+    "Wno-unused-function",
+    "Wno-unused-result",
+}
+
+--扩展的FLAGS
+EX_FLAGS = {
+
 }
 
 --需要的include目录

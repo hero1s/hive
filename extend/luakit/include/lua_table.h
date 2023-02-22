@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "lua_reference.h"
 
 namespace luakit {
@@ -84,12 +84,12 @@ namespace luakit {
         }
     };
 
-    template <> 
+    template <>
     inline int native_to_lua(lua_State* L, lua_table tb) {
         return tb.push_stack();
     }
 
-    template <> 
+    template <>
     inline lua_table lua_to_native(lua_State* L, int i) {
         lua_guard g(L);
         lua_pushvalue(L, i);

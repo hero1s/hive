@@ -7,14 +7,6 @@ TARGET_NAME = "mimalloc"
 ----工程类型: static/dynamic/exe
 PROJECT_TYPE = "dynamic"
 
---需要的FLAGS
-FLAGS = {
-	"Wno-sign-compare",
-    "Wno-unused-variable",
-    "Wno-unused-parameter",
-    "Wno-unused-but-set-parameter"
-}
-
 --需要的include目录
 INCLUDES = {
 	"mimalloc/include"

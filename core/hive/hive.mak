@@ -15,13 +15,15 @@ all : pre_build target post_build
 MYCFLAGS =
 
 #需要定义的FLAG
-MYCFLAGS += -fpermissive
+MYCFLAGS += -Wsign-compare
+MYCFLAGS += -Wno-sign-compare
 MYCFLAGS += -Wno-unused-variable
 MYCFLAGS += -Wno-unused-parameter
+MYCFLAGS += -Wno-unknown-pragmas
 MYCFLAGS += -Wno-unused-but-set-parameter
 MYCFLAGS += -Wno-unused-function
 MYCFLAGS += -Wno-unused-result
-MYCFLAGS += -Wno-sign-compare
+MYCFLAGS += -fpermissive
 
 #c标准库版本
 #gnu99/gnu11/gnu17
@@ -74,8 +76,8 @@ endif
 ifndef CX
 CX = c++
 endif
-CFLAGS = -g -O2 -Wall -Wno-deprecated -Wextra -Wno-unknown-pragmas $(STDC) $(MYCFLAGS)
-CXXFLAGS = -g -O2 -Wall -Wno-deprecated -Wextra -Wno-unknown-pragmas $(STDCPP) $(MYCFLAGS)
+CFLAGS = -g -O2 -Wall -Wno-deprecated -Wextra $(STDC) $(MYCFLAGS)
+CXXFLAGS = -g -O2 -Wall -Wno-deprecated -Wextra $(STDCPP) $(MYCFLAGS)
 
 #项目目录
 ifndef SOLUTION_DIR

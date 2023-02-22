@@ -7,17 +7,10 @@ TARGET_NAME = "plugins"
 --工程类型: static/dynamic/exe
 PROJECT_TYPE = "static"
 
---需要的FLAGS
-FLAGS = {
-	"Wno-unused-variable",
-	"Wno-unused-parameter",
-	"Wno-unused-but-set-parameter",
-    "Wno-unused-function",
-    "Wno-sign-compare",
+--扩展的FLAGS
+EX_FLAGS = {
     "Wno-implicit-fallthrough",
-    "Wno-maybe-uninitialized",
-    "Wno-unused-variable",
-    "Wno-unused-result"
+    "Wno-maybe-uninitialized"
 }
 
 --需要定义的选项

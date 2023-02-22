@@ -68,8 +68,9 @@ static int lrand_weight(lua_State* L)
 {
 	luaL_checktype(L, 1, LUA_TTABLE);
 	luaL_checktype(L, 2, LUA_TTABLE);
-	auto values = luakit::lua_to_native<luakit::reference>(L, 1).to_sequence<std::vector<int64_t>, int64_t>();
-	auto weights = luakit::lua_to_native<luakit::reference>(L, 2).to_sequence<std::vector<int64_t>, int64_t>();
+	std::vector<int64_t> values, weights;
+	luakit::lua_to_native(L, 1,values);
+	luakit::lua_to_native(L, 2, weights);
 
 	if (values.size() != weights.size() || values.size() == 0) {
 		return luaL_error(L, "lrand_weight table empty or values size:%d != weights size:%d", values.size(), weights.size());
@@ -94,8 +95,9 @@ static int lrand_weight_some(lua_State* L)
 {
 	luaL_checktype(L, 1, LUA_TTABLE);
 	luaL_checktype(L, 2, LUA_TTABLE);
-	auto v = luakit::lua_to_native<luakit::reference>(L, 1).to_sequence<std::vector<int64_t>, int64_t>();
-	auto w = luakit::lua_to_native<luakit::reference>(L, 2).to_sequence<std::vector<int64_t>, int64_t>();
+	std::vector<int64_t> v, w;
+	luakit::lua_to_native(L, 1,v);
+	luakit::lua_to_native(L, 2,w);
 	int64_t count = luaL_checkinteger(L, 3);
 	if (v.size() != w.size() || v.size() == 0 || count < 0 || (int64_t)v.size() < count)
 	{

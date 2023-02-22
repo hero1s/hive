@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "lua_table.h"
 #include "lua_class.h"
 
@@ -135,19 +135,19 @@ namespace luakit {
 
         template <typename T>
         int push(T v) {
-            return native_to_lua(m_L, v);
+            return native_to_lua(m_L, std::move(v));
         }
 
         template <typename T>
         reference new_reference(T v) {
             lua_guard g(m_L);
-            native_to_lua(m_L, v);
+            native_to_lua(m_L, std::move(v));
             return reference(m_L);
         }
 
         template<typename... arg_types>
         variadic_results as_return(arg_types... args) {
-            variadic_results vr = { new_reference<arg_types>(args)... };
+            variadic_results vr = { new_reference<arg_types>(std::move(args))... };
             return vr;
         }
 

@@ -7,15 +7,6 @@ TARGET_NAME = "luna"
 --工程类型: static/dynamic/exe
 PROJECT_TYPE = "static"
 
---需要的FLAGS
-FLAGS = {
-	"Wno-unused-variable",
-	"Wno-unused-parameter",
-	"Wno-unused-but-set-parameter",
-    "Wno-unused-function",
-    "Wno-sign-compare",
-}
-
 --需要的include目录
 INCLUDES = {
 	"../../extend/lua/lua"
