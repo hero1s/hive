@@ -120,24 +120,6 @@ template <typename Char> class basic_cstring_view {
 using cstring_view = basic_cstring_view<char>;
 using wcstring_view = basic_cstring_view<wchar_t>;
 
-template <typename Char> struct formatter<std::error_code, Char> {
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    return ctx.begin();
-  }
-
-  template <typename FormatContext>
-  FMT_CONSTEXPR auto format(const std::error_code& ec, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
-    auto out = ctx.out();
-    out = detail::write_bytes(out, ec.category().name(),
-                              basic_format_specs<Char>());
-    out = detail::write<Char>(out, Char(':'));
-    out = detail::write<Char>(out, ec.value());
-    return out;
-  }
-};
-
 #ifdef _WIN32
 FMT_API const std::error_category& system_category() noexcept;
 
@@ -260,10 +242,7 @@ class buffered_file {
   // Returns the pointer to a FILE object representing this file.
   FILE* get() const noexcept { return file_; }
 
-  // We place parentheses around fileno to workaround a bug in some versions
-  // of MinGW that define fileno as a macro.
-  // DEPRECATED! Rename to descriptor to avoid issues with macros.
-  FMT_API int(fileno)() const;
+  FMT_API int descriptor() const;
 
   void vprint(string_view format_str, format_args args) {
     fmt::vprint(file_, format_str, args);
@@ -358,6 +337,11 @@ class FMT_API file {
   // Creates a buffered_file object associated with this file and detaches
   // this file object from the file.
   buffered_file fdopen(const char* mode);
+
+  # if defined(_WIN32) && !defined(__MINGW32__)
+  // Opens a file and constructs a file object representing this file by wcstring_view filename. Windows only.
+  static file open_windows_file(wcstring_view path, int oflag);
+  #endif
 };
 
 // Returns the memory page size.
@@ -400,6 +384,28 @@ struct ostream_params {
 #  endif
 };
 
+class file_buffer final : public buffer<char> {
+  file file_;
+
+  FMT_API void grow(size_t) override;
+
+ public:
+  FMT_API file_buffer(cstring_view path, const ostream_params& params);
+  FMT_API file_buffer(file_buffer&& other);
+  FMT_API ~file_buffer();
+
+  void flush() {
+    if (size() == 0) return;
+    file_.write(data(), size() * sizeof(data()[0]));
+    clear();
+  }
+
+  void close() {
+    flush();
+    file_.close();
+  }
+};
+
 FMT_END_DETAIL_NAMESPACE
 
 // Added {} below to work around default constructor error known to
@@ -407,49 +413,32 @@ FMT_END_DETAIL_NAMESPACE
 constexpr detail::buffer_size buffer_size{};
 
 /** A fast output stream which is not thread-safe. */
-class FMT_API ostream final : private detail::buffer<char> {
+class FMT_API ostream {
  private:
-  file file_;
-
-  void grow(size_t) override;
+  FMT_MSC_WARNING(suppress : 4251)
+  detail::file_buffer buffer_;
 
   ostream(cstring_view path, const detail::ostream_params& params)
-      : file_(path, params.oflag) {
-    set(new char[params.buffer_size], params.buffer_size);
-  }
+      : buffer_(path, params) {}
 
  public:
-  ostream(ostream&& other)
-      : detail::buffer<char>(other.data(), other.size(), other.capacity()),
-        file_(std::move(other.file_)) {
-    other.clear();
-    other.set(nullptr, 0);
-  }
-  ~ostream() {
-    flush();
-    delete[] data();
-  }
+  ostream(ostream&& other) : buffer_(std::move(other.buffer_)) {}
 
-  void flush() {
-    if (size() == 0) return;
-    file_.write(data(), size());
-    clear();
-  }
+  ~ostream();
+
+  void flush() { buffer_.flush(); }
 
   template <typename... T>
   friend ostream output_file(cstring_view path, T... params);
 
-  void close() {
-    flush();
-    file_.close();
-  }
+  void close() { buffer_.close(); }
 
   /**
     Formats ``args`` according to specifications in ``fmt`` and writes the
     output to the file.
    */
   template <typename... T> void print(format_string<T...> fmt, T&&... args) {
-    vformat_to(detail::buffer_appender<char>(*this), fmt,
+    vformat_to(detail::buffer_appender<char>(buffer_), fmt,
                fmt::make_format_args(args...));
   }
 };

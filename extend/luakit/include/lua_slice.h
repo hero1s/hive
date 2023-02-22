@@ -1,8 +1,7 @@
 #pragma once
-#include "lua_kit.h"
-#include <string.h>
+#include "lua_base.h"
 
-namespace lcodec {
+namespace luakit {
 
     class slice {
     public:

@@ -34,16 +34,6 @@ namespace luakit {
         uint32_t    m_index = LUA_NOREF;
     };
 
-    using variadic_results = std::vector<reference>;
-
-    template <>
-    inline int native_to_lua(lua_State* L, variadic_results vr) {
-        for (auto r : vr) {
-            r.push_stack();
-        }
-        return (int)vr.size();
-    }
-
     template <>
     inline int native_to_lua(lua_State* L, reference r) {
         return r.push_stack();

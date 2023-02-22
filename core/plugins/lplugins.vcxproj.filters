@@ -16,9 +16,6 @@
     <ClInclude Include="src\lcjson\strbuf.h">
       <Filter>lcjson</Filter>
     </ClInclude>
-    <ClInclude Include="src\lcodec\buffer.h">
-      <Filter>lcodec</Filter>
-    </ClInclude>
     <ClInclude Include="src\lcodec\bufpool.h">
       <Filter>lcodec</Filter>
     </ClInclude>
@@ -44,9 +41,6 @@
       <Filter>lcodec</Filter>
     </ClInclude>
     <ClInclude Include="src\lcodec\shmpool.h">
-      <Filter>lcodec</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lcodec\slice.h">
       <Filter>lcodec</Filter>
     </ClInclude>
     <ClInclude Include="src\lcrypt\base64.h">
@@ -176,6 +170,9 @@
     </ClCompile>
     <ClCompile Include="src\tools\helper.cpp">
       <Filter>tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\github\xiyoo0812\quanta\extend\lstdfs\src\lstdfs.cpp">
+      <Filter>lstdfs</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -1,4 +1,5 @@
 #pragma once
+#include "lua_buff.h"
 #include "lua_table.h"
 #include "lua_class.h"
 
@@ -11,6 +12,13 @@ namespace luakit {
             luaL_openlibs(m_L);
             new_class<class_member>();
             new_class<function_wrapper>();
+            new_class<slice>(
+                "size", &slice::size,
+                "read", &slice::read,
+                "peek", &slice::check,
+                "string", &slice::string,
+                "contents", &slice::contents
+            );
         }
         kit_state(lua_State* L) : m_L(L) {}
 
@@ -143,12 +151,6 @@ namespace luakit {
             lua_guard g(m_L);
             native_to_lua(m_L, std::move(v));
             return reference(m_L);
-        }
-
-        template<typename... arg_types>
-        variadic_results as_return(arg_types... args) {
-            variadic_results vr = { new_reference<arg_types>(std::move(args))... };
-            return vr;
         }
 
         lua_State* L() { 

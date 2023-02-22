@@ -106,16 +106,15 @@ namespace ltimer {
 		return timers;
 	}
 
-	luakit::variadic_results cron_next(lua_State* L, std::string cex) {
-		luakit::kit_state kit_state(L);
+	static int cron_next(lua_State* L, std::string cex) {
 		try {
 			auto result = cron::cron_next(cron::make_cron(cex), (time_t)now());
 			std::tm result_tm;
 			cron::utils::time_to_tm(&result, &result_tm);
-			return kit_state.as_return(result, cron::utils::to_string(result_tm));
+			return luakit::variadic_return(L,result, cron::utils::to_string(result_tm));
 		}
 		catch (const std::exception& e) {
-			return kit_state.as_return(-1, e.what());
+			return luakit::variadic_return(L,-1, e.what());
 		}
 	}
 
@@ -128,9 +127,8 @@ namespace ltimer {
 		return thread_timer.update(elapse);
 	}
 
-	static luakit::variadic_results timer_time(lua_State* L) {
-		luakit::kit_state kit_state(L);
-		return kit_state.as_return(now_ms(), steady_ms());
+	static int timer_time(lua_State* L) {
+		return luakit::variadic_return(L, now_ms(), steady_ms());
 	}
 
 	luakit::lua_table open_ltimer(lua_State* L) {

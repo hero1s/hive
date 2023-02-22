@@ -64,13 +64,6 @@ namespace lcodec {
         llcodec.set_function("ketama_remove", ketama_remove);
         llcodec.set_function("ketama_next", ketama_next);
         llcodec.set_function("ketama_map", ketama_map);
-        kit_state.new_class<slice>(
-            "size", &slice::size,
-            "read", &slice::read,
-            "peek", &slice::check,
-            "string", &slice::string,
-            "contents", &slice::contents
-            );
         return llcodec;
     }
 }

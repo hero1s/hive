@@ -5,7 +5,9 @@
 #endif
 
 #include <vector>
-#include "buffer.h"
+#include "lua_kit.h"
+
+using namespace luakit;
 
 namespace lcodec {
     const uint8_t type_nil          = 0;

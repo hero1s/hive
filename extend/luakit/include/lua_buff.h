@@ -1,10 +1,10 @@
 #pragma once
-#include "slice.h"
+#include "lua_slice.h"
 
-namespace lcodec {
+namespace luakit {
 
-    constexpr size_t BUFFER_DEF = 64 * 1024;        //64K
-    constexpr size_t BUFFER_MAX = 64 * 1024 * 1024; //64M
+    const size_t BUFFER_DEF = 64 * 1024;        //64K
+    const size_t BUFFER_MAX = 16 * 1024 * 1024; //16M
 
     class var_buffer {
     public:

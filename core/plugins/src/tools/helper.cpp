@@ -162,10 +162,9 @@ namespace tools
 		auto helper = lua.new_table();
 
 		helper.set_function("mem_available", [](lua_State* L) {
-			luakit::kit_state kit_state(L);
 			double total = 0, available = 0;
 			CHelper::MemAvailable(total, available);
-			return kit_state.as_return(total, available);
+			return luakit::variadic_return(L, total, available);
 			});
 		helper.set_function("cpu_use_percent", []() { return CHelper::CpuUsePercent(); });
 		helper.set_function("cpu_core_num", []() { return CHelper::CpuCoreNum(); });

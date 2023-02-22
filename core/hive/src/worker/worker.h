@@ -4,11 +4,10 @@
 #include <atomic>
 #include <thread>
 
-#include "lcodec/buffer.h"
 #include "fmt/core.h"
 #include "thread_name.hpp"
+#include "lua_kit.h"
 
-using namespace lcodec;
 using namespace luakit;
 
 extern "C" void open_custom_libs(lua_State * L);
