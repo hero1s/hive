@@ -63,8 +63,10 @@ function UpdateMgr:on_second_5s()
     --检查文件更新
     if self.hotfix_able then
         if hive.reload() > 0 then
-            local config_mgr = hive.get("config_mgr")
-            config_mgr:reload()
+            local config_mgr = hive.load("config_mgr")
+            if config_mgr then
+                config_mgr:reload(true)
+            end
         end
     end
 end
@@ -79,10 +81,10 @@ function UpdateMgr:collect_gc()
 end
 
 function UpdateMgr:update_next()
-    local next_events = self.next_events
+    local next_events   = self.next_events
     local next_handlers = self.next_handlers
-    self.next_events = {}
-    self.next_handlers = {}
+    self.next_events    = {}
+    self.next_handlers  = {}
     for _, handler in pairs(next_handlers) do
         thread_mgr:fork(handler)
     end

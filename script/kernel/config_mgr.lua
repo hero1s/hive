@@ -15,13 +15,19 @@ function ConfigMgr:__init()
 end
 
 --- 配置热更新
-function ConfigMgr:reload()
+function ConfigMgr:reload(notify)
     for name in pairs(self.table_list) do
         local load_info = self.table_load_info[name]
         if load_info then
             local load_func = load_info.func
             local params    = load_info.params
             ConfigMgr[load_func](self, tunpack(params))
+        end
+    end
+    if notify then
+        local event_mgr = hive.load("event_mgr")
+        if event_mgr then
+            event_mgr:notify_trigger("reload_config")
         end
     end
 end
@@ -57,7 +63,7 @@ function ConfigMgr:load_table(name, ...)
     if conf_tab then
         conf_tab:setup(name, ...)
     else
-        conf_tab               = ConfigTable()
+        conf_tab              = ConfigTable()
         self.table_list[name] = conf_tab
         conf_tab:setup(name, ...)
     end

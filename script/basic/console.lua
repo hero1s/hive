@@ -5,6 +5,7 @@ local pcall         = pcall
 local stdout        = io.stdout
 local ssub          = string.sub
 local schar         = string.char
+local sformat       = string.format
 local tpack         = table.pack
 local tconcat       = table.concat
 
@@ -14,7 +15,7 @@ local console_input = false
 
 local function exec_command(cmd)
     stdout:write("\ncommand: " .. cmd .. "\n")
-    local res = tpack(pcall(load(cmd)))
+    local res = tpack(pcall(load(sformat("return %s", cmd))))
     if res[1] then
         stdout:write("result: " .. tconcat(res, ",", 2, #res))
     else

@@ -32,7 +32,6 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "rpc_inject")
     event_mgr:add_listener(self, "rpc_set_server_status")
     event_mgr:add_listener(self, "rpc_set_log_level")
-    event_mgr:add_listener(self, "rpc_config_reload")
     event_mgr:add_listener(self, "rpc_collect_gc")
     event_mgr:add_listener(self, "rpc_snapshot")
     event_mgr:add_listener(self, "rpc_count_lua_obj")
@@ -40,7 +39,7 @@ end
 
 -- 连接关闭回调
 function MonitorAgent:on_socket_error(client, token, err)
-    log_info("[MonitorAgent][on_socket_error] disconnect monitor fail!:[%s:%s],err:%s", self.client.ip, self.client.port,err)
+    log_info("[MonitorAgent][on_socket_error] disconnect monitor fail!:[%s:%s],err:%s", self.client.ip, self.client.port, err)
 end
 
 -- 连接成回调
@@ -100,17 +99,10 @@ end
 
 function MonitorAgent:rpc_reload()
     log_info("[MonitorAgent][rpc_reload]")
-    hive.reload()
-    hive.protobuf_mgr:reload()
-    config_mgr:reload()
-
-    event_mgr:notify_trigger("reload_config")
-end
-
-function MonitorAgent:rpc_config_reload()
-    log_info("[MonitorAgent][rpc_config_reload]")
-    config_mgr:reload()
-    event_mgr:notify_trigger("reload_config")
+    if hive.reload() > 0 then
+        hive.protobuf_mgr:reload()
+        config_mgr:reload(true)
+    end
 end
 
 function MonitorAgent:rpc_collect_gc()

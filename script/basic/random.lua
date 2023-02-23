@@ -66,7 +66,7 @@ function Random:rand_wheel()
     local weight = mrandom(1, self.weight)
     for i, child in pairs(self.childs) do
         local obj, wght, excl = tunpack(child)
-        if wght > weight then
+        if wght >= weight then
             if excl then
                 tremove(self.childs, i)
                 self.weight = self.weight - wght
