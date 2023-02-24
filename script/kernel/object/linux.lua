@@ -6,15 +6,16 @@ local ssub        = string.sub
 local sformat     = string.format
 local ssplit      = string_ext.split
 
-local LinuxStatis = singleton()
-function LinuxStatis:__init()
+local LinuxStatis = class()
+function LinuxStatis:__init(pid)
+    self.pid = pid or hive.pid
+    self:setup()
 end
 
 function LinuxStatis:setup()
-    self.pid          = hive.pid
-    self.cpu_core     = self:calc_cpu_core()
-    self.cpu_time     = self:calc_cpu_time()
-    self.thread_time  = self:calc_thread_time()
+    self.cpu_core    = self:calc_cpu_core()
+    self.cpu_time    = self:calc_cpu_time()
+    self.thread_time = self:calc_thread_time()
 end
 
 --计算cpu核心数量
@@ -92,7 +93,5 @@ function LinuxStatis:calc_memory()
     fstatus:close()
     return mem_res, mem_virt
 end
-
-hive.linux_statis = LinuxStatis()
 
 return LinuxStatis

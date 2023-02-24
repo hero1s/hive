@@ -22,7 +22,7 @@ local dgetinfo     = debug.getinfo
 local sformat      = string.format
 local setmetatable = setmetatable
 local dtraceback   = debug.traceback
-
+local log_err      = logger.err
 local mixin_tpls   = _ENV.mixin_tpls or {}
 
 local function tab_copy(src, dst)
@@ -88,14 +88,14 @@ local function delegate_one(class, mixin)
     end
     for name in pairs(mixin.__props) do
         if has_prop(class, name) then
-            print(sformat("the mixin default %s has repeat defined.", name))
+            log_err(sformat("the mixin:[%s] default ( %s ) has repeat defined.", mixin.__source, name))
         end
     end
     for method in pairs(mixin.__methods) do
         --下划线前缀方法不代理
         if ssub(method, 1, 1) ~= "_" then
             if class[method] then
-                print(sformat("the mixin method %s has repeat defined.", method))
+                log_err(sformat("the mixin:[%s] method ( %s ) has repeat defined.", mixin.__source, method))
             end
             --接口代理
             class[method] = function(...)

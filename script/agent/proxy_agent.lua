@@ -41,7 +41,7 @@ function ProxyAgent:dispatch_log(content, lvl_name, lvl)
     if lvl < self.dispatch_log_lv then
         return
     end
-    local title = sformat("[%s][%s]", hive.service_name, lvl_name)
+    local title = sformat("[%s][%s]", hive.name, lvl_name)
     return self:send("rpc_fire_webhook", title, content, lvl)
 end
 

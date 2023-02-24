@@ -1,18 +1,18 @@
 --statis_mgr.lua
-import("kernel/object/linux.lua")
-local InfluxDB     = import("driver/influx.lua")
+local LinuxStatis = import("kernel/object/linux.lua")
+local InfluxDB    = import("driver/influx.lua")
 
-local env_get      = environ.get
-local env_addr     = environ.addr
-local event_mgr    = hive.get("event_mgr")
-local update_mgr   = hive.get("update_mgr")
-local linux_statis = hive.get("linux_statis")
+local env_get     = environ.get
+local env_addr    = environ.addr
+local event_mgr   = hive.get("event_mgr")
+local update_mgr  = hive.get("update_mgr")
 
-local StatisMgr    = singleton()
-local prop         = property(StatisMgr)
+local StatisMgr   = singleton()
+local prop        = property(StatisMgr)
 prop:reader("influx", nil)              --influx
 prop:reader("statis", {})               --statis
 prop:reader("statis_status", false)     --统计开关
+prop:reader("linux_statis", nil)
 
 function StatisMgr:__init()
     local statis_status = environ.status("HIVE_STATIS")
@@ -31,7 +31,7 @@ function StatisMgr:__init()
 
         --系统监控
         if hive.platform == "linux" then
-            linux_statis:setup()
+            self.linux_statis  = LinuxStatis()
         end
         --influx
         self:init_influx()
@@ -150,7 +150,7 @@ end
 -- 计算内存信息(KB)
 function StatisMgr:_calc_mem_use()
     if hive.platform == "linux" then
-        return linux_statis:calc_memory()
+        return self.linux_statis:calc_memory()
     end
     return 0
 end
@@ -158,7 +158,7 @@ end
 -- 计算cpu使用率
 function StatisMgr:_calc_cpu_rate()
     if hive.platform == "linux" then
-        return linux_statis:calc_cpu_rate()
+        return self.linux_statis:calc_cpu_rate()
     end
     return 0.1
 end
