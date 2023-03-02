@@ -14,17 +14,16 @@ local prop        = property(ProxyAgent)
 prop:reader("service", "proxy")
 prop:reader("ignore_statistics", {})
 prop:reader("statis_status", false)
-prop:reader("dispatch_log_lv", 5)
 
 function ProxyAgent:__init()
     if scheduler then
         --启动代理线程
         scheduler:startup(self.service, "worker.proxy")
         --日志上报
-        if environ.status("HIVE_LOG_REPORT") then
-            logger.add_monitor(self)
-            log_warn("[ProxyAgent:__init] open report log !!!,it will degrade performance")
-            self.dispatch_log_lv = math.max(4, environ.number("HIVE_WEBHOOK_LVL", "5"))
+        local wlvl = environ.number("HIVE_WEBHOOK_LVL")
+        if wlvl then
+            --添加webhook功能
+            logger.add_monitor(self, wlvl)
         end
         --开启统计
         if environ.status("HIVE_STATIS") then
@@ -37,12 +36,9 @@ function ProxyAgent:__init()
 end
 
 --日志分发
-function ProxyAgent:dispatch_log(content, lvl_name, lvl)
-    if lvl < self.dispatch_log_lv then
-        return
-    end
+function ProxyAgent:dispatch_log(content, lvl_name)
     local title = sformat("[%s][%s]", hive.name, lvl_name)
-    return self:send("rpc_fire_webhook", title, content, lvl)
+    return self:send("rpc_fire_webhook", title, content)
 end
 
 function ProxyAgent:http_get(url, querys, headers)

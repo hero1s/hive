@@ -77,7 +77,7 @@ end
 
 function NetlogMgr:rpc_show_log(data)
     if not next(self.sessions) then
-        logger.add_monitor(self)
+        logger.add_monitor(self,0)
     end
     local show_logs = {}
     local session   = self:open_session(data)

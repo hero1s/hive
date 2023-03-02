@@ -10,20 +10,15 @@ local HOUR_S      = hive.enum("PeriodTime", "HOUR_S")
 
 local Webhook     = singleton()
 local prop        = property(Webhook)
-prop:reader("url", nil)             --url地址
-prop:reader("lvl", 100)             --上报等级
 prop:reader("hooks", {})            --webhook通知接口
 prop:reader("notify_limit", {})     --控制同样消息的发送频率
 prop:reader("lan_ip", "")
 
 function Webhook:__init()
-    self.lvl    = math.max(4, environ.number("HIVE_WEBHOOK_LVL", "5"))
-    self.lan_ip = hive.lan_ip
-    if self.lvl then
-        self.hooks.lark_log   = environ.get("HIVE_LARK_URL")
-        self.hooks.ding_log   = environ.get("HIVE_DING_URL")
-        self.hooks.wechat_log = environ.get("HIVE_WECHAT_URL")
-    end
+    self.lan_ip           = hive.lan_ip
+    self.hooks.lark_log   = environ.get("HIVE_LARK_URL")
+    self.hooks.ding_log   = environ.get("HIVE_DING_URL")
+    self.hooks.wechat_log = environ.get("HIVE_WECHAT_URL")
 end
 
 --飞书
@@ -51,8 +46,8 @@ function Webhook:ding_log(url, title, context, at_mobiles, at_all)
     http_client:call_post(url, body)
 end
 
-function Webhook:notify(title, content, lvl, ...)
-    if next(self.hooks) and lvl >= self.lvl then
+function Webhook:notify(title, content, ...)
+    if next(self.hooks) then
         title        = title .. " host:" .. self.lan_ip
         local now    = hive.now
         local notify = self.notify_limit[content]

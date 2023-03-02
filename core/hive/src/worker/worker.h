@@ -105,6 +105,7 @@ namespace lworker {
 
         void run(){
             auto hive = m_lua->new_table(m_service.c_str());
+            hive.set("pid", ::getpid());
             hive.set("worker_title", m_name);
             hive.set("logtag", fmt::format("[{}]", m_name));
             hive.set_function("stop", [&]() { stop(); });

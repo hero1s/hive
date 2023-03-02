@@ -53,6 +53,10 @@ end
 --计算主线程时间
 function LinuxStatis:calc_thread_time()
     local fstat = iopen(sformat("/proc/%d/stat", self.pid), "r")
+    if not fstat then
+        -- pid可能已经不存在了
+        return 0
+    end
     local line  = fstat:read()
     local times = ssplit(line, " ")
     local time  = 0
@@ -79,6 +83,10 @@ end
 function LinuxStatis:calc_memory()
     local linen, mem_res, mem_virt = 0, 0, 0
     local fstatus                  = iopen(sformat("/proc/%d/status", self.pid), "r")
+    if not fstatus then
+        -- pid可能已经不存在了
+        return 0, 0
+    end
     while linen < 22 do
         linen      = linen + 1
         local line = fstatus:read()

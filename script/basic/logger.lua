@@ -45,8 +45,8 @@ function logger.init()
     llog.add_lvl_dest(LOG_LEVEL.ERROR)
 end
 
-function logger.add_monitor(monitor)
-    monitors[monitor] = true
+function logger.add_monitor(monitor, lvl)
+    monitors[monitor] = lvl
 end
 
 function logger.remove_monitor(monitor)
@@ -60,7 +60,7 @@ function logger.filter(level)
     end
 end
 
-local function logger_output(feature, lvl, lvl_name, fmt, log_conf, ...)
+local function logger_output(feature, notify, lvl, lvl_name, fmt, log_conf, ...)
     if lis_filter(lvl) then
         return false
     end
@@ -77,15 +77,17 @@ local function logger_output(feature, lvl, lvl_name, fmt, log_conf, ...)
     else
         content = sformat(fmt, ...)
     end
-    if not dispatching then
+    lvl_func(logtag .. content, feature)
+    if notify and not dispatching then
         --防止重入
         dispatching = true
-        for monitor in pairs(monitors) do
-            monitor:dispatch_log(content, lvl_name, lvl)
+        for monitor, mlvl in pairs(monitors) do
+            if lvl >= mlvl then
+                monitor:dispatch_log(content, lvl_name)
+            end
         end
         dispatching = false
     end
-    return lvl_func(logtag .. content, feature)
 end
 
 local function trim_src(short_src)
@@ -115,9 +117,9 @@ for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     logger[lvl_name]         = function(fmt, ...)
         if logshow == 1 then
             local info = dgetinfo(2, "nSl")
-            fmt = sformat("[%s:%d(%s)]", trim_src(info.short_src), info.currentline or 0, info.name or "") .. fmt
+            fmt        = sformat("[%s:%d(%s)]", trim_src(info.short_src), info.currentline or 0, info.name or "") .. fmt
         end
-        local ok, res = pcall(logger_output, "", lvl, lvl_name, fmt, log_conf, ...)
+        local ok, res = pcall(logger_output, true, "", lvl, lvl_name, fmt, log_conf, ...)
         if not ok then
             local info = dgetinfo(2, "S")
             lwarn(sformat("[logger][%s] format failed: %s, source(%s:%s)", lvl_name, res, info.short_src, info.linedefined))
@@ -136,7 +138,7 @@ for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
         end
         llog.add_dest(feature)
         return function(fmt, ...)
-            local ok, res = pcall(logger_output, feature, lvl, lvl_name, fmt, log_conf, ...)
+            local ok, res = pcall(logger_output, false, feature, lvl, lvl_name, fmt, log_conf, ...)
             if not ok then
                 local info = dgetinfo(2, "S")
                 lwarn(sformat("[logger][%s] format failed: %s, source(%s:%s)", lvl_name, res, info.short_src, info.linedefined))
