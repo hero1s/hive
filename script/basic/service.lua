@@ -60,6 +60,7 @@ function service.init()
     hive.service_id   = service_id
     hive.name         = sformat("%s_%s", name, index)
     hive.host         = environ.get("HIVE_HOST_IP")
+    hive.is_master    = false
     service.make_node()
 end
 

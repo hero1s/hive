@@ -26,7 +26,6 @@ prop:accessor("routers", {})
 prop:accessor("candidates", {})
 prop:accessor("ready_watchers", {})
 prop:accessor("close_watchers", {})
-prop:accessor("master_watchers", {})
 prop:accessor("hid", 0)
 function RouterMgr:__init()
     self.hid = hive.id
@@ -278,14 +277,6 @@ function RouterMgr:watch_service_ready(listener, service_name)
     self.ready_watchers[service_name][listener] = true
 end
 
---监听服务切换master
-function RouterMgr:watch_service_master(listener)
-    if not self.master_watchers then
-        self.master_watchers = {}
-    end
-    self.master_watchers[listener] = true
-end
-
 --业务事件响应
 -------------------------------------------------------------------------------
 -- 刷新router配置
@@ -338,14 +329,9 @@ end
 --服务器切换master
 function RouterMgr:rpc_service_master(id, router_id)
     if self:is_master_router(router_id) then
-        if next(self.master_watchers) then
-            log_info("[RouterMgr][rpc_service_master] switch master self:%s,master:%s", id2nick(hive.id), id2nick(id))
-        end
-        for listener in pairs(self.master_watchers or {}) do
-            thread_mgr:fork(function()
-                listener:on_service_master(id, hive.id == id and true or false)
-            end)
-        end
+        hive.is_master = hive.id == id and true or false
+        event_mgr:notify_trigger("evt_service_master")
+        log_info("[RouterMgr][rpc_service_master] is_master:%s,:%s", hive.is_master, hive.name)
     end
 end
 
