@@ -6,12 +6,10 @@ local pairs       = pairs
 local loadfile    = loadfile
 local iopen       = io.open
 local mabs        = math.abs
-local tpack       = table.pack
-local tunpack     = table.unpack
 local tsort       = table.sort
 local sformat     = string.format
 local sfind       = string.find
-local dgetinfo    = debug.getinfo
+local dtraceback  = debug.traceback
 local file_time   = lstdfs.last_write_time
 local ldir        = lstdfs.dir
 local lfilename   = lstdfs.filename
@@ -80,15 +78,18 @@ local function try_load(node, reload)
         log_output("error", sformat("[sandbox][try_load] load file: %s ... [failed]\nerror : %s", node.filename, err))
         return
     end
-    local res = tpack(pcall(trunk_func))
-    if not res[1] then
-        log_output("error", sformat("[sandbox][try_load] exec file: %s ... [failed]\nerror : %s", node.filename, res[2]))
+    local ok, res = xpcall(trunk_func, dtraceback)
+    if not ok then
+        log_output("error", sformat("[sandbox][try_load] exec file: %s ... [failed]\nerror : %s", node.filename, res))
         return
+    end
+    if res then
+        node.res = res
     end
     if reload then
         log_output("info", sformat("[sandbox][try_load] load file: %s ... [ok]", node.filename))
     end
-    return tunpack(res, 2)
+    return res
 end
 
 function import(filename)
@@ -98,10 +99,7 @@ function import(filename)
         load_files[filename] = node
     end
     if not node.time then
-        local res = try_load(node)
-        if res then
-            node.res = res
-        end
+        try_load(node)
     end
     return node.res
 end
@@ -160,31 +158,16 @@ function hive.reload()
             end
             if node.time then
                 if mabs(node.time - filetime) > 1 then
-                    local res = try_load(node, true)
-                    if res then
-                        node.res = res
-                    end
+                    try_load(node, true)
                     count = count + 1
                 end
             else
                 log_output("error", sformat("[hive][reload] error file:%s", node.filename))
             end
         end
-        ::continue::
+        :: continue ::
     end
     return count
 end
 
-function hive.load(name)
-    return hive[name]
-end
 
-function hive.get(name)
-    local global_obj = hive[name]
-    if not global_obj then
-        local info = dgetinfo(2, "S")
-        log_output("error", sformat("[hive][get] %s not initial! source(%s:%s)", name, info.short_src, info.linedefined))
-        return
-    end
-    return global_obj
-end

@@ -7,8 +7,22 @@ local log_err  = logger.err
 local sformat  = string.format
 local dgetinfo = debug.getinfo
 
+function hive.load(name)
+    return hive[name]
+end
+
+function hive.get(name)
+    local global_obj = hive[name]
+    if not global_obj then
+        local info = dgetinfo(2, "S")
+        log_err(sformat("[hive][get] %s not initial! source(%s:%s)", name, info.short_src, info.linedefined))
+        return
+    end
+    return global_obj
+end
+
 --快速获取enum
-local function henum(ename, ekey)
+function hive.enum(ename, ekey)
     local eobj = enum(ename)
     if not eobj then
         local info = dgetinfo(2, "S")
@@ -24,11 +38,10 @@ local function henum(ename, ekey)
     return eval
 end
 
-hive.enum     = henum
-local FAILED  = henum("KernCode", "FAILED")
-local SUCCESS = henum("KernCode", "SUCCESS")
-local DAY_S   = henum("PeriodTime", "DAY_S")
-local HOUR_S  = henum("PeriodTime", "HOUR_S")
+local FAILED  = hive.enum("KernCode", "FAILED")
+local SUCCESS = hive.enum("KernCode", "SUCCESS")
+local DAY_S   = hive.enum("PeriodTime", "DAY_S")
+local HOUR_S  = hive.enum("PeriodTime", "HOUR_S")
 
 function hive.success(code, ok)
     if ok == nil then
@@ -91,7 +104,7 @@ function hive.edition_utc(period, time, offset)
     return hive.edition(period, utime, offset)
 end
 
-local ServiceStatus_RUN = henum("ServiceStatus", "RUN")
+local ServiceStatus_RUN = hive.enum("ServiceStatus", "RUN")
 
 function hive.is_runing()
     return hive.service_status == ServiceStatus_RUN

@@ -7,6 +7,10 @@ local log_warn         = logger.warn
 local hxpcall          = hive.xpcall
 local env_number       = environ.number
 local signal_quit      = signal.quit
+local b64_encode       = lcrypt.b64_encode
+local b64_decode       = lcrypt.b64_decode
+local lz4_encode       = lcrypt.lz4_encode
+local lz4_decode       = lcrypt.lz4_decode
 
 local event_mgr        = hive.get("event_mgr")
 local thread_mgr       = hive.get("thread_mgr")
@@ -173,12 +177,12 @@ function NetServer:encode(cmd_id, data, flag)
     local encode_data = self.coder:encode(cmd_id, data)
     -- 加密处理
     if out_encrypt then
-        encode_data = lcrypt.b64_encode(encode_data)
+        encode_data = b64_encode(encode_data)
         flag        = flag | FLAG_ENCRYPT
     end
     -- 压缩处理
     if out_press then
-        encode_data = lcrypt.lz4_encode(encode_data)
+        encode_data = lz4_encode(encode_data)
         flag        = flag | FLAG_ZIP
     end
     return encode_data, flag
@@ -191,11 +195,11 @@ function NetServer:decode(cmd_id, data, flag)
     local de_data = data
     if flag & FLAG_ZIP == FLAG_ZIP then
         --解压处理
-        de_data = lcrypt.lz4_decode(de_data)
+        de_data = lz4_decode(de_data)
     end
     if flag & FLAG_ENCRYPT == FLAG_ENCRYPT then
         --解密处理
-        de_data = lcrypt.b64_decode(de_data)
+        de_data = b64_decode(de_data)
     end
     return self.coder:decode(cmd_id, de_data)
 end

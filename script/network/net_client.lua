@@ -1,6 +1,10 @@
 local lcrypt       = require("lcrypt")
 local log_err      = logger.err
 local hxpcall      = hive.xpcall
+local b64_encode   = lcrypt.b64_encode
+local b64_decode   = lcrypt.b64_decode
+local lz4_encode   = lcrypt.lz4_encode
+local lz4_decode   = lcrypt.lz4_decode
 
 local proxy_agent  = hive.get("proxy_agent")
 local socket_mgr   = hive.get("socket_mgr")
@@ -92,12 +96,12 @@ function NetClient:encode(cmd_id, data, flag)
     end
     -- 加密处理
     if out_encrypt then
-        encode_data = lcrypt.b64_encode(encode_data)
+        encode_data = b64_encode(encode_data)
         flag        = flag | FlagMask.ENCRYPT
     end
     -- 压缩处理
     if out_press then
-        encode_data = lcrypt.lz4_encode(encode_data)
+        encode_data = lz4_encode(encode_data)
         flag        = flag | FlagMask.ZIP
     end
     return encode_data, flag
@@ -107,11 +111,11 @@ function NetClient:decode(cmd_id, data, flag)
     local decode_data = data
     if flag & FlagMask.ZIP == FlagMask.ZIP then
         --解压处理
-        decode_data = lcrypt.lz4_decode(decode_data)
+        decode_data = lz4_decode(decode_data)
     end
     if flag & FlagMask.ENCRYPT == FlagMask.ENCRYPT then
         --解密处理
-        decode_data = lcrypt.b64_decode(decode_data)
+        decode_data = b64_decode(decode_data)
     end
     if self.decoder then
         return self.decoder(cmd_id, decode_data)
