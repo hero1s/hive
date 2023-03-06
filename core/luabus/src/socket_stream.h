@@ -44,7 +44,7 @@ struct socket_stream : public socket_object
 	void do_send(size_t max_len, bool is_eof);
 	void do_recv(size_t max_len, bool is_eof);
 
-	void dispatch_package();
+	void dispatch_package(bool reset);
 	int  handshake_rpc(BYTE* data, size_t data_len);
 	void send_handshake_rpc();
 	void on_error(const char err[]);

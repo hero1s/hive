@@ -123,7 +123,7 @@ bool socket_stream::update(int64_t now) {
 			on_error(fmt::format("timeout:{}", m_timeout).c_str());
 			return true;
 		}
-		dispatch_package();
+		dispatch_package(true);
 	}
 	}
 	return true;
@@ -499,7 +499,7 @@ void socket_stream::do_recv(size_t max_len, bool is_eof)
 		}
 		total_recv += recv_len;
 		m_recv_buffer.pop_space(recv_len);
-		m_need_dispatch_pkg = true;
+		dispatch_package(false);
 	}
 
 	if (is_eof || max_len == 0) {
@@ -507,12 +507,16 @@ void socket_stream::do_recv(size_t max_len, bool is_eof)
 	}
 }
 
-void socket_stream::dispatch_package() {
-	if (!m_need_dispatch_pkg)return;
+void socket_stream::dispatch_package(bool reset) {
+	if ((reset && !m_need_dispatch_pkg) || (!reset && m_need_dispatch_pkg))return;
 	m_need_dispatch_pkg = false;
 
-	int64_t now = steady_ms();
-	auto max_dispatch_pkg = m_tick_dispatch_pkg;
+	thread_local int64_t now;
+	thread_local time_t max_dispatch_pkg;
+	if (reset) {
+		now = steady_ms();
+		max_dispatch_pkg = m_tick_dispatch_pkg;
+	} 
 	while (m_link_status == elink_status::link_connected) {
 		uint64_t package_size = 0;
 		size_t data_len = 0, header_len = 0;
