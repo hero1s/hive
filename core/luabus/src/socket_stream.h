@@ -49,6 +49,7 @@ struct socket_stream : public socket_object
 	void send_handshake_rpc();
 	void on_error(const char err[]);
 	void on_connect(bool ok, const char reason[]);
+	void reset_dispatch_pkg();
 
 	int token = 0;
 	socket_mgr* m_mgr = nullptr;
@@ -66,7 +67,8 @@ struct socket_stream : public socket_object
 	int m_timeout = -1;
 
 	bool    m_need_dispatch_pkg = true;
-	int16_t m_tick_dispatch_pkg = 2000;
+	int64_t m_tick_dispatch_time;
+
 	bool    m_delay_send = false; //大包发送
 	
 	uint8_t m_seq_id = 0;

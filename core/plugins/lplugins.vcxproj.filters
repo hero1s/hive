@@ -171,9 +171,6 @@
     <ClCompile Include="src\tools\helper.cpp">
       <Filter>tools</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\github\xiyoo0812\quanta\extend\lstdfs\src\lstdfs.cpp">
-      <Filter>lstdfs</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="bitarray">

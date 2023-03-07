@@ -25,9 +25,7 @@ socket_stream::socket_stream(socket_mgr* mgr, LPFN_CONNECTEX connect_func, eprot
 	if (m_proto_type == eproto_type::proto_pack || m_proto_type == eproto_type::proto_rpc) {
 		m_delay_send = true;
 	}
-	if (link_type == elink_type::elink_tcp_accept) {
-		m_tick_dispatch_pkg = DISPATCH_PKG[int(m_proto_type)];
-	}
+	reset_dispatch_pkg();
 }
 #endif
 
@@ -40,9 +38,7 @@ socket_stream::socket_stream(socket_mgr* mgr, eproto_type proto_type, elink_type
 	if (m_proto_type == eproto_type::proto_pack || m_proto_type == eproto_type::proto_rpc) {
 		m_delay_send = true;
 	}
-	if (link_type == elink_type::elink_tcp_accept) {
-		m_tick_dispatch_pkg = DISPATCH_PKG[int(m_proto_type)];
-	}
+	reset_dispatch_pkg();
 }
 
 socket_stream::~socket_stream() {
@@ -508,15 +504,14 @@ void socket_stream::do_recv(size_t max_len, bool is_eof)
 }
 
 void socket_stream::dispatch_package(bool reset) {
-	if ((reset && !m_need_dispatch_pkg) || (!reset && m_need_dispatch_pkg))return;
-	m_need_dispatch_pkg = false;
-
-	thread_local int64_t now;
-	thread_local time_t max_dispatch_pkg;
 	if (reset) {
-		now = steady_ms();
-		max_dispatch_pkg = m_tick_dispatch_pkg;
-	} 
+		reset_dispatch_pkg();
+		if (!m_need_dispatch_pkg)return;
+	}
+	else {
+		if (m_need_dispatch_pkg)return;
+	}
+	m_need_dispatch_pkg = false;
 	while (m_link_status == elink_status::link_connected) {
 		uint64_t package_size = 0;
 		size_t data_len = 0, header_len = 0;
@@ -579,10 +574,9 @@ void socket_stream::dispatch_package(bool reset) {
 		// 接收缓冲读游标调整
 		m_recv_buffer.pop_data(header_len + (size_t)package_size);
 		m_last_recv_time = steady_ms();
-		max_dispatch_pkg--;
 
 		// 防止单个连接处理太久，不能大于20ms
-		if (m_last_recv_time - now > 20 || max_dispatch_pkg < 1) {
+		if (m_last_recv_time - m_tick_dispatch_time > 20) {
 			m_need_dispatch_pkg = true;
 			break;
 		}
@@ -646,3 +640,8 @@ void socket_stream::on_connect(bool ok, const char reason[]) {
 		m_connect_cb(ok, reason);
 	}
 }
+
+void socket_stream::reset_dispatch_pkg() {
+	m_tick_dispatch_time = steady_ms();
+}
+

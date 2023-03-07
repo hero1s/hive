@@ -5,9 +5,9 @@
 #include <limits.h>
 #include <string.h>
 
-constexpr int IO_BUFFER_DEF = 64 * 1024;             //64K
-constexpr int IO_BUFFER_MAX = IO_BUFFER_DEF * 1024;  //64M
-constexpr int IO_BUFFER_SEND = 8 * 1024;
+constexpr int IO_BUFFER_DEF		= 64 * 1024;             //64K
+constexpr int IO_BUFFER_MAX		= 128 * 1024 * 1024;	 //128M
+constexpr int IO_BUFFER_SEND	= 8 * 1024;
 
 class io_buffer
 {
@@ -29,7 +29,7 @@ public:
 		m_buffer_end = m_buffer + m_buffer_size;
 		if (align) {
 			m_align_size = size;
-			m_align_max = m_align_size * 4;
+			m_align_max = m_align_size * 8;
 		}
 		return m_buffer_size - data_len;
 	}
@@ -128,7 +128,7 @@ protected:
 	void alloc_buffer(size_t align_size)
 	{
 		m_align_size = align_size;
-		m_align_max = m_align_size * 4;
+		m_align_max = m_align_size * 8;
 		m_buffer = (BYTE*)malloc(align_size);
 		m_buffer_size = align_size;
 		m_data_begin = m_buffer;

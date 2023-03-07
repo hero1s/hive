@@ -33,8 +33,6 @@ enum class eproto_type : int
 	proto_max = 3,   // max 
 };
 
-static const int16_t DISPATCH_PKG[int(eproto_type::proto_max)] = { 20000,20,1000 };
-
 struct sendv_item
 {
 	const void* data;
