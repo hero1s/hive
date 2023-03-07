@@ -318,6 +318,7 @@ int socket_stream::stream_send(const char* data, size_t data_len)
 	if (m_send_buffer.data_len() >= IO_BUFFER_SEND || !m_delay_send)
 	{
 		do_send(UINT_MAX, false);
+		return send_len;
 	}
 #if _MSC_VER
 	if (!wsa_send_empty(m_socket, m_send_ovl)) {

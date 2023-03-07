@@ -94,7 +94,7 @@ void hive_app::setup(int argc, const char* argv[]) {
 }
 
 void hive_app::exception_handler(std::string msg, std::string& err) {
-	LOG_FATAL << msg << err;
+	LOG_FATAL(fmt::format(msg, err));
 	log_service::instance()->stop();
 #if WIN32
 	_getch();
@@ -198,12 +198,12 @@ void hive_app::run() {
 		});
 	while (hive.get_function("run")) {
 		hive.call([&](std::string err) {
-			LOG_FATAL << "hive run err: " << err;
+			LOG_FATAL(fmt::format("hive run err: {} ", err));
 			});
 	}
 	if (hive.get_function("exit")) {
 		hive.call([&](std::string err) {
-			LOG_FATAL << "hive exit err: " << err;
+			LOG_FATAL(fmt::format("hive exit err: {} ", err));
 			});
 	}
 	m_schedulor.shutdown();

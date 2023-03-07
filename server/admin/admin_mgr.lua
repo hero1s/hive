@@ -103,6 +103,10 @@ function AdminMgr:on_gm_page(url, querys, request)
     if not gm_page then
         local html_path = hive.import_file_dir("admin/admin_mgr.lua") .. "/gm_page.html"
         gm_page         = readfile(html_path)
+		if environ.get("HTTP_MODE") == "https" then
+			gm_page = gm_page:gsub("X%-UA%-Compatible", "Content-Security-Policy")
+			gm_page = gm_page:gsub("IE=edge,chrome=1", "upgrade-insecure-requests")
+		end
         if not gm_page then
             log_err("[AdminMgr][on_gm_page] load html faild:%s", html_path)
         end
