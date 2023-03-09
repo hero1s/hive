@@ -78,7 +78,7 @@ function GMAgent:rpc_command_execute(cmd_name, ...)
 end
 
 -- GM服务已经ready
-function GMAgent:on_service_ready(id, service_name)
+function GMAgent:on_service_ready(id, service_name,pid)
     log_info("[GMAgent][on_service_ready]->id:%s, service_name:%s", id, service_name)
     -- 上报gm列表
     thread_mgr:success_call(PeriodTime.SECOND_10_MS, function()

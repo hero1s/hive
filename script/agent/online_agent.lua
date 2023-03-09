@@ -92,7 +92,7 @@ function OnlineAgent:rpc_forward_client(player_id, ...)
 end
 
 -- Online服务已经ready
-function OnlineAgent:on_service_ready(id, service_name)
+function OnlineAgent:on_service_ready(id, service_name, pid)
     log_info("[OnlineAgent][on_service_ready]->service_name:%s", service.id2nick(id))
     self:on_rebuild_online()
 end

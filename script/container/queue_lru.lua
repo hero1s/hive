@@ -90,6 +90,13 @@ function QueueLRU:set(key, value)
     end
 end
 
+function QueueLRU:update(key, value)
+    local tuple = self.tuples[key]
+    if tuple then
+        self:set(key, value)
+    end
+end
+
 --无序迭代器
 function QueueLRU:iter()
     local index  = nil

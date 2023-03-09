@@ -219,28 +219,34 @@ end
 --生成针对服务的访问接口
 function RouterMgr:build_service_method(service, service_id)
     local method_list = {
-        ["call_%s_hash"]   = function(obj, hash_key, rpc, ...)
+        ["call_%s_hash"]     = function(obj, hash_key, rpc, ...)
             return obj:call_hash(service_id, hash_key, rpc, ...)
         end,
-        ["send_%s_hash"]   = function(obj, hash_key, rpc, ...)
+        ["send_%s_hash"]     = function(obj, hash_key, rpc, ...)
             return obj:send_hash(service_id, hash_key, rpc, ...)
         end,
-        ["call_%s_master"] = function(obj, rpc, ...)
+        ["call_%s_master"]   = function(obj, rpc, ...)
             return obj:call_master(service_id, rpc, ...)
         end,
-        ["send_%s_master"] = function(obj, rpc, ...)
+        ["send_%s_master"]   = function(obj, rpc, ...)
             return obj:send_master(service_id, rpc, ...)
         end,
-        ["call_%s_random"] = function(obj, rpc, ...)
+        ["call_%s_random"]   = function(obj, rpc, ...)
             return obj:call_random(service_id, rpc, ...)
         end,
-        ["send_%s_random"] = function(obj, rpc, ...)
+        ["send_%s_random"]   = function(obj, rpc, ...)
             return obj:send_random(service_id, rpc, ...)
         end,
-        ["send_%s_all"]    = function(obj, rpc, ...)
+        ["send_%s_all"]      = function(obj, rpc, ...)
             return obj:broadcast(service_id, rpc, ...)
         end,
-        ["collect_%s"]     = function(obj, rpc, ...)
+        ["send_%s_all_self"] = function(obj, rpc, ...)
+            if service_id == hive.service_id then
+                event_mgr:notify_listener(rpc, ...)
+            end
+            return obj:broadcast(service_id, rpc, ...)
+        end,
+        ["collect_%s"]       = function(obj, rpc, ...)
             return obj:collect(service_id, rpc, ...)
         end,
     }
@@ -291,7 +297,8 @@ end
 --服务器关闭
 function RouterMgr:rpc_service_close(id, router_id)
     if self:is_master_router(router_id) then
-        local server_name  = sid2name(id)
+        local server_name = sid2name(id)
+        log_info("[RouterMgr][rpc_service_close] %s", id2nick(id))
         local listener_set = self.close_watchers[server_name]
         for listener in pairs(listener_set or {}) do
             thread_mgr:fork(function()
@@ -308,19 +315,20 @@ function RouterMgr:rpc_service_close(id, router_id)
 end
 
 --服务器注册
-function RouterMgr:rpc_service_ready(id, router_id)
+function RouterMgr:rpc_service_ready(id, router_id, pid)
     if self:is_master_router(router_id) then
-        local server_name  = sid2name(id)
+        local server_name = sid2name(id)
+        log_info("[RouterMgr][rpc_service_ready] %s,pid:%s", id2nick(id), pid)
         local listener_set = self.ready_watchers[server_name]
         for listener in pairs(listener_set or {}) do
             thread_mgr:fork(function()
-                listener:on_service_ready(id, server_name)
+                listener:on_service_ready(id, server_name, pid)
             end)
         end
         listener_set = self.ready_watchers["*"]
         for listener in pairs(listener_set or {}) do
             thread_mgr:fork(function()
-                listener:on_service_ready(id, server_name)
+                listener:on_service_ready(id, server_name, pid)
             end)
         end
     end

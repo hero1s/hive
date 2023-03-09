@@ -61,7 +61,7 @@ function ReliableMsg:delete_message(to, uuid)
 end
 
 -- 发送消息
-function ReliableMsg:send_message(from, to, typ, body, id)
+function ReliableMsg:send_message(from, to, body, typ, id)
     local uuid = id or hive.new_guid()
     local doc  = {
         uuid      = uuid,

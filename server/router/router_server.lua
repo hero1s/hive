@@ -65,7 +65,7 @@ function RouterServer:on_client_error(server, server_token, err)
         self.service_masters[service_id] = new_master
         socket_mgr.set_master(service_id, new_master_token)
         log_info("[RouterServer][on_socket_error] switch master --> %s", sid2nick(new_master))
-        self:broadcast_switch_master(new_master,service_id)
+        self:broadcast_switch_master(new_master, service_id)
     end
 end
 
@@ -114,7 +114,7 @@ function RouterServer:service_register(server, id)
         self.service_masters[service_id] = id
         socket_mgr.set_master(service_id, server_token)
         log_info("[RouterServer][service_register] switch master --> %s", sid2nick(id))
-        self:broadcast_switch_master(id,service_id)
+        self:broadcast_switch_master(id, service_id)
     end
     --通知其他服务器
     self:broadcast_service_ready(server, id)
@@ -126,8 +126,8 @@ function RouterServer:broadcast_service_ready(server, id)
     for _, exist_server in self.rpc_server:iterator() do
         local exist_server_id = exist_server.id
         if exist_server_id and exist_server_id ~= id then
-            self.rpc_server:send(exist_server, "rpc_service_ready", id, router_id)
-            self.rpc_server:send(server, "rpc_service_ready", exist_server_id, router_id)
+            self.rpc_server:send(exist_server, "rpc_service_ready", id, router_id, server.pid)
+            self.rpc_server:send(server, "rpc_service_ready", exist_server_id, router_id, exist_server.pid)
         end
     end
 end

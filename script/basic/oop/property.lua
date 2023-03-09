@@ -23,7 +23,7 @@ local function on_prop_changed(object, name, value, ...)
 end
 
 local function prop_accessor(class, name, default, mode)
-    class.__props[name] = tpack(default, mode)
+    class.__props[name] = tpack(default)
     if (mode & READER) == READER then
         class["get_" .. name] = function(self)
             return self[name]

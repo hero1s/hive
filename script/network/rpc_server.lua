@@ -190,6 +190,7 @@ function RpcServer:rpc_heartbeat(client, node)
         client.service_id   = node.service_id
         client.service_name = node.service_name
         client.name         = node.name
+        client.pid          = node.pid
         self.holder:on_client_register(client, node)
     end
 end

@@ -1,24 +1,23 @@
 --monitor_agent.lua
-local RpcClient     = import("network/rpc_client.lua")
+local RpcClient    = import("network/rpc_client.lua")
 
-local tunpack       = table.unpack
-local signal_quit   = signal.quit
-local env_addr      = environ.addr
-local log_err       = logger.err
-local log_warn      = logger.warn
-local log_info      = logger.info
-local check_success = hive.success
-local check_failed  = hive.failed
+local tunpack      = table.unpack
+local signal_quit  = signal.quit
+local env_addr     = environ.addr
+local log_err      = logger.err
+local log_warn     = logger.warn
+local log_info     = logger.info
+local check_failed = hive.failed
 
-local event_mgr     = hive.get("event_mgr")
-local config_mgr    = hive.get("config_mgr")
-local update_mgr    = hive.get("update_mgr")
-local mem_monitor   = hive.get("mem_monitor")
+local event_mgr    = hive.get("event_mgr")
+local config_mgr   = hive.get("config_mgr")
+local update_mgr   = hive.get("update_mgr")
+local mem_monitor  = hive.get("mem_monitor")
 
-local RPC_FAILED    = hive.enum("KernCode", "RPC_FAILED")
+local RPC_FAILED   = hive.enum("KernCode", "RPC_FAILED")
 
-local MonitorAgent  = singleton()
-local prop          = property(MonitorAgent)
+local MonitorAgent = singleton()
+local prop         = property(MonitorAgent)
 prop:reader("client", nil)
 function MonitorAgent:__init()
     --创建连接
@@ -47,24 +46,9 @@ function MonitorAgent:on_socket_connect(client)
     log_info("[MonitorAgent][on_socket_connect]: connect monitor success!:[%s:%s]", self.client.ip, self.client.port)
 end
 
--- 请求服务
-function MonitorAgent:service_request(api_name, data)
-    local req           = {
-        data    = data,
-        id      = hive.id,
-        index   = hive.index,
-        service = hive.service_id,
-    }
-    local ok, code, res = self.client:call("rpc_monitor_post", api_name, req)
-    if check_success(code, ok) then
-        return tunpack(res)
-    end
-    return false
-end
-
 -- 更新路由
 function MonitorAgent:rpc_update_router_nodes(router_nodes)
-    local router_mgr = hive.get("router_mgr")
+    local router_mgr = hive.load("router_mgr")
     if router_mgr then
         for id, node in pairs(router_nodes) do
             log_info("[MonitorAgent][rpc_update_router_nodes] %s,%s:%s", service.id2nick(id), node.host, node.port)

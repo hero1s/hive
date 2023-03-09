@@ -183,7 +183,7 @@ function MonitorMgr:on_monitor_command(url, body, request)
 end
 
 -- GM服务已经ready
-function MonitorMgr:on_service_ready(id, service_name)
+function MonitorMgr:on_service_ready(id, service_name,pid)
     log_info("[MonitorMgr][on_service_ready]->id:%s, service_name:%s", service.id2nick(id), service_name)
     self:register_admin()
 end

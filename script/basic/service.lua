@@ -37,6 +37,7 @@ function service.make_node(port, domain)
         service_name = hive.service_name,
         port         = port or hive.index,
         host         = domain or hive.host,
+        pid          = hive.pid,
     }
 end
 
