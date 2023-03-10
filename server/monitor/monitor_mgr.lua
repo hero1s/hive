@@ -20,7 +20,7 @@ local PeriodTime  = enum("PeriodTime")
 
 local router_mgr  = hive.get("router_mgr")
 local thread_mgr  = hive.get("thread_mgr")
-local timer_mgr   = hive.get("timer_mgr")
+local update_mgr  = hive.get("update_mgr")
 
 local MonitorMgr  = singleton()
 local prop        = property(MonitorMgr)
@@ -41,12 +41,9 @@ function MonitorMgr:__init()
     server:register_post("/command", "on_monitor_command", self)
     self.http_server = server
 
-    --检测失活
-    timer_mgr:loop(PeriodTime.MINUTE_MS, function()
-        self:check_lost_node()
-    end)
-
     router_mgr:watch_service_ready(self, "admin")
+    --定时更新
+    update_mgr:attach_minute(self)
 end
 
 function MonitorMgr:register_admin()
@@ -95,6 +92,11 @@ function MonitorMgr:check_lost_node()
     for _, v in pairs(self.monitor_lost_nodes) do
         log_err("[MonitorMgr][check_lost_node] lost service:%s", v)
     end
+end
+
+function MonitorMgr:on_minute()
+    self:check_lost_node()
+    log_page = nil
 end
 
 --gm_page
@@ -183,7 +185,7 @@ function MonitorMgr:on_monitor_command(url, body, request)
 end
 
 -- GM服务已经ready
-function MonitorMgr:on_service_ready(id, service_name,pid)
+function MonitorMgr:on_service_ready(id, service_name, pid)
     log_info("[MonitorMgr][on_service_ready]->id:%s, service_name:%s", service.id2nick(id), service_name)
     self:register_admin()
 end

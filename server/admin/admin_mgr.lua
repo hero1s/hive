@@ -24,6 +24,7 @@ local cmdline      = hive.get("cmdline")
 local event_mgr    = hive.get("event_mgr")
 local router_mgr   = hive.get("router_mgr")
 local online_agent = hive.get("online_agent")
+local update_mgr   = hive.get("update_mgr")
 
 local AdminMgr     = singleton()
 local prop         = property(AdminMgr)
@@ -61,6 +62,9 @@ function AdminMgr:__init()
     --用户密码
     self.user = environ.get("HIVE_ADMIN_USER", "admin")
     self.pwd  = environ.get("HIVE_ADMIN_PWD", "dsybs")
+
+    --定时更新
+    update_mgr:attach_minute(self)
 end
 
 --rpc请求
@@ -96,6 +100,10 @@ function AdminMgr:rpc_register_monitor(addr)
     return SUCCESS
 end
 
+function AdminMgr:on_minute()
+    gm_page = nil
+end
+
 --http 回调
 ----------------------------------------------------------------------
 --gm_page
@@ -103,10 +111,10 @@ function AdminMgr:on_gm_page(url, querys, request)
     if not gm_page then
         local html_path = hive.import_file_dir("admin/admin_mgr.lua") .. "/gm_page.html"
         gm_page         = readfile(html_path)
-		if environ.get("HTTP_MODE") == "https" then
-			gm_page = gm_page:gsub("X%-UA%-Compatible", "Content-Security-Policy")
-			gm_page = gm_page:gsub("IE=edge,chrome=1", "upgrade-insecure-requests")
-		end
+        if environ.get("HTTP_MODE") == "https" then
+            gm_page = gm_page:gsub("X%-UA%-Compatible", "Content-Security-Policy")
+            gm_page = gm_page:gsub("IE=edge,chrome=1", "upgrade-insecure-requests")
+        end
         if not gm_page then
             log_err("[AdminMgr][on_gm_page] load html faild:%s", html_path)
         end
