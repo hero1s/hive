@@ -15,7 +15,6 @@ local fsstem      = lstdfs.stem
 local serialize   = lcodec.serialize
 local lwarn       = llog.warn
 local lfilter     = llog.filter
-local lis_filter  = llog.is_filter
 
 local LOG_LEVEL   = llog.LOG_LEVEL
 
@@ -25,6 +24,7 @@ local logtag      = hive.logtag
 local monitors    = _ENV.monitors or {}
 local dispatching = false
 local logshow     = 0
+local log_lvl     = 1
 
 function logger.init()
     --配置日志信息
@@ -34,14 +34,16 @@ function logger.init()
     local maxline             = environ.number("HIVE_LOG_LINE", 100000)
     local maxdays             = environ.number("HIVE_LOG_DAYS", 7)
     logshow                   = environ.number("HIVE_LOG_SHOW", 0)
+    log_lvl                   = environ.number("HIVE_LOG_LVL", 1)
 
     llog.set_max_line(maxline)
     llog.set_clean_time(maxdays * 24 * 3600)
     llog.option(path, service_name, index, rolltype);
     --设置日志过滤
-    logger.filter(environ.number("HIVE_LOG_LVL", 1))
+    logger.filter(log_lvl)
     --添加输出目标
     llog.add_dest(service_name);
+    --错误日志备份
     llog.add_lvl_dest(LOG_LEVEL.ERROR)
 end
 
@@ -61,7 +63,7 @@ function logger.filter(level)
 end
 
 local function logger_output(feature, notify, lvl, lvl_name, fmt, log_conf, ...)
-    if lis_filter(lvl) then
+    if lvl < log_lvl then
         return false
     end
     local content
