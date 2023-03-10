@@ -25,4 +25,13 @@ local name     = "tencent"
 local name_num = lcodec.guid_decode(name)
 log_info("guid:%s -->%s --> %s ", name, name_num, lcodec.guid_encode(name_num))
 
-log_info("jumphash value: %s,%s,%s", lcodec.jumphash("", 3),lcodec.jumphash(-1, 3),lcodec.jumphash(0, 3))
+log_info("jumphash value: %s,%s,%s", lcodec.jumphash("", 3), lcodec.jumphash(-1, 3), lcodec.jumphash(0, 3))
+local jumphash   = lcodec.jumphash
+--测试jumphash均衡性
+local count_jump = { 0, 0, 0, 0, 0, 0 }
+for i = 1, 100 do
+    local value     = "toney" .. i
+    local pos       = jumphash(value, #count_jump)
+    count_jump[pos] = count_jump[pos] + 1
+end
+logger.debug("jump hash:%s", count_jump)
