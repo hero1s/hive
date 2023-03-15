@@ -16,6 +16,7 @@ local ServiceStatus = enum("ServiceStatus")
 local co_hookor     = hive.load("co_hookor")
 local socket_mgr    = hive.load("socket_mgr")
 local update_mgr    = hive.load("update_mgr")
+local event_mgr     = hive.get("event_mgr")
 
 --初始化网络
 local function init_network()
@@ -141,8 +142,7 @@ end
 function hive.after_start()
     local timer_mgr = hive.get("timer_mgr")
     timer_mgr:once(10 * 1000, function()
-        hive.service_status = ServiceStatus.RUN
-        logger.info("service start run status:%s", hive.name)
+        hive.change_service_status(ServiceStatus.RUN)
     end)
     update_mgr:update(ltime())
     --开启debug模式
@@ -151,8 +151,19 @@ function hive.after_start()
     end
 end
 
+--变更服务状态
+function hive.change_service_status(status)
+    hive.service_status = status
+    logger.warn("[hive][change_service_status] service_status:%s,:%s", hive.service_status, hive.name)
+    event_mgr:notify_trigger("evt_set_server_status", hive.service_status)
+end
+
+function hive.is_runing()
+    return hive.service_status == ServiceStatus.RUN
+end
+
 --底层驱动
-hive.run      = function()
+hive.run  = function()
     if socket_mgr then
         socket_mgr.wait(10)
     end
@@ -160,6 +171,6 @@ hive.run      = function()
     update_mgr:update(ltime())
 end
 
-hive.exit     = function()
+hive.exit = function()
 
 end

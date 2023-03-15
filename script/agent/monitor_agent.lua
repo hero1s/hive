@@ -113,9 +113,7 @@ function MonitorAgent:rpc_inject(code_string)
 end
 
 function MonitorAgent:rpc_set_server_status(status)
-    hive.service_status = status
-    log_warn("[MonitorAgent][rpc_set_server_status] service_status:%s,:%s", hive.service_status, hive.name)
-    event_mgr:notify_trigger("evt_set_server_status", hive.service_status)
+    hive.change_service_status(status)
 end
 
 function MonitorAgent:rpc_set_log_level(level)

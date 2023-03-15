@@ -86,8 +86,12 @@ function CacheMgr:setup()
 end
 
 function CacheMgr:evt_set_server_status(status)
-    log_err("[CacheMgr][evt_set_server_status] enter flush mode,wait stop service:%s", hive.index)
-    self.flush = (status ~= 0)
+    if not hive.is_runing() then
+        log_err("[CacheMgr][evt_set_server_status] enter flush mode,wait stop service:%s", hive.index)
+        self.flush = true
+        return
+    end
+    self.flush = false
 end
 
 function CacheMgr:on_service_close(id, service_name)
