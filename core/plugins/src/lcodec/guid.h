@@ -18,26 +18,20 @@ namespace lcodec {
         stGUID   logic;  //逻辑
         int64_t  number; //数值
     };
-
-    const uint32_t GROUP_BITS   = 10;
-    const uint32_t INDEX_BITS   = 10;
-    const uint32_t TYPE_BITS    = 5;
-    const uint32_t SNUM_BITS    = 9;
-
     const uint32_t LETTER_LEN   = 11;
     const uint32_t LETTER_SIZE  = 62;
 
     //基准时钟：2022-10-01 08:00:00
     const uint32_t BASE_TIME    = 1664582400;
 
-    const uint32_t MAX_GROUP    = ((1 << GROUP_BITS) - 1);      //1024 - 1
-    const uint32_t MAX_INDEX    = ((1 << INDEX_BITS) - 1);      //1024 - 1
-    const uint32_t MAX_TYPE     = ((1 << TYPE_BITS) - 1);       //32   - 1
-    const uint32_t MAX_SNUM     = ((1 << (SNUM_BITS)) - 1);     //256  - 1
+    const uint32_t MAX_GROUP    = ((1 << 10) - 1);    //1024 - 1
+    const uint32_t MAX_INDEX    = ((1 << 10) - 1);    //1024 - 1
+    const uint32_t MAX_TYPE     = ((1 << 5) - 1);     //32   - 1
+    const uint32_t MAX_SNUM     = ((1 << 9) - 1);     //512  - 1
     
     //每一group独享一个id生成种子
     static thread_local time_t last_time = 0;
-    static thread_local size_t serial_inedx_table[(1 << GROUP_BITS)] = { 0 };
+    static thread_local size_t serial_inedx_table[(1 << 10)] = { 0 };
     static thread_local UGUID  s_guid;
 
     static const char letter[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
