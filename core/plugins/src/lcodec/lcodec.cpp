@@ -46,15 +46,13 @@ namespace lcodec {
         llcodec.set_function("encode_slice", encode_slice);
         llcodec.set_function("decode_slice", decode_slice);
         llcodec.set_function("guid_new", guid_new);
-        llcodec.set_function("guid_string", guid_string);
-        llcodec.set_function("guid_tostring", guid_tostring);
-        llcodec.set_function("guid_number", guid_number);
         llcodec.set_function("guid_encode", guid_encode);
         llcodec.set_function("guid_decode", guid_decode);
-        llcodec.set_function("guid_source", guid_source);
         llcodec.set_function("guid_group", guid_group);
         llcodec.set_function("guid_index", guid_index);
+        llcodec.set_function("guid_type", guid_type);
         llcodec.set_function("guid_time", guid_time);
+        llcodec.set_function("guid_source", guid_source);
         llcodec.set_function("hash_code", hash_code);
         llcodec.set_function("jumphash", jumphash_l);
         llcodec.set_function("fnv_1_32", fnv_1_32_l);
