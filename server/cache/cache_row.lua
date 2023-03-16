@@ -14,19 +14,16 @@ local prop         = property(CacheRow)
 prop:accessor("cache_table", nil)       -- cache table
 prop:accessor("cache_key", "")          -- cache key
 prop:accessor("primary_value", nil)     -- primary value
-prop:accessor("total_table", nil)       -- total table
 prop:accessor("db_name", "default")     -- database name
 prop:accessor("dirty", false)           -- dirty
 prop:accessor("first_save", false)      -- first_save
 prop:accessor("data", {})               -- data
 
 --构造函数
-function CacheRow:__init(row_conf, primary_value, total_table, data)
-    self.total_table   = total_table
+function CacheRow:__init(row_conf, primary_value)
     self.primary_value = primary_value
     self.cache_table   = row_conf.cache_table
     self.cache_key     = row_conf.cache_key
-    self.data          = data or {}
 end
 
 --从数据库加载
@@ -45,25 +42,14 @@ end
 --保存数据库
 function CacheRow:save()
     if self.dirty then
-        local selector = { [self.cache_key] = self.primary_value }
-        if self.total_table then
-            local update_obj = { ["$set"] = { [self.cache_table] = self.data } }
-            local code, res  = mongo_mgr:update(self.db_name, self.total_table, update_obj, selector)
-            if check_failed(code) then
-                log_err("[CacheRow][save] failed: %s=> db: %s, table: %s", res, self.db_name, self.cache_table)
-                return code
-            end
-            self.dirty = false
-            return code
-        else
-            local code, res = mongo_mgr:update(self.db_name, self.cache_table, self.data, selector, true)
-            if check_failed(code) then
-                log_err("[CacheRow][save] failed: %s=> db: %s, table: %s", res, self.db_name, self.cache_table)
-                return code
-            end
-            self.dirty = false
+        local selector  = { [self.cache_key] = self.primary_value }
+        local code, res = mongo_mgr:update(self.db_name, self.cache_table, self.data, selector, true)
+        if check_failed(code) then
+            log_err("[CacheRow][save] failed: %s=> db: %s, table: %s", res, self.db_name, self.cache_table)
             return code
         end
+        self.dirty = false
+        return code
     end
     return SUCCESS
 end

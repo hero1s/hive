@@ -1,7 +1,7 @@
 -- cache_mgr.lua
 import("store/mongo_mgr.lua")
 local WheelMap     = import("container/wheel_map.lua")
-
+local CacheObj     = import("cache/cache_obj.lua")
 local log_err      = logger.err
 local log_info     = logger.info
 local tunpack      = table.unpack
@@ -24,7 +24,7 @@ local config_mgr   = hive.get("config_mgr")
 local update_mgr   = hive.get("update_mgr")
 local router_mgr   = hive.get("router_mgr")
 
-local obj_table    = config_mgr:init_table("cache_obj", "cache_table")
+local obj_table    = config_mgr:init_table("cache_obj", "cache_name")
 local row_table    = config_mgr:init_table("cache_row", "cache_table")
 
 local CacheMgr     = singleton()
@@ -148,7 +148,6 @@ end
 
 --缓存加载
 function CacheMgr:load_cache_impl(cache_list, conf, primary_key)
-    local CacheObj          = import("cache/cache_obj.lua")
     local cache_obj         = CacheObj(conf, primary_key)
     cache_list[primary_key] = cache_obj
     local code              = cache_obj:load()
