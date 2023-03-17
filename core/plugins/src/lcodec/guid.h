@@ -18,7 +18,7 @@ namespace lcodec {
     const uint32_t TYPE_BITS    = 5;
     const uint32_t SNUM_BITS    = 8; 
 
-    const uint32_t LETTER_LEN   = 11;
+    const uint32_t LETTER_LEN   = 12;
     const uint32_t LETTER_SIZE  = 62;
 
     //基准时钟：2022-10-01 08:00:00
@@ -74,7 +74,7 @@ namespace lcodec {
         char tmp[LETTER_LEN];
         memset(tmp, 0, LETTER_LEN);
         uint64_t val = (lua_gettop(L) > 0) ? lua_tointeger(L, 1) : guid_new(0, 0,0);
-        for (int i = 0; i < LETTER_LEN; ++i) {
+        for (int i = 0; i < LETTER_LEN - 1; ++i) {
             tmp[i] = letter[val % LETTER_SIZE];
             val /= LETTER_SIZE;
             if (val == 0) break;
