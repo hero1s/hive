@@ -174,8 +174,8 @@ function DevopsGmMgr:gm_count_obj(less_num, service_name, index)
 end
 
 function DevopsGmMgr:gm_guid_view(guid)
-    local group, index, gtype, time = lcodec.guid_source(guid)
-    return { group = group, gtype = gtype, index = index, time = time_str(time) }
+    local group, index, gtype, time, serial = lcodec.guid_source(guid)
+    return { group = group, gtype = gtype, index = index, time = time_str(time), serial = serial }
 end
 
 function DevopsGmMgr:gm_log_format(data, swline)

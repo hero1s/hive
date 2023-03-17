@@ -4,35 +4,34 @@
 #include <time.h>
 #include <math.h>
 
+//i  - group，10位，(0~1023)
+//g  - index，10位  (0~1023)
+//t  - gtype, 5位   (0~31) 
+//s  - 序号，  8位  (0~255)
+//ts - 时间戳，30位
+//共63位，防止出现负数
+
 namespace lcodec {
-    struct stGUID
-    {
-        uint16_t group : 10;
-        uint16_t index : 10;
-        uint16_t gtype : 5;
-        uint16_t serial_index : 9;
-        uint32_t time : 30;
-    };
-    union UGUID
-    {
-        stGUID   logic;  //逻辑
-        int64_t  number; //数值
-    };
+
+    const uint32_t GROUP_BITS   = 10;
+    const uint32_t INDEX_BITS   = 10;
+    const uint32_t TYPE_BITS    = 5;
+    const uint32_t SNUM_BITS    = 8; 
+
     const uint32_t LETTER_LEN   = 11;
     const uint32_t LETTER_SIZE  = 62;
 
     //基准时钟：2022-10-01 08:00:00
     const uint32_t BASE_TIME    = 1664582400;
 
-    const uint32_t MAX_GROUP    = ((1 << 10) - 1);    //1024 - 1
-    const uint32_t MAX_INDEX    = ((1 << 10) - 1);    //1024 - 1
-    const uint32_t MAX_TYPE     = ((1 << 5) - 1);     //32   - 1
-    const uint32_t MAX_SNUM     = ((1 << 9) - 1);     //512  - 1
-    
+    const uint32_t MAX_GROUP    = ((1 << GROUP_BITS) - 1);      //1024 - 1
+    const uint32_t MAX_INDEX    = ((1 << INDEX_BITS) - 1);      //1024 - 1
+    const uint32_t MAX_TYPE     = ((1 << TYPE_BITS) - 1);       //32   - 1
+    const uint32_t MAX_SNUM     = ((1 << SNUM_BITS) - 1);       //256  - 1
+
     //每一group独享一个id生成种子
     static thread_local time_t last_time = 0;
-    static thread_local size_t serial_inedx_table[(1 << 10)] = { 0 };
-    static thread_local UGUID  s_guid;
+    static thread_local size_t serial_inedx_table[(1 << GROUP_BITS)] = { 0 };
 
     static const char letter[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
@@ -49,7 +48,6 @@ namespace lcodec {
         group %= MAX_GROUP;
         index %= MAX_INDEX;
         gtype %= MAX_TYPE;
-
         time_t now_time;
         time(&now_time);
         size_t serial_index = 0;
@@ -64,20 +62,18 @@ namespace lcodec {
                 serial_inedx_table[group] = 0;
                 last_time = ++now_time;
                 serial_index = 0;
-            }            
+            }
         }
-        s_guid.logic.group = group;
-        s_guid.logic.index = index;
-        s_guid.logic.gtype = gtype;
-        s_guid.logic.serial_index = serial_index;
-        s_guid.logic.time = last_time - BASE_TIME;
-        return s_guid.number;
+        return ((last_time - BASE_TIME) << (SNUM_BITS + TYPE_BITS + GROUP_BITS + INDEX_BITS)) | 
+                (serial_index << (TYPE_BITS + GROUP_BITS + INDEX_BITS)) | 
+                (gtype << GROUP_BITS + INDEX_BITS) |
+                (index << GROUP_BITS) | group;
     }
 
     static int guid_encode(lua_State* L) {
         char tmp[LETTER_LEN];
         memset(tmp, 0, LETTER_LEN);
-        uint64_t val = (lua_gettop(L) > 0) ? lua_tointeger(L, 1) : guid_new(0, 0, 0);
+        uint64_t val = (lua_gettop(L) > 0) ? lua_tointeger(L, 1) : guid_new(0, 0,0);
         for (int i = 0; i < LETTER_LEN; ++i) {
             tmp[i] = letter[val % LETTER_SIZE];
             val /= LETTER_SIZE;
@@ -115,35 +111,43 @@ namespace lcodec {
     }
 
     static int guid_group(lua_State* L) {
-        s_guid.number = format_guid(L);
-        lua_pushinteger(L, s_guid.logic.group);
+        size_t guid = format_guid(L);
+        lua_pushinteger(L, guid & 0x3ff);
         return 1;
     }
 
     static int guid_index(lua_State* L) {
-        s_guid.number = format_guid(L);
-        lua_pushinteger(L, s_guid.logic.index);
+        size_t guid = format_guid(L);
+        lua_pushinteger(L, (guid >> GROUP_BITS) & 0x3ff);
         return 1;
     }
 
     static int guid_type(lua_State* L) {
-        s_guid.number = format_guid(L);
-        lua_pushinteger(L, s_guid.logic.gtype);
+        size_t guid = format_guid(L);
+        lua_pushinteger(L, (guid >> (GROUP_BITS + INDEX_BITS)) & 0x1f);
+        return 1;
+    }
+
+    static int guid_serial(lua_State* L) {
+        size_t guid = format_guid(L);
+        lua_pushinteger(L, (guid >> (GROUP_BITS + INDEX_BITS + TYPE_BITS)) & 0xff);
         return 1;
     }
 
     static int guid_time(lua_State* L) {
-        s_guid.number = format_guid(L);
-        lua_pushinteger(L, s_guid.logic.time + BASE_TIME);
+        size_t guid = format_guid(L);
+        size_t time = (guid >> (GROUP_BITS + INDEX_BITS + TYPE_BITS + SNUM_BITS)) & 0x3fffffff;
+        lua_pushinteger(L, time + BASE_TIME);
         return 1;
     }
 
     static int guid_source(lua_State* L) {
-        s_guid.number = format_guid(L);
-        lua_pushinteger(L, s_guid.logic.group);
-        lua_pushinteger(L, s_guid.logic.index);
-        lua_pushinteger(L, s_guid.logic.gtype);
-        lua_pushinteger(L, s_guid.logic.time + BASE_TIME);
-        return 4;
+        size_t guid = format_guid(L);
+        lua_pushinteger(L, guid & 0x3ff);
+        lua_pushinteger(L, (guid >> GROUP_BITS) & 0x3ff);
+        lua_pushinteger(L, (guid >> (GROUP_BITS + INDEX_BITS)) & 0x1f);
+        lua_pushinteger(L, ((guid >> (GROUP_BITS + INDEX_BITS + TYPE_BITS + SNUM_BITS)) & 0x3fffffff) + BASE_TIME);
+        lua_pushinteger(L, (guid >> (GROUP_BITS + INDEX_BITS + TYPE_BITS)) & 0xff);
+        return 5;
     }
 }

@@ -50,7 +50,8 @@ namespace lcodec {
         llcodec.set_function("guid_decode", guid_decode);
         llcodec.set_function("guid_group", guid_group);
         llcodec.set_function("guid_index", guid_index);
-        llcodec.set_function("guid_type", guid_type);
+        llcodec.set_function("guid_type", guid_type); 
+        llcodec.set_function("guid_serial", guid_serial);
         llcodec.set_function("guid_time", guid_time);
         llcodec.set_function("guid_source", guid_source);
         llcodec.set_function("hash_code", hash_code);
