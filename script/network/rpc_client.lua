@@ -125,10 +125,6 @@ function RpcClient:connect()
         local send_len   = socket.forward_hash(session_id, FlagMask.REQ, hive.id, service_id, hash_value, rpc, ...)
         return self:on_call_router(rpc, send_len, ...)
     end
-    socket.call_random     = function(session_id, service_id, rpc, ...)
-        local send_len = socket.forward_random(session_id, FlagMask.REQ, hive.id, service_id, rpc, ...)
-        return self:on_call_router(rpc, send_len, ...)
-    end
     socket.call_master     = function(session_id, service_id, rpc, ...)
         local send_len = socket.forward_master(session_id, FlagMask.REQ, hive.id, service_id, rpc, ...)
         return self:on_call_router(rpc, send_len, ...)

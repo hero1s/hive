@@ -4,7 +4,6 @@ local pairs            = pairs
 local log_err          = logger.err
 local log_info         = logger.info
 local log_debug        = logger.debug
-local mrandom          = math.random
 local signal_quit      = signal.quit
 local tunpack          = table.unpack
 local sformat          = string.format
@@ -37,7 +36,6 @@ function RouterMgr:setup()
     --router接口
     self:build_service()
     --注册事件
-    event_mgr:add_listener(self, "rpc_router_update")
     event_mgr:add_listener(self, "rpc_service_close")
     event_mgr:add_listener(self, "rpc_service_ready")
     event_mgr:add_listener(self, "rpc_service_kickout")
@@ -46,8 +44,11 @@ end
 
 --添加router
 function RouterMgr:add_router(router_id, host, port)
+    if router_id == hive.id then
+        return
+    end
     if not self.routers[router_id] then
-        log_debug("[RouterMgr][add_router] %s,%s:%s", id2nick(router_id), host, port)
+        log_debug("[RouterMgr][add_router] %s --> %s,%s:%s", hive.name, id2nick(router_id), host, port)
         local RpcClient         = import("network/rpc_client.lua")
         self.routers[router_id] = {
             addr      = host,
@@ -78,24 +79,15 @@ function RouterMgr:switch_master()
             self.candidates[#self.candidates + 1] = node
         end
     end
-    local node = self:random_router()
-    if node then
-        self.master = node
-        log_info("[RouterMgr][switch_master] switch router addr: %s", node.addr)
+    self.master = self:hash_router(hive.now)
+    if self.master then
+        log_info("[RouterMgr][switch_master] switch router addr: %s", self.master.addr)
     end
 end
 
 --查找指定router
 function RouterMgr:get_router(router_id)
     return self.routers[router_id]
-end
-
---查找随机router
-function RouterMgr:random_router()
-    local count = #self.candidates
-    if count > 0 then
-        return self.candidates[mrandom(count)]
-    end
 end
 
 --查找hash router
@@ -139,7 +131,8 @@ end
 
 --通过router传递广播
 function RouterMgr:broadcast(service_id, rpc, ...)
-    return self:forward_client(self.master, "call_broadcast", rpc, 0, service_id, rpc, ...)
+    local router = self:hash_router(service_id)
+    return self:forward_client(router, "call_broadcast", rpc, 0, service_id, rpc, ...)
 end
 
 --发送给指定目标
@@ -161,26 +154,17 @@ function RouterMgr:send_target(target, rpc, ...)
     return self:forward_client(self:hash_router(id2sid(target)), "call_target", rpc, 0, target, rpc, ...)
 end
 
---发送给指定目标
-function RouterMgr:random_call(target, rpc, ...)
-    local session_id = thread_mgr:build_session_id()
-    return self:forward_client(self:random_router(), "call_target", rpc, session_id, target, rpc, ...)
-end
-
---发送给指定目标
-function RouterMgr:random_send(target, rpc, ...)
-    return self:forward_client(self:random_router(), "call_target", rpc, 0, target, rpc, ...)
-end
-
 --指定路由发送给指定目标
 function RouterMgr:router_call(router_id, target, rpc, ...)
+    local router     = self:get_router(router_id)
     local session_id = thread_mgr:build_session_id()
-    return self:forward_client(self:get_router(router_id), "call_target", rpc, session_id, target, rpc, ...)
+    return self:forward_client(router, "call_target", rpc, session_id, target, rpc, ...)
 end
 
 --指定路由发送给指定目标
 function RouterMgr:router_send(router_id, target, rpc, ...)
-    return self:forward_client(self:get_router(router_id), "call_target", rpc, 0, target, rpc, ...)
+    local router = self:get_router(router_id)
+    return self:forward_client(router, "call_target", rpc, 0, target, rpc, ...)
 end
 
 --发送给指定service的hash
@@ -192,17 +176,6 @@ end
 --发送给指定service的hash
 function RouterMgr:send_hash(service_id, hash_key, rpc, ...)
     return self:forward_client(self:hash_router(service_id), "call_hash", rpc, 0, service_id, hash_key, rpc, ...)
-end
-
---发送给指定service的random
-function RouterMgr:call_random(service_id, rpc, ...)
-    local session_id = thread_mgr:build_session_id()
-    return self:forward_client(self:hash_router(service_id), "call_random", rpc, session_id, service_id, rpc, ...)
-end
-
---发送给指定service的random
-function RouterMgr:send_random(service_id, rpc, ...)
-    return self:forward_client(self:hash_router(service_id), "call_random", rpc, 0, service_id, rpc, ...)
 end
 
 --发送给指定service的master
@@ -230,12 +203,6 @@ function RouterMgr:build_service_method(service, service_id)
         end,
         ["send_%s_master"]   = function(obj, rpc, ...)
             return obj:send_master(service_id, rpc, ...)
-        end,
-        ["call_%s_random"]   = function(obj, rpc, ...)
-            return obj:call_random(service_id, rpc, ...)
-        end,
-        ["send_%s_random"]   = function(obj, rpc, ...)
-            return obj:send_random(service_id, rpc, ...)
         end,
         ["send_%s_all"]      = function(obj, rpc, ...)
             return obj:broadcast(service_id, rpc, ...)
@@ -285,11 +252,6 @@ end
 
 --业务事件响应
 -------------------------------------------------------------------------------
--- 刷新router配置
-function RouterMgr:rpc_router_update()
-    self:load_router()
-end
-
 function RouterMgr:is_master_router(router_id)
     return self.master and self.master.router_id == router_id
 end

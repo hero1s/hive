@@ -18,7 +18,7 @@ struct lua_socket_node final
 	int call_text(lua_State* L);
 	int forward_target(lua_State* L);
 
-	template <msg_id forward_method>
+	template <rpc_type forward_method>
 	int forward_by_group(lua_State* L);
 
 	int forward_hash(lua_State* L);
@@ -36,7 +36,7 @@ private:
 	void on_call(router_header* header, char* data, size_t data_len);
 	void on_forward_broadcast(router_header* header, size_t target_size);
 	void on_forward_error(router_header* header);
-	size_t format_header(lua_State* L, BYTE* header_data, size_t data_len, msg_id msgid);
+	size_t format_header(lua_State* L, BYTE* header_data, size_t data_len, rpc_type msgid);
 	size_t parse_header(BYTE* data, size_t data_len, uint64_t* msgid, router_header* header);
 
 	uint32_t m_token = 0;

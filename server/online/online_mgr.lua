@@ -36,11 +36,10 @@ function OnlineMgr:__init()
     event_mgr:add_listener(self, "rpc_query_player")
     event_mgr:add_listener(self, "rpc_sync_openid_info")
     event_mgr:add_listener(self, "rpc_sync_player_info")
-    event_mgr:add_listener(self, "rpc_router_message")
-    event_mgr:add_listener(self, "rpc_forward_message")
-    event_mgr:add_listener(self, "rpc_transfer_message")
-    event_mgr:add_listener(self, "rpc_send_forward_message")
-    event_mgr:add_listener(self, "rpc_send_transfer_message")
+    event_mgr:add_listener(self, "rpc_call_client")
+    event_mgr:add_listener(self, "rpc_call_lobby")
+    event_mgr:add_listener(self, "rpc_send_client")
+    event_mgr:add_listener(self, "rpc_send_lobby")
 
     router_mgr:watch_service_close(self, "lobby")
 
@@ -199,7 +198,7 @@ end
 
 -------------------------------------------------------------------
 --根据玩家所在的lobby转发消息
-function OnlineMgr:rpc_transfer_message(player_id, rpc, ...)
+function OnlineMgr:rpc_call_lobby(player_id, rpc, ...)
     local lobby = self.lobbys[player_id]
     if not lobby then
         return KernCode.PLAYER_NOT_EXIST, "player not online!"
@@ -214,23 +213,15 @@ function OnlineMgr:rpc_transfer_message(player_id, rpc, ...)
 end
 
 --根据玩家所在的lobby转发消息
-function OnlineMgr:rpc_send_transfer_message(player_id, rpc, ...)
+function OnlineMgr:rpc_send_lobby(player_id, rpc, ...)
     local lobby = self.lobbys[player_id]
     if lobby then
         router_mgr:send_target(lobby, rpc, ...)
     end
 end
 
---根据玩家所在的lobby转发消息(随机router,无时序保证)
-function OnlineMgr:rpc_router_message(player_id, rpc, ...)
-    local lobby = self.lobbys[player_id]
-    if lobby then
-        router_mgr:random_send(lobby, rpc, ...)
-    end
-end
-
 --根据玩家所在的lobby转发消息，然后转发给客户端
-function OnlineMgr:rpc_forward_message(player_id, ...)
+function OnlineMgr:rpc_call_client(player_id, ...)
     local lobby = self.lobbys[player_id]
     if not lobby then
         return KernCode.PLAYER_NOT_EXIST, "player not online!"
@@ -242,7 +233,7 @@ function OnlineMgr:rpc_forward_message(player_id, ...)
     return codeoe, res
 end
 
-function OnlineMgr:rpc_send_forward_message(player_id, ...)
+function OnlineMgr:rpc_send_client(player_id, ...)
     local lobby = self.lobbys[player_id]
     if lobby then
         router_mgr:send_target(lobby, "rpc_forward_client", player_id, ...)

@@ -192,7 +192,7 @@ end
 
 --GLOBAL command
 function AdminMgr:exec_global_cmd(service_id, cmd_name, ...)
-    local ok, codeoe, res = router_mgr:call_random(service_id, "rpc_command_execute", cmd_name, ...)
+    local ok, codeoe, res = router_mgr:call_hash(service_id, service_id, "rpc_command_execute", cmd_name, ...)
     if not ok then
         log_err("[AdminMgr][exec_global_cmd] call_random(rpc_command_execute) failed! service_id=%s", service_id)
         return { code = 1, msg = codeoe }
@@ -225,16 +225,16 @@ end
 --player command
 function AdminMgr:exec_player_cmd(cmd_name, player_id, ...)
     if player_id == 0 then
-        local ok, codeoe, res = router_mgr:call_lobby_random("rpc_command_execute", cmd_name, player_id, ...)
+        local ok, codeoe, res = router_mgr:call_lobby_hash(player_id, "rpc_command_execute", cmd_name, player_id, ...)
         if not ok then
             log_err("[AdminMgr][exec_player_cmd] call_lobby_random(rpc_command_execute) failed! player_id=%s", player_id)
             return { code = 1, msg = codeoe }
         end
         return { code = codeoe, msg = res }
     end
-    local ok, codeoe, res = online_agent:transfer_message(player_id, "rpc_command_execute", cmd_name, player_id, ...)
+    local ok, codeoe, res = online_agent:call_lobby(player_id, "rpc_command_execute", cmd_name, player_id, ...)
     if not ok then
-        log_err("[AdminMgr][exec_player_cmd] rpc_transfer_message(rpc_command_execute) failed! player_id=%s", player_id)
+        log_err("[AdminMgr][exec_player_cmd] rpc_call_lobby(rpc_command_execute) failed! player_id=%s", player_id)
         return { code = 1, msg = codeoe }
     end
     return { code = codeoe, msg = res }

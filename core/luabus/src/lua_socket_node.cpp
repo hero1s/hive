@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "fmt/core.h"
 #include "var_int.h"
 #include "lua_socket_node.h"
 #include "socket_helper.h"
@@ -9,9 +10,8 @@ EXPORT_LUA_FUNCTION(call)
 EXPORT_LUA_FUNCTION(call_pack)
 EXPORT_LUA_FUNCTION(call_text)
 EXPORT_LUA_FUNCTION(forward_target)
-EXPORT_LUA_FUNCTION_AS(forward_by_group<msg_id::forward_master>, "forward_master")
-EXPORT_LUA_FUNCTION_AS(forward_by_group<msg_id::forward_random>, "forward_random")
-EXPORT_LUA_FUNCTION_AS(forward_by_group<msg_id::forward_broadcast>, "forward_broadcast")
+EXPORT_LUA_FUNCTION_AS(forward_by_group<rpc_type::forward_master>, "forward_master")
+EXPORT_LUA_FUNCTION_AS(forward_by_group<rpc_type::forward_broadcast>, "forward_broadcast")
 EXPORT_LUA_FUNCTION(forward_hash)
 EXPORT_LUA_FUNCTION(close)
 EXPORT_LUA_FUNCTION(set_send_buffer_size)
@@ -22,6 +22,8 @@ EXPORT_LUA_FUNCTION(can_send)
 EXPORT_LUA_STD_STR_AS_R(m_ip, "ip")
 EXPORT_LUA_INT_AS_R(m_token, "token")
 EXPORT_CLASS_END()
+
+static thread_local BYTE header[ROUTER_HEAD_LEN];
 
 lua_socket_node::lua_socket_node(uint32_t token, lua_State* L, std::shared_ptr<socket_mgr>& mgr,
 	std::shared_ptr<lua_archiver>& ar, std::shared_ptr<socket_router> router, bool blisten, eproto_type proto_type)
@@ -99,7 +101,7 @@ int lua_socket_node::call_text(lua_State* L) {
 	return 1;
 }
 
-size_t lua_socket_node::format_header(lua_State* L, BYTE* header_data, size_t data_len, msg_id msgid) {
+size_t lua_socket_node::format_header(lua_State* L, BYTE* header_data, size_t data_len, rpc_type msgid) {
 	uint32_t offset = 0;
 	router_header header;
 	header.session_id = (uint32_t)lua_tointeger(L, 1);
@@ -126,6 +128,10 @@ size_t lua_socket_node::parse_header(BYTE* data, size_t data_len, uint64_t* msgi
 	if (len == 0)
 		return 0;
 	offset += len;
+	len = decode_u64(&header->router_id, data + offset, data_len - offset);
+	if (len == 0)
+		return 0;
+	offset += len;
 	return offset;
 }
 
@@ -135,17 +141,13 @@ int lua_socket_node::call(lua_State* L) {
 		lua_pushinteger(L, -1);
 		return 1;
 	}
-
-	BYTE header[MAX_VARINT_SIZE * 4];
-	size_t header_len = format_header(L, header, sizeof(header), msg_id::remote_call);
-
+	size_t header_len = format_header(L, header, sizeof(header), rpc_type::remote_call);
 	size_t data_len = 0;
 	void* data = m_archiver->save(&data_len, L, 4, top);
 	if (data == nullptr) {
 		lua_pushinteger(L, -2);
 		return 1;
 	}
-
 	sendv_item items[] = { {header, header_len}, {data, data_len} };
 	auto send_len = m_mgr->sendv(m_token, items, _countof(items));
 	lua_pushinteger(L, send_len);
@@ -158,21 +160,16 @@ int lua_socket_node::forward_target(lua_State* L) {
 		lua_pushinteger(L, -1);
 		return 1;
 	}
-
-	BYTE header[MAX_VARINT_SIZE * 4];
-	size_t header_len = format_header(L, header, sizeof(header), msg_id::forward_target);
-
+	size_t header_len = format_header(L, header, sizeof(header), rpc_type::forward_target);
 	BYTE svr_id_data[MAX_VARINT_SIZE];
 	uint32_t service_id = (uint32_t)lua_tointeger(L, 4);
 	size_t svr_id_len = encode_u64(svr_id_data, sizeof(svr_id_data), service_id);
-
 	size_t data_len = 0;
 	void* data = m_archiver->save(&data_len, L, 5, top);
 	if (data == nullptr) {
 		lua_pushinteger(L, -2);
 		return 1;
 	}
-
 	sendv_item items[] = { {header, header_len}, {svr_id_data, svr_id_len}, {data, data_len} };
 	m_mgr->sendv(m_token, items, _countof(items));
 
@@ -181,20 +178,14 @@ int lua_socket_node::forward_target(lua_State* L) {
 	return 1;
 }
 
-template <msg_id forward_method>
+template <rpc_type forward_method>
 int lua_socket_node::forward_by_group(lua_State* L) {
 	int top = lua_gettop(L);
 	if (top < 5) {
 		lua_pushinteger(L, -1);
 		return 1;
 	}
-
-	static_assert(forward_method == msg_id::forward_master || forward_method == msg_id::forward_random ||
-		forward_method == msg_id::forward_broadcast, "Unexpected forward method !");
-
-	BYTE header[MAX_VARINT_SIZE * 4];
 	size_t header_len = format_header(L, header, sizeof(header), forward_method);
-
 	uint8_t group_id = (uint8_t)lua_tointeger(L, 4);
 	BYTE group_id_data[MAX_VARINT_SIZE];
 	size_t group_id_len = encode_u64(group_id_data, sizeof(group_id_data), group_id);
@@ -220,20 +211,13 @@ int lua_socket_node::forward_hash(lua_State* L) {
 		lua_pushinteger(L, -1);
 		return 1;
 	}
-
-	BYTE header[MAX_VARINT_SIZE * 4];
-	size_t header_len = format_header(L, header, sizeof(header), msg_id::forward_hash);
+	size_t header_len = format_header(L, header, sizeof(header), rpc_type::forward_hash);
 
 	uint8_t group_id = (uint8_t)lua_tointeger(L, 4);
 	BYTE group_id_data[MAX_VARINT_SIZE];
 	size_t group_id_len = encode_u64(group_id_data, sizeof(group_id_data), group_id);
 
 	size_t hash_key = luaL_optinteger(L, 5, 0);
-	if (hash_key == 0) {
-		// unexpected hash key
-		lua_pushinteger(L, -3);
-		return 1;
-	}
 
 	BYTE hash_data[MAX_VARINT_SIZE];
 	size_t hash_len = encode_u64(hash_data, sizeof(hash_data), hash_key);
@@ -279,27 +263,27 @@ void lua_socket_node::on_recv(char* data, size_t data_len) {
 	data += len;
 	data_len -= len;
 	m_error_msg = "";
-	switch ((msg_id)msg) {
-	case msg_id::remote_call:
+	if (msg >= (uint8_t)(rpc_type::forward_router)) {
+		msg -= (uint8_t)rpc_type::forward_router;
+		std::cout << fmt::format("recv forward router msg:{}", m_router->debug_header(&header)) << std::endl;
+	}
+	switch ((rpc_type)msg) {
+	case rpc_type::remote_call:
 		on_call(&header, data, data_len);
 		break;
-	case msg_id::forward_target:
+	case rpc_type::forward_target:
 		if (!m_router->do_forward_target(&header, data, data_len, m_error_msg))
 			on_forward_error(&header);
 		break;
-	case msg_id::forward_random:
-		if (!m_router->do_forward_random(&header, data, data_len, m_error_msg))
-			on_forward_error(&header);
-		break;
-	case msg_id::forward_master:
+	case rpc_type::forward_master:
 		if (!m_router->do_forward_master(&header, data, data_len, m_error_msg))
 			on_forward_error(&header);
 		break;
-	case msg_id::forward_hash:
+	case rpc_type::forward_hash:
 		if (!m_router->do_forward_hash(&header, data, data_len, m_error_msg))
 			on_forward_error(&header);
 		break;
-	case msg_id::forward_broadcast: 
+	case rpc_type::forward_broadcast:
 		{
 		size_t broadcast_num = 0;
 		if (m_router->do_forward_broadcast(&header, m_token, data, data_len, broadcast_num))

@@ -12,8 +12,8 @@ EXPORT_LUA_FUNCTION(listen)
 EXPORT_LUA_FUNCTION(connect)
 EXPORT_LUA_FUNCTION(set_package_size)
 EXPORT_LUA_FUNCTION(set_lz_threshold)
-EXPORT_LUA_FUNCTION(set_master)
 EXPORT_LUA_FUNCTION(map_token)
+EXPORT_LUA_FUNCTION(set_router_id)
 EXPORT_LUA_FUNCTION(set_rpc_key)
 EXPORT_CLASS_END()
 
@@ -108,16 +108,17 @@ void lua_socket_mgr::set_lz_threshold(size_t size) {
 	m_archiver->set_lz_threshold(size);
 }
 
-void lua_socket_mgr::set_master(uint32_t group_idx, uint32_t token) {
-	m_router->set_master(group_idx, token);
-}
-
 int lua_socket_mgr::map_token(lua_State* L) {
-	uint32_t service_id = (uint32_t)lua_tointeger(L, 1);
+	uint32_t node_id = (uint32_t)lua_tointeger(L, 1);
 	uint32_t token = (uint32_t)lua_tointeger(L, 2);
 	uint16_t hash = (uint16_t)lua_tointeger(L, 3);
-	m_router->map_token(service_id, token, hash);
-	return 0;
+	uint32_t master_id = m_router->map_token(node_id, token, hash);
+	lua_pushinteger(L, master_id);
+	return 1;
+}
+
+void lua_socket_mgr::set_router_id(int id) {
+	m_router->set_router_id(id);
 }
 
 void lua_socket_mgr::set_rpc_key(std::string key) {

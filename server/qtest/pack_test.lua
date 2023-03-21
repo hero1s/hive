@@ -13,7 +13,7 @@ end
 
 function PackTest:on_service_ready(hive_id)
     local service_id = sname2sid("proxy")
-    local router     = router_mgr:random_router(service_id)
+    local router     = router_mgr:hash_router(service_id)
     if router then
         local strs, args = {}, {}
         for i = 1, 1000 do

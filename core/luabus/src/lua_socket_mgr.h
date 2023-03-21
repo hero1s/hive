@@ -17,8 +17,8 @@ public:
 	int connect(lua_State* L);
 	void set_package_size(size_t size);
 	void set_lz_threshold(size_t size);
-	void set_master(uint32_t group_idx, uint32_t token);
 	int map_token(lua_State* L);
+	void set_router_id(int id);
 	void set_rpc_key(std::string key);
 
 private:
