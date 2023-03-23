@@ -63,6 +63,11 @@ function MonitorMgr:on_client_accept(client)
     log_info("[MonitorMgr][on_client_accept] token:%s", client.token)
 end
 
+-- 心跳
+function MonitorMgr:on_client_beat(client)
+
+end
+
 -- 会话信息
 function MonitorMgr:on_client_register(client, node_info)
     log_debug("[MonitorMgr][on_client_register] node token:%s,%s,%s", client.token, id2nick(node_info.id), node_info)

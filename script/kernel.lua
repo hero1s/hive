@@ -21,7 +21,7 @@ local event_mgr     = hive.get("event_mgr")
 --初始化网络
 local function init_network()
     local lbus     = require("luabus")
-    local max_conn = environ.number("HIVE_MAX_CONN", 4096)
+    local max_conn = environ.number("HIVE_MAX_CONN", 10000)
     local rpc_key  = environ.get("HIVE_RPC_KEY", "hive2022")
     socket_mgr     = lbus.create_socket_mgr(max_conn)
     socket_mgr.set_rpc_key(rpc_key)

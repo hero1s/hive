@@ -67,7 +67,8 @@ bool socket_mgr::setup(int max_connection) {
 		return false;
 #endif
 
-	m_max_count = max_connection;
+	m_max_count = max_connection > 10240 ? 10240 : max_connection;
+	m_max_count = m_max_count < 1024 ? 1024 : m_max_count;
 	m_events.resize(max_connection);
 
 	return true;

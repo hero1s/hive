@@ -38,8 +38,9 @@ function RouterMgr:setup()
     --注册事件
     event_mgr:add_listener(self, "rpc_service_close")
     event_mgr:add_listener(self, "rpc_service_ready")
-    event_mgr:add_listener(self, "rpc_service_kickout")
     event_mgr:add_listener(self, "rpc_service_master")
+
+    event_mgr:add_listener(self, "rpc_client_kickout")
 end
 
 --添加router
@@ -306,8 +307,8 @@ function RouterMgr:rpc_service_master(id, router_id)
 end
 
 --服务被踢下线
-function RouterMgr:rpc_service_kickout(router_id, reason)
-    log_err("[RouterMgr][rpc_service_kickout] reason:%s router_id:%s", reason, router_id)
+function RouterMgr:rpc_client_kickout(router_id, reason)
+    log_err("[RouterMgr][rpc_client_kickout] reason:%s router_id:%s", reason, router_id)
     signal_quit()
 end
 

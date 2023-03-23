@@ -75,9 +75,11 @@ function RpcServer:on_socket_error(token, err)
     local client = self.clients[token]
     if client then
         self.clients[token] = nil
-        thread_mgr:fork(function()
-            self.holder:on_client_error(client, token, err)
-        end)
+        if client.id then
+            thread_mgr:fork(function()
+                self.holder:on_client_error(client, token, err)
+            end)
+        end
     end
 end
 
@@ -145,7 +147,7 @@ end
 
 --获取client
 function RpcServer:get_client_by_id(hive_id)
-    for token, client in pairs(self.clients) do
+    for _, client in pairs(self.clients) do
         if client.id == hive_id then
             return client
         end
@@ -170,7 +172,21 @@ end
 --服务器心跳协议
 function RpcServer:rpc_heartbeat(client, node)
     self:send(client, "on_heartbeat", hive.id)
-    if node then
+    if not node then
+        --正常心跳
+        self.holder:on_client_beat(client)
+        return
+    end
+
+    if not client.id then
+        -- 检查重复注册
+        local client_id = node.id
+        local eclient = self:get_client_by_id(client_id)
+        if eclient then
+            eclient.id = nil
+            self:send(eclient, "rpc_client_kickout", hive.id, "service replace")
+            log_err("[RpcServer][rpc_heartbeat] client(%s) be kickout, service replace!", eclient.name)
+        end
         -- 通知注册
         client.id           = node.id
         client.index        = node.index
