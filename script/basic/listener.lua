@@ -101,8 +101,7 @@ function Listener:notify_trigger(event, ...)
         local callback_func      = trigger[func_name]
         local ok, ret            = xpcall(callback_func, dtraceback, trigger, ...)
         if not ok then
-            log_err("[Listener][notify_trigger] xpcall [%s:%s] failed: %s!,call from:%s,param:[%s]",
-                    trigger:source(), func_name, ret, hive.where_call(), tpack(...))
+            log_err("[Listener][notify_trigger] xpcall [%s:%s] failed: %s!,call from:%s", trigger:source(), func_name, ret, hive.where_call())
         end
     end
 end
@@ -111,8 +110,8 @@ function Listener:notify_listener(event, ...)
     local listener_ctx = self._listeners[event]
     if not listener_ctx then
         if not self._ignores[event] then
-            log_warn("[Listener][notify_listener] event %s handler is nil!,call from:%s,param:[%s]",
-                     event, hive.where_call(), tpack(...))
+            log_warn("[Listener][notify_listener] event %s handler is nil!,call from:%s",
+                     event, hive.where_call())
             self._ignores[event] = true
         end
         return tpack(false, "event handler is nil")
@@ -121,8 +120,7 @@ function Listener:notify_listener(event, ...)
     local callback_func       = listener[func_name]
     local result              = tpack(xpcall(callback_func, dtraceback, listener, ...))
     if not result[1] then
-        log_err("[Listener][notify_listener] xpcall [%s:%s] failed: %s,call from:%s,param:[%s]",
-                listener:source(), func_name, result[2], hive.where_call(), tpack(...))
+        log_err("[Listener][notify_listener] xpcall [%s:%s] failed: %s,call from:%s", listener:source(), func_name, result[2], hive.where_call())
     end
     return result
 end
@@ -141,8 +139,7 @@ function Listener:notify_command(cmd, ...)
     local callback_func       = listener[func_name]
     local result              = tpack(xpcall(callback_func, dtraceback, listener, ...))
     if not result[1] then
-        log_err("[Listener][notify_command] xpcall [%s:%s] failed: %s!,call from:%s,param:[%s]",
-                listener:source(), func_name, result[2], hive.where_call(), tpack(...))
+        log_err("[Listener][notify_command] xpcall [%s:%s] failed: %s!,call from:%s", listener:source(), func_name, result[2], hive.where_call())
     end
     return result
 end

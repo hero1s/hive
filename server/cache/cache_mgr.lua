@@ -99,7 +99,7 @@ function CacheMgr:on_service_close(id, service_name)
     for cache_name, obj_list in pairs(self.cache_lists) do
         for primary_key, obj in pairs(obj_list) do
             if obj:get_lock_node_id() == id then
-                log_info("[CacheMgr][on_service_close] %s unlock by service close!", obj:info())
+                log_info("[CacheMgr][on_service_close] %s unlock by service close!", primary_key)
                 obj:set_lock_node_id(0)
             end
         end

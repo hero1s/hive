@@ -30,7 +30,7 @@ function StatisMgr:__init()
         update_mgr:attach_minute(self)
 
         --系统监控
-        if hive.platform == "linux" then
+        if hive.is_linux() then
             self.linux_statis  = LinuxStatis()
         end
         --influx
@@ -149,7 +149,7 @@ end
 
 -- 计算内存信息(KB)
 function StatisMgr:_calc_mem_use()
-    if hive.platform == "linux" then
+    if hive.is_linux() then
         return self.linux_statis:calc_memory()
     end
     return 0
@@ -157,7 +157,7 @@ end
 
 -- 计算cpu使用率
 function StatisMgr:_calc_cpu_rate()
-    if hive.platform == "linux" then
+    if hive.is_linux() then
         return self.linux_statis:calc_cpu_rate()
     end
     return 0.1

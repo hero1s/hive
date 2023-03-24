@@ -34,7 +34,6 @@ AUTO_SUB_DIR = true
 --需要连接的库文件
 LIBS = {
 	"luabus",
-	"luna",
 	"plugins",
 	"lua"
 }

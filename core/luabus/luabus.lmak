@@ -29,7 +29,7 @@ LIB_PREFIX = 1
 
 --依赖项目
 DEPS = {
-	"luna"
+	"lualib"
 }
 
 --分组定义

@@ -1,4 +1,5 @@
-﻿#include <sys/stat.h>
+﻿#include "stdafx.h"
+#include <sys/stat.h>
 #include <sys/types.h>
 #ifdef __linux
 #include <dirent.h>

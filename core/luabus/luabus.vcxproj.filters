@@ -4,10 +4,16 @@
     <ClInclude Include="src\io_buffer.h">
       <Filter>inc</Filter>
     </ClInclude>
+    <ClInclude Include="src\lua_archiver.h">
+      <Filter>inc</Filter>
+    </ClInclude>
     <ClInclude Include="src\lua_socket_mgr.h">
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="src\lua_socket_node.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\luna.h">
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="src\socket_dns.h">
@@ -37,12 +43,21 @@
     <ClInclude Include="src\stdafx.h">
       <Filter>inc</Filter>
     </ClInclude>
+    <ClInclude Include="src\var_int.h">
+      <Filter>inc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\lua_archiver.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\lua_socket_mgr.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\lua_socket_node.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\luna.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\main.cpp">
@@ -70,6 +85,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\stdafx.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\var_int.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

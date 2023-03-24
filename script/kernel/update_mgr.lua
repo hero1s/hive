@@ -345,9 +345,9 @@ function UpdateMgr:monitor_mem()
     if lua_mem > self.max_lua_mem_usage then
         self.max_lua_mem_usage = lua_mem
     end
-    if diff_mem > 1 and diff_mem / lua_mem > 0.01 then
+    if diff_mem > 1 and diff_mem / lua_mem > 0.1 then
         local cur_size, idle_size = thread_mgr:size()
-        log_warn("UpdateMgr][monitor_mem] lua_mem: +%s -> %s/%s M,threads:%s/%s,lock size:%s,gc_step:%s",
+        log_warn("[UpdateMgr][monitor_mem] lua_mem: +%s -> %s/%s M,threads:%s/%s,lock size:%s,gc_step:%s",
                  diff_mem, lua_mem, self.max_lua_mem_usage, cur_size, idle_size, thread_mgr:lock_size(), gc_step)
     end
 end

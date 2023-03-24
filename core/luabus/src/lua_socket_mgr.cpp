@@ -11,7 +11,6 @@ EXPORT_LUA_FUNCTION(wait)
 EXPORT_LUA_FUNCTION(listen)
 EXPORT_LUA_FUNCTION(connect)
 EXPORT_LUA_FUNCTION(set_package_size)
-EXPORT_LUA_FUNCTION(set_lz_threshold)
 EXPORT_LUA_FUNCTION(map_token)
 EXPORT_LUA_FUNCTION(set_router_id)
 EXPORT_LUA_FUNCTION(set_rpc_key)
@@ -102,10 +101,6 @@ int lua_socket_mgr::connect(lua_State* L) {
 
 void lua_socket_mgr::set_package_size(size_t size) {
 	m_archiver->set_buffer_size(size);
-}
-
-void lua_socket_mgr::set_lz_threshold(size_t size) {
-	m_archiver->set_lz_threshold(size);
 }
 
 int lua_socket_mgr::map_token(lua_State* L) {

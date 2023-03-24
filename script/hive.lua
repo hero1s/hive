@@ -110,6 +110,11 @@ function hive.is_runing()
     return hive.service_status == ServiceStatus_RUN
 end
 
+function hive.is_linux()
+    return hive.platform == "linux"
+end
+
 function hive.new_guid()
     return guid_new(hive.service_id, hive.index)
 end
+

@@ -42,7 +42,7 @@ end
 
 --写入pid文件
 function DevopsMgr:file_pid_oper(is_create)
-    if hive.platform == "windows" then
+    if not hive.is_linux() then
         return
     end
     local lstdfs   = require("lstdfs")

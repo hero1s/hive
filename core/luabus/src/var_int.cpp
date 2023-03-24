@@ -1,4 +1,5 @@
-﻿#include <stddef.h>
+﻿#include "stdafx.h"
+#include <stddef.h>
 #include <stdint.h>
 #include "var_int.h"
 

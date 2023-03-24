@@ -6,15 +6,10 @@ class lua_archiver
 {
 public:
     lua_archiver(size_t size);
-    lua_archiver(size_t ar_size, size_t lz_size);
     virtual ~lua_archiver();
-
     void set_buffer_size(size_t size);
-    void set_lz_threshold(size_t size) { m_lz_threshold = size; }
-
     void* save(size_t* data_len, lua_State* L, int first, int last);
     int load(lua_State* L, const void* data, size_t data_len);
-
 private:
     bool alloc_buffer();
     void free_buffer();
@@ -36,8 +31,5 @@ private:
     std::vector<const char*> m_shared_string;
     std::vector<size_t> m_shared_strlen;
     unsigned char* m_ar_buffer = nullptr;
-    unsigned char* m_lz_buffer = nullptr;
     size_t m_ar_buffer_size = 0;
-    size_t m_lz_buffer_size = 0;
-    size_t m_lz_threshold = 0;
 };
