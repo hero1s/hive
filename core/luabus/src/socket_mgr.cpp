@@ -411,7 +411,9 @@ bool socket_mgr::watch_send(socket_t fd, socket_object* object, bool enable) {
 #ifdef __linux
 	epoll_event ev;
 	ev.data.ptr = object;
-	ev.events = EPOLLIN | (enable ? EPOLLOUT : 0) | EPOLLET;
+	ev.events = EPOLLIN | EPOLLET;
+	if(enable){ ev.events |= EPOLLOUT; }
+
 	return epoll_ctl(m_handle, EPOLL_CTL_MOD, fd, &ev) == 0;
 #endif
 

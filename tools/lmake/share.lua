@@ -149,7 +149,7 @@ OBJS = {
 }
 
 --是否启用mimalloc库
-MIMALLOC = true
+MIMALLOC = false
 
 --依赖项目
 DEPS = {

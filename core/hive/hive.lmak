@@ -51,3 +51,6 @@ DEPS = {
 
 --分组定义
 GROUP = "core"
+
+--是否启用mimalloc库
+MIMALLOC = true

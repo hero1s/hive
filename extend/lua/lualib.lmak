@@ -45,3 +45,6 @@ DEPS = {
 
 --分组定义
 GROUP = "lua"
+
+--是否启用mimalloc库
+MIMALLOC = true

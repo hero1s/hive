@@ -30,9 +30,6 @@ DEPS = {
 	"lualib"
 }
 
---是否启用mimalloc库
-MIMALLOC = false
-
 --分组定义
 GROUP = "lua"
 
