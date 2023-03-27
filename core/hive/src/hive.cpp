@@ -93,7 +93,7 @@ void hive_app::setup(int argc, const char* argv[]) {
 	}
 }
 
-void hive_app::exception_handler(std::string msg, std::string& err) {
+void hive_app::exception_handler(const std::string& msg, std::string& err) {
 	LOG_FATAL(fmt::format(msg, err));
 	log_service::instance()->stop();
 #if WIN32

@@ -14,10 +14,9 @@ DEFINES = {
 
 --需要的include目录
 INCLUDES = {
-	"../luna/src",
 	"../../extend/lua/lua",
     "../../extend/fmt/include",
-	"../../extend/utility"
+    "../../extend/luakit/include",
 }
 ---子目录路径
 

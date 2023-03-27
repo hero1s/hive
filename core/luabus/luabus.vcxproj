@@ -11,7 +11,6 @@
     <ClInclude Include="src\lua_archiver.h"/>
     <ClInclude Include="src\lua_socket_mgr.h"/>
     <ClInclude Include="src\lua_socket_node.h"/>
-    <ClInclude Include="src\luna.h"/>
     <ClInclude Include="src\socket_dns.h"/>
     <ClInclude Include="src\socket_helper.h"/>
     <ClInclude Include="src\socket_listener.h"/>
@@ -27,7 +26,6 @@
     <ClCompile Include="src\lua_archiver.cpp"/>
     <ClCompile Include="src\lua_socket_mgr.cpp"/>
     <ClCompile Include="src\lua_socket_node.cpp"/>
-    <ClCompile Include="src\luna.cpp"/>
     <ClCompile Include="src\main.cpp"/>
     <ClCompile Include="src\socket_helper.cpp"/>
     <ClCompile Include="src\socket_listener.cpp"/>
@@ -72,7 +70,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\luna\src;..\..\extend\lua\lua;..\..\extend\fmt\include;..\..\extend\utility;$(SolutionDir)extend\mimalloc\mimalloc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\extend\lua\lua;..\..\extend\fmt\include;..\..\extend\luakit\include;$(SolutionDir)extend\mimalloc\mimalloc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;FMT_HEADER_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>

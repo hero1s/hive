@@ -27,10 +27,11 @@ enum elink_type : uint8_t
 // 协议类型
 enum class eproto_type : int
 {
-	proto_rpc = 0,   // rpc协议
-	proto_pack = 1,  // pack协议
-	proto_text = 2,  // text协议
-	proto_max = 3,   // max 
+	proto_rpc		= 0,   // rpc协议
+	proto_pack		= 1,   // pack协议
+	proto_text		= 2,   // text协议
+	proto_common	= 3,   // 通用协议，协议前4个字节为长度
+	proto_max		= 4,   // max 
 };
 
 struct sendv_item

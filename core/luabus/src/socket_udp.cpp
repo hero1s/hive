@@ -1,13 +1,6 @@
 #include "stdafx.h"
 #include "socket_udp.h"
 
-EXPORT_CLASS_BEGIN(socket_udp)
-EXPORT_LUA_FUNCTION(send)
-EXPORT_LUA_FUNCTION(recv)
-EXPORT_LUA_FUNCTION(close)
-EXPORT_LUA_FUNCTION(listen)
-EXPORT_CLASS_END()
-
 socket_udp::~socket_udp() {
     close();
 }
@@ -26,13 +19,10 @@ bool socket_udp::setup() {
     }
     m_fd = fd;
     set_no_block(fd);
-    set_reuseaddr(fd);
     return true;
 }
 
-int socket_udp::listen(lua_State* L) {
-    const char* ip = lua_tostring(L, 1);
-    int port = (int)lua_tointeger(L, 2);
+int socket_udp::listen(lua_State* L, const char* ip, int port) {
     size_t addr_len = 0;
     sockaddr_storage addr;
     make_ip_addr(&addr, &addr_len, ip, port);
@@ -45,11 +35,7 @@ int socket_udp::listen(lua_State* L) {
     return 1;
 }
 
-int socket_udp::send(lua_State* L) {
-    size_t len = 0;
-    const char* buf = lua_tolstring(L, 1, &len);
-    const char* ip = lua_tostring(L, 2);
-    int port = (int)lua_tointeger(L, 3);
+int socket_udp::send(lua_State* L, const char* buf, size_t len, const char* ip, int port) {
     size_t addr_len = 0;
     sockaddr_storage addr;
     make_ip_addr(&addr, &addr_len, ip, port);
@@ -74,7 +60,8 @@ int socket_udp::recv(lua_State* L) {
         lua_pushboolean(L, false);
         if (get_socket_error() == WSAEWOULDBLOCK) {
             lua_pushstring(L, "EWOULDBLOCK");
-        } else {
+        }
+        else {
             lua_pushstring(L, "recv failed");
         }
         return 2;

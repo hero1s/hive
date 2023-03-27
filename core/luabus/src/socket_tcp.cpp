@@ -14,16 +14,6 @@ enum {
     IO_UNKNOWN = -3
 };
 
-EXPORT_CLASS_BEGIN(socket_tcp)
-EXPORT_LUA_FUNCTION(send)
-EXPORT_LUA_FUNCTION(recv)
-EXPORT_LUA_FUNCTION(close)
-EXPORT_LUA_FUNCTION(accept)
-EXPORT_LUA_FUNCTION(listen)
-EXPORT_LUA_FUNCTION(invalid)
-EXPORT_LUA_FUNCTION(connect)
-EXPORT_CLASS_END()
-
 socket_tcp::~socket_tcp() {
     close();
 }
@@ -42,7 +32,6 @@ bool socket_tcp::setup() {
     }
     m_fd = fd;
     set_no_block(fd);
-    set_reuseaddr(fd);
     return true;
 }
 
@@ -51,10 +40,10 @@ bool socket_tcp::invalid() {
 }
 
 int socket_tcp::socket_waitfd(socket_t fd, int sw, size_t tm) {
-    fd_set rfds, wfds, efds, *rp = nullptr, *wp = nullptr, *ep = nullptr;
-    if (sw & WAITFD_R) { FD_ZERO(&rfds); FD_SET(fd, &rfds); rp = &rfds;}
-    if (sw & WAITFD_W) { FD_ZERO(&wfds); FD_SET(fd, &wfds); wp = &wfds;}
-    if (sw & WAITFD_C) { FD_ZERO(&efds); FD_SET(fd, &efds); ep = &efds;}
+    fd_set rfds, wfds, efds, * rp = nullptr, * wp = nullptr, * ep = nullptr;
+    if (sw & WAITFD_R) { FD_ZERO(&rfds); FD_SET(fd, &rfds); rp = &rfds; }
+    if (sw & WAITFD_W) { FD_ZERO(&wfds); FD_SET(fd, &wfds); wp = &wfds; }
+    if (sw & WAITFD_C) { FD_ZERO(&efds); FD_SET(fd, &efds); ep = &efds; }
     struct timeval tv;
     tv.tv_sec = tm / 1000;
     tv.tv_usec = (tm % 1000) * 1000;
@@ -65,20 +54,16 @@ int socket_tcp::socket_waitfd(socket_t fd, int sw, size_t tm) {
     return IO_DONE;
 }
 
-int socket_tcp::listen(lua_State* L) {
-    const char* ip = lua_tostring(L, 1);
-    int port = (int)lua_tointeger(L, 2);
-    if (ip == nullptr || port <= 0) {
-        lua_pushboolean(L, false);
-        lua_pushstring(L, "invalid param");
-        return 2;
-    }
+int socket_tcp::listen(lua_State* L, const char* ip, int port) {
+    //set status
+    set_no_block(m_fd);
+    set_reuseaddr(m_fd);
+    set_close_on_exec(m_fd);
+    //bind && listen
     size_t addr_len = 0;
     sockaddr_storage addr;
     make_ip_addr(&addr, &addr_len, ip, port);
     if (::bind(m_fd, (sockaddr*)&addr, (int)addr_len) != SOCKET_ERROR) {
-        set_no_block(m_fd);
-        set_close_on_exec(m_fd);
         if (::listen(m_fd, 200) != SOCKET_ERROR) {
             lua_pushboolean(L, true);
             return 1;
@@ -89,14 +74,11 @@ int socket_tcp::listen(lua_State* L) {
     return 2;
 }
 
-int socket_tcp::connect(lua_State* L) {
-    const char* ip = lua_tostring(L, 1);
-    int port = (int)lua_tointeger(L, 2);
-    int timeout = (int)lua_tonumber(L, 3);
+int socket_tcp::connect(lua_State* L, const char* ip, int port, int timeout) {
     size_t addr_len = 0;
     sockaddr_storage addr;
     make_ip_addr(&addr, &addr_len, ip, port);
-    if(::connect(m_fd, (sockaddr*)&addr, addr_len) == 0){
+    if (::connect(m_fd, (sockaddr*)&addr, addr_len) == 0) {
         lua_pushboolean(L, true);
         return 1;
     }
@@ -118,8 +100,7 @@ int socket_tcp::connect(lua_State* L) {
     return 2;
 }
 
-int socket_tcp::accept(lua_State* L) {
-    int timeout = (int)lua_tonumber(L, 1);
+int socket_tcp::accept(lua_State* L, int timeout) {
     if (m_fd == INVALID_SOCKET) {
         lua_pushnil(L);
         lua_pushstring(L, "socket invalid");
@@ -131,7 +112,7 @@ int socket_tcp::accept(lua_State* L) {
     while (true) {
         socket_t new_fd = ::accept(m_fd, (sockaddr*)&addr, &addr_len);
         if (new_fd != INVALID_SOCKET) {
-            lua_push_object(L, new socket_tcp(new_fd));
+            luakit::native_to_lua(L, new socket_tcp(new_fd));
             return 1;
         }
         int err = get_socket_error();
@@ -143,16 +124,13 @@ int socket_tcp::accept(lua_State* L) {
         err = socket_waitfd(m_fd, WAITFD_R, timeout);
         if (err != IO_DONE) {
             lua_pushnil(L);
-            lua_pushstring(L, err == IO_TIMEOUT ? "timeout": "select failed");
+            lua_pushstring(L, err == IO_TIMEOUT ? "timeout" : "select failed");
             return 2;
         }
     }
 }
 
-int socket_tcp::send(lua_State* L) {
-    size_t len = 0;
-    const char* buf = lua_tolstring(L, 1, &len);
-    int timeout = (int)lua_tonumber(L, 2);
+int socket_tcp::send(lua_State* L, const char* buf, size_t len, int timeout) {
     if (m_fd == INVALID_SOCKET) {
         lua_pushboolean(L, false);
         lua_pushstring(L, "socket invalid");
@@ -182,8 +160,7 @@ int socket_tcp::send(lua_State* L) {
     }
 }
 
-int socket_tcp::recv(lua_State* L) {
-    int timeout = (int)lua_tonumber(L, 1);
+int socket_tcp::recv(lua_State* L, int timeout) {
     if (m_fd == INVALID_SOCKET) {
         lua_pushboolean(L, false);
         lua_pushstring(L, "socket invalid");

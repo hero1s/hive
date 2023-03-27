@@ -65,3 +65,4 @@
 #endif
 
 #include <iostream>
+#include "lua_kit.h"

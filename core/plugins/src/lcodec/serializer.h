@@ -94,7 +94,7 @@ namespace lcodec {
         }
 
     protected:
-        int16_t find_index(std::string str) {
+        int16_t find_index(const std::string& str) {
             for (int i = 0; i < m_sshares.size(); ++i) {
                 if (m_sshares[i] == str) {
                     return i;

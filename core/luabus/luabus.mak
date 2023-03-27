@@ -33,10 +33,9 @@ STDC = -std=gnu99
 STDCPP = -std=c++17
 
 #需要的include目录
-MYCFLAGS += -I../luna/src
 MYCFLAGS += -I../../extend/lua/lua
 MYCFLAGS += -I../../extend/fmt/include
-MYCFLAGS += -I../../extend/utility
+MYCFLAGS += -I../../extend/luakit/include
 
 #需要定义的选项
 MYCFLAGS += -DFMT_HEADER_ONLY

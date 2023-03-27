@@ -16,8 +16,8 @@ public:
 	bool load(int argc, const char* argv[]);
 	void set_signal(uint32_t n);
 protected:
-	std::string get_environ_def(std::string key, std::string def) { auto value = getenv(key.c_str()); return value ? value : def; };
-	void exception_handler(std::string msg, std::string& err);
+	std::string get_environ_def(const std::string& key, const std::string& def) { auto value = getenv(key.c_str()); return value ? value : def; };
+	void exception_handler(const std::string& msg, std::string& err);
 
 private:
 	uint64_t m_signal = 0;

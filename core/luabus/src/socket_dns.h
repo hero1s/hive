@@ -1,18 +1,12 @@
 ﻿#pragma once
-#include "luna.h"
 
 #ifndef WIN32
 #include <netdb.h>
 #endif
 
-inline int gethostbydomain(lua_State* L) {
-    const char* domain = lua_tostring(L, 1);
-    if (domain == nullptr) {
-        lua_pushnil(L);
-        return 1;
-    }
+inline int gethostbydomain(lua_State* L, std::string domain) {
  #ifdef WIN32
-    struct hostent* host = gethostbyname(domain);
+    struct hostent* host = gethostbyname(domain.c_str());
     if (host && host->h_addrtype == AF_INET && *(host->h_addr_list) != nullptr) {
         struct in_addr addr;
         addr.s_addr = *(u_long*)(*(host->h_addr_list));
@@ -28,7 +22,7 @@ inline int gethostbydomain(lua_State* L) {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = 0;  /* any protocol */
     struct addrinfo* result, * result_pointer;
-    if (getaddrinfo(domain, NULL, &hints, &result) == 0) {
+    if (getaddrinfo(domain.c_str(), NULL, &hints, &result) == 0) {
         for (result_pointer = result; result_pointer != NULL; result_pointer = result_pointer->ai_next) {
             if (AF_INET == result_pointer->ai_family) {
                 char ipAddr[32] = {0};

@@ -66,7 +66,7 @@ namespace lcodec {
         }
         return ((last_time - BASE_TIME) << (SNUM_BITS + TYPE_BITS + GROUP_BITS + INDEX_BITS)) | 
                 (serial_index << (TYPE_BITS + GROUP_BITS + INDEX_BITS)) | 
-                (gtype << GROUP_BITS + INDEX_BITS) |
+                (gtype << (GROUP_BITS + INDEX_BITS)) |
                 (index << GROUP_BITS) | group;
     }
 
