@@ -8,7 +8,7 @@ local router_mgr = hive.get("router_mgr")
 
 local PackTest   = singleton()
 function PackTest:__init()
-    router_mgr:watch_service_ready(self, "proxy")
+    monitor:watch_service_ready(self, "proxy")
 end
 
 function PackTest:on_service_ready(hive_id)

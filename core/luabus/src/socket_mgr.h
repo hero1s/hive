@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include "socket_helper.h"
 
+using namespace luakit;
+
 enum class elink_status : uint8_t
 {
 	link_init = 0,

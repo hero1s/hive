@@ -71,6 +71,10 @@ function ProxyAgent:statistics(event, name, ...)
     self:send(event, name, ...)
 end
 
+function ProxyAgent:register_nacos(node)
+    return self:call("rpc_register_nacos", node)
+end
+
 function ProxyAgent:send(rpc, ...)
     if scheduler then
         return scheduler:send(self.service, rpc, ...)

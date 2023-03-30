@@ -34,6 +34,7 @@ struct router_header {
 
 struct service_group {
 	uint16_t hash = 0;
+	uint16_t status = 0;
 	service_node master;
 	std::vector<service_node> nodes;
 };
@@ -45,6 +46,7 @@ public:
 
 	uint32_t map_token(uint32_t node_id, uint32_t token, uint16_t hash);
 	void set_router_id(uint32_t node_id);
+	void set_service_status(uint16_t group_idx, uint16_t status);
 	uint32_t choose_master(uint32_t service_id);
 	void erase(uint32_t node_id);
 	bool do_forward_target(router_header* header, char* data, size_t data_len, std::string& error);
@@ -54,8 +56,6 @@ public:
 	size_t format_header(BYTE* header_data, size_t data_len, router_header* header, rpc_type msgid);
 
 	bool do_forward_router(router_header* header, char* data, size_t data_len, std::string& error, rpc_type msgid,uint64_t target_idx, uint64_t target_index);
-
-	std::string debug_header(router_header* header);
 private:
 	std::shared_ptr<socket_mgr> m_mgr;
 	std::array<service_group, MAX_SERVICE_GROUP> m_groups;

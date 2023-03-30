@@ -71,6 +71,7 @@ namespace luabus {
             "connect", &lua_socket_mgr::connect,
             "map_token", &lua_socket_mgr::map_token,
             "set_router_id",&lua_socket_mgr::set_router_id,
+            "set_service_status",&lua_socket_mgr::set_service_status,
             "set_rpc_key",&lua_socket_mgr::set_rpc_key
             );
         kit_state.new_class<lua_socket_node>(
@@ -79,6 +80,7 @@ namespace luabus {
             "call", &lua_socket_node::call,
             "call_pack",&lua_socket_node::call_pack,
             "call_text",&lua_socket_node::call_text,
+            "call_slice", &lua_socket_node::call_slice,
             "forward_hash", &lua_socket_node::forward_hash,
             "forward_target", &lua_socket_node::forward_target,
             "forward_master", &lua_socket_node::forward_by_group<rpc_type::forward_master>,

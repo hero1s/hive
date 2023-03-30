@@ -503,6 +503,9 @@ namespace lzset
 			auto iter = dict_.find(key);
 			if (iter != dict_.end())
 			{
+				if (reverse_) {
+					return -(iter->second->score);
+				}
 				return iter->second->score;
 			}
 			return 0;

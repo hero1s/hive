@@ -181,7 +181,7 @@ function ThreadMgr:on_second(clock_ms)
     for session_id, context in pairs(timeout_coroutines) do
         self.coroutine_yields[session_id] = nil
         if context.title then
-            log_err("[ThreadMgr][on_fast] session_id(%s:%s) timeout!", session_id, context.title)
+            log_err("[ThreadMgr][on_second] session_id(%s:%s) timeout!", session_id, context.title)
         end
         self:resume(context.co, false, sformat("%s timeout", context.title), session_id)
     end

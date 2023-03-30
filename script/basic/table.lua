@@ -107,6 +107,30 @@ local function tmerge(src, dst)
     return ndst
 end
 
+local function tpush(dst, ...)
+    local args = { ... }
+    local n    = select("#", ...)
+    for i = 1, n do
+        dst[#dst + 1] = args[i]
+    end
+    return dst
+end
+
+local function tdiff(src, dst)
+    local add, del = {}, {}
+    for k, v in pairs(src) do
+        if not dst[k] then
+            del[k] = v
+        end
+    end
+    for k, v in pairs(dst) do
+        if not src[k] then
+            add[k] = v
+        end
+    end
+    return add, del
+end
+
 -- map中的value抽出来变成array (会丢失key信息)
 local function tarray(src)
     local dst = {}
@@ -167,21 +191,14 @@ local function fastremove(object, fn)
     return false
 end
 
-local function shuffle(t)
-    local n = #t
-    if n <= 0 then
-        return t
+local function shuffle(arr)
+    local count = #arr
+    while count > 1 do
+        local n = mrandom(1, count-1)
+        arr[count], arr[n] = arr[n], arr[count]
+        count = count - 1
     end
-    local tab   = {}
-    local index = 1
-    while n > 0 do
-        local tmp  = mrandom(1, n)
-        tab[index] = t[tmp]
-        tremove(t, tmp)
-        index = index + 1
-        n     = #t
-    end
-    return tab
+    return arr
 end
 
 local function contains(t, value)
@@ -269,6 +286,8 @@ table_ext.delete            = tdelete
 table_ext.join              = tjoin
 table_ext.merge             = tmerge
 table_ext.map               = tmap
+table_ext.push              = tpush
+table_ext.diff              = tdiff
 table_ext.array             = tarray
 table_ext.kvarray           = tkvarray
 table_ext.mapsort           = tmapsort

@@ -553,6 +553,12 @@ void socket_stream::dispatch_package(bool reset) {
 			}
 			package_size = header->len - header_len;
 		}
+		else if (eproto_type::proto_common == m_proto_type) {
+			header_len = sizeof(uint32_t);
+			if (data_len < header_len)break;
+			//头长度只包含内容，不包括长度
+			package_size = *((uint32_t*)data);
+		}
 		else if (eproto_type::proto_text == m_proto_type) {
 			if (data_len == 0) break;
 			package_size = data_len;

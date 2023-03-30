@@ -7,24 +7,29 @@ local env_addr     = environ.addr
 local log_err      = logger.err
 local log_warn     = logger.warn
 local log_info     = logger.info
+local log_debug    = logger.debug
 local check_failed = hive.failed
 
 local event_mgr    = hive.get("event_mgr")
 local config_mgr   = hive.get("config_mgr")
 local update_mgr   = hive.get("update_mgr")
 local mem_monitor  = hive.get("mem_monitor")
+local thread_mgr   = hive.get("thread_mgr")
 
 local RPC_FAILED   = hive.enum("KernCode", "RPC_FAILED")
 
 local MonitorAgent = singleton()
 local prop         = property(MonitorAgent)
 prop:reader("client", nil)
+prop:reader("ready_watchers", {})
+prop:reader("close_watchers", {})
+
 function MonitorAgent:__init()
     --创建连接
     local ip, port = env_addr("HIVE_MONITOR_ADDR")
     self.client    = RpcClient(self, ip, port)
     --注册事件
-    event_mgr:add_listener(self, "rpc_update_router_nodes")
+    event_mgr:add_listener(self, "rpc_service_changed")
     event_mgr:add_listener(self, "rpc_hive_quit")
     event_mgr:add_listener(self, "on_remote_message")
     event_mgr:add_listener(self, "rpc_reload")
@@ -34,6 +39,22 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "rpc_collect_gc")
     event_mgr:add_listener(self, "rpc_snapshot")
     event_mgr:add_listener(self, "rpc_count_lua_obj")
+end
+
+--监听服务断开
+function MonitorAgent:watch_service_close(listener, service_name)
+    if not self.close_watchers[service_name] then
+        self.close_watchers[service_name] = {}
+    end
+    self.close_watchers[service_name][listener] = true
+end
+
+--监听服务注册
+function MonitorAgent:watch_service_ready(listener, service_name)
+    if not self.ready_watchers[service_name] then
+        self.ready_watchers[service_name] = {}
+    end
+    self.ready_watchers[service_name][listener] = true
 end
 
 -- 连接关闭回调
@@ -46,15 +67,30 @@ function MonitorAgent:on_socket_connect(client)
     log_info("[MonitorAgent][on_socket_connect]: connect monitor success!:[%s:%s]", self.client.ip, self.client.port)
 end
 
--- 更新路由
-function MonitorAgent:rpc_update_router_nodes(router_nodes)
-    local router_mgr = hive.load("router_mgr")
-    if router_mgr then
-        for id, node in pairs(router_nodes) do
-            log_info("[MonitorAgent][rpc_update_router_nodes] %s,%s:%s", service.id2nick(id), node.host, node.port)
-            router_mgr:add_router(id, node.host, node.port)
+function MonitorAgent:notify_service_event(listener_set, service_name, services, is_ready)
+    for listener in pairs(listener_set or {}) do
+        for id, info in pairs(services) do
+            if id ~= hive.id then
+                thread_mgr:fork(function()
+                    if is_ready then
+                        listener:on_service_ready(id, service_name, info)
+                    else
+                        listener:on_service_close(id, service_name, info)
+                    end
+                end)
+            end
         end
     end
+end
+
+--服务改变
+function MonitorAgent:rpc_service_changed(service_name, readys, closes)
+    log_debug("[MonitorAgent][rpc_service_changed] %s,%s,%s", service_name, readys, closes)
+    self:notify_service_event(self.ready_watchers[service_name], service_name, readys, true)
+    self:notify_service_event(self.ready_watchers["*"], service_name, readys, true)
+
+    self:notify_service_event(self.close_watchers[service_name], service_name, closes, false)
+    self:notify_service_event(self.close_watchers["*"], service_name, closes, false)
 end
 
 -- 处理Monitor通知退出消息

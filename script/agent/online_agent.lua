@@ -4,6 +4,7 @@ local tunpack       = table.unpack
 
 local event_mgr     = hive.get("event_mgr")
 local router_mgr    = hive.get("router_mgr")
+local monitor       = hive.get("monitor")
 
 local SUCCESS       = hive.enum("KernCode", "SUCCESS")
 local LOGIC_FAILED  = hive.enum("KernCode", "LOGIC_FAILED")
@@ -16,7 +17,7 @@ prop:reader("player_ids", {})
 
 function OnlineAgent:__init()
     event_mgr:add_listener(self, "rpc_forward_client")
-    router_mgr:watch_service_ready(self, "online")
+    monitor:watch_service_ready(self, "online")
 end
 
 --执行远程rpc消息
@@ -87,7 +88,7 @@ function OnlineAgent:rpc_forward_client(player_id, ...)
 end
 
 -- Online服务已经ready
-function OnlineAgent:on_service_ready(id, service_name, pid)
+function OnlineAgent:on_service_ready(id, service_name)
     log_info("[OnlineAgent][on_service_ready]->service_name:%s", service.id2nick(id))
     self:on_rebuild_online()
 end

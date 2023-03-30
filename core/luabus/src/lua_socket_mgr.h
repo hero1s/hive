@@ -17,6 +17,7 @@ public:
 	void set_package_size(size_t size);
 	int map_token(uint32_t node_id, uint32_t token, uint16_t hash);
 	void set_router_id(int id);
+	void set_service_status(uint16_t group_idx, uint16_t status);
 	void set_rpc_key(std::string key);
 
 private:

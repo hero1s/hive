@@ -7,24 +7,22 @@ local log_debug        = logger.debug
 local signal_quit      = signal.quit
 local tunpack          = table.unpack
 local sformat          = string.format
-local sid2name         = service.id2name
 local id2sid           = service.id2sid
 local id2nick          = service.id2nick
 local check_success    = hive.success
 local jumphash         = lcodec.jumphash
 
+local monitor          = hive.get("monitor")
 local thread_mgr       = hive.get("thread_mgr")
 local event_mgr        = hive.get("event_mgr")
 
 local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
+local RPC_UNREACHABLE  = hive.enum("KernCode", "RPC_UNREACHABLE")
 
 local RouterMgr        = singleton()
 local prop             = property(RouterMgr)
-prop:accessor("master", nil)
 prop:accessor("routers", {})
 prop:accessor("candidates", {})
-prop:accessor("ready_watchers", {})
-prop:accessor("close_watchers", {})
 prop:accessor("hid", 0)
 function RouterMgr:__init()
     self.hid = hive.id
@@ -35,12 +33,29 @@ end
 function RouterMgr:setup()
     --router接口
     self:build_service()
+    --监听路由信息
+    monitor:watch_service_ready(self, "router")
+    monitor:watch_service_close(self, "router")
     --注册事件
-    event_mgr:add_listener(self, "rpc_service_close")
-    event_mgr:add_listener(self, "rpc_service_ready")
-    event_mgr:add_listener(self, "rpc_service_master")
-
     event_mgr:add_listener(self, "rpc_client_kickout")
+    event_mgr:add_listener(self, "on_forward_error")
+    event_mgr:add_listener(self, "reply_forward_error")
+end
+
+--服务关闭
+function RouterMgr:on_service_close(id, name)
+    log_debug("[RouterMgr][on_service_close] node: %s", id2nick(id))
+    local router = self.routers[id]
+    if router then
+        router.client:close()
+        self.routers[id] = nil
+    end
+end
+
+--服务上线
+function RouterMgr:on_service_ready(id, name, info)
+    log_debug("[RouterMgr][on_service_ready] node: %s, info: %s", id2nick(id), info)
+    self:add_router(info.id, info.ip, info.port)
 end
 
 --添加router
@@ -61,28 +76,23 @@ end
 
 --错误处理
 function RouterMgr:on_socket_error(client, token, err)
-    self:switch_master()
+    self:check_router()
     log_err("[RouterMgr][on_socket_error] router lost %s:%s, err=%s", client.ip, client.port, err)
 end
 
 --连接成功
 function RouterMgr:on_socket_connect(client, res)
     log_info("[RouterMgr][on_socket_connect] router %s:%s success!", client.ip, client.port)
-    --switch master
-    self:switch_master()
+    self:check_router()
 end
 
 --切换主router
-function RouterMgr:switch_master()
+function RouterMgr:check_router()
     self.candidates = {}
     for _, node in pairs(self.routers) do
         if node.client:is_alive() then
             self.candidates[#self.candidates + 1] = node
         end
-    end
-    self.master = self:hash_router(hive.now)
-    if self.master then
-        log_info("[RouterMgr][switch_master] switch router addr: %s", self.master.addr)
     end
 end
 
@@ -117,7 +127,7 @@ end
 function RouterMgr:collect(service_id, rpc, ...)
     local collect_res          = {}
     local session_id           = thread_mgr:build_session_id()
-    local ok, code, target_cnt = self:forward_client(self.master, "call_broadcast", rpc, session_id, service_id, rpc, ...)
+    local ok, code, target_cnt = self:forward_client(self:hash_router(service_id), "call_broadcast", rpc, session_id, service_id, rpc, ...)
     if check_success(code, ok) then
         while target_cnt > 0 do
             target_cnt              = target_cnt - 1
@@ -235,81 +245,24 @@ function RouterMgr:build_service()
     end
 end
 
---监听服务断开
-function RouterMgr:watch_service_close(listener, service_name)
-    if not self.close_watchers[service_name] then
-        self.close_watchers[service_name] = {}
-    end
-    self.close_watchers[service_name][listener] = true
-end
-
---监听服务注册
-function RouterMgr:watch_service_ready(listener, service_name)
-    if not self.ready_watchers[service_name] then
-        self.ready_watchers[service_name] = {}
-    end
-    self.ready_watchers[service_name][listener] = true
-end
-
 --业务事件响应
 -------------------------------------------------------------------------------
-function RouterMgr:is_master_router(router_id)
-    return self.master and self.master.router_id == router_id
-end
-
---服务器关闭
-function RouterMgr:rpc_service_close(id, router_id)
-    if self:is_master_router(router_id) then
-        local server_name = sid2name(id)
-        log_info("[RouterMgr][rpc_service_close] %s", id2nick(id))
-        local listener_set = self.close_watchers[server_name]
-        for listener in pairs(listener_set or {}) do
-            thread_mgr:fork(function()
-                listener:on_service_close(id, server_name)
-            end)
-        end
-        listener_set = self.close_watchers["*"]
-        for listener in pairs(listener_set or {}) do
-            thread_mgr:fork(function()
-                listener:on_service_close(id, server_name)
-            end)
-        end
-    end
-end
-
---服务器注册
-function RouterMgr:rpc_service_ready(id, router_id, pid)
-    if self:is_master_router(router_id) then
-        local server_name = sid2name(id)
-        log_info("[RouterMgr][rpc_service_ready] %s,pid:%s", id2nick(id), pid)
-        local listener_set = self.ready_watchers[server_name]
-        for listener in pairs(listener_set or {}) do
-            thread_mgr:fork(function()
-                listener:on_service_ready(id, server_name, pid)
-            end)
-        end
-        listener_set = self.ready_watchers["*"]
-        for listener in pairs(listener_set or {}) do
-            thread_mgr:fork(function()
-                listener:on_service_ready(id, server_name, pid)
-            end)
-        end
-    end
-end
-
---服务器切换master
-function RouterMgr:rpc_service_master(id, router_id)
-    if self:is_master_router(router_id) then
-        hive.is_master = hive.id == id and true or false
-        event_mgr:notify_trigger("evt_service_master")
-        log_info("[RouterMgr][rpc_service_master] is_master:%s,:%s", hive.is_master, hive.name)
-    end
-end
 
 --服务被踢下线
 function RouterMgr:rpc_client_kickout(router_id, reason)
     log_err("[RouterMgr][rpc_client_kickout] reason:%s router_id:%s", reason, router_id)
     signal_quit()
+end
+
+--路由集群转发失败
+function RouterMgr:on_forward_error(session_id, error_msg, source_id)
+    log_err("[RouterMgr][on_forward_error] session_id:%s,from:%s,%s", session_id, id2nick(source_id), error_msg)
+    self:send_target(source_id, "reply_forward_error", session_id, error_msg)
+end
+
+function RouterMgr:reply_forward_error(session_id, error_msg)
+    log_err("[RouterMgr][reply_forward_error] %s,%s", thread_mgr:get_title(session_id), error_msg)
+    thread_mgr:response(session_id, false, RPC_UNREACHABLE, error_msg)
 end
 
 hive.router_mgr = RouterMgr()

@@ -100,14 +100,16 @@ namespace lcodec {
     }
 
     size_t format_guid(lua_State* L) {
-        if (lua_type(L, 1) == LUA_TSTRING) {
+        int type = lua_type(L, 1);
+        if (type == LUA_TSTRING) {
             char* chEnd = NULL;
             const char* sguid = lua_tostring(L, 1);
             return strtoull(sguid, &chEnd, 16);
-        }
-        else {
+        } else if (type == LUA_TNUMBER) {
             return lua_tointeger(L, 1);
         }
+        //luaL_error(L, "guid only support number or string!");        
+        return 0;
     }
 
     static int guid_group(lua_State* L) {

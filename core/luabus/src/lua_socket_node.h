@@ -17,6 +17,7 @@ struct lua_socket_node final
 	int call(lua_State* L);
 	int call_pack(lua_State* L);
 	int call_text(lua_State* L);
+	int call_slice(slice* slice);
 
 	void close();
 	void set_send_buffer_size(size_t size) { m_mgr->set_send_buffer_size(m_token, size); }
@@ -63,6 +64,7 @@ private:
 	void on_recv(char* data, size_t data_len);
 	void on_call_pack(char* data, size_t data_len);
 	void on_call_text(char* data, size_t data_len);
+	void on_call_common(char* data, size_t data_len);
 	void on_call(router_header* header, char* data, size_t data_len);
 	void on_forward_broadcast(router_header* header, size_t target_size);
 	void on_forward_error(router_header* header);

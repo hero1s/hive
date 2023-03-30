@@ -99,19 +99,19 @@ function RpcClient:connect()
         log_err("[RpcClient][connect] failed to connect: %s:%d err=%s", self.ip, self.port, cerr)
         return false, cerr
     end
-    socket.on_call         = function(recv_len, session_id, rpc_flag, source, rpc, ...)
+    socket.on_call          = function(recv_len, session_id, rpc_flag, source, rpc, ...)
         proxy_agent:statistics("on_rpc_recv", rpc, recv_len)
         hxpcall(self.on_socket_rpc, "on_socket_rpc: %s", self, socket, session_id, rpc_flag, source, rpc, ...)
     end
-    socket.call_rpc        = function(session_id, rpc_flag, rpc, ...)
+    socket.call_rpc         = function(session_id, rpc_flag, rpc, ...)
         local send_len = socket.call(session_id, rpc_flag, hive.id, rpc, ...)
         return self:on_call_router(rpc, send_len, ...)
     end
-    socket.call_target     = function(session_id, target, rpc, ...)
+    socket.call_target      = function(session_id, target, rpc, ...)
         local send_len = socket.forward_target(session_id, FlagMask.REQ, hive.id, target, rpc, ...)
         return self:on_call_router(rpc, send_len, ...)
     end
-    socket.callback_target = function(session_id, target, rpc, ...)
+    socket.callback_target  = function(session_id, target, rpc, ...)
         if target == 0 then
             local send_len = socket.call(session_id, FlagMask.RES, hive.id, rpc, ...)
             return self:on_call_router(rpc, send_len, ...)
@@ -120,29 +120,29 @@ function RpcClient:connect()
             return self:on_call_router(rpc, send_len, ...)
         end
     end
-    socket.call_hash       = function(session_id, service_id, hash_key, rpc, ...)
+    socket.call_hash        = function(session_id, service_id, hash_key, rpc, ...)
         local hash_value = hhash_code(hash_key)
         local send_len   = socket.forward_hash(session_id, FlagMask.REQ, hive.id, service_id, hash_value, rpc, ...)
         return self:on_call_router(rpc, send_len, ...)
     end
-    socket.call_master     = function(session_id, service_id, rpc, ...)
+    socket.call_master      = function(session_id, service_id, rpc, ...)
         local send_len = socket.forward_master(session_id, FlagMask.REQ, hive.id, service_id, rpc, ...)
         return self:on_call_router(rpc, send_len, ...)
     end
-    socket.call_broadcast  = function(session_id, service_id, rpc, ...)
+    socket.call_broadcast   = function(session_id, service_id, rpc, ...)
         local send_len = socket.forward_broadcast(session_id, FlagMask.REQ, hive.id, service_id, rpc, ...)
         return self:on_call_router(rpc, send_len, ...)
     end
-    socket.call_collect    = function(session_id, service_id, rpc, ...)
+    socket.call_collect     = function(session_id, service_id, rpc, ...)
         local send_len = socket.forward_broadcast(session_id, FlagMask.REQ, hive.id, service_id, rpc, ...)
         return self:on_call_router(rpc, send_len, ...)
     end
-    socket.on_error        = function(token, err)
+    socket.on_error         = function(token, err)
         thread_mgr:fork(function()
             hxpcall(self.on_socket_error, "on_socket_error: %s", self, token, err)
         end)
     end
-    socket.on_connect      = function(res)
+    socket.on_connect       = function(res)
         thread_mgr:fork(function()
             if res == "ok" then
                 hxpcall(self.on_socket_connect, "on_socket_connect: %s", self, socket, res)
@@ -151,7 +151,13 @@ function RpcClient:connect()
             end
         end)
     end
-    self.socket            = socket
+    --集群转发失败后回调 modify add by toney
+    socket.on_forward_error = function(session_id, error_msg, source_id)
+        thread_mgr:fork(function()
+            event_mgr:notify_listener("on_forward_error", session_id, error_msg, source_id)
+        end)
+    end
+    self.socket             = socket
 end
 
 -- 主动关闭连接

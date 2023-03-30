@@ -12,7 +12,6 @@ local CacheRow      = import("cache/cache_row.lua")
 
 local CacheObj      = class()
 local prop          = property(CacheObj)
-prop:accessor("uuid", 0)                -- uuid
 prop:accessor("holding", true)          -- holding status
 prop:accessor("lock_node_id", 0)        -- lock node id
 prop:accessor("expire_time", 600)       -- expire time
@@ -30,7 +29,6 @@ prop:accessor("records", {})            -- records
 prop:accessor("dirty_records", {})      -- dirty records
 
 function CacheObj:__init(cache_conf, primary_value)
-    self.uuid          = hive.new_guid()
     self.primary_value = primary_value
     self.cache_rows    = cache_conf.rows
     self.db_name       = cache_conf.cache_db
@@ -74,7 +72,7 @@ function CacheObj:is_dirty()
     return next(self.dirty_records)
 end
 
-function CacheObj:expired(tick)
+function CacheObj:expired(tick, flush)
     if next(self.dirty_records) then
         return false
     end
@@ -85,7 +83,7 @@ function CacheObj:expired(tick)
     if self.lock_node_id == 0 and escape_time > self.expire_time then
         return true
     end
-    return false
+    return flush
 end
 
 function CacheObj:need_save(now)

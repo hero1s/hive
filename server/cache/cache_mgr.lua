@@ -1,6 +1,5 @@
 -- cache_mgr.lua
 import("store/mongo_mgr.lua")
-local WheelMap     = import("container/wheel_map.lua")
 local CacheObj     = import("cache/cache_obj.lua")
 local log_err      = logger.err
 local log_info     = logger.info
@@ -10,7 +9,6 @@ local sid2nick     = service.id2nick
 
 local KernCode     = enum("KernCode")
 local CacheCode    = enum("CacheCode")
-local PeriodTime   = enum("PeriodTime")
 local CacheType    = enum("CacheType")
 
 local SUCCESS      = KernCode.SUCCESS
@@ -19,20 +17,18 @@ local CAWRITE      = CacheType.WRITE
 
 local thread_mgr   = hive.get("thread_mgr")
 local event_mgr    = hive.get("event_mgr")
-local timer_mgr    = hive.get("timer_mgr")
 local config_mgr   = hive.get("config_mgr")
 local update_mgr   = hive.get("update_mgr")
-local router_mgr   = hive.get("router_mgr")
+local monitor      = hive.get("monitor")
 
 local obj_table    = config_mgr:init_table("cache_obj", "cache_name")
 local row_table    = config_mgr:init_table("cache_row", "cache_table")
 
 local CacheMgr     = singleton()
 local prop         = property(CacheMgr)
-prop:reader("cache_enable", true)     -- 缓存开关
 prop:reader("cache_confs", {})        -- cache_confs
 prop:reader("cache_lists", {})        -- cache_lists
-prop:reader("dirty_map", nil)         -- dirty objects
+prop:reader("dirty_map", {})          -- dirty objects
 prop:reader("flush", false)           -- 立即存盘
 
 function CacheMgr:__init()
@@ -47,16 +43,13 @@ function CacheMgr:__init()
     -- 订阅停服事件
     event_mgr:add_trigger(self, "evt_set_server_status")
     --定时器
-    timer_mgr:loop(PeriodTime.SECOND_MS, function(ms)
-        self:on_timer_update(ms)
-    end)
-    timer_mgr:loop(PeriodTime.SECOND_10_MS, function(ms)
-        self:on_timer_expire(ms)
-    end)
+    update_mgr:attach_minute(self)
+    update_mgr:attach_second(self)
     -- 退出通知
     update_mgr:attach_quit(self)
 
-    router_mgr:watch_service_close(self, "*")
+    monitor:watch_service_close(self, "*")
+    monitor:watch_service_ready(self, "*")
 end
 
 function CacheMgr:on_quit()
@@ -81,8 +74,6 @@ function CacheMgr:setup()
             log_err("[CacheMgr:setup] cache row config obj:%s not exist !", cache_name)
         end
     end
-    -- 创建WheelMap
-    self.dirty_map = WheelMap(10)
 end
 
 function CacheMgr:evt_set_server_status(status)
@@ -101,35 +92,42 @@ function CacheMgr:on_service_close(id, service_name)
             if obj:get_lock_node_id() == id then
                 log_info("[CacheMgr][on_service_close] %s unlock by service close!", primary_key)
                 obj:set_lock_node_id(0)
+                self:save_cache(obj, true)
             end
         end
     end
 end
 
-function CacheMgr:on_timer_update()
-    if self.flush then
-        self:save_all()
-        return
+function CacheMgr:on_service_ready(id, service_name)
+    log_info("[CacheMgr][on_service_ready] connect:%s", sid2nick(id))
+    for cache_name, obj_list in pairs(self.cache_lists) do
+        for primary_key, obj in pairs(obj_list) do
+            if obj:get_lock_node_id() == id then
+                log_info("[CacheMgr][on_service_ready] %s unlock by service close!", primary_key)
+                obj:set_lock_node_id(0)
+                self:save_cache(obj, true)
+            end
+        end
     end
+end
+
+function CacheMgr:on_second()
     local now_tick = hive.clock_ms
-    for uuid, obj in self.dirty_map:wheel_iterator() do
-        if obj:need_save(now_tick) then
-            self:set_dirty(obj, false)
+    for _, obj in pairs(self.dirty_map) do
+        if self.flush or obj:need_save(now_tick) then
             thread_mgr:fork(function()
-                if not obj:save() then
-                    self:set_dirty(obj, true)
-                end
+                self:save_cache(obj)
             end)
         end
     end
 end
 
 --清理超时的记录
-function CacheMgr:on_timer_expire()
+function CacheMgr:on_minute()
     local now_tick = hive.clock_ms
     for cache_name, obj_list in pairs(self.cache_lists) do
         for primary_key, obj in pairs(obj_list) do
-            if obj:expired(now_tick) then
+            if obj:expired(now_tick, self.flush) then
                 log_info("[CacheMgr][on_timer_expire] cache(%s)'s data(%s) expired!", cache_name, primary_key)
                 obj_list[primary_key] = nil
             end
@@ -140,10 +138,34 @@ end
 --设置标记
 function CacheMgr:set_dirty(cache_obj, is_dirty)
     if is_dirty then
-        self.dirty_map:set(cache_obj:get_uuid(), cache_obj)
+        self.dirty_map[cache_obj:get_primary_value()] = cache_obj
     else
-        self.dirty_map:set(cache_obj:get_uuid(), nil)
+        self.dirty_map[cache_obj:get_primary_value()] = nil
     end
+end
+
+function CacheMgr:delete(cache_obj)
+    local cache_name  = cache_obj:get_cache_name()
+    local primary_key = cache_obj:get_primary_value()
+    local cache_list  = self.cache_lists[cache_name]
+    if not cache_list then
+        log_err("[CacheMgr][delete] cache list not find! cache_name=%s,primary=%s", cache_name, primary_key)
+        return false
+    end
+    cache_list[primary_key] = nil
+    log_info("[CacheMgr][delete] cache=%s,primary=%s", cache_name, primary_key)
+end
+
+function CacheMgr:save_cache(cache_obj, remove)
+    self:set_dirty(cache_obj, false)
+    if not cache_obj:save() then
+        self:set_dirty(cache_obj, true)
+        return false
+    end
+    if remove then
+        self:delete(cache_obj)
+    end
+    return true
 end
 
 --缓存加载
@@ -251,13 +273,9 @@ function CacheMgr:rpc_cache_delete(hive_id, req_data)
         log_err("[CacheMgr][rpc_cache_delete] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return code
     end
-    self:set_dirty(cache_obj, false)
-    if cache_obj:save() then
-        self.cache_lists[cache_name][primary_key] = nil
+    if self:save_cache(cache_obj, true) then
         log_info("[CacheMgr][rpc_cache_delete] cache=%s,primary=%s", cache_name, primary_key)
         return SUCCESS
-    else
-        self:set_dirty(cache_obj, true)
     end
     log_err("[CacheMgr][rpc_cache_delete] save failed: cache=%s,primary=%s", cache_name, primary_key)
     return CacheCode.CACHE_DELETE_SAVE_FAILD
@@ -271,26 +289,13 @@ function CacheMgr:rpc_cache_flush(hive_id, req_data)
         log_err("[CacheMgr][rpc_cache_flush] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return code
     end
-    self:set_dirty(cache_obj, false)
-    if cache_obj:save() then
-        cache_obj:set_lock_node_id(0)
+    cache_obj:set_lock_node_id(0)
+    if self:save_cache(cache_obj, true) then
         log_info("[CacheMgr][rpc_cache_flush] cache=%s,primary=%s", cache_name, primary_key)
         return SUCCESS
-    else
-        self:set_dirty(cache_obj, true)
     end
     log_err("[CacheMgr][rpc_cache_flush] save failed: cache=%s,primary=%s", cache_name, primary_key)
     return CacheCode.CACHE_DELETE_SAVE_FAILD
-end
-
---全部存档
-function CacheMgr:save_all()
-    for uuid, obj in self.dirty_map:iterator() do
-        thread_mgr:fork(function()
-            self.dirty_map:set(uuid, nil)
-            obj:save()
-        end)
-    end
 end
 
 hive.cache_mgr = CacheMgr()

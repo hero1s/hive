@@ -156,6 +156,12 @@ function hive.change_service_status(status)
     hive.service_status = status
     logger.warn("[hive][change_service_status] service_status:%s,:%s", hive.service_status, hive.name)
     event_mgr:notify_trigger("evt_set_server_status", hive.service_status)
+    if status == ServiceStatus.RUN then
+        local proxy_agent = hive.load("proxy_agent")
+        if proxy_agent then
+            proxy_agent:register_nacos(hive.node_info)
+        end
+    end
 end
 
 function hive.is_runing()

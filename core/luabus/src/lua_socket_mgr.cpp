@@ -57,6 +57,10 @@ void lua_socket_mgr::set_router_id(int id) {
 	m_router->set_router_id(id);
 }
 
+void lua_socket_mgr::set_service_status(uint16_t group_idx, uint16_t status) {
+	m_router->set_service_status(group_idx, status);
+}
+
 void lua_socket_mgr::set_rpc_key(std::string key) {
 	m_mgr->set_handshake_verify(key);
 }

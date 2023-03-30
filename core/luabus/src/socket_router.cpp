@@ -10,6 +10,8 @@
 uint32_t get_group_idx(uint32_t node_id) { return  (node_id >> 16) & 0xff; }
 uint32_t get_node_index(uint32_t node_id) { return node_id & 0x3ff; }
 uint32_t build_service_id(uint16_t group_idx, uint16_t index) { return (group_idx & 0xff) << 16 | index; }
+bool verify_index(uint16_t index) { return index > 0 && index < 0x3ff; }
+
 bool comp_node(service_node& node, uint32_t id) { return node.id < id; }
 
 uint32_t socket_router::map_token(uint32_t node_id, uint32_t token, uint16_t hash) {
@@ -46,6 +48,12 @@ uint32_t socket_router::map_token(uint32_t node_id, uint32_t token, uint16_t has
 void socket_router::set_router_id(uint32_t node_id) {
 	m_router_idx = get_group_idx(node_id);
 	m_index = get_node_index(node_id);
+}
+
+void socket_router::set_service_status(uint16_t group_idx,uint16_t status) {
+	if (group_idx < m_groups.size()) {
+		m_groups[group_idx].status = status;
+	}
 }
 
 uint32_t socket_router::choose_master(uint32_t group_idx) {
@@ -96,8 +104,11 @@ bool socket_router::do_forward_target(router_header* header, char* data, size_t 
 	auto& nodes = group.nodes;
 	auto it = std::lower_bound(nodes.begin(), nodes.end(), target_id, comp_node);
 	if (it == nodes.end() || it->id != target_id) {
-		error = fmt::format("router forward-target not find,target_id:{}, group:{},index:{}", target_id, group_idx, target_id << 16);
-		return do_forward_router(header, data-len, data_len+len, error, rpc_type::forward_target,group_idx, target_id << 16);
+		error = fmt::format("router forward-target not find,target_id:{}, group:{},index:{},status:{}", target_id, group_idx, get_node_index(target_id),group.status);
+		if (group.status == 1 && verify_index(get_node_index(target_id))) {
+			return do_forward_router(header, data - len, data_len + len, error, rpc_type::forward_target, group_idx, get_node_index(target_id));
+		}
+		return false;
 	}
 
 	size_t header_len = format_header(m_header_data, sizeof(m_header_data), header, rpc_type::remote_call);
@@ -120,8 +131,11 @@ bool socket_router::do_forward_master(router_header* header, char* data, size_t 
 
 	auto token = m_groups[group_idx].master.token;
 	if (token == 0) {
-		error = fmt::format("router forward-master token=0");
-		return do_forward_router(header, data-len, data_len+len, error, rpc_type::forward_master,group_idx,0);
+		error = fmt::format("router forward-master:{},status:{} token=0",group_idx, m_groups[group_idx].status);
+		if (m_groups[group_idx].status == 1) {
+			return do_forward_router(header, data - len, data_len + len, error, rpc_type::forward_master, group_idx, 0);
+		}
+		return false;
 	}
 
 	size_t header_len = format_header(m_header_data, sizeof(m_header_data), header, rpc_type::remote_call);
@@ -180,8 +194,11 @@ bool socket_router::do_forward_hash(router_header* header, char* data, size_t da
 	auto& nodes = group.nodes;
 	int count = (int)nodes.size();
 	if (count == 0) {
-		error = fmt::format("router forward-hash not nodes");
-		return do_forward_router(header,data-hlen-glen,data_len+hlen+glen,error,rpc_type::forward_hash,group_idx,hash);
+		error = fmt::format("router forward-hash not nodes:{},status:{}",group_idx,group.status);
+		if (group.status == 1) {
+			return do_forward_router(header, data - hlen - glen, data_len + hlen + glen, error, rpc_type::forward_hash, group_idx, hash);
+		}
+		return false;
 	}
 
 	size_t header_len = format_header(m_header_data, sizeof(m_header_data), header, rpc_type::remote_call);
@@ -233,7 +250,6 @@ bool socket_router::do_forward_router(router_header* header, char* data, size_t 
 	if (flag == 1) {
 		uint16_t t_index = start_index & 0x3ff;
 		if (last_index >= t_index) {//首次重置
-			std::cout << "reset flag:" << t_index << std::endl;
 			last_index = 0;
 		}
 		for (auto& node : nodes) {
@@ -245,7 +261,7 @@ bool socket_router::do_forward_router(router_header* header, char* data, size_t 
 		}
 	}
 	if (ptarget == nullptr) {//已经轮完
-		error += fmt::format(" | router had run over:{}--{}", header->router_id,nodes.size());
+		error += fmt::format(" | router had run over:{}", nodes.size());
 		return false;
 	}
 	header->router_id = start_index << 16 | last_index;
@@ -255,14 +271,9 @@ bool socket_router::do_forward_router(router_header* header, char* data, size_t 
 
 	if (ptarget->token != 0) {
 		m_mgr->sendv(ptarget->token, items, _countof(items));
-		std::cout << fmt::format("forward msg to router:{},{},data_len:{}",get_node_index(ptarget->id), debug_header(header),data_len) << " target: " << target_idx << " # " << target_index << std::endl;
 		return true;
 	}
 	error += fmt::format(" | all router is disconnect");
 	return false;
 }
 
-std::string socket_router::debug_header(router_header* header) {
-	return fmt::format("sid:{},index:{},flag:{},start:{},last:{},session_id:{}",
-		get_group_idx(header->source_id), get_node_index(header->source_id), header->router_id >> 16 >> 10, header->router_id >> 16 & 0x3ff, header->router_id & 0x3ff, header->session_id);
-}

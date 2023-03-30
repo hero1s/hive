@@ -20,7 +20,7 @@ static int lupdate(lua_State* L)
 	{
 		int64_t key = (int64_t)luaL_checkinteger(L, 2);
 		int64_t score = (int64_t)luaL_checkinteger(L, 3);
-		int64_t timestamp = (int64_t)luaL_checkinteger(L, 4);
+		int64_t timestamp = (int64_t)luaL_optinteger(L, 4, 0);
 		zset->update(key, score, timestamp);
 		return 0;
 	}
@@ -63,7 +63,8 @@ static int lkey_by_rank(lua_State* L)
 
 	if (it != zset->end()) {
 		lua_pushinteger(L, it->key);
-		return 1;
+		lua_pushinteger(L, zset->score(it->key));
+		return 2;
 	}
 	return 0;
 }
@@ -156,7 +157,7 @@ static int lrange(lua_State* L)
 		lua_rawseti(L, -2, 1);
 		lua_pushinteger(L, ++start);
 		lua_rawseti(L, -2, 2);
-		lua_pushinteger(L, it->score);
+		lua_pushinteger(L, zset->score(it->key));
 		lua_rawseti(L, -2, 3);
 		lua_rawseti(L, -2, idx++);
 		reverse ? --it : ++it;

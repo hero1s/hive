@@ -81,6 +81,10 @@ int lua_socket_node::call_text(lua_State* L) {
 	return 1;
 }
 
+int lua_socket_node::call_slice(slice* slice) {
+	return m_mgr->send(m_token,(const char*)slice->head(), slice->size());
+}
+
 size_t lua_socket_node::format_header(lua_State* L, BYTE* header_data, size_t data_len, rpc_type msgid) {
 	uint32_t offset = 0;
 	router_header header;
@@ -202,6 +206,10 @@ void lua_socket_node::on_recv(char* data, size_t data_len) {
 		on_call_pack(data, data_len);
 		return;
 	}
+	if (eproto_type::proto_common == m_proto_type) {
+		on_call_common(data,data_len);
+		return;
+	}
 	if (eproto_type::proto_text == m_proto_type) {
 		on_call_text(data, data_len);
 		return;
@@ -218,7 +226,6 @@ void lua_socket_node::on_recv(char* data, size_t data_len) {
 	m_error_msg = "";
 	if (msg >= (uint8_t)(rpc_type::forward_router)) {
 		msg -= (uint8_t)rpc_type::forward_router;
-		std::cout << fmt::format("recv forward router msg:{}", m_router->debug_header(&header)) << std::endl;
 	}
 	switch ((rpc_type)msg) {
 	case rpc_type::remote_call:
@@ -251,9 +258,9 @@ void lua_socket_node::on_recv(char* data, size_t data_len) {
 }
 
 void lua_socket_node::on_forward_error(router_header* header) {
-	if (header->session_id > 0) {
+	if (header->session_id > 0) {//sendµÄÔÝÊ±ºöÂÔ toney
 		luakit::kit_state kit_state(m_lvm);
-		kit_state.object_call(this, "on_forward_error", nullptr, std::tie(), header->session_id, m_error_msg);
+		kit_state.object_call(this, "on_forward_error", nullptr, std::tie(), header->session_id, m_error_msg, header->source_id);
 	}
 }
 
@@ -296,3 +303,11 @@ void lua_socket_node::on_call_text(char* data, size_t data_len) {
 	luakit::kit_state kit_state(m_lvm);
 	kit_state.object_call(this, "on_call_text",nullptr, std::tie(), data_len, m_msg_body);
 }
+
+void lua_socket_node::on_call_common(char* data, size_t data_len) {
+	m_msg_body.clear();
+	m_msg_body.append(data, data_len);
+	luakit::kit_state kit_state(m_lvm);
+	kit_state.object_call(this, "on_call_common", nullptr, std::tie(), data_len,m_msg_body);
+}
+

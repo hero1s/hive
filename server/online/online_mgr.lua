@@ -16,6 +16,7 @@ local FAILED           = KernCode.FAILED
 local id2nick          = service.id2nick
 local event_mgr        = hive.get("event_mgr")
 local router_mgr       = hive.get("router_mgr")
+local monitor          = hive.get("monitor")
 local update_mgr       = hive.get("update_mgr")
 local due_time <const> = 3600
 
@@ -41,7 +42,7 @@ function OnlineMgr:__init()
     event_mgr:add_listener(self, "rpc_send_client")
     event_mgr:add_listener(self, "rpc_send_lobby")
 
-    router_mgr:watch_service_close(self, "lobby")
+    monitor:watch_service_close(self, "lobby")
 
     update_mgr:attach_minute(self)
 end

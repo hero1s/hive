@@ -5,6 +5,7 @@ local log_info      = logger.info
 local check_success = hive.success
 
 local router_mgr    = hive.get("router_mgr")
+local monitor       = hive.get("monitor")
 local event_mgr     = hive.get("event_mgr")
 local thread_mgr    = hive.get("thread_mgr")
 
@@ -20,11 +21,11 @@ function GMAgent:__init()
     --注册gm事件分发
     event_mgr:add_listener(self, "rpc_command_execute")
     -- 关注 gm服务 事件
-    router_mgr:watch_service_ready(self, "admin")
+    monitor:watch_service_ready(self, "admin")
 end
 
 --插入一条command
-function GMAgent:insert_command(cmd_list,listener)
+function GMAgent:insert_command(cmd_list, listener)
     if listener then
         for _, v in ipairs(cmd_list) do
             event_mgr:add_listener(listener, v.name)
@@ -78,7 +79,7 @@ function GMAgent:rpc_command_execute(cmd_name, ...)
 end
 
 -- GM服务已经ready
-function GMAgent:on_service_ready(id, service_name,pid)
+function GMAgent:on_service_ready(id, service_name)
     log_info("[GMAgent][on_service_ready]->id:%s, service_name:%s", id, service_name)
     -- 上报gm列表
     thread_mgr:success_call(PeriodTime.SECOND_10_MS, function()
