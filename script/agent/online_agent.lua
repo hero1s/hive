@@ -5,7 +5,9 @@ local tunpack       = table.unpack
 local event_mgr     = hive.get("event_mgr")
 local router_mgr    = hive.get("router_mgr")
 local monitor       = hive.get("monitor")
+local thread_mgr    = hive.get("thread_mgr")
 
+local PeriodTime    = enum("PeriodTime")
 local SUCCESS       = hive.enum("KernCode", "SUCCESS")
 local LOGIC_FAILED  = hive.enum("KernCode", "LOGIC_FAILED")
 local check_success = hive.success
@@ -95,6 +97,7 @@ end
 
 -- online数据恢复
 function OnlineAgent:on_rebuild_online()
+    thread_mgr:sleep(PeriodTime.SECOND_10_MS)
     for open_id, _ in pairs(self.open_ids) do
         router_mgr:send_online_hash(open_id, "rpc_login_dispatch_lobby", open_id, hive.id)
     end

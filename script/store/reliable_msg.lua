@@ -45,6 +45,7 @@ function ReliableMsg:list_message(to)
     if check_success(code, ok) then
         return result
     end
+    return {}
 end
 
 -- 设置信息为已处理

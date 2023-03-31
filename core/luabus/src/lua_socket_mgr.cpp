@@ -53,12 +53,12 @@ int lua_socket_mgr::map_token(uint32_t node_id, uint32_t token,uint16_t hash) {
 	return m_router->map_token(node_id, token, hash);
 }
 
-void lua_socket_mgr::set_router_id(int id) {
-	m_router->set_router_id(id);
+void lua_socket_mgr::map_router_node(uint32_t router_id, uint32_t target_id, uint8_t status) {
+	return m_router->map_router_node(router_id,target_id,status);
 }
 
-void lua_socket_mgr::set_service_status(uint16_t group_idx, uint16_t status) {
-	m_router->set_service_status(group_idx, status);
+void lua_socket_mgr::set_router_id(int id) {
+	m_router->set_router_id(id);
 }
 
 void lua_socket_mgr::set_rpc_key(std::string key) {

@@ -112,10 +112,6 @@ size_t lua_socket_node::parse_header(BYTE* data, size_t data_len, uint64_t* msgi
 	if (len == 0)
 		return 0;
 	offset += len;
-	len = decode_u64(&header->router_id, data + offset, data_len - offset);
-	if (len == 0)
-		return 0;
-	offset += len;
 	return offset;
 }
 
