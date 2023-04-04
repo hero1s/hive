@@ -2,6 +2,7 @@
 local RpcClient    = import("network/rpc_client.lua")
 
 local tunpack      = table.unpack
+local tinsert      = table.insert
 local signal_quit  = signal.quit
 local env_addr     = environ.addr
 local log_err      = logger.err
@@ -55,6 +56,17 @@ function MonitorAgent:watch_service_ready(listener, service_name)
         self.ready_watchers[service_name] = {}
     end
     self.ready_watchers[service_name][listener] = true
+end
+
+function MonitorAgent:watch_services()
+    local services = {}
+    for service_name, _ in pairs(self.ready_watchers) do
+        tinsert(services, service_name)
+    end
+    for service_name, _ in pairs(self.close_watchers) do
+        tinsert(services, service_name)
+    end
+    return services
 end
 
 -- 连接关闭回调

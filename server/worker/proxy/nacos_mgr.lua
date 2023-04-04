@@ -1,7 +1,5 @@
 local log_debug  = logger.debug
-local log_err    = logger.err
 local log_warn   = logger.warn
-local tdiff      = table_ext.diff
 
 local PeriodTime = enum("PeriodTime")
 
@@ -15,10 +13,12 @@ prop:reader("nacos", nil)
 prop:reader("node", nil)
 prop:reader("status", false)
 prop:reader("services", {})
+prop:reader("watch_services", {})
 
 function NacosMgr:__init()
     -- 注册事件
     event_mgr:add_listener(self, "rpc_register_nacos")
+    event_mgr:add_listener(self, "rpc_watch_service")
 
     self:setup()
 end
@@ -45,6 +45,14 @@ function NacosMgr:rpc_register_nacos(node)
     end
     self:register()
     return true
+end
+
+function NacosMgr:rpc_watch_service(watch_services)
+    log_debug("[NacosMgr][rpc_watch_service] %s", watch_services)
+    self.watch_services = {}
+    for _, service_name in ipairs(watch_services) do
+        self.watch_services[service_name] = 1
+    end
 end
 
 function NacosMgr:on_nacos_ready()
@@ -83,32 +91,34 @@ function NacosMgr:on_nacos_tick()
     end
     self.nacos:sent_beat(self.node.service_name, self.node.host, self.node.port)
     for _, service_name in pairs(self.nacos:query_services() or {}) do
-        local curr = self.nacos:query_instances(service_name)
-        if curr then
-            if not self.services[service_name] then
-                self.services[service_name] = {}
-            end
-            local old        = self.services[service_name]
-            local sadd, sdel = {}, {}
-            for id, node in pairs(old) do
-                if not curr[id] or curr[id].is_ready ~= 1 then
-                    sdel[id] = node
+        if self.watch_services[service_name] or self.watch_services["*"] then
+            local curr = self.nacos:query_instances(service_name)
+            if curr then
+                if not self.services[service_name] then
+                    self.services[service_name] = {}
                 end
-            end
-            for id, node in pairs(curr) do
-                if node.is_ready == 1 and not old[id] then
-                    sadd[id] = node
+                local old        = self.services[service_name]
+                local sadd, sdel = {}, {}
+                for id, node in pairs(old) do
+                    if not curr[id] or curr[id].is_ready ~= 1 then
+                        sdel[id] = node
+                    end
                 end
-            end
-            for id, node in pairs(sadd) do
-                old[id] = node
-            end
-            for id, node in pairs(sdel) do
-                old[id] = nil
-            end
-            if next(sadd) or next(sdel) then
-                log_debug("[MonitorMgr][on_nacos_tick] sadd:%s, sdel: %s", sadd, sdel)
-                hive.send_master("rpc_service_changed", service_name, sadd, sdel)
+                for id, node in pairs(curr) do
+                    if node.is_ready == 1 and not old[id] then
+                        sadd[id] = node
+                    end
+                end
+                for id, node in pairs(sadd) do
+                    old[id] = node
+                end
+                for id, node in pairs(sdel) do
+                    old[id] = nil
+                end
+                if next(sadd) or next(sdel) then
+                    log_debug("[MonitorMgr][on_nacos_tick] sadd:%s, sdel: %s", sadd, sdel)
+                    hive.send_master("rpc_service_changed", service_name, sadd, sdel)
+                end
             end
         end
     end
