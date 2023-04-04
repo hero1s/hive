@@ -170,18 +170,18 @@ end
 --rpc回执
 -----------------------------------------------------------------------------
 --服务器心跳协议
-function RpcServer:rpc_heartbeat(client, node)
+function RpcServer:rpc_heartbeat(client, is_ready, node)
     self:send(client, "on_heartbeat", hive.id)
     if not node then
         --正常心跳
-        self.holder:on_client_beat(client)
+        self.holder:on_client_beat(client, is_ready)
         return
     end
 
     if not client.id then
         -- 检查重复注册
         local client_id = node.id
-        local eclient = self:get_client_by_id(client_id)
+        local eclient   = self:get_client_by_id(client_id)
         if eclient then
             eclient.id = nil
             self:send(eclient, "rpc_client_kickout", hive.id, "service replace")

@@ -29,9 +29,13 @@ prop:reader("http_server", nil)
 prop:reader("monitor_nodes", {})
 prop:reader("monitor_lost_nodes", {})
 prop:reader("services", {})
+prop:reader("open_nacos", false)
 prop:reader("log_page", nil)
 
 function MonitorMgr:__init()
+    --是否nacos做服务发现
+    self.open_nacos = environ.status("HIVE_NACOS_OPEN")
+
     --创建rpc服务器
     local ip, port  = env_addr("HIVE_MONITOR_HOST")
     self.rpc_server = RpcServer(self, ip, port)
@@ -65,8 +69,21 @@ function MonitorMgr:on_client_accept(client)
 end
 
 -- 心跳
-function MonitorMgr:on_client_beat(client)
-
+function MonitorMgr:on_client_beat(client, is_ready)
+    local node = self.monitor_nodes[client.token]
+    if node.is_ready ~= is_ready then
+        --广播其它服务
+        if is_ready then
+            local readys      = {}
+            readys[client.id] = { id = node.id, ip = node.host, port = node.port }
+            self:add_service(node.service_name, node)
+            self:broadcast_service_status(node.service_name, readys, {})
+        else
+            self:remove_service(node.service_name, node.id)
+            self:broadcast_service_status(client.service_name, {}, { [client.id] = { id = client.id } })
+        end
+        node.is_ready = is_ready
+    end
 end
 
 -- 会话信息
@@ -75,17 +92,15 @@ function MonitorMgr:on_client_register(client, node_info)
     node_info.token                       = client.token
     self.monitor_nodes[client.token]      = node_info
     self.monitor_lost_nodes[node_info.id] = nil
-    self:add_service(node_info.service_name, node_info)
     --返回所有服务
-    for service_name, curr_services in pairs(self.services) do
-        if next(curr_services) then
-            self.rpc_server:send(client, "rpc_service_changed", service_name, curr_services, {})
-        end
-    end
+    self:send_all_service_status(client)
     --广播其它服务
-    local readys      = {}
-    readys[client.id] = { id = node_info.id, ip = node_info.host, port = node_info.port }
-    self.rpc_server:broadcast("rpc_service_changed", node_info.service_name, readys, {})
+    if node_info.is_ready then
+        self:add_service(node_info.service_name, node_info)
+        local readys      = {}
+        readys[client.id] = { id = node_info.id, ip = node_info.host, port = node_info.port }
+        self:broadcast_service_status(node_info.service_name, readys, {})
+    end
 end
 
 -- 会话关闭回调
@@ -95,7 +110,7 @@ function MonitorMgr:on_client_error(client, token, err)
         self.monitor_lost_nodes[client.id] = self.monitor_nodes[token]
         self.monitor_nodes[token]          = nil
         if self:remove_service(client.service_name, client.id) then
-            self.rpc_server:broadcast("rpc_service_changed", client.service_name, {}, { [client.id] = { id = client.id } })
+            self:broadcast_service_status(client.service_name, {}, { [client.id] = { id = client.id } })
         end
     end
 end
@@ -219,6 +234,25 @@ function MonitorMgr:remove_service(service_name, id)
         return true
     end
     return false
+end
+
+-- 通知服务变更
+function MonitorMgr:send_all_service_status(client)
+    if self.open_nacos then
+        return
+    end
+    for service_name, curr_services in pairs(self.services) do
+        if next(curr_services) then
+            self.rpc_server:send(client, "rpc_service_changed", service_name, curr_services, {})
+        end
+    end
+end
+
+function MonitorMgr:broadcast_service_status(service_name, readys, closes)
+    if self.open_nacos then
+        return
+    end
+    self.rpc_server:broadcast("rpc_service_changed", service_name, readys, closes)
 end
 
 hive.monitor_mgr = MonitorMgr()

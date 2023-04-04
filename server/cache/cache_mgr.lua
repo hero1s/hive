@@ -41,7 +41,7 @@ function CacheMgr:__init()
     event_mgr:add_listener(self, "rpc_cache_delete")
     event_mgr:add_listener(self, "rpc_cache_flush")
     -- 订阅停服事件
-    event_mgr:add_trigger(self, "evt_set_server_status")
+    event_mgr:add_trigger(self, "evt_change_service_status")
     --定时器
     update_mgr:attach_minute(self)
     update_mgr:attach_second(self)
@@ -76,9 +76,9 @@ function CacheMgr:setup()
     end
 end
 
-function CacheMgr:evt_set_server_status(status)
+function CacheMgr:evt_change_service_status(status)
     if not hive.is_runing() then
-        log_err("[CacheMgr][evt_set_server_status] enter flush mode,wait stop service:%s", hive.index)
+        log_info("[CacheMgr][evt_change_service_status] enter flush mode,wait stop service:%s", hive.index)
         self.flush = true
         return
     end

@@ -269,10 +269,9 @@ function Nacos:query_instances(service_name, group_name)
     local insts    = {}
     local jsondata = json_decode(res)
     for _, inst in pairs(jsondata.hosts) do
-        local id     = tonumber(inst.metadata.id)
-        local group  = mtointeger(inst.metadata.group)
-        local region = mtointeger(inst.metadata.region)
-        insts[id]    = { id = id, group = group, region = region, ip = inst.ip, port = inst.port }
+        local id       = tonumber(inst.metadata.id)
+        local is_ready = mtointeger(inst.metadata.is_ready)
+        insts[id]      = { id = id, is_ready = is_ready, ip = inst.ip, port = inst.port }
     end
     return insts
 end

@@ -3,22 +3,23 @@
 --1、服务类型 0-1023
 --2、实例编号 0-1023
 --变量说明
---id：          进程id     32位整数
+--id：           进程id     32位整数
 --index：        编号       0-1023
---service_id:   服务类型    0-255
---service_name: 服务名      lobby
---service_nick: 服务别名    lobby.1
+--service_id:    服务       0-255
+--service_name:  服务名      lobby
+--service_nick:  服务别名    lobby.1
 
 import("kernel/config_mgr.lua")
 
-local sformat       = string.format
+local sformat         = string.format
 
 --服务组常量
-local SERVICES      = _ENV.SERVICES or {}
-local SERVICE_NAMES = _ENV.SERVICE_NAMES or {}
-local SERVICE_HASHS = _ENV.SERVICE_HASHS or {}
+local SERVICES        = _ENV.SERVICES or {}
+local SERVICE_NAMES   = _ENV.SERVICE_NAMES or {}
+local SERVICE_HASHS   = _ENV.SERVICE_HASHS or {}
+local SERVICE_ROUTERS = _ENV.SERVICE_ROUTERS or {}
 
-service             = {}
+service               = {}
 
 function service.make_node(port, domain)
     hive.node_info = {
@@ -30,6 +31,7 @@ function service.make_node(port, domain)
         port         = port or hive.index,
         host         = domain or hive.host,
         pid          = hive.pid,
+        is_ready     = false,
     }
 end
 
@@ -38,9 +40,10 @@ function service.init()
     local config_mgr = hive.get("config_mgr")
     local service_db = config_mgr:init_table("service", "id")
     for _, conf in service_db:iterator() do
-        SERVICES[conf.name]    = conf.id
-        SERVICE_NAMES[conf.id] = conf.name
-        SERVICE_HASHS[conf.id] = conf.hash
+        SERVICES[conf.name]      = conf.id
+        SERVICE_NAMES[conf.id]   = conf.name
+        SERVICE_HASHS[conf.id]   = conf.hash
+        SERVICE_ROUTERS[conf.id] = conf.rely_router
     end
     config_mgr:close_table("service")
     --初始化服务信息
@@ -112,4 +115,9 @@ end
 --服务固定hash
 function service.hash(service_id)
     return SERVICE_HASHS[service_id]
+end
+
+--是否依赖路由
+function service.rely_router(service_id)
+    return SERVICE_ROUTERS[service_id]
 end

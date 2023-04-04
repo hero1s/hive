@@ -30,6 +30,7 @@ function ProxyAgent:__init()
             self.statis_status = true
             log_warn("[ProxyAgent:__init] open statis !!!,it will degrade performance")
         end
+        event_mgr:add_trigger(self, "evt_change_service_status")
     end
     --添加忽略的rpc统计事件
     self:ignore_statis("rpc_heartbeat")
@@ -69,6 +70,10 @@ function ProxyAgent:statistics(event, name, ...)
         return
     end
     self:send(event, name, ...)
+end
+
+function ProxyAgent:evt_change_service_status(service_status)
+    self:register_nacos(hive.node_info)
 end
 
 function ProxyAgent:register_nacos(node)

@@ -78,12 +78,12 @@ end
 --发送心跳
 function RpcClient:heartbeat(initial, clock_ms)
     if initial then
-        self:send("rpc_heartbeat", hive.node_info)
+        self:send("rpc_heartbeat", hive.node_info.is_ready, hive.node_info)
         return
     end
     if clock_ms - self.last_heart_time > HEARTBEAT_TIME then
         self.last_heart_time = clock_ms
-        self:send("rpc_heartbeat")
+        self:send("rpc_heartbeat", hive.node_info.is_ready)
     end
 end
 

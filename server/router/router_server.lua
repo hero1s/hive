@@ -94,7 +94,9 @@ function RouterServer:on_client_register(client, node_info)
 end
 
 -- 心跳
-function RouterServer:on_client_beat(client)
+function RouterServer:on_client_beat(client, is_ready)
+
+
 end
 
 hive.router_server = RouterServer()

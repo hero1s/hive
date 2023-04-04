@@ -86,14 +86,21 @@ function RouterMgr:on_socket_connect(client, res)
     self:check_router()
 end
 
---切换主router
 function RouterMgr:check_router()
+    local old_ready = self:is_ready()
     self.candidates = {}
     for _, node in pairs(self.routers) do
         if node.client:is_alive() then
             self.candidates[#self.candidates + 1] = node
         end
     end
+    if old_ready ~= self:is_ready() then
+        hive.change_service_status(hive.service_status)
+    end
+end
+
+function RouterMgr:is_ready()
+    return #self.candidates > 0
 end
 
 --查找指定router
@@ -250,7 +257,7 @@ end
 
 --服务被踢下线
 function RouterMgr:rpc_client_kickout(router_id, reason)
-    log_err("[RouterMgr][rpc_client_kickout] reason:%s router_id:%s", reason, router_id)
+    log_err("[RouterMgr][rpc_client_kickout] reason:%s router_id:%s", reason, id2nick(router_id))
     signal_quit()
 end
 

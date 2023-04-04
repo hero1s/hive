@@ -12,6 +12,7 @@ local ltime         = ltimer.time
 
 local HiveMode      = enum("HiveMode")
 local ServiceStatus = enum("ServiceStatus")
+local rely_router   = service.rely_router
 
 local co_hookor     = hive.load("co_hookor")
 local socket_mgr    = hive.load("socket_mgr")
@@ -142,7 +143,8 @@ end
 function hive.after_start()
     local timer_mgr = hive.get("timer_mgr")
     timer_mgr:once(10 * 1000, function()
-        hive.change_service_status(ServiceStatus.RUN)
+        local router_mgr = hive.load("router_mgr")
+        hive.change_service_status(ServiceStatus.RUN, router_mgr and router_mgr:is_ready() or false)
     end)
     update_mgr:update(ltime())
     --开启debug模式
@@ -153,19 +155,25 @@ end
 
 --变更服务状态
 function hive.change_service_status(status)
-    hive.service_status = status
-    logger.warn("[hive][change_service_status] service_status:%s,:%s", hive.service_status, hive.name)
-    event_mgr:notify_trigger("evt_set_server_status", hive.service_status)
-    if status == ServiceStatus.RUN then
-        local proxy_agent = hive.load("proxy_agent")
-        if proxy_agent then
-            proxy_agent:register_nacos(hive.node_info)
-        end
-    end
+    hive.service_status     = status
+    hive.node_info.is_ready = hive.is_ready()
+    logger.warn("[hive][change_service_status] %s,service_status:%s,is_ready:%s", hive.name, status, hive.is_ready())
+    event_mgr:notify_trigger("evt_change_service_status", hive.service_status)
 end
 
 function hive.is_runing()
-    return hive.service_status == ServiceStatus.RUN
+    if hive.service_status ~= ServiceStatus.RUN then
+        return false
+    end
+    return hive.is_ready()
+end
+
+function hive.is_ready()
+    if rely_router(hive.service_id) then
+        local router_mgr = hive.get("router_mgr")
+        return router_mgr:is_ready()
+    end
+    return true
 end
 
 --底层驱动
