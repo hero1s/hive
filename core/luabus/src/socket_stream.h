@@ -27,6 +27,7 @@ struct socket_stream : public socket_object
 	void set_recv_buffer_size(size_t size) override { m_recv_buffer.resize(size, true); }
 	void set_timeout(int duration) override { m_timeout = duration; }
 	void set_nodelay(int flag) override { set_no_delay(m_socket, flag); }
+	void set_flow_ctrl(int ctrl_package, int ctrl_bytes) override { m_fc_ctrl_package = ctrl_package; m_fc_ctrl_bytes = ctrl_bytes; m_last_fc_time = steady_ms(); }
 
 	int send(const void* data, size_t data_len) override;
 	int sendv(const sendv_item items[], int count) override;
@@ -50,6 +51,7 @@ struct socket_stream : public socket_object
 	void on_error(const char err[]);
 	void on_connect(bool ok, const char reason[]);
 	void reset_dispatch_pkg();
+	bool check_flow_ctrl(int64_t now);
 
 	int token = 0;
 	socket_mgr* m_mgr = nullptr;
@@ -74,6 +76,13 @@ struct socket_stream : public socket_object
 	uint8_t m_seq_id = 0;
 	int64_t m_last_recv_time = 0;
 	int64_t m_connecting_time = 0;
+
+	//流量控制
+	int64_t m_fc_ctrl_package = 0;
+	int64_t m_fc_ctrl_bytes = 0;
+	int64_t m_fc_package = 0;
+	int64_t m_fc_bytes = 0;
+	int64_t m_last_fc_time = 0;
 
 #ifdef _MSC_VER
 	LPFN_CONNECTEX m_connect_func = nullptr;

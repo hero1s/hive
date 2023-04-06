@@ -86,6 +86,10 @@ function NacosMgr:unregister()
 end
 
 function NacosMgr:on_nacos_tick()
+    local _lock<close> = thread_mgr:lock("on_nacos_tick", false)
+    if not _lock then
+        return
+    end
     if not self.nacos:get_access_token() or not self.status then
         return
     end

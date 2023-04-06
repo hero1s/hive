@@ -29,8 +29,8 @@ local out_press        = environ.status("HIVE_OUT_PRESS")
 local out_encrypt      = environ.status("HIVE_OUT_ENCRYPT")
 local flow_ctrl        = environ.status("HIVE_FLOW_CTRL")
 local flow_cd          = env_number("HIVE_FLOW_CTRL_CD")
-local fc_package       = env_number("HIVE_FLOW_CTRL_PACKAGE") / 1000
-local fc_bytes         = env_number("HIVE_FLOW_CTRL_BYTES") / 1000
+local fc_package       = env_number("HIVE_FLOW_CTRL_PACKAGE")
+local fc_bytes         = env_number("HIVE_FLOW_CTRL_BYTES")
 
 -- Dx协议会话对象管理器
 local NetServer        = class()
@@ -84,9 +84,9 @@ end
 function NetServer:on_socket_accept(session)
     self:add_session(session)
     -- 流控配置
-    session.fc_packet    = 0
-    session.fc_bytes     = 0
-    session.last_fc_time = hive.clock_ms
+    if flow_ctrl then
+        session.set_flow_ctrl(fc_package, fc_bytes)
+    end
     -- 设置超时(心跳)
     session.set_timeout(self.timeout)
     -- 设置buff长度
@@ -97,8 +97,6 @@ function NetServer:on_socket_accept(session)
     -- 绑定call回调
     session.on_call_pack  = function(recv_len, cmd_id, flag, session_id, data)
         thread_mgr:fork(function()
-            session.fc_packet = session.fc_packet + 1
-            session.fc_bytes  = session.fc_bytes + recv_len
             proxy_agent:statistics("on_proto_recv", cmd_id, recv_len)
             hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, cmd_id, flag, session_id, data)
         end)
@@ -250,27 +248,6 @@ function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
     end
     --异步回执
     thread_mgr:response(session_id, true, body)
-end
-
---检查序列号
-function NetServer:check_serial(session)
-    -- 流量控制检测
-    if flow_ctrl then
-        -- 达到检测周期
-        local cur_time    = hive.clock_ms
-        local escape_time = cur_time - session.last_fc_time
-        if escape_time > 10000 then
-            -- 检查是否超过配置
-            if session.fc_packet / escape_time > fc_package or session.fc_bytes / escape_time > fc_bytes then
-                log_warn("[NetServer][check_serial] session trigger package:%s/%s or bytes:%s/%s,escape_time:%s flowctrl line, will be closed.",
-                         session.fc_packet, fc_package, session.fc_bytes, fc_bytes, escape_time)
-                self:close_session(session)
-            end
-            session.fc_packet    = 0
-            session.fc_bytes     = 0
-            session.last_fc_time = cur_time
-        end
-    end
 end
 
 -- 关闭会话

@@ -119,6 +119,13 @@ bool socket_stream::update(int64_t now) {
 			on_error(fmt::format("timeout:{}", m_timeout).c_str());
 			return true;
 		}
+		// 限流检测
+		if (eproto_type::proto_pack == m_proto_type) {
+			if (check_flow_ctrl(now)) {
+				on_error(fmt::format("trigger package:{} or bytes:{},escape_time:{} flowctrl line,will be closed", m_fc_package, m_fc_bytes, now - m_last_fc_time).c_str());
+				return true;
+			}
+		}
 		dispatch_package(true);
 	}
 	}
@@ -551,6 +558,10 @@ void socket_stream::dispatch_package(bool reset) {
 				on_error(fmt::format("seq_id not eq:{}--{},cmd:{},len:{}", header->seq_id, m_seq_id, header->cmd_id, header->len).c_str());
 				break;
 			}
+
+			m_fc_package++;
+			m_fc_bytes += header->len;
+
 			package_size = header->len - header_len;
 		}
 		else if (eproto_type::proto_common == m_proto_type) {
@@ -652,3 +663,16 @@ void socket_stream::reset_dispatch_pkg() {
 	m_tick_dispatch_time = steady_ms();
 }
 
+bool socket_stream::check_flow_ctrl(int64_t now) {
+	if (m_fc_ctrl_package < 1 || m_fc_ctrl_bytes < 1)return false;
+	auto escape_time = (now - m_last_fc_time)/1000;//秒
+	if (escape_time > 10) {
+		if ((m_fc_package / escape_time) > m_fc_ctrl_package || m_fc_bytes / escape_time > m_fc_ctrl_bytes) {
+			return true;
+		}
+		m_fc_package = 0;
+		m_fc_bytes = 0;
+		m_last_fc_time = now;
+	}	
+	return false;
+}

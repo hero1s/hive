@@ -258,6 +258,13 @@ void socket_mgr::set_nodelay(uint32_t token, int flag) {
 	}
 }
 
+void socket_mgr::set_flow_ctrl(uint32_t token, int ctrl_package, int ctrl_bytes) {
+	auto node = get_object(token);
+	if (node) {
+		node->set_flow_ctrl(ctrl_package,ctrl_bytes);
+	}
+}
+
 bool socket_mgr::can_send(uint32_t token) {
 	auto node = get_object(token);
 	if (node) {

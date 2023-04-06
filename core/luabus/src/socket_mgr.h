@@ -53,6 +53,7 @@ struct socket_object
 	virtual void set_recv_buffer_size(size_t size) { }
 	virtual void set_timeout(int duration) { }
 	virtual void set_nodelay(int flag) { }
+	virtual void set_flow_ctrl(int ctrl_package, int ctrl_bytes){ }
 	virtual int  send(const void* data, size_t data_len) { return 0; }
 	virtual int  sendv(const sendv_item items[], int count) { return 0; };
 	virtual void set_accept_callback(const std::function<void(int, eproto_type)>& cb) { }
@@ -96,6 +97,7 @@ public:
 	void set_recv_buffer_size(uint32_t token, size_t size);
 	void set_timeout(uint32_t token, int duration);
 	void set_nodelay(uint32_t token, int flag);
+	void set_flow_ctrl(uint32_t token, int ctrl_package, int ctrl_bytes);
 	bool can_send(uint32_t token);
 	int  send(uint32_t token, const void* data, size_t data_len);
 	int  sendv(uint32_t token, const sendv_item items[], int count);

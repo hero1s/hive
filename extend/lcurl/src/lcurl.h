@@ -150,7 +150,7 @@ namespace lcurl {
 			return select(maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout) > 0;
 		}
 		int update(lua_State* L) {
-			if (!curl_select())return 1;
+			//if (!curl_select())return 1;
 			int running_handles;
 			CURLMcode result = curl_multi_perform(curlm, &running_handles);
 			if (result != CURLM_OK && result != CURLM_CALL_MULTI_PERFORM) {

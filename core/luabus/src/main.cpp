@@ -90,6 +90,7 @@ namespace luabus {
             "set_recv_buffer_size",&lua_socket_node::set_recv_buffer_size,
             "set_nodelay", &lua_socket_node::set_nodelay,
             "set_timeout", &lua_socket_node::set_timeout,
+            "set_flow_ctrl",&lua_socket_node::set_flow_ctrl,
             "can_send",&lua_socket_node::can_send
             );
         return lluabus;
