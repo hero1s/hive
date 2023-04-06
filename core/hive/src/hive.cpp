@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <functional>
+#include "sandbox.h"
 #include "hive.h"
 
 #include "lua_kit.h"
@@ -139,7 +140,6 @@ bool hive_app::load(int argc, const char* argv[]) {
 	}
 	//设置默认参数
 	if (lua_conf) {
-		setenv("HIVE_SANDBOX", "sandbox", 1);
 		setenv("HIVE_SERVICE", "hive", 0);
 		setenv("HIVE_INDEX", "1", 0);
 		setenv("HIVE_HOST_IP", "127.0.0.1", 0);
@@ -175,8 +175,8 @@ void hive_app::run() {
 	hive.set_function("register_signal", [](int n) { signal(n, on_signal); });
 	//begin worker操作接口
 	hive.set_function("worker_update", [&](size_t to) { m_schedulor.update(); });
-	hive.set_function("worker_setup", [&](lua_State* L, std::string service, std::string sandbox) {
-		m_schedulor.setup(L, service, sandbox);
+	hive.set_function("worker_setup", [&](lua_State* L, std::string service) {
+		m_schedulor.setup(L, service);
 		return 0;
 		});
 	hive.set_function("worker_startup", [&](std::string name, std::string entry) {
@@ -188,13 +188,12 @@ void hive_app::run() {
 	hive.set_function("worker_shutdown", [&]() { m_schedulor.shutdown(); });
 	//end worker接口
 
-	if (getenv("HIVE_SANDBOX") != NULL) {
-		lua.run_script(fmt::format("require '{}'", getenv("HIVE_SANDBOX")), [&](std::string err) {
-			exception_handler("load sandbox err: ", err);
-			});
-	}
+	lua.run_script(g_sandbox, [&](std::string err) {
+		exception_handler("load sandbox err: ", err);
+		});
+	
 	lua.run_script(fmt::format("require '{}'", getenv("HIVE_ENTRY")), [&](std::string err) {
-		exception_handler("load entry err: ", err);
+		exception_handler(fmt::format("load entry [{}] err: ", getenv("HIVE_ENTRY")), err);
 		});
 	while (hive.get_function("run")) {
 		hive.call([&](std::string err) {

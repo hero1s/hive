@@ -11,9 +11,8 @@ namespace lworker {
     class scheduler : public ischeduler
     {
     public:
-        void setup(lua_State* L, std::string& service, std::string& sandbox) {
+        void setup(lua_State* L, std::string& service) {
             m_service = service;
-            m_sandbox = sandbox;
             m_lua = std::make_shared<kit_state>(L);
         }
 
@@ -30,7 +29,7 @@ namespace lworker {
             std::unique_lock<spin_mutex> lock(m_mutex);
             auto it = m_worker_map.find(name);
             if (it == m_worker_map.end()) {
-                auto workor = std::make_shared<worker>(this, name, entry, m_service, m_sandbox);
+                auto workor = std::make_shared<worker>(this, name, entry, m_service);
                 m_worker_map.insert(std::make_pair(name, workor));
                 workor->startup();
                 return true;
@@ -97,7 +96,7 @@ namespace lworker {
 
     private:
         spin_mutex m_mutex;
-        std::string m_service, m_sandbox;
+        std::string m_service;
         std::shared_ptr<kit_state> m_lua = nullptr;
         std::map<std::string, std::shared_ptr<worker>> m_worker_map;
         std::shared_ptr<var_buffer> m_slice = std::make_shared<var_buffer>();

@@ -3,7 +3,7 @@
 #include <mutex>
 #include <atomic>
 #include <thread>
-
+#include "../sandbox.h"
 #include "fmt/core.h"
 #include "thread_name.hpp"
 #include "lua_kit.h"
@@ -52,8 +52,8 @@ namespace lworker {
     class worker :public std::enable_shared_from_this<worker>
     {
     public:
-        worker(ischeduler* schedulor, std::string& name, std::string& entry, std::string& service, std::string& sandbox)
-            : m_schedulor(schedulor), m_name(name), m_entry(entry), m_service(service), m_sandbox(sandbox) { }
+        worker(ischeduler* schedulor, std::string& name, std::string& entry, std::string& service)
+            : m_schedulor(schedulor), m_name(name), m_entry(entry), m_service(service) { }
 
         virtual ~worker() {
             m_running = false;
@@ -112,8 +112,8 @@ namespace lworker {
             hive.set_function("update", [&]() { update(); });
             hive.set_function("getenv", [&](const char* key) { return get_env(key); });
             hive.set_function("call", [&](std::string name, slice* buf) { return m_schedulor->call(name,buf); });
-            m_lua->run_script(fmt::format("require '{}'", m_sandbox), [&](std::string err) {
-                printf("worker load %s failed, because: %s", m_sandbox.c_str(), err.c_str());
+            m_lua->run_script(g_sandbox, [&](std::string err) {
+                printf("worker load sandbox failed, because: %s", err.c_str());
                 m_schedulor->destory(m_name, shared_from_this());
                 return;
             });
@@ -139,7 +139,7 @@ namespace lworker {
         std::thread m_thread;
         bool m_running = false;
         ischeduler* m_schedulor = nullptr;
-        std::string m_name, m_entry, m_service, m_sandbox;
+        std::string m_name, m_entry, m_service;
         std::shared_ptr<kit_state> m_lua = std::make_shared<kit_state>();
         std::shared_ptr<var_buffer> m_read_buf = std::make_shared<var_buffer>();
         std::shared_ptr<var_buffer> m_write_buf = std::make_shared<var_buffer>();

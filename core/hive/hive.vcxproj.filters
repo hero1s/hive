@@ -7,6 +7,9 @@
     <ClInclude Include="src\lualog\logger.h">
       <Filter>lualog</Filter>
     </ClInclude>
+    <ClInclude Include="src\sandbox.h">
+      <Filter>inc</Filter>
+    </ClInclude>
     <ClInclude Include="src\worker\scheduler.h">
       <Filter>worker</Filter>
     </ClInclude>

@@ -24,7 +24,7 @@ local Scheduler     = singleton()
 function Scheduler:__init()
     update_mgr:attach_frame(self)
     update_mgr:attach_quit(self)
-    hive.worker_setup("hive", environ.get("HIVE_SANDBOX"))
+    hive.worker_setup("hive")
 end
 
 function Scheduler:on_quit()
@@ -36,7 +36,7 @@ function Scheduler:on_frame()
 end
 
 function Scheduler:setup(service)
-    hive.worker_setup(service, environ.get("HIVE_SANDBOX"))
+    hive.worker_setup(service)
 end
 
 function Scheduler:startup(name, entry)

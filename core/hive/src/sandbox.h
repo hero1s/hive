@@ -1,3 +1,6 @@
+#pragma once
+
+static const char* g_sandbox = u8R"__(
 --sandbox.lua
 local logger      = require("lualog")
 local lstdfs      = require("lstdfs")
@@ -169,5 +172,4 @@ function hive.reload()
     end
     return count
 end
-
-
+)__";

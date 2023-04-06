@@ -262,3 +262,17 @@ function show_class_track(less_num)
     end)
     return l
 end
+
+function set_const_table(tbl)
+    for key, value in pairs(tbl) do
+        if type(value) == "table" then
+            tbl[key] = set_const_table(value)
+        end
+    end
+    return setmetatable({}, {
+        __index    = tbl,
+        __newindex = function(t, key, value)
+            error("attempting to change constant " .. tostring(key) .. " to " .. tostring(value), 2)
+        end
+    })
+end
