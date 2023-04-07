@@ -224,10 +224,6 @@ bool socket_router::do_forward_hash(router_header* header, char* data, size_t da
 
 bool socket_router::do_forward_router(router_header* header, char* data, size_t data_len, std::string& error, rpc_type msgid, uint64_t target_id, uint16_t group_idx)
 {
-	if (m_router_idx < 0 || m_router_idx > m_groups.size()) {
-		error += fmt::format(" | router idx is error:{}",m_router_idx);
-		return false;
-	}
 	auto router_id = find_transfer_router(target_id, group_idx);
 	if (router_id == 0) {
 		error += fmt::format(" | not router can find:{},{}", target_id,group_idx);

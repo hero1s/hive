@@ -280,6 +280,7 @@ function NetServer:add_session(session)
         self.sessions[token] = session
         self.session_count   = self.session_count + 1
         proxy_agent:statistics("on_conn_update", self.session_type, self.session_count)
+        log_info("[NetServer][add_session] session count:%s", self.session_count)
     end
 end
 
@@ -290,6 +291,7 @@ function NetServer:remove_session(token)
         self.sessions[token] = nil
         self.session_count   = self.session_count - 1
         proxy_agent:statistics("on_conn_update", self.session_type, self.session_count)
+        log_info("[NetServer][remove_session] session count:%s", self.session_count)
         return session
     end
 end

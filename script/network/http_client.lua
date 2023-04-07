@@ -51,20 +51,18 @@ function HttpClient:on_frame(clock_ms)
 end
 
 function HttpClient:on_respond(curl_handle, result)
-    thread_mgr:fork(function()
-        local context = self.contexts[curl_handle]
-        if context then
-            local request            = context.request
-            local session_id         = context.session_id
-            local content, code, err = request.get_respond()
-            if result == 0 then
-                thread_mgr:response(session_id, true, code, content)
-            else
-                thread_mgr:response(session_id, false, code, err)
-            end
-            self.contexts[curl_handle] = nil
+    local context = self.contexts[curl_handle]
+    if context then
+        local request            = context.request
+        local session_id         = context.session_id
+        local content, code, err = request.get_respond()
+        if result == 0 then
+            thread_mgr:response(session_id, true, code, content)
+        else
+            thread_mgr:response(session_id, false, code, err)
         end
-    end)
+        self.contexts[curl_handle] = nil
+    end
 end
 
 function HttpClient:format_url(url, query)

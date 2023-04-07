@@ -35,7 +35,7 @@ namespace lcurl {
 
 		void create(const string& url, size_t timeout_ms) {
 			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-			curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+			curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)this);
 			curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error);
 			curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout_ms);

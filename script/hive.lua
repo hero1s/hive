@@ -104,12 +104,6 @@ function hive.edition_utc(period, time, offset)
     return hive.edition(period, utime, offset)
 end
 
-local ServiceStatus_RUN = hive.enum("ServiceStatus", "RUN")
-
-function hive.is_runing()
-    return hive.service_status == ServiceStatus_RUN
-end
-
 function hive.is_linux()
     return hive.platform == "linux"
 end
