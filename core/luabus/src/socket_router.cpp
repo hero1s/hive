@@ -233,7 +233,7 @@ bool socket_router::do_forward_router(router_header* header, char* data, size_t 
 	auto& nodes = router_group.nodes;
 	int count = (int)nodes.size();
 	if (count == 0) {
-		error += fmt::format(" | router group is empty:{}",m_router_idx);
+		error += fmt::format(" | router group is empty");
 		return false;
 	}
 	service_node* ptarget = nullptr;

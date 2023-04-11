@@ -109,6 +109,10 @@ function TimerMgr:unregister(timer_id)
     end
 end
 
+function TimerMgr:clock_ms()
+    return lclock_ms()
+end
+
 hive.timer_mgr = TimerMgr()
 
 return TimerMgr

@@ -133,24 +133,7 @@ namespace lcurl {
 			request->create(url, timeout_ms);
 			return luakit::variadic_return(L, request, curl);
 		}
-		bool curl_select()
-		{
-			struct timeval timeout;
-			fd_set fdread;
-			fd_set fdwrite;
-			fd_set fdexcep;
-			int maxfd = -1;
-			FD_ZERO(&fdread);
-			FD_ZERO(&fdwrite);
-			FD_ZERO(&fdexcep);
-			timeout.tv_sec = 0;
-			timeout.tv_usec = 0;
-			curl_multi_fdset(curlm, &fdread, &fdwrite, &fdexcep, &maxfd);
-			if (-1 == maxfd)return -1;
-			return select(maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout) > 0;
-		}
 		int update(lua_State* L) {
-			//if (!curl_select())return 1;
 			int running_handles;
 			CURLMcode result = curl_multi_perform(curlm, &running_handles);
 			if (result != CURLM_OK && result != CURLM_CALL_MULTI_PERFORM) {

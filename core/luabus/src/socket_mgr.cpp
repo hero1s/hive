@@ -439,6 +439,7 @@ int socket_mgr::accept_stream(socket_t fd, const char ip[], const std::function<
 	if (watch_accepted(fd, stm) && stm->accept_socket(fd, ip)) {
 		auto token = new_token();
 		m_objects[token] = stm;
+		cb(token, proto_type);
 		return token;
 	}
 	delete stm;

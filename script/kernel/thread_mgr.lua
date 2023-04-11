@@ -1,6 +1,7 @@
 --thread_mgr.lua
 local select        = select
 local tunpack       = table.unpack
+local tpack         = table.pack
 local sformat       = string.format
 local co_yield      = coroutine.yield
 local co_create     = coroutine.create
@@ -127,7 +128,7 @@ end
 function ThreadMgr:response(session_id, ...)
     local context = self.coroutine_yields[session_id]
     if not context then
-        log_err("[ThreadMgr][response] unknown session_id(%s) response!", session_id)
+        log_err("[ThreadMgr][response] unknown session_id(%s) response!,[%s],from:[%s]", session_id, tpack(...), hive.where_call())
         return
     end
     self.coroutine_yields[session_id] = nil

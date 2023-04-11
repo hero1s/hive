@@ -108,10 +108,6 @@ void socket_listener::on_complete(WSAOVERLAPPED* ovl) {
 	if (token == 0) {
 		closesocket(node->fd);
 	}
-	else {
-		m_accept_cb(token, m_proto_type);
-	}
-
 	node->fd = INVALID_SOCKET;
 	queue_accept(ovl);
 }
@@ -173,9 +169,7 @@ void socket_listener::queue_accept(WSAOVERLAPPED* ovl) {
 			m_error_cb("new-stream-failed");
 			return;
 		}
-
 		node->fd = INVALID_SOCKET;
-		m_accept_cb(token, m_proto_type);
 	}
 }
 #endif
@@ -201,10 +195,7 @@ void socket_listener::on_can_recv(size_t max_len, bool is_eof) {
 		get_ip_string(ip, sizeof(ip), &addr, (size_t)addr_len);
 		init_socket_option(fd);
 		auto token = m_mgr->accept_stream(fd, ip, m_accept_cb, m_proto_type);
-		if (token != 0) {
-			m_accept_cb(token, m_proto_type);
-		}
-		else {
+		if (token == 0) {
 			closesocket(fd);
 		}
 	}

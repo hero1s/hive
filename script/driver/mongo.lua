@@ -46,6 +46,7 @@ prop:reader("passwd", nil)      --passwd
 prop:reader("cursor_id", nil)   --cursor_id
 prop:reader("sessions", {})     --sessions
 prop:reader("readpref", nil)    --readPreference
+prop:reader("is_login", false)
 
 function MongoDB:__init(conf)
     self.user      = conf.user
@@ -106,6 +107,7 @@ function MongoDB:on_second()
                 return
             end
         end
+        self.is_login = true
         log_info("[MongoDB][on_second] connect db(%s:%s:%s) success!", self.ip, self.port, self.name)
     end
 end
@@ -204,6 +206,7 @@ function MongoDB:auth(username, password)
 end
 
 function MongoDB:on_socket_error(sock, token, err)
+    self.is_login = false
     for session_id in pairs(self.sessions) do
         thread_mgr:response(session_id, false, err)
     end
@@ -262,6 +265,9 @@ function MongoDB:adminCommand(cmd, cmd_v, ...)
 end
 
 function MongoDB:runCommand(cmd, cmd_v, ...)
+    if not self.is_login then
+        return false, sformat("[%s] is not login:%s:%s,ip:%s:%d", self.name, self.user, self.passwd, self.ip, self.port)
+    end
     local bson_cmd = bson_encode_o(cmd, cmd_v or 1, "$db", self.name, ...)
     return self:op_msg(bson_cmd)
 end
