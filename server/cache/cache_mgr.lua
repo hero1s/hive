@@ -53,7 +53,7 @@ function CacheMgr:__init()
 end
 
 function CacheMgr:on_quit()
-    self:save_all()
+
 end
 
 function CacheMgr:setup()
