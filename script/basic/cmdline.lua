@@ -149,7 +149,7 @@ function Cmdline:parser_command(argument)
     end
     local args = tpack(argsfunc())
     if #args ~= (#define_args + 1) then
-        local err = sformat("invalid command: argument need %d but get %d", #define_args, #args)
+        local err = sformat("invalid command: argument need %d", #define_args)
         log_warn("[Cmdline][parser_command] (%s): %s!", argument, err)
         return nil, err
     end

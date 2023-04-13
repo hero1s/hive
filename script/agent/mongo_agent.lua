@@ -3,8 +3,8 @@ local tunpack      = table.unpack
 local check_failed = hive.failed
 local log_err      = logger.err
 local log_info     = logger.info
-
-local router_mgr   = hive.get("router_mgr")
+local KernCode     = enum("KernCode")
+local router_mgr   = hive.load("router_mgr")
 local scheduler    = hive.load("scheduler")
 
 local MongoAgent   = singleton()
@@ -76,7 +76,10 @@ function MongoAgent:execute(rpc, db_query, hash_key, db_name)
     if self.local_run then
         return scheduler:call(self.service, rpc, db_name or "default", tunpack(db_query))
     end
-    return router_mgr:call_dbsvr_hash(hash_key or hive.id, rpc, db_name or "default", tunpack(db_query))
+    if router_mgr then
+        return router_mgr:call_dbsvr_hash(hash_key or hive.id, rpc, db_name or "default", tunpack(db_query))
+    end
+    return false, KernCode.FAILED, "init not right"
 end
 
 ------------------------------------------------------------------

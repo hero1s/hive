@@ -44,7 +44,7 @@ function CacheMgr:__init()
     event_mgr:add_trigger(self, "evt_change_service_status")
     --定时器
     update_mgr:attach_minute(self)
-    update_mgr:attach_second(self)
+    update_mgr:attach_second5(self)
     -- 退出通知
     update_mgr:attach_quit(self)
 
@@ -111,7 +111,7 @@ function CacheMgr:on_service_ready(id, service_name)
     end
 end
 
-function CacheMgr:on_second()
+function CacheMgr:on_second5()
     local now_tick = hive.clock_ms
     for _, obj in pairs(self.dirty_map) do
         if self.flush or obj:need_save(now_tick) then

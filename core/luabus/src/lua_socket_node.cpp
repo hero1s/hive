@@ -220,23 +220,25 @@ void lua_socket_node::on_recv(char* data, size_t data_len) {
 	data += len;
 	data_len -= len;
 	m_error_msg = "";
+	bool is_router = false;
 	if (msg >= (uint8_t)(rpc_type::forward_router)) {
 		msg -= (uint8_t)rpc_type::forward_router;
+		is_router = true;
 	}
 	switch ((rpc_type)msg) {
 	case rpc_type::remote_call:
 		on_call(&header, data, data_len);
 		break;
 	case rpc_type::forward_target:
-		if (!m_router->do_forward_target(&header, data, data_len, m_error_msg))
+		if (!m_router->do_forward_target(&header, data, data_len, m_error_msg,is_router))
 			on_forward_error(&header);
 		break;
 	case rpc_type::forward_master:
-		if (!m_router->do_forward_master(&header, data, data_len, m_error_msg))
+		if (!m_router->do_forward_master(&header, data, data_len, m_error_msg,is_router))
 			on_forward_error(&header);
 		break;
 	case rpc_type::forward_hash:
-		if (!m_router->do_forward_hash(&header, data, data_len, m_error_msg))
+		if (!m_router->do_forward_hash(&header, data, data_len, m_error_msg,is_router))
 			on_forward_error(&header);
 		break;
 	case rpc_type::forward_broadcast:

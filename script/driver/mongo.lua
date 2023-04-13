@@ -47,6 +47,8 @@ prop:reader("cursor_id", nil)   --cursor_id
 prop:reader("sessions", {})     --sessions
 prop:reader("readpref", nil)    --readPreference
 prop:reader("is_login", false)
+prop:reader("op_qps", 0)
+prop:reader("tb_qps", {})
 
 function MongoDB:__init(conf)
     self.user      = conf.user
@@ -86,10 +88,26 @@ function MongoDB:set_options(opts)
     end
 end
 
+function MongoDB:add_qps(co_name)
+    self.op_qps = self.op_qps + 1
+    if not self.tb_qps[co_name] then
+        self.tb_qps[co_name] = 1
+    else
+        self.tb_qps[co_name] = self.tb_qps[co_name] + 1
+    end
+end
+
 function MongoDB:on_minute()
     if self.sock:is_alive() then
         self:runCommand("ping")
     end
+    if self.op_qps > 6000 then
+        log_err("[MongoDB][on_minute] db:%s,qps:%s,is busy,please check logic.%s", self.name, self.op_qps, self.tb_qps)
+    else
+        log_info("[MongoDB][on_minute] db:%s,qps:%s", self.name, self.op_qps)
+    end
+    self.op_qps = 0
+    self.tb_qps = {}
 end
 
 function MongoDB:on_second()
@@ -273,12 +291,14 @@ function MongoDB:runCommand(cmd, cmd_v, ...)
 end
 
 function MongoDB:drop_collection(co_name)
+    self:add_qps(co_name)
     return self:runCommand("drop", co_name)
 end
 
 -- 参数说明
 -- indexes={{key={open_id=1,platform_id=1},name="open_id-platform_id",unique=true}, }
 function MongoDB:create_indexes(co_name, indexes)
+    self:add_qps(co_name)
     local tindexs = tdeep_copy(indexes)
     for _, v in ipairs(tindexs) do
         v.key = self:sort_param(v.key)
@@ -291,6 +311,7 @@ function MongoDB:create_indexes(co_name, indexes)
 end
 
 function MongoDB:drop_indexes(co_name, index_name)
+    self:add_qps(co_name)
     local succ, doc = self:runCommand("dropIndexes", co_name, "index", index_name)
     if not succ then
         return succ, doc
@@ -299,20 +320,24 @@ function MongoDB:drop_indexes(co_name, index_name)
 end
 
 function MongoDB:insert(co_name, doc)
+    self:add_qps(co_name)
     return self:runCommand("insert", co_name, "documents", { doc })
 end
 
 function MongoDB:update(co_name, update, selector, upsert, multi)
+    self:add_qps(co_name)
     local cmd_data = { q = selector, u = update, upsert = upsert, multi = multi }
     return self:runCommand("update", co_name, "updates", { cmd_data })
 end
 
 function MongoDB:delete(co_name, selector, onlyone)
+    self:add_qps(co_name)
     local cmd_data = { q = selector, limit = onlyone and 1 or 0 }
     return self:runCommand("delete", co_name, "deletes", { cmd_data })
 end
 
 function MongoDB:count(co_name, query, limit, skip)
+    self:add_qps(co_name)
     local succ, doc = self:runCommand("count", co_name, "query", query, "limit", limit or 0, "skip", skip or 0)
     if not succ then
         return succ, doc
@@ -321,6 +346,7 @@ function MongoDB:count(co_name, query, limit, skip)
 end
 
 function MongoDB:find_one(co_name, query, projection)
+    self:add_qps(co_name)
     local succ, reply = self:runCommand("find", co_name, "$readPreference", self.readpref, "filter", query, "projection" or {}, projection, "limit", 1)
     if not succ then
         return succ, reply
@@ -333,6 +359,7 @@ function MongoDB:find_one(co_name, query, projection)
 end
 
 function MongoDB:find(co_name, query, projection, sortor, limit, skip)
+    self:add_qps(co_name)
     if sortor and next(sortor) then
         sortor = self:sort_param(sortor)
     end
@@ -362,6 +389,7 @@ function MongoDB:find(co_name, query, projection, sortor, limit, skip)
 end
 
 function MongoDB:find_and_modify(co_name, update, selector, upsert, fields, new)
+    self:add_qps(co_name)
     return self:runCommand("findAndModify", co_name, "query", selector, "update", update, "fields", fields, "upsert", upsert, "new", new)
 end
 
