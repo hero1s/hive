@@ -1,6 +1,7 @@
 -- cache_row.lua
 -- cache单行
 local log_err      = logger.err
+local log_debug    = logger.debug
 local check_failed = hive.failed
 
 local KernCode     = enum("KernCode")
@@ -16,7 +17,7 @@ prop:accessor("cache_key", "")          -- cache key
 prop:accessor("primary_value", nil)     -- primary value
 prop:accessor("db_name", "default")     -- database name
 prop:accessor("dirty", false)           -- dirty
-prop:accessor("first_save", false)      -- first_save
+prop:accessor("save_cnt", 0)            -- 存储次数
 prop:accessor("data", {})               -- data
 
 --构造函数
@@ -48,7 +49,9 @@ function CacheRow:save()
             log_err("[CacheRow][save] failed: %s=> db: %s, table: %s", res, self.db_name, self.cache_table)
             return code
         end
-        self.dirty = false
+        self.save_cnt = self.save_cnt + 1
+        self.dirty    = false
+        log_debug("[CacheRow][save] %s:%s,save_cnt:%s", self.cache_table, self.primary_value, self.save_cnt)
         return code
     end
     return SUCCESS
@@ -58,13 +61,12 @@ end
 function CacheRow:update(data, flush)
     self.data  = data
     self.dirty = true
-    if flush or not self.first_save then
+    if flush or self.save_cnt == 0 then
         local code = self:save()
         if check_failed(code) then
             log_err("[CacheRow][update] flush failed: db: %s, table: %s", self.db_name, self.cache_table)
             return CacheCode.CACHE_FLUSH_FAILED
         end
-        self.first_save = true
     end
     return SUCCESS
 end

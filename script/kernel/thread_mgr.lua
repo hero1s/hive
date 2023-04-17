@@ -13,6 +13,7 @@ local tsize         = table_ext.size
 local hxpcall       = hive.xpcall
 local log_err       = logger.err
 local log_info      = logger.info
+local log_warn      = logger.warn
 
 local QueueFIFO     = import("container/queue_fifo.lua")
 local SyncLock      = import("kernel/object/sync_lock.lua")
@@ -75,7 +76,7 @@ function ThreadMgr:lock(key, waiting)
             co_yield()
             return lock
         end
-        log_err("[ThreadMgr][lock] the func is runing and try lock:[%s],check it's right", key)
+        log_warn("[ThreadMgr][lock] the func is runing and try lock:[%s],check it's right", key)
     end
 end
 
@@ -102,6 +103,15 @@ function ThreadMgr:unlock(key, force)
         end
         queue.sync_num = 0
     end
+end
+
+-- 不重入执行,只有一个在执行
+function ThreadMgr:once_run(key, func)
+    local _lock<close> = self:lock(key, false)
+    if not _lock then
+        return
+    end
+    func()
 end
 
 function ThreadMgr:co_create(f)
@@ -140,7 +150,7 @@ function ThreadMgr:resume(co, ...)
 end
 
 function ThreadMgr:yield(session_id, title, ms_to, ...)
-    local context                     = { co = co_running(), title = title, to = hive.clock_ms + ms_to }
+    local context                     = { co = co_running(), title = title, to = hive.clock_ms + ms_to, stime = hive.clock_ms }
     self.coroutine_yields[session_id] = context
     return co_yield(...)
 end
@@ -179,12 +189,14 @@ function ThreadMgr:on_second(clock_ms)
         end
     end
     --处理协程超时
-    for session_id, context in pairs(timeout_coroutines) do
-        self.coroutine_yields[session_id] = nil
-        if context.title then
-            log_err("[ThreadMgr][on_second] session_id(%s:%s) timeout!", session_id, context.title)
+    if next(timeout_coroutines) then
+        for session_id, context in pairs(timeout_coroutines) do
+            self.coroutine_yields[session_id] = nil
+            if context.title then
+                log_err("[ThreadMgr][on_second] session_id(%s:%s) timeout:%s !", session_id, context.title, clock_ms - context.stime)
+            end
+            self:resume(context.co, false, sformat("%s timeout", context.title), session_id)
         end
-        self:resume(context.co, false, sformat("%s timeout", context.title), session_id)
     end
 end
 

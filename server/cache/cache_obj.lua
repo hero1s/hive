@@ -1,13 +1,15 @@
 -- cache_obj.lua
 -- cache的实体类
 local log_err       = logger.err
+local log_debug     = logger.debug
 local check_failed  = hive.failed
 local check_success = hive.success
 
 local KernCode      = enum("KernCode")
 local CacheCode     = enum("CacheCode")
+local DB_TIMEOUT    = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
 local SUCCESS       = KernCode.SUCCESS
-
+local thread_mgr    = hive.get("thread_mgr")
 local CacheRow      = import("cache/cache_row.lua")
 
 local CacheObj      = class()
@@ -53,7 +55,43 @@ function CacheObj:load()
         end
     end
     self.holding = false
+    log_debug("[CacheObj][load] %s,cost time:%s", self.cache_name, hive.clock_ms - self.update_time)
     return SUCCESS
+end
+
+--异步
+function CacheObj:load_async()
+    self.active_tick = hive.clock_ms
+    self.update_time = hive.clock_ms
+    local tab_cnt    = 0
+    local ret        = SUCCESS
+    local session_id = thread_mgr:build_session_id()
+    for _, row_conf in pairs(self.cache_rows) do
+        tab_cnt = tab_cnt + 1
+        thread_mgr:fork(function()
+            local tab_name         = row_conf.cache_table
+            local record           = CacheRow(row_conf, self.primary_value)
+            self.records[tab_name] = record
+            local code             = record:load(self.db_name)
+            if check_failed(code) then
+                log_err("[CacheObj][load] load row failed: tab_name=%s", tab_name)
+                thread_mgr:response(session_id, false, code)
+                return
+            end
+            thread_mgr:response(session_id, true, code)
+        end)
+    end
+    while tab_cnt > 0 do
+        local ok, code = thread_mgr:yield(session_id, "load_async", DB_TIMEOUT)
+        if check_failed(code, ok) then
+            log_err("[CacheObj][load] load response:%s,%s", ok, code)
+            ret = code
+        end
+        tab_cnt = tab_cnt - 1
+    end
+    log_debug("[CacheObj][load_async] %s,cost time:%s", self.cache_name, hive.clock_ms - self.update_time)
+    self.holding = false
+    return ret
 end
 
 function CacheObj:active()

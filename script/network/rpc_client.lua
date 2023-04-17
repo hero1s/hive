@@ -193,10 +193,16 @@ function RpcClient:on_socket_rpc(socket, session_id, rpc_flag, source, rpc, ...)
         return self:on_forward_error(session_id, ...)
     end
     if session_id == 0 or rpc_flag == FlagMask.REQ then
+        --todo test
+        local btime = hive.clock_ms
         local function dispatch_rpc_message(...)
             local _<close>  = heval(rpc)
             local rpc_datas = event_mgr:notify_listener(rpc, ...)
             if session_id > 0 then
+                local cost_time = hive.clock_ms - btime
+                if cost_time > 3000 then
+                    log_err("[RpcClient][on_socket_rpc] rpc:%s, session:%s,cost_time:%s", rpc, session_id, cost_time)
+                end
                 socket.callback_target(session_id, source, rpc, tunpack(rpc_datas))
             end
         end

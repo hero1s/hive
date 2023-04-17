@@ -44,7 +44,7 @@ function CacheMgr:__init()
     event_mgr:add_trigger(self, "evt_change_service_status")
     --定时器
     update_mgr:attach_minute(self)
-    update_mgr:attach_second5(self)
+    update_mgr:attach_second(self)
     -- 退出通知
     update_mgr:attach_quit(self)
 
@@ -111,13 +111,11 @@ function CacheMgr:on_service_ready(id, service_name)
     end
 end
 
-function CacheMgr:on_second5()
+function CacheMgr:on_second()
     local now_tick = hive.clock_ms
     for _, obj in pairs(self.dirty_map) do
         if self.flush or obj:need_save(now_tick) then
-            thread_mgr:fork(function()
-                self:save_cache(obj)
-            end)
+            self:save_cache(obj)
         end
     end
 end
@@ -157,14 +155,15 @@ function CacheMgr:delete(cache_obj)
 end
 
 function CacheMgr:save_cache(cache_obj, remove)
-    self:set_dirty(cache_obj, false)
-    if not cache_obj:save() then
-        self:set_dirty(cache_obj, true)
-        return false
-    end
-    if remove then
-        self:delete(cache_obj)
-    end
+    thread_mgr:fork(function()
+        self:set_dirty(cache_obj, false)
+        if not cache_obj:save() then
+            self:set_dirty(cache_obj, true)
+        end
+        if remove then
+            self:delete(cache_obj)
+        end
+    end)
     return true
 end
 
@@ -172,7 +171,7 @@ end
 function CacheMgr:load_cache_impl(cache_list, conf, primary_key)
     local cache_obj         = CacheObj(conf, primary_key)
     cache_list[primary_key] = cache_obj
-    local code              = cache_obj:load()
+    local code              = cache_obj:load_async()
     if check_failed(code) then
         cache_list[primary_key] = nil
         return code
@@ -181,8 +180,7 @@ function CacheMgr:load_cache_impl(cache_list, conf, primary_key)
 end
 
 function CacheMgr:get_cache_obj(hive_id, cache_name, primary_key, cache_type)
-    local _lock<close> = thread_mgr:lock(cache_name .. primary_key)
-    local cache_list   = self.cache_lists[cache_name]
+    local cache_list = self.cache_lists[cache_name]
     if not cache_list then
         log_err("[CacheMgr][get_cache_obj] cache list not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return CacheCode.CACHE_NOT_SUPPERT
@@ -243,7 +241,7 @@ function CacheMgr:rpc_cache_update(hive_id, req_data)
         log_err("[CacheMgr][rpc_cache_update] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return code
     end
-    local ucode = cache_obj:update(table_name, table_data, self.flush or flush)
+    local ucode = cache_obj:update(table_name, table_data, flush)
     if cache_obj:is_dirty() then
         self:set_dirty(cache_obj, true)
     end
@@ -258,7 +256,7 @@ function CacheMgr:rpc_cache_update_key(hive_id, req_data)
         log_err("[CacheMgr][rpc_cache_update_key] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return code
     end
-    local ucode = cache_obj:update_key(table_name, table_kvs, self.flush or flush)
+    local ucode = cache_obj:update_key(table_name, table_kvs, flush)
     if cache_obj:is_dirty() then
         self:set_dirty(cache_obj, true)
     end

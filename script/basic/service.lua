@@ -11,15 +11,15 @@
 
 import("kernel/config_mgr.lua")
 
-local sformat         = string.format
+local sformat       = string.format
 
 --服务组常量
-local SERVICES        = _ENV.SERVICES or {}
-local SERVICE_NAMES   = _ENV.SERVICE_NAMES or {}
-local SERVICE_HASHS   = _ENV.SERVICE_HASHS or {}
-local SERVICE_ROUTERS = _ENV.SERVICE_ROUTERS or {}
+local SERVICES      = _ENV.SERVICES or {}
+local SERVICE_NAMES = _ENV.SERVICE_NAMES or {}
+local SERVICE_HASHS = _ENV.SERVICE_HASHS or {}
+local SERVICE_CONFS = _ENV.SERVICE_CONFS or {}
 
-service               = {}
+service             = {}
 
 function service.make_node(port, domain)
     hive.node_info = {
@@ -40,10 +40,10 @@ function service.init()
     local config_mgr = hive.get("config_mgr")
     local service_db = config_mgr:init_table("service", "id")
     for _, conf in service_db:iterator() do
-        SERVICES[conf.name]      = conf.id
-        SERVICE_NAMES[conf.id]   = conf.name
-        SERVICE_HASHS[conf.id]   = conf.hash
-        SERVICE_ROUTERS[conf.id] = conf.rely_router
+        SERVICES[conf.name]    = conf.id
+        SERVICE_NAMES[conf.id] = conf.name
+        SERVICE_HASHS[conf.id] = conf.hash
+        SERVICE_CONFS[conf.id] = conf
     end
     config_mgr:close_table("service")
     --初始化服务信息
@@ -56,6 +56,8 @@ function service.init()
     hive.service_id   = service_id
     hive.name         = sformat("%s_%s", name, index)
     hive.host         = environ.get("HIVE_HOST_IP")
+    hive.mode         = SERVICE_CONFS[service_id].mode
+    hive.rely_router  = SERVICE_CONFS[service_id].rely_router
     service.make_node()
 end
 
@@ -115,9 +117,4 @@ end
 --服务固定hash
 function service.hash(service_id)
     return SERVICE_HASHS[service_id]
-end
-
---是否依赖路由
-function service.rely_router(service_id)
-    return SERVICE_ROUTERS[service_id]
 end

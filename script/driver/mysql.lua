@@ -24,7 +24,7 @@ local thread_mgr                 = hive.get("thread_mgr")
 local update_mgr                 = hive.get("update_mgr")
 
 local DB_TIMEOUT                 = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
-
+local max_session <const>        = 2000
 --charset编码
 local CHARSET_MAP                = {
     _default = 0,
@@ -789,6 +789,9 @@ end
 function MysqlDB:request(packet, callback, quote, param)
     if not self.sock:send(packet) then
         return false, "send request failed"
+    end
+    if self.sessions:size() > max_session then
+        return false, sformat("mysql is busy:%d", self.sessions:size())
     end
     local context = { cmd = quote }
     self.sessions:push(context)

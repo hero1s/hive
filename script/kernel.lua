@@ -12,7 +12,6 @@ local ltime         = ltimer.time
 
 local HiveMode      = enum("HiveMode")
 local ServiceStatus = enum("ServiceStatus")
-local rely_router   = service.rely_router
 
 local co_hookor     = hive.load("co_hookor")
 local socket_mgr    = hive.load("socket_mgr")
@@ -169,7 +168,7 @@ function hive.is_runing()
 end
 
 function hive.is_ready()
-    if rely_router(hive.service_id) then
+    if hive.rely_router then
         local router_mgr = hive.get("router_mgr")
         return router_mgr:is_ready()
     end

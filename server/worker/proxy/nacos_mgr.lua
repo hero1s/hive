@@ -86,46 +86,44 @@ function NacosMgr:unregister()
 end
 
 function NacosMgr:on_nacos_tick()
-    local _lock<close> = thread_mgr:lock("on_nacos_tick", false)
-    if not _lock then
-        return
-    end
-    if not self.nacos:get_access_token() or not self.status then
-        return
-    end
-    self.nacos:sent_beat(self.node.service_name, self.node.host, self.node.port)
-    for _, service_name in pairs(self.nacos:query_services() or {}) do
-        if self.watch_services[service_name] or self.watch_services["*"] then
-            local curr = self.nacos:query_instances(service_name)
-            if curr then
-                if not self.services[service_name] then
-                    self.services[service_name] = {}
-                end
-                local old        = self.services[service_name]
-                local sadd, sdel = {}, {}
-                for id, node in pairs(old) do
-                    if not curr[id] or curr[id].is_ready ~= 1 then
-                        sdel[id] = node
+    thread_mgr:once_run("on_nacos_tick", function()
+        if not self.nacos:get_access_token() or not self.status then
+            return
+        end
+        self.nacos:sent_beat(self.node.service_name, self.node.host, self.node.port)
+        for _, service_name in pairs(self.nacos:query_services() or {}) do
+            if self.watch_services[service_name] or self.watch_services["*"] then
+                local curr = self.nacos:query_instances(service_name)
+                if curr then
+                    if not self.services[service_name] then
+                        self.services[service_name] = {}
                     end
-                end
-                for id, node in pairs(curr) do
-                    if node.is_ready == 1 and not old[id] then
-                        sadd[id] = node
+                    local old        = self.services[service_name]
+                    local sadd, sdel = {}, {}
+                    for id, node in pairs(old) do
+                        if not curr[id] or curr[id].is_ready ~= 1 then
+                            sdel[id] = node
+                        end
                     end
-                end
-                for id, node in pairs(sadd) do
-                    old[id] = node
-                end
-                for id, node in pairs(sdel) do
-                    old[id] = nil
-                end
-                if next(sadd) or next(sdel) then
-                    log_debug("[MonitorMgr][on_nacos_tick] sadd:%s, sdel: %s", sadd, sdel)
-                    hive.send_master("rpc_service_changed", service_name, sadd, sdel)
+                    for id, node in pairs(curr) do
+                        if node.is_ready == 1 and not old[id] then
+                            sadd[id] = node
+                        end
+                    end
+                    for id, node in pairs(sadd) do
+                        old[id] = node
+                    end
+                    for id, node in pairs(sdel) do
+                        old[id] = nil
+                    end
+                    if next(sadd) or next(sdel) then
+                        log_debug("[MonitorMgr][on_nacos_tick] sadd:%s, sdel: %s", sadd, sdel)
+                        hive.send_master("rpc_service_changed", service_name, sadd, sdel)
+                    end
                 end
             end
         end
-    end
+    end)
 end
 
 hive.nacos_mgr = NacosMgr()

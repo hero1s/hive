@@ -1,7 +1,8 @@
 import("agent/mongo_agent.lua")
-
+local ltimer        = require("ltimer")
 local bson          = require("bson")
 local bdate         = bson.date
+local lnow_ms       = ltimer.now_ms
 
 local log_err       = logger.err
 local log_info      = logger.info
@@ -49,16 +50,29 @@ function ReliableMsg:list_message(to)
 end
 
 -- 设置信息为已处理
-function ReliableMsg:deal_message(to, uuid)
-    log_info("[RmsgMgr][deal_message] deal message: %s", uuid)
-    local query = { self.table_name, { ["$set"] = { deal_time = hive.now } }, { uuid = uuid } }
+function ReliableMsg:deal_message(to, timestamp)
+    log_info("[RmsgMgr][deal_message] message:%s, %s,%s", self.table_name, to, timestamp)
+    local selecter = { ["$and"] = { { to = to }, { time = { ["$lte"] = timestamp } } } }
+    local query    = { self.table_name, { ["$set"] = { deal_time = hive.now } }, selecter }
     return mongo_agent:update(query, to, self.db_name)
 end
 
+function ReliableMsg:deal_message_by_uuid(uuid)
+    log_info("[RmsgMgr][deal_message_by_uuid] message:%s,%s", self.table_name, uuid)
+    local query = { self.table_name, { ["$set"] = { deal_time = hive.now } }, { uuid = uuid } }
+    return mongo_agent:update(query, hive.id, self.db_name)
+end
+
 -- 删除消息
-function ReliableMsg:delete_message(to, uuid)
-    log_info("[RmsgMgr][delete_message] delete message: %s", uuid)
-    return mongo_agent:delete({ self.table_name, { uuid = uuid } }, to, self.db_name)
+function ReliableMsg:delete_message(to, timestamp)
+    log_info("[ReliableMsg][delete_message] delete %s message: %s", self.table_name, to)
+    local selecter = { ["$and"] = { { to = to }, { time = { ["$lte"] = timestamp } } } }
+    return mongo_agent:delete({ self.table_name, selecter }, hive.id, self.db_name)
+end
+
+function ReliableMsg:delete_message_by_uuid(uuid)
+    log_info("[RmsgMgr][delete_message_by_uuid] delete message: %s", uuid)
+    return mongo_agent:delete({ self.table_name, { uuid = uuid } }, hive.id, self.db_name)
 end
 
 -- 发送消息
@@ -68,7 +82,7 @@ function ReliableMsg:send_message(from, to, body, typ, id)
         uuid      = uuid,
         from      = from, to = to,
         type      = typ, body = body,
-        time      = hive.now,
+        time      = lnow_ms(),
         deal_time = 0,
     }
     --设置过期ttl字段
