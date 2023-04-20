@@ -47,9 +47,10 @@ function service.init()
     end
     config_mgr:close_table("service")
     --初始化服务信息
-    local name        = environ.get("HIVE_SERVICE")
-    local index       = environ.number("HIVE_INDEX", 1)
-    local service_id  = service.name2sid(name)
+    local name       = environ.get("HIVE_SERVICE")
+    local index      = environ.number("HIVE_INDEX", 1)
+    local service_id = service.name2sid(name)
+    assert(service_id ~= nil,"service is not config")
     hive.index        = index
     hive.id           = service.make_id(name, index)
     hive.service_name = name

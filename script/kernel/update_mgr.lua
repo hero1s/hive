@@ -1,4 +1,5 @@
 --update_mgr.lua
+local VarLock        = import("kernel/object/var_lock.lua")
 local ltimer         = require("ltimer")
 local lhelper        = require("lhelper")
 local mem_usage      = lhelper.mem_usage
@@ -95,6 +96,11 @@ end
 function UpdateMgr:update_second(clock_ms)
     for obj in pairs(self.second_objs) do
         thread_mgr:fork(function()
+            if obj.second_doing then
+                log_err("[UpdateMgr][update_second] want reentry:%s", tostring(obj))
+                return
+            end
+            local _lock<close> = VarLock(obj, "second_doing")
             obj:on_second(clock_ms)
         end)
     end

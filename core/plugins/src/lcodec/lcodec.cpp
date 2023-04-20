@@ -35,6 +35,14 @@ namespace lcodec {
     static std::map<uint32_t, uint32_t> ketama_map() {
         return thread_ketama.virtual_map;
     }
+    static bitarray* barray(lua_State* L, size_t nbits) {
+        bitarray* barray = new bitarray();
+        if (!barray->general(nbits)) {
+            delete barray;
+            return nullptr;
+        }
+        return barray;
+    }
 
     luakit::lua_table open_lcodec(lua_State* L) {
         luakit::kit_state kit_state(L);
@@ -63,6 +71,35 @@ namespace lcodec {
         llcodec.set_function("ketama_remove", ketama_remove);
         llcodec.set_function("ketama_next", ketama_next);
         llcodec.set_function("ketama_map", ketama_map);
+        llcodec.set_function("bitarray", barray);
+
+        kit_state.new_class<bitarray>(
+            "flip", &bitarray::flip,
+            "fill", &bitarray::fill,
+            "equal", &bitarray::equal,
+            "clone", &bitarray::clone,
+            "slice", &bitarray::slice,
+            "concat", &bitarray::concat,
+            "lshift", &bitarray::lshift,
+            "rshift", &bitarray::rshift,
+            "length", &bitarray::length,
+            "resize", &bitarray::resize,
+            "reverse", &bitarray::reverse,
+            "set_bit", &bitarray::set_bit,
+            "get_bit", &bitarray::get_bit,
+            "flip_bit", &bitarray::flip_bit,
+            "to_string", &bitarray::to_string,
+            "from_string", &bitarray::from_string,
+            "to_uint8", &bitarray::to_number<uint8_t>,
+            "to_uint16", &bitarray::to_number<uint16_t>,
+            "to_uint32", &bitarray::to_number<uint32_t>,
+            "to_uint64", &bitarray::to_number<uint64_t>,
+            "from_uint8", &bitarray::from_number<uint8_t>,
+            "from_uint16", &bitarray::from_number<uint16_t>,
+            "from_uint32", &bitarray::from_number<uint32_t>,
+            "from_uint64", &bitarray::from_number<uint64_t>
+            );
+
         return llcodec;
     }
 }

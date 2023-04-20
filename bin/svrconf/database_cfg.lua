@@ -9,12 +9,10 @@ return {
     },
     {
         name    = 'rmsg', --[[ 别名 ]]
-        default = false, --[[ 默认数据库 ]]
         url     = [[mongodb://_:_@10.100.0.48:27019/klbq_rmsg?readPreference=secondaryPreferred]]
     },
     {
         name    = 'activity', --[[ 别名 ]]
-        default = false, --[[ 默认数据库 ]]
         url     = [[mongodb://_:_@10.100.0.48:27019/klbq_activity?readPreference=secondaryPreferred]]
     },
     {

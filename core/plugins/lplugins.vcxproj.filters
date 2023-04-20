@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="src\bitarray\bitarray_impl.h">
-      <Filter>bitarray</Filter>
-    </ClInclude>
     <ClInclude Include="src\laoi\aoi.hpp">
       <Filter>laoi</Filter>
     </ClInclude>
@@ -15,6 +12,9 @@
     </ClInclude>
     <ClInclude Include="src\lcjson\strbuf.h">
       <Filter>lcjson</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lcodec\bitarray.h">
+      <Filter>lcodec</Filter>
     </ClInclude>
     <ClInclude Include="src\lcodec\bufpool.h">
       <Filter>lcodec</Filter>
@@ -96,9 +96,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\bitarray\bitarray.c">
-      <Filter>bitarray</Filter>
-    </ClCompile>
     <ClCompile Include="src\bson\lua-bson.c">
       <Filter>bson</Filter>
     </ClCompile>
@@ -173,9 +170,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="bitarray">
-      <UniqueIdentifier>{76D20ECC-835B-356B-2AE0-2401E14F7737}</UniqueIdentifier>
-    </Filter>
     <Filter Include="bson">
       <UniqueIdentifier>{0B6879B1-86BF-B2B1-EC65-D2460E4ECCD4}</UniqueIdentifier>
     </Filter>
