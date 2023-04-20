@@ -183,6 +183,7 @@ void hive_app::run() {
 		return m_schedulor.startup(name, entry);
 		});
 	hive.set_function("worker_call", [&](std::string name, slice* buf) {
+		if (buf == nullptr)return false;
 		return m_schedulor.call(name, buf);
 		});
 	hive.set_function("worker_shutdown", [&]() { m_schedulor.shutdown(); });

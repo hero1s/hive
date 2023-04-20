@@ -14,7 +14,6 @@ local tpack      = table.pack
 local event_mgr  = hive.get("event_mgr")
 local update_mgr = hive.get("update_mgr")
 local thread_mgr = hive.get("thread_mgr")
-local timer_mgr  = hive.get("timer_mgr")
 
 local LineTitle  = "\r\n"
 local DB_TIMEOUT = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
@@ -327,13 +326,15 @@ function RedisDB:__init(conf)
     self:set_options(conf.opts)
     --update
     update_mgr:attach_second(self)
+    update_mgr:attach_second30(self)
     --setup
     self:setup()
 end
 
 function RedisDB:__release()
     self:close()
-    timer_mgr:unregister(self.timer_id)
+    update_mgr:detach_second(self)
+    update_mgr:detach_second30(self)
 end
 
 function RedisDB:setup()
@@ -347,9 +348,6 @@ function RedisDB:setup()
             return this:commit(this.subscribe_sock, param, ...)
         end
     end
-    self.timer_id = timer_mgr:loop(10 * 1000, function()
-        self:ping()
-    end)
 end
 
 function RedisDB:close()
@@ -413,6 +411,10 @@ function RedisDB:on_second()
             end
         end
     end
+end
+
+function RedisDB:on_second30()
+    self:ping()
 end
 
 function RedisDB:ping()

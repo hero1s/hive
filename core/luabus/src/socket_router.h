@@ -68,7 +68,7 @@ protected:
 private:
 	std::shared_ptr<socket_mgr> m_mgr;
 	std::array<service_group, MAX_SERVICE_GROUP> m_groups;
-	std::unordered_map<uint32_t, router_node> m_routers;
+	std::map<uint32_t, router_node> m_routers;
 	int16_t m_router_idx = -1;
 	uint32_t m_node_id = 0;
 	BYTE m_header_data[ROUTER_HEAD_LEN];

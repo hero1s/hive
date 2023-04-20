@@ -3,8 +3,8 @@
 
 namespace luakit {
 
-    const size_t BUFFER_DEF = 64 * 1024;        //64K
-    const size_t BUFFER_MAX = 16 * 1024 * 1024; //16M
+    const size_t BUFFER_DEF = 64 * 1024;         //64K
+    const size_t BUFFER_MAX = 128 * 1024 * 1024; //128M
 
     class var_buffer {
     public:

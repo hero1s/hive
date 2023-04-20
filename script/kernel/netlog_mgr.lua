@@ -6,11 +6,10 @@ local sformat      = string.format
 local ssplit       = string_ext.split
 
 local event_mgr    = hive.get("event_mgr")
-local timer_mgr    = hive.get("timer_mgr")
 local thread_mgr   = hive.get("thread_mgr")
+local update_mgr   = hive.get("update_mgr")
 
 local SUCCESS      = hive.enum("KernCode", "SUCCESS")
-local SECOND_MS    = hive.enum("PeriodTime", "SECOND_MS")
 local SECOND_5_S   = hive.enum("PeriodTime", "SECOND_5_S")
 
 local PULL_CNT_MAX = 10
@@ -20,9 +19,7 @@ local prop         = property(NetlogMgr)
 prop:reader("sessions", {})
 function NetlogMgr:__init()
     event_mgr:add_listener(self, "rpc_show_log")
-    timer_mgr:loop(SECOND_MS, function()
-        self:on_timer()
-    end)
+    update_mgr:attach_second(self)
 end
 
 function NetlogMgr:open_session(data)
@@ -77,7 +74,7 @@ end
 
 function NetlogMgr:rpc_show_log(data)
     if not next(self.sessions) then
-        logger.add_monitor(self,0)
+        logger.add_monitor(self, 0)
     end
     local show_logs = {}
     local session   = self:open_session(data)
@@ -97,7 +94,7 @@ function NetlogMgr:rpc_show_log(data)
     return SUCCESS, { logs = show_logs, session_id = session.session_id }
 end
 
-function NetlogMgr:on_timer()
+function NetlogMgr:on_second()
     local cur_time = hive.now
     for session_id, session in pairs(self.sessions) do
         if cur_time - session.active_time > SECOND_5_S then

@@ -22,7 +22,6 @@ local event_mgr      = hive.get("event_mgr")
 local WTITLE         = hive.worker_title
 local FAST_MS        = hive.enum("PeriodTime", "FAST_MS")
 local HALF_MS        = hive.enum("PeriodTime", "HALF_MS")
-local SECOND_5_MS    = hive.enum("PeriodTime", "SECOND_5_MS")
 
 local UpdateMgr      = singleton()
 local prop           = property(UpdateMgr)
@@ -31,8 +30,6 @@ prop:reader("last_hour", 0)
 prop:reader("last_frame", 0)
 prop:reader("last_minute", 0)
 prop:reader("last_check_time", 0)
-prop:reader("last_lua_mem_usage", 0)
-prop:reader("max_lua_mem_usage", 0)
 prop:reader("quit_objs", {})
 prop:reader("hour_objs", {})
 prop:reader("frame_objs", {})
@@ -55,12 +52,9 @@ function UpdateMgr:__init()
     self:attach_minute(thread_mgr)
     --注册5秒定时器
     self.hotfix_able = environ.status("HIVE_HOTFIX")
-    timer_mgr:loop(SECOND_5_MS, function()
-        self:on_second_5s()
-    end)
 end
 
-function UpdateMgr:on_second_5s()
+function UpdateMgr:check_hotfix()
     --检查文件更新
     if self.hotfix_able then
         if hive.reload() > 0 then
@@ -151,8 +145,8 @@ function UpdateMgr:update(now_ms, clock_ms)
         local diff_ms = clock_ms - hive.clock_ms
         if diff_ms > HALF_MS and hive.frame > 1 then
             local cur_size, idle_size = thread_mgr:size()
-            log_err("[UpdateMgr][update] last frame exec too long(%d ms)!,service:%s,mem:%s M,threads:%s/%s,lock size:%s,gc_step:%s",
-                    diff_ms, hive.name, self.last_lua_mem_usage, cur_size, idle_size, thread_mgr:lock_size(), gc_step)
+            log_err("[UpdateMgr][update] last frame exec too long(%d ms)!,service:%s,threads:%s/%s,lock size:%s,gc_step:%s",
+                    diff_ms, hive.name, cur_size, idle_size, thread_mgr:lock_size(), gc_step)
         end
         --帧更新
         local frame   = hive.frame + 1
@@ -197,6 +191,7 @@ function UpdateMgr:update_by_time(now, clock_ms)
             obj:on_second5(clock_ms)
         end)
     end
+    self:check_hotfix()
     --30秒更新
     if time.sec % 30 > 0 then
         return

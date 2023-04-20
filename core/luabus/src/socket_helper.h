@@ -7,7 +7,7 @@
 using namespace std::chrono;
 
 constexpr int NET_PACKET_MAX_LEN = (64 * 1024 - 1);
-constexpr int SOCKET_RECV_LEN = 4096;
+constexpr int SOCKET_RECV_LEN = 32*1024;
 
 struct socket_header {
 	uint16_t    len;            // 整个包的长度

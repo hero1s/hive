@@ -22,9 +22,7 @@ socket_stream::socket_stream(socket_mgr* mgr, LPFN_CONNECTEX connect_func, eprot
 	m_mgr = mgr;
 	m_connect_func = connect_func;
 	m_ip[0] = 0;
-	if (m_proto_type == eproto_type::proto_pack || m_proto_type == eproto_type::proto_rpc) {
-		m_delay_send = true;
-	}
+
 	reset_dispatch_pkg();
 }
 #endif
@@ -35,9 +33,7 @@ socket_stream::socket_stream(socket_mgr* mgr, eproto_type proto_type, elink_type
 	m_proto_type = proto_type;
 	m_mgr = mgr;
 	m_ip[0] = 0;
-	if (m_proto_type == eproto_type::proto_pack || m_proto_type == eproto_type::proto_rpc) {
-		m_delay_send = true;
-	}
+
 	reset_dispatch_pkg();
 }
 
@@ -304,29 +300,33 @@ int socket_stream::sendv(const sendv_item items[], int count)
 
 int socket_stream::stream_send(const char* data, size_t data_len)
 {
-	int send_len = data_len;
-	if (m_link_status != elink_status::link_connected)
+	int total_len = data_len;
+	if (m_link_status != elink_status::link_connected || data_len == 0)
 		return 0;
-	while (data_len > 0) {
-		size_t space_len;
-		m_send_buffer.peek_space(&space_len,data_len);
-		if (space_len == 0) {
-			on_error(fmt::format("send-buffer-full:{}", m_send_buffer.data_len()).c_str());
-			return 0;
+
+	if (m_send_buffer.empty()) {
+		while (data_len > 0) {
+			int send_len = ::send(m_socket, data, (int)data_len, 0);
+			if (send_len == 0) {
+				on_error("connection-lost");
+				return 0;
+			}
+			if (send_len == SOCKET_ERROR) {
+				break;
+			}
+			data += send_len;
+			data_len -= send_len;
 		}
-		size_t try_len = std::min<size_t>(space_len, data_len);
-		if (!m_send_buffer.push_data(data, try_len)) {
-			on_error(fmt::format("send-buffer-failed:{}", try_len).c_str());
-			return 0;
+		if (data_len == 0) {
+			return total_len;
 		}
-		data_len -= try_len;
-		data += try_len;
 	}
-	if (m_send_buffer.data_len() >= IO_BUFFER_SEND || !m_delay_send)
-	{
-		do_send(UINT_MAX, false);
-		return send_len;
+
+	if (!m_send_buffer.push_data(data, data_len)) {
+		on_error(fmt::format("send-buffer-full:{},data:{},want:{}", m_send_buffer.capacity(), m_send_buffer.data_len(),data_len).c_str());
+		return 0;
 	}
+
 #if _MSC_VER
 	if (!wsa_send_empty(m_socket, m_send_ovl)) {
 		on_error("send-failed");
@@ -339,7 +339,7 @@ int socket_stream::stream_send(const char* data, size_t data_len)
 		return 0;
 	}
 #endif
-	return send_len;
+	return total_len;
 }
 
 #ifdef _MSC_VER

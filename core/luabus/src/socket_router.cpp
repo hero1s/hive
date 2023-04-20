@@ -46,6 +46,7 @@ uint32_t socket_router::map_token(uint32_t node_id, uint32_t token, uint16_t has
 }
 
 void socket_router::map_router_node(uint32_t router_id, uint32_t target_id, uint8_t status) {
+	if (router_id == m_node_id)return;
 	auto it = m_routers.find(router_id);
 	if (it != m_routers.end()) {
 		if (target_id == 0) {//清空
@@ -258,7 +259,6 @@ bool socket_router::do_forward_router(router_header* header, char* data, size_t 
 
 uint32_t socket_router::find_transfer_router(uint32_t target_id, uint16_t group_idx) {
 	for (auto& it : m_routers) {
-		if (it.first == m_node_id)continue;
 		if (target_id > 0 && it.second.targets.find(target_id) != it.second.targets.end()) {
 			return it.first;
 		}

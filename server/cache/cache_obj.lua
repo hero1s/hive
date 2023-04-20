@@ -1,5 +1,7 @@
 -- cache_obj.lua
 -- cache的实体类
+local VarLock       = import("kernel/object/var_lock.lua")
+
 local log_err       = logger.err
 local log_debug     = logger.debug
 local check_failed  = hive.failed
@@ -29,6 +31,7 @@ prop:accessor("active_tick", 0)         -- active tick
 prop:accessor("db_name", "")            -- db name
 prop:accessor("records", {})            -- records
 prop:accessor("dirty_records", {})      -- dirty records
+prop:accessor("is_doing", false)        -- in doing
 
 function CacheObj:__init(cache_conf, primary_value)
     self.primary_value = primary_value
@@ -125,6 +128,9 @@ function CacheObj:expired(tick, flush)
 end
 
 function CacheObj:need_save(now)
+    if self.is_doing then
+        return false
+    end
     if self.store_count <= self.update_count or self.update_time + self.store_time < now then
         return true
     end
@@ -132,7 +138,8 @@ function CacheObj:need_save(now)
 end
 
 function CacheObj:save()
-    self.active_tick = hive.clock_ms
+    local _lock<close> = VarLock(self, "is_doing")
+    self.active_tick   = hive.clock_ms
     if next(self.dirty_records) then
         self.update_count = 0
         self.update_time  = hive.clock_ms

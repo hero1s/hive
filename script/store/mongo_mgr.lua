@@ -37,7 +37,7 @@ function MongoMgr:setup()
         if drivers and #drivers > 0 then
             local dconf = drivers[1]
             if dconf.driver == "mongodb" then
-                local mongo_db            = MongoDB(dconf)
+                local mongo_db            = MongoDB(dconf, conf.max_ops or 2000)
                 self.mongo_dbs[conf.name] = mongo_db
                 if conf.default then
                     self.default_db = mongo_db

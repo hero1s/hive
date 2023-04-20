@@ -71,10 +71,10 @@ namespace lcodec {
         int serialize(lua_State* L) {
             m_buffer.reset();
             size_t data_len = 0;
-            luaL_optinteger(L, 2, 0);
             int line = luaL_optinteger(L, 2, 0);
             int max_depth = luaL_optinteger(L, 3, 6);
-            serialize_one(L, 1, 1, line,max_depth);
+            int max_len = luaL_optinteger(L, 4, 512);
+            serialize_one(L, 1, 1, line,max_depth,max_len);
             const char* data = (const char*)m_buffer.data(&data_len);
             lua_pushlstring(L, data, data_len);
             return 1;
@@ -323,12 +323,16 @@ namespace lcodec {
             }
         }
 
-        void serialize_string(lua_State* L, int index) {
+        void serialize_string(lua_State* L, int index, size_t max_len) {
             size_t sz;
-            serialize_value("'");
             const char* str = luaL_checklstring(L, index, &sz);
+            if ((sz > 20) &&  (m_buffer.size() + sz) > max_len) {//³¤×Ö·û´®ÏÔÊ¾Ê¡ÂÔ
+                serialize_value("omit...");
+                return;
+            }
+            serialize_value("'");
             if (sz > 0) {
-                m_buffer.push_data((const uint8_t*)str, sz);
+                m_buffer.push_data((const uint8_t*)str, sz);                                
             }
             serialize_value("'");
         }
@@ -339,7 +343,7 @@ namespace lcodec {
             serialize_value(r);
         }
 
-        void serialize_one(lua_State* L, int index, int depth, int line,uint8_t max_depth) {
+        void serialize_one(lua_State* L, int index, int depth, int line,uint8_t max_depth,size_t max_len) {
             if (depth > max_encode_depth) {
                 luaL_error(L, "serialize can't pack too depth table");
             }
@@ -352,13 +356,13 @@ namespace lcodec {
                 serialize_value(lua_toboolean(L, index) ? "true" : "false");
                 break;
             case LUA_TSTRING:
-                serialize_string(L, index);
+                serialize_string(L, index, max_len);
                 break;
             case LUA_TNUMBER:
                 serialize_value(lua_tostring(L, index));
                 break;
             case LUA_TTABLE:
-                serialize_table(L, index, depth + 1, line,max_depth);
+                serialize_table(L, index, depth + 1, line,max_depth,max_len);
                 break;
             case LUA_TUSERDATA:
             case LUA_TLIGHTUSERDATA:
@@ -370,8 +374,8 @@ namespace lcodec {
             }
         }
 
-        void serialize_table(lua_State* L, int index, int depth, int line, int max_depth) {
-            if (depth > max_depth) {
+        void serialize_table(lua_State* L, int index, int depth, int line, int max_depth, size_t max_len) {
+            if (depth > max_depth || m_buffer.size() > max_len) {
                 serialize_value("{...}");
                 return;
             }
@@ -395,10 +399,10 @@ namespace lcodec {
                     serialize_value("=");
                 }
                 else {
-                    serialize_one(L, -2, depth, line,max_depth);
+                    serialize_one(L, -2, depth, line,max_depth,max_len);
                     serialize_value("=");
                 }
-                serialize_one(L, -1, depth, line,max_depth);
+                serialize_one(L, -1, depth, line,max_depth,max_len);
                 lua_pop(L, 1);
             }
             serialize_crcn(depth - 1, line);

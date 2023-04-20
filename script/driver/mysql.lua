@@ -24,7 +24,7 @@ local thread_mgr                 = hive.get("thread_mgr")
 local update_mgr                 = hive.get("update_mgr")
 
 local DB_TIMEOUT                 = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
-local max_session <const>        = 2000
+
 --charset编码
 local CHARSET_MAP                = {
     _default = 0,
@@ -605,13 +605,15 @@ prop:reader("user", nil)        --user
 prop:reader("passwd", nil)      --passwd
 prop:reader("packet_no", 0)     --passwd
 prop:reader("sessions", nil)                --sessions
+prop:reader("max_ops", 1000)
 prop:accessor("charset", "_default")        --charset
 prop:accessor("max_packet_size", 1024 * 1024) --max_packet_size,1mb
 
-function MysqlDB:__init(conf)
+function MysqlDB:__init(conf, max_ops)
     self.db       = conf.db
     self.user     = conf.user
     self.passwd   = conf.passwd
+    self.max_ops  = max_ops
     self.sessions = QueueFIFO()
     self.sock     = Socket(self)
     self:choose_host(conf.hosts)
@@ -790,8 +792,8 @@ function MysqlDB:request(packet, callback, quote, param)
     if not self.sock:send(packet) then
         return false, "send request failed"
     end
-    if self.sessions:size() > max_session then
-        return false, sformat("mysql is busy:%d", self.sessions:size())
+    if self.sessions:size() > self.max_ops then
+        return false, sformat("mysql is busy:%d,max_ops:%d", self.sessions:size(), self.max_ops)
     end
     local context = { cmd = quote }
     self.sessions:push(context)

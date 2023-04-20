@@ -37,8 +37,11 @@ public:
 
 	bool push_data(const void* data, size_t data_len)
 	{
-		size_t space_len = m_buffer_end - m_data_end;
-		assert(space_len >= data_len);
+		size_t space_len;
+		peek_space(&space_len, data_len);
+		if (space_len < data_len) {
+			return false;
+		}		
 		memcpy(m_data_end, data, data_len);
 		m_data_end += data_len;
 		return true;
@@ -66,8 +69,13 @@ public:
 		size_t space_len = m_buffer_end - m_data_end;
 		if (space_len < want_len) {
 			space_len = regularize();
-			if (space_len < m_align_size / 8) {
-				space_len = resize(m_buffer_size * 2);
+			if (space_len < want_len) {
+				size_t nsize = m_buffer_size * 2;
+				size_t dlen = data_len();
+				while ((nsize - dlen) < want_len){
+					nsize *= 2;
+				}
+				space_len = resize(nsize);
 			}
 		}
 		*len = space_len;
@@ -96,6 +104,10 @@ public:
 	size_t data_len()
 	{
 		return (size_t)(m_data_end - m_data_begin);
+	}
+	
+	size_t capacity() {
+		return m_buffer_size;
 	}
 
 	inline bool read(uint32_t bytes, void* out_buffer) {

@@ -1,44 +1,43 @@
 --mongo.lua
-local bson                = require("bson")
-local lmongo              = require("mongo")
-local lcrypt              = require("lcrypt")
-local Socket              = import("driver/socket.lua")
+local bson             = require("bson")
+local lmongo           = require("mongo")
+local lcrypt           = require("lcrypt")
+local Socket           = import("driver/socket.lua")
 
-local log_err             = logger.err
-local log_info            = logger.info
-local tunpack             = table.unpack
-local tinsert             = table.insert
-local tis_array           = table_ext.is_array
-local tdeep_copy          = table_ext.deep_copy
-local tjoin               = table_ext.join
-local ssub                = string.sub
-local sgsub               = string.gsub
-local sformat             = string.format
-local sgmatch             = string.gmatch
-local mtointeger          = math.tointeger
-local lmd5                = lcrypt.md5
-local lsha1               = lcrypt.sha1
-local lrandomkey          = lcrypt.randomkey
-local lb64encode          = lcrypt.b64_encode
-local lb64decode          = lcrypt.b64_decode
-local lhmac_sha1          = lcrypt.hmac_sha1
-local lxor_byte           = lcrypt.xor_byte
+local log_err          = logger.err
+local log_info         = logger.info
+local tunpack          = table.unpack
+local tinsert          = table.insert
+local tis_array        = table_ext.is_array
+local tdeep_copy       = table_ext.deep_copy
+local tjoin            = table_ext.join
+local ssub             = string.sub
+local sgsub            = string.gsub
+local sformat          = string.format
+local sgmatch          = string.gmatch
+local mtointeger       = math.tointeger
+local lmd5             = lcrypt.md5
+local lsha1            = lcrypt.sha1
+local lrandomkey       = lcrypt.randomkey
+local lb64encode       = lcrypt.b64_encode
+local lb64decode       = lcrypt.b64_decode
+local lhmac_sha1       = lcrypt.hmac_sha1
+local lxor_byte        = lcrypt.xor_byte
 
-local mreply              = lmongo.reply
-local mopmsg              = lmongo.op_msg
-local mlength             = lmongo.length
-local bson_decode         = bson.decode
-local bson_encode_o       = bson.encode_order
+local mreply           = lmongo.reply
+local mopmsg           = lmongo.op_msg
+local mlength          = lmongo.length
+local bson_decode      = bson.decode
+local bson_encode_o    = bson.encode_order
 
-local update_mgr          = hive.get("update_mgr")
-local thread_mgr          = hive.get("thread_mgr")
+local update_mgr       = hive.get("update_mgr")
+local thread_mgr       = hive.get("thread_mgr")
 
-local DB_TIMEOUT          = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
-local warn_qps <const>    = 60 * 200
-local max_session <const> = 5000
+local DB_TIMEOUT       = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
+local warn_qps <const> = 60 * 200
 
-local MongoDB             = class()
-local prop                = property(MongoDB)
+local MongoDB          = class()
+local prop             = property(MongoDB)
 prop:reader("ip", nil)          --mongo地址
 prop:reader("sock", nil)        --网络连接对象
 prop:reader("name", "")         --dbname
@@ -51,13 +50,15 @@ prop:reader("session_cnt", 0)    --sessions数量
 prop:reader("readpref", nil)    --readPreference
 prop:reader("auth_source", "admin") --authSource
 prop:reader("is_login", false)
+prop:reader("max_ops", 1000)
 prop:reader("op_qps", 0)
 prop:reader("tb_qps", {})
 
-function MongoDB:__init(conf)
+function MongoDB:__init(conf, max_ops)
     self.user      = conf.user
     self.passwd    = conf.passwd
     self.name      = conf.db
+    self.max_ops   = max_ops
     self.sock      = Socket(self)
     self.cursor_id = bson.int64(0)
     self:choose_host(conf.hosts)
@@ -267,7 +268,7 @@ function MongoDB:on_socket_recv(sock, token)
         local reply, session_id, documents = mreply(bdata)
         local cost_time                    = hive.clock_ms - self.sessions[session_id]
         if cost_time > DB_TIMEOUT then
-            log_err("[MongoDB][on_socket_recv] the op_session:%s, timeout:%s", session_id, cost_time)
+            log_err("[MongoDB][on_socket_recv] the op_session:%s, timeout:%s,session_cnt:%s", session_id, cost_time, self.session_cnt)
         end
         self.sessions[session_id] = nil
         self.session_cnt          = self.session_cnt - 1
@@ -299,8 +300,8 @@ function MongoDB:runCommand(cmd, cmd_v, ...)
     if not self.is_login then
         return false, sformat("[%s] is not login:%s:%s,ip:%s:%d", self.name, self.user, self.passwd, self.ip, self.port)
     end
-    if self.session_cnt > max_session then
-        return false, sformat("mongo is busy:%d", self.session_cnt)
+    if self.session_cnt > self.max_ops then
+        return false, sformat("mongo is busy:%d,max_ops:%s", self.session_cnt, self.max_ops)
     end
     local bson_cmd = bson_encode_o(cmd, cmd_v or 1, "$db", self.name, ...)
     return self:op_msg(bson_cmd)

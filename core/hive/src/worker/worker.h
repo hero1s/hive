@@ -111,7 +111,10 @@ namespace lworker {
             hive.set_function("stop", [&]() { stop(); });
             hive.set_function("update", [&]() { update(); });
             hive.set_function("getenv", [&](const char* key) { return get_env(key); });
-            hive.set_function("call", [&](std::string name, slice* buf) { return m_schedulor->call(name,buf); });
+            hive.set_function("call", [&](std::string name, slice* buf) { 
+                if (buf == nullptr)return false;
+                return m_schedulor->call(name,buf); 
+                });
             m_lua->run_script(g_sandbox, [&](std::string err) {
                 printf("worker load sandbox failed, because: %s", err.c_str());
                 m_schedulor->destory(m_name, shared_from_this());
