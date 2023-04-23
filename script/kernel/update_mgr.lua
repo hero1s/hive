@@ -1,5 +1,5 @@
 --update_mgr.lua
-local VarLock        = import("kernel/object/var_lock.lua")
+local lcodec         = require("lcodec")
 local ltimer         = require("ltimer")
 local lhelper        = require("lhelper")
 local mem_usage      = lhelper.mem_usage
@@ -13,6 +13,7 @@ local sig_check      = signal.check
 local tunpack        = table.unpack
 local tinsert        = table.insert
 local collectgarbage = collectgarbage
+local guid_new       = lcodec.guid_new
 local cut_tail       = math_ext.cut_tail
 local is_same_day    = datetime_ext.is_same_day
 
@@ -94,13 +95,8 @@ function UpdateMgr:update_next()
 end
 
 function UpdateMgr:update_second(clock_ms)
-    for obj in pairs(self.second_objs) do
-        thread_mgr:fork(function()
-            if obj.second_doing then
-                log_err("[UpdateMgr][update_second] want reentry:%s", tostring(obj))
-                return
-            end
-            local _lock<close> = VarLock(obj, "second_doing")
+    for obj, key in pairs(self.second_objs) do
+        thread_mgr:entry(key, function()
             obj:on_second(clock_ms)
         end)
     end
@@ -116,8 +112,8 @@ function UpdateMgr:update_second(clock_ms)
 end
 
 function UpdateMgr:update_fast(clock_ms)
-    for obj in pairs(self.fast_objs) do
-        thread_mgr:fork(function()
+    for obj, key in pairs(self.fast_objs) do
+        thread_mgr:entry(key, function()
             obj:on_fast(clock_ms)
         end)
     end
@@ -159,8 +155,8 @@ function UpdateMgr:update(now_ms, clock_ms)
         hive.frame    = frame
         hive.now_ms   = now_ms
         hive.clock_ms = clock_ms
-        for obj in pairs(self.frame_objs) do
-            thread_mgr:fork(function()
+        for obj, key in pairs(self.frame_objs) do
+            thread_mgr:entry(key, function()
                 obj:on_frame(clock_ms, frame)
             end)
         end
@@ -192,8 +188,8 @@ function UpdateMgr:update_by_time(now, clock_ms)
     if time.sec % 5 > 0 then
         return
     end
-    for obj in pairs(self.second5_objs) do
-        thread_mgr:fork(function()
+    for obj, key in pairs(self.second5_objs) do
+        thread_mgr:entry(key, function()
             obj:on_second5(clock_ms)
         end)
     end
@@ -202,8 +198,8 @@ function UpdateMgr:update_by_time(now, clock_ms)
     if time.sec % 30 > 0 then
         return
     end
-    for obj in pairs(self.second30_objs) do
-        thread_mgr:fork(function()
+    for obj, key in pairs(self.second30_objs) do
+        thread_mgr:entry(key, function()
             obj:on_second30(clock_ms)
         end)
     end
@@ -287,7 +283,7 @@ function UpdateMgr:attach_second(obj)
         log_warn("[UpdateMgr][attach_second] obj(%s) isn't on_second method!", obj)
         return
     end
-    self.second_objs[obj] = true
+    self.second_objs[obj] = guid_new()
 end
 
 function UpdateMgr:detach_second(obj)
@@ -300,7 +296,7 @@ function UpdateMgr:attach_second5(obj)
         log_warn("[UpdateMgr][attach_second5] obj(%s) isn't on_second5 method!", obj)
         return
     end
-    self.second5_objs[obj] = true
+    self.second5_objs[obj] = guid_new()
 end
 
 function UpdateMgr:detach_second5(obj)
@@ -313,7 +309,7 @@ function UpdateMgr:attach_second30(obj)
         log_warn("[UpdateMgr][attach_second30] obj(%s) isn't on_second30 method!", obj)
         return
     end
-    self.second30_objs[obj] = true
+    self.second30_objs[obj] = guid_new()
 end
 
 function UpdateMgr:detach_second30(obj)
@@ -326,7 +322,7 @@ function UpdateMgr:attach_frame(obj)
         log_warn("[UpdateMgr][attach_frame] obj(%s) isn't on_frame method!", obj)
         return
     end
-    self.frame_objs[obj] = true
+    self.frame_objs[obj] = guid_new()
 end
 
 function UpdateMgr:detach_frame(obj)
@@ -339,7 +335,7 @@ function UpdateMgr:attach_fast(obj)
         log_warn("[UpdateMgr][attach_fast] obj(%s) isn't on_fast method!", obj)
         return
     end
-    self.fast_objs[obj] = true
+    self.fast_objs[obj] = guid_new()
 end
 
 function UpdateMgr:detach_fast(obj)

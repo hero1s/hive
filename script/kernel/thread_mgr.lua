@@ -13,10 +13,10 @@ local tsize         = table_ext.size
 local hxpcall       = hive.xpcall
 local log_err       = logger.err
 local log_info      = logger.info
-local log_warn      = logger.warn
 
 local QueueFIFO     = import("container/queue_fifo.lua")
 local SyncLock      = import("kernel/object/sync_lock.lua")
+local EntryLock     = import("kernel/object/entry_lock.lua")
 
 local MINUTE_10_MS  = hive.enum("PeriodTime", "MINUTE_10_MS")
 local SYNC_PERFRAME = 5
@@ -24,6 +24,7 @@ local SYNC_PERFRAME = 5
 local ThreadMgr     = singleton()
 local prop          = property(ThreadMgr)
 prop:reader("session_id", 1)
+prop:reader("entry_pools", {})
 prop:reader("syncqueue_map", {})
 prop:reader("coroutine_waitings", {})
 prop:reader("coroutine_yields", {})
@@ -49,7 +50,23 @@ function ThreadMgr:lock_size()
     return count
 end
 
-function ThreadMgr:lock(key, waiting)
+function ThreadMgr:entry(key, func)
+    if self.entry_pools[key] then
+        return false
+    end
+    self:fork(function()
+        local lock<close>     = EntryLock(self, key)
+        self.entry_pools[key] = lock
+        func()
+    end)
+    return true
+end
+
+function ThreadMgr:leave(key)
+    self.entry_pools[key] = nil
+end
+
+function ThreadMgr:lock(key)
     local queue = self.syncqueue_map[key]
     if not queue then
         queue                   = QueueFIFO()
@@ -69,14 +86,11 @@ function ThreadMgr:lock(key, waiting)
             head:increase()
             return head
         end
-        if waiting or waiting == nil then
-            --等待则挂起
-            local lock = SyncLock(self, key)
-            queue:push(lock)
-            co_yield()
-            return lock
-        end
-        log_warn("[ThreadMgr][lock] the func is runing and try lock:[%s],check it's right", key)
+        --等待则挂起
+        local lock = SyncLock(self, key)
+        queue:push(lock)
+        co_yield()
+        return lock
     end
 end
 
@@ -103,15 +117,6 @@ function ThreadMgr:unlock(key, force)
         end
         queue.sync_num = 0
     end
-end
-
--- 不重入执行,只有一个在执行
-function ThreadMgr:once_run(key, func)
-    local _lock<close> = self:lock(key, false)
-    if not _lock then
-        return
-    end
-    func()
 end
 
 function ThreadMgr:co_create(f)

@@ -1,7 +1,8 @@
 --main_convertor.lua
-local lcrypt      = require('lcrypt')
-local lstdfs      = require('lstdfs')
-local lexcel      = require('luaxlsx')
+local lcrypt = require('lcrypt')
+local lstdfs = require('lstdfs')
+local lexcel = require('luaxlsx')
+local GenCfgProto
 
 require("check_valid")
 local check_valid   = hive.check_valid
@@ -63,8 +64,13 @@ local function conv_number(v)
 end
 
 --移除首尾空格
-local function trim(str)
-    return (str:gsub("^%s*(.-)%s*$", "%1"))
+local function trim(sheet_name, str)
+    local old_str = str
+    str           = str:gsub("^%s*(.-)%s*$", "%1")
+    if #str ~= #old_str then
+        print("----------- !!! attention config has blank : ", sheet_name, str)
+    end
+    return str
 end
 
 --28800 => 3600 * 8
@@ -104,7 +110,12 @@ local value_func = {
         if sfind(value, '[(]') then
             -- 替换'('&')' 为 '{' & '}'
             return sgsub(value, '[(.*)]', function(s)
-                return s == '(' and '{' or '}'
+                if s == '(' then
+                    return '{'
+                elseif s == ')' then
+                    return '}'
+                end
+                return s
             end)
         else
             return '{' .. value .. '}'
@@ -128,6 +139,8 @@ local function get_sheet_value(sheet, row, col, field_type, header)
     local cell = sheet.get_cell(row, col)
     if cell and cell.type ~= "blank" then
         local value                            = cell.value
+        value                                  = trim(sheet.name, value)
+
         --------------------------------------兼容了文本格式的转换，后期可以去掉 modify toney 2021/7/15------------------
         local year, month, day, hour, min, sec = smatch(cell.value, "(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)")
         if year and month and day and hour and min and sec then
@@ -190,6 +203,9 @@ end
 --导出到lua
 --使用luatable
 local function export_records_to_table(output, title, records)
+    --if #records <= 0 then
+    --	return
+    --end
     local table_name  = sformat("%s_cfg", title)
     local filename    = lappend(output, lconcat(table_name, ".lua"))
     local export_file = iopen(filename, "w")
@@ -197,6 +213,7 @@ local function export_records_to_table(output, title, records)
         print(sformat("open output file %s failed!", filename))
         return
     end
+
     local lines = {}
     tinsert(lines, sformat("--%s.lua", table_name))
     tinsert(lines, "--luacheck: ignore 631\n")
@@ -231,15 +248,15 @@ local function export_records_to_table(output, title, records)
 export %s error:%s!
 ========================================================================]], table_name, err))
     else
-		local ret, err = check_valid:check(table_name, dofile(filename))
-		if not ret then
-			error(sformat([[
+        local ret, err = check_valid:check(table_name, dofile(filename))
+        if not ret then
+            error(sformat([[
 ========================================================================
 export %s error:%s!
 ========================================================================]], table_name, err))
-		else
-			--print(sformat("export %s success and ----------->> check valid success!", table_name))
-		end
+        else
+            --print(sformat("export %s success and ----------->> check valid success!", table_name))
+        end
     end
 end
 
@@ -253,12 +270,15 @@ local function export_sheet_to_table(sheet, output, title, is_server)
     if not is_server and string.lower(string.sub(title, 1, 8)) == "activity" then
         return true
     end
-    
+
     if string.lower(string.sub(title, 1, 8)) == "activity" and string.lower(title) ~= "activitytask" then
         b_act = true
     end
 
-    local activity_data = {}
+    if get_sheet_value(sheet, 2, 1) ~= "Server" or get_sheet_value(sheet, 3, 1) ~= "Client" then
+        return false
+    end
+
     for col = sheet.first_col, sheet.last_col do
         -- 读取第一行作为字段描述
         field_desc[col] = get_sheet_value(sheet, 1, col)
@@ -267,8 +287,20 @@ local function export_sheet_to_table(sheet, output, title, is_server)
         -- 读取第四行作为表头
         header[col]     = get_sheet_value(sheet, head_line, col)
         if b_act and col > 1 and field_type[col] and header[col] then
-            field_type[col] = trim(field_type[col])
-            header[col]     = trim(header[col])
+            field_type[col] = trim(sheet.name, field_type[col])
+            header[col]     = trim(sheet.name, header[col])
+
+            if GenCfgProto:need_gen(header[col]) then
+                local result, real_type, real_name = GenCfgProto:process_excel_header(title, field_type[col], header[col])
+                if not result then
+                    return false
+                end
+                field_type[col] = GenCfgProto:parse_type(field_type[col])
+                header[col]     = GenCfgProto:parse_name(header[col], field_type[col])
+            else
+                field_type[col] = GenCfgProto:parse_type(field_type[col])
+                header[col]     = GenCfgProto:parse_name(header[col], field_type[col])
+            end
         end
     end
 
@@ -279,6 +311,7 @@ local function export_sheet_to_table(sheet, output, title, is_server)
             svr_cols = svr_cols + 1
         end
     end
+
     if svr_cols <= 1 then
         return false
     end
@@ -302,7 +335,7 @@ local function export_sheet_to_table(sheet, output, title, is_server)
             -- 过滤掉没有配置的行
             local ftype = field_type[col]
             if ftype then
-                ftype       = trim(ftype)
+                ftype       = trim(sheet.name, ftype)
                 local key   = header[col]
                 local value = get_sheet_value(sheet, row, col, ftype, key)
                 if value ~= nil then
@@ -368,16 +401,11 @@ end
 
 --导出lua文件名
 local function get_export_file_name(fname)
-    local _, idx = fname:find(".*_")
+    local idx = fname:match(".+()%.%w+$")
     if idx then
         return slower(fname:sub(1, idx - 1))
-    else
-        idx = fname:match(".+()%.%w+$")
-        if idx then
-            return slower(fname:sub(1, idx - 1))
-        end
-        return slower(fname)
     end
+    return slower(fname)
 end
 
 --入口函数
@@ -390,7 +418,7 @@ local function export_excel(input, output, recursion, is_server)
                 local fname   = lfilename(fullname)
                 local soutput = lappend(output, fname)
                 lmkdir(soutput)
-                export_excel(fullname, soutput, recursion)
+                export_excel(fullname, soutput, recursion, is_server)
             end
             goto continue
         end
@@ -401,28 +429,35 @@ local function export_excel(input, output, recursion, is_server)
                 goto continue
             end
             --只导出sheet1
-            local sheets = workbook.sheets()
-            local sheet  = sheets and sheets[1]
-            if not sheet then
-                print(sformat("export excel %s open sheet %d failed!", file, 0))
-                break
-            end
-            local sheet_name = sheet.name
-            if sheet.last_row < 4 or sheet.last_col <= 0 then
-                print(sformat("export excel %s sheet %s empty!", file, sheet_name))
-                break
+            local sheets      = workbook.sheets()
+            local total_count = #sheets
+            if not string.find(fullname, "Activity_") then
+                total_count = 1
             end
 
-            --local title    = slower(sheet_name)
-            local fname = lfilename(fullname)
-            local title = get_export_file_name(fname)
-            local ret   = export_sheet_to_table(sheet, output, title, is_server)
-            if ret then
-                if file_names[title] then
-                    print(sformat("repeated sheet_name:%s old_name:%s file_name:%s", sheet_name, file_names[sheet_name], fullname))
-                    goto continue
+            for i = 1, total_count do
+                local sheet = sheets[i]
+                if not sheet then
+                    print(sformat("export excel %s open sheet %d failed!", file, 0))
+                    break
                 end
-                file_names[title] = fullname
+                local sheet_name = sheet.name
+                if sheet.last_row < 4 or sheet.last_col <= 0 then
+                    --print(sformat("export excel %s sheet %s empty!", file, sheet_name))
+                    break
+                end
+
+                --local title    = slower(sheet_name)
+                --local fname = lfilename(fullname)
+                local title = get_export_file_name(sheet_name)
+                local ret   = export_sheet_to_table(sheet, output, title, is_server)
+                if ret then
+                    if file_names[title] then
+                        print(sformat("repeated sheet_name:%s old_name:%s file_name:%s", title, file_names[title], fullname))
+                        goto continue
+                    end
+                    file_names[title] = fullname
+                end
             end
         end
         :: continue ::
@@ -461,7 +496,7 @@ local function export_config()
         recursion = false
     end
 
-    local target = hgetenv("HIVE_TARGET")
+    local target     = hgetenv("HIVE_TARGET")
     local env_format = hgetenv("HIVE_FORMAT")
     export_method    = export_records_to_table
     if env_format and env_format == "struct" then
@@ -470,44 +505,64 @@ local function export_config()
     return input, output, recursion, target
 end
 
-local function gen_activity_proto(output, title)
-    if #title < 8 then
-        return
-    end
-
-    local format_str = string.lower(sformat("%8s", title))
-    if format_str ~= "activity" then
-        return
-    end
-
-    local table_name = sformat("%s_cfg", title)
-    local filename   = lappend(output, lconcat(table_name, ".lua"))
-    local cfg_file   = require(filename)
-
-    local proto_str  = sformat("// %s_cfg配置文件\nmessage %s\n\t{\n", title, title)
-    for key, value in ipairs(cfg_file) do
-        proto_str = sformat("%s\t")
-    end
-end
-
 --挂载表格校验逻辑
 local function attach_check_valid()
-    local valid_file = hgetenv("HIVE_VALID_FILE")
-    if valid_file then
-        require(valid_file)
+    local release_cfg = hgetenv("HIVE_RELEASE_CFG")
+    if release_cfg then
+        hive.release_cfg = (tonumber(release_cfg) == 1)
+    end
+
+    local gen_cfg_proto = hgetenv("HIVE_GEN_CFG_PROTO")
+    if gen_cfg_proto then
+        hive.gen_cfg_proto = (tonumber(gen_cfg_proto) == 1)
+    end
+
+    local check_cfg_file = hgetenv("HIVE_VALID_FILE")
+    if check_cfg_file then
+        hive.check_cfg = true
+    end
+
+    if hive.check_cfg then
+        require(check_cfg_file)
     end
 end
 attach_check_valid()
+
 print("useage: hive.exe [--input=xxx] [--output=xxx]")
 print("begin export excels to lua!")
 
+GenCfgProto = require("gen_cfg_proto")
+GenCfgProto:init()
 
 local input, output, recursion, target = export_config()
-local ok, err                  = pcall(export_excel, input, output, recursion, target == "server")
+local ok, err                          = pcall(export_excel, input, output, recursion, target == "server")
 if not ok then
     print("export excel to lua failed:", err)
 else
-    print("success export excels to lua!")
+    if hive.check_cfg then
+        local ret, err = check_valid:check_by_multi_table()
+        if not ret then
+            error(sformat([[
+    ========================================================================
+    export  error:%s!
+    ========================================================================]], err))
+        else
+            print("export excel to lua success")
+        end
+    end
+end
+
+-- 只能用于最终是否生成协议文件
+if hive.gen_cfg_proto then
+    if #GenCfgProto.excel_header <= 0 then
+        os.exit()
+    end
+
+    if not GenCfgProto:exec_gen() then
+        print("------------gen excel proto to lua failed")
+    else
+        print("------------gen excel proto to lua success")
+    end
 end
 
 os.exit()

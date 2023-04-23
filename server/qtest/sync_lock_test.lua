@@ -28,17 +28,6 @@ function test_c(index, sync)
     log_debug("test_c:%s", index)
 end
 
-function test_no_reentry(index)
-    local _lock<close> = thread_mgr:lock("no_reentry", false)
-    if not _lock then
-        log_debug("function is runing")
-        return
-    end
-    thread_mgr:sleep(500)
-    test_b(index)
-    log_debug("test_no_reentry:%s", index)
-end
-
 function test_loop_lock(index)
     log_debug("lock:%s", index)
     local _lock<close> = thread_mgr:lock("test_loop")

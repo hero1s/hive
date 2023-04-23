@@ -33,6 +33,7 @@ end
 function string_ext.untitle(value)
     return slower(ssub(value, 1, 1)) .. ssub(value, 2, #value)
 end
+
 --切分字符串
 function string_ext.split(str, token)
     local t = {}
@@ -49,6 +50,7 @@ function string_ext.split(str, token)
     end
     return t
 end
+
 --判断结尾
 function string_ext.ends_with(str, ending)
     return str:sub(-#ending) == ending

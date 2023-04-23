@@ -86,7 +86,7 @@ function NacosMgr:unregister()
 end
 
 function NacosMgr:on_nacos_tick()
-    thread_mgr:once_run("on_nacos_tick", function()
+    thread_mgr:entry("on_nacos_tick", function()
         if not self.nacos:get_access_token() or not self.status then
             return
         end

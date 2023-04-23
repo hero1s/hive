@@ -114,6 +114,10 @@ local function object_source(obj)
     return obj.__source
 end
 
+local function object_address(obj)
+    return obj.__addr
+end
+
 local function mt_class_new(class, ...)
     if rawget(class, "__singleton") then
         local object = rawget(class, "__inst")
@@ -167,6 +171,7 @@ local function class_constructor(class, super, ...)
             __tostring = object_tostring,
             super      = object_super,
             source     = object_source,
+            address    = object_address
         }
         vtbl.__index = vtbl
         vtbl.__gc    = mt_object_release

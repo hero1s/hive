@@ -1,5 +1,5 @@
 ﻿local lcurl    = require("lcurl")
-
+local log_err  = logger.err
 local pairs    = pairs
 local tconcat  = table.concat
 local sformat  = string.format
@@ -29,3 +29,10 @@ function http_helper.urlencoded(query, sort)
     return ""
 end
 
+function http_helper.http_success(ok, code, res)
+    if not ok or 200 ~= code then
+        log_err("[http_failed] call failed:ok=%s,code=%s,res=%s,from:[%s]", ok, code, res, hive.where_call())
+        return false
+    end
+    return true
+end
