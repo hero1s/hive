@@ -23,7 +23,7 @@ socket_stream::socket_stream(socket_mgr* mgr, LPFN_CONNECTEX connect_func, eprot
 	m_connect_func = connect_func;
 	m_ip[0] = 0;
 
-	reset_dispatch_pkg();
+	reset_dispatch_pkg(true);
 }
 #endif
 
@@ -34,7 +34,7 @@ socket_stream::socket_stream(socket_mgr* mgr, eproto_type proto_type, elink_type
 	m_mgr = mgr;
 	m_ip[0] = 0;
 
-	reset_dispatch_pkg();
+	reset_dispatch_pkg(true);
 }
 
 socket_stream::~socket_stream() {
@@ -513,7 +513,7 @@ void socket_stream::do_recv(size_t max_len, bool is_eof)
 
 void socket_stream::dispatch_package(bool reset) {
 	if (reset) {
-		reset_dispatch_pkg();
+		reset_dispatch_pkg(false);
 		if (!m_need_dispatch_pkg)return;
 	}
 	else {
@@ -659,8 +659,12 @@ void socket_stream::on_connect(bool ok, const char reason[]) {
 	}
 }
 
-void socket_stream::reset_dispatch_pkg() {
+void socket_stream::reset_dispatch_pkg(bool init) {
 	m_tick_dispatch_time = steady_ms();
+	if (init && eproto_type::proto_rpc == m_proto_type) {
+		set_send_buffer_size(IO_BUFFER_DEF*8);
+		set_recv_buffer_size(IO_BUFFER_DEF*8);
+	}
 }
 
 bool socket_stream::check_flow_ctrl(int64_t now) {

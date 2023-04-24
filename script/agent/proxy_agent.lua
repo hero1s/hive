@@ -2,6 +2,7 @@
 local sformat     = string.format
 local tunpack     = table.unpack
 local log_warn    = logger.warn
+local log_debug   = logger.debug
 local send_worker = hive.send_worker
 local call_worker = hive.call_worker
 
@@ -42,20 +43,20 @@ function ProxyAgent:dispatch_log(content, lvl_name)
     return self:send("rpc_fire_webhook", title, content)
 end
 
-function ProxyAgent:http_get(url, querys, headers)
-    return self:call("rpc_http_get", url, querys, headers)
+function ProxyAgent:http_get(url, querys, headers, datas, timeout, debug)
+    return self:call("rpc_http_get", url, querys, headers, datas, timeout, debug)
 end
 
-function ProxyAgent:http_post(url, post_data, headers, querys)
-    return self:call("rpc_http_post", url, post_data, headers, querys)
+function ProxyAgent:http_post(url, post_data, headers, querys, timeout, debug)
+    return self:call("rpc_http_post", url, post_data, headers, querys, timeout, debug)
 end
 
-function ProxyAgent:http_put(url, post_data, headers, querys)
-    return self:call("rpc_http_put", url, post_data, headers, querys)
+function ProxyAgent:http_put(url, post_data, headers, querys, timeout, debug)
+    return self:call("rpc_http_put", url, post_data, headers, querys, timeout, debug)
 end
 
-function ProxyAgent:http_del(url, querys, headers)
-    return self:call("rpc_http_del", url, querys, headers)
+function ProxyAgent:http_del(url, querys, headers, timeout, debug)
+    return self:call("rpc_http_del", url, querys, headers, timeout, debug)
 end
 
 function ProxyAgent:ignore_statis(name)
@@ -82,6 +83,10 @@ end
 
 function ProxyAgent:register_nacos(node)
     return self:call("rpc_register_nacos", node)
+end
+
+function ProxyAgent:unregister_nacos()
+    return self:call("register_nacos")
 end
 
 function ProxyAgent:send(rpc, ...)

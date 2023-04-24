@@ -18,6 +18,7 @@ prop:reader("watch_services", {})
 function NacosMgr:__init()
     -- 注册事件
     event_mgr:add_listener(self, "rpc_register_nacos")
+    event_mgr:add_listener(self, "rpc_unregister_nacos")
     event_mgr:add_listener(self, "rpc_watch_service")
 
     self:setup()
@@ -44,6 +45,11 @@ function NacosMgr:rpc_register_nacos(node)
         return false
     end
     self:register()
+    return true
+end
+
+function NacosMgr:rpc_unregister_nacos()
+    self:unregister()
     return true
 end
 

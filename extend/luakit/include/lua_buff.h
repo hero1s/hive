@@ -3,8 +3,9 @@
 
 namespace luakit {
 
-    const size_t BUFFER_DEF = 64 * 1024;         //64K
-    const size_t BUFFER_MAX = 128 * 1024 * 1024; //128M
+    constexpr size_t BUFFER_DEF     = 64 * 1024;         //64K
+    constexpr size_t BUFFER_RECYCLE = BUFFER_DEF * 64;    
+    constexpr size_t BUFFER_MAX     = 128 * 1024 * 1024; //128M
 
     class var_buffer {
     public:
@@ -67,7 +68,9 @@ namespace luakit {
                 size_t data_len = (size_t)(m_tail - m_head);
                 if (m_size > BUFFER_DEF && data_len < m_size / 4) {
                     _regularize();
-                    _resize(m_size / 2);
+                    if (m_size > BUFFER_RECYCLE) {
+                        _resize(m_size / 2);
+                    }
                 }
                 return erase_len;
             }

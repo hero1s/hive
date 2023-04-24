@@ -41,7 +41,8 @@ end
 function Listener:remove_trigger(trigger, event)
     local remove_array = function(trigger_array)
         if trigger_array then
-            for i, context in pairs(trigger_array or {}) do
+            for i = #trigger_array, 1, -1 do
+                local context = trigger_array[i]
                 if context[1] == trigger then
                     tremove(trigger_array, i)
                 end

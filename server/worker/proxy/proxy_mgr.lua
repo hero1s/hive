@@ -30,23 +30,23 @@ function ProxyMgr:rpc_fire_webhook(title, content)
 end
 
 --通用http请求
-function ProxyMgr:rpc_http_get(url, querys, headers)
-    local ok, status, res = http_client:call_get(url, querys, headers)
+function ProxyMgr:rpc_http_get(url, querys, headers, datas, timeout, debug)
+    local ok, status, res = http_client:call_get(url, querys, headers, datas, timeout, debug)
     return ok and status or 404, res
 end
 
-function ProxyMgr:rpc_http_post(url, post_data, headers, querys)
-    local ok, status, res = http_client:call_post(url, post_data, headers, querys)
+function ProxyMgr:rpc_http_post(url, post_data, headers, querys, timeout, debug)
+    local ok, status, res = http_client:call_post(url, post_data, headers, querys, timeout, debug)
     return ok and status or 404, res
 end
 
-function ProxyMgr:rpc_http_put(url, put_data, headers, querys)
-    local ok, status, res = http_client:call_put(url, put_data, headers, querys)
+function ProxyMgr:rpc_http_put(url, put_data, headers, querys, timeout, debug)
+    local ok, status, res = http_client:call_put(url, put_data, headers, querys, timeout, debug)
     return ok and status or 404, res
 end
 
-function ProxyMgr:rpc_http_del(url, querys, headers)
-    local ok, status, res = http_client:call_del(url, querys, headers)
+function ProxyMgr:rpc_http_del(url, querys, headers, timeout, debug)
+    local ok, status, res = http_client:call_del(url, querys, headers, timeout, debug)
     return ok and status or 404, res
 end
 

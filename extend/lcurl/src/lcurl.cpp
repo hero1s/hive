@@ -20,7 +20,9 @@ namespace lcurl {
 			"call_post", &curl_request::call_post,
 			"set_header", &curl_request::set_header,
 			"get_respond", &curl_request::get_respond,
-			"enable_ssl", &curl_request::enable_ssl
+			"enable_ssl", &curl_request::enable_ssl,
+			"enable_debug",&curl_request::enable_debug,
+			"debug",&curl_request::debug
 			);
 		//创建管理器
 		CURL* curle = curl_easy_init();

@@ -3,6 +3,7 @@ local lcurl             = require("lcurl")
 
 local pairs             = pairs
 local log_err           = logger.err
+local log_debug         = logger.debug
 local tconcat           = table.concat
 local sformat           = string.format
 local hxpcall           = hive.xpcall
@@ -62,6 +63,9 @@ function HttpClient:on_respond(curl_handle, result)
             thread_mgr:response(session_id, false, code, err)
         end
         self.contexts[curl_handle] = nil
+        if context.debug then
+            log_debug("[http: \n %s \n]", request.debug)
+        end
     end
 end
 
@@ -81,10 +85,10 @@ function HttpClient:format_url(url, query)
 end
 
 --构建请求
-function HttpClient:send_request(url, timeout, querys, headers, method, datas)
+function HttpClient:send_request(url, timeout, querys, headers, method, datas, debug)
     local to                   = timeout or HTTP_CALL_TIMEOUT
     local fmt_url              = self:format_url(url, querys)
-    local request, curl_handle = curlm_mgr.create_request(fmt_url, to)
+    local request, curl_handle = curlm_mgr.create_request(fmt_url, to, debug or false)
     if not request then
         log_err("[HttpClient][send_request] failed : %s", curl_handle)
         return false
@@ -115,28 +119,29 @@ function HttpClient:send_request(url, timeout, querys, headers, method, datas)
         request    = request,
         session_id = session_id,
         time       = hive.clock_ms + to,
+        debug      = debug
     }
     return thread_mgr:yield(session_id, url, to)
 end
 
 --get接口
-function HttpClient:call_get(url, querys, headers, datas, timeout)
-    return self:send_request(url, timeout, querys, headers, "call_get", datas)
+function HttpClient:call_get(url, querys, headers, datas, timeout, debug)
+    return self:send_request(url, timeout, querys, headers, "call_get", datas, debug)
 end
 
 --post接口
-function HttpClient:call_post(url, datas, headers, querys, timeout)
-    return self:send_request(url, timeout, querys, headers, "call_post", datas)
+function HttpClient:call_post(url, datas, headers, querys, timeout, debug)
+    return self:send_request(url, timeout, querys, headers, "call_post", datas, debug)
 end
 
 --put接口
-function HttpClient:call_put(url, datas, headers, querys, timeout)
-    return self:send_request(url, timeout, querys, headers, "call_put", datas)
+function HttpClient:call_put(url, datas, headers, querys, timeout, debug)
+    return self:send_request(url, timeout, querys, headers, "call_put", datas, debug)
 end
 
 --del接口
-function HttpClient:call_del(url, querys, headers, timeout)
-    return self:send_request(url, timeout, querys, headers, "call_del")
+function HttpClient:call_del(url, querys, headers, timeout, debug)
+    return self:send_request(url, timeout, querys, headers, "call_del", debug)
 end
 
 hive.http_client = HttpClient()

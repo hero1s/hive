@@ -15,6 +15,7 @@ using namespace std;
 namespace lcurl {
 
 	static size_t write_callback(char* buffer, size_t block_size, size_t count, void* arg);
+	static int debug_callback(CURL* handle, curl_infotype type, char* data, size_t size, void* clientp);
 
 	class curl_request
 	{
@@ -33,7 +34,7 @@ namespace lcurl {
 			curlm = nullptr;
 		}
 
-		void create(const string& url, size_t timeout_ms) {
+		void create(const string& url, size_t timeout_ms, bool debug) {
 			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 			curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)this);
@@ -44,6 +45,7 @@ namespace lcurl {
 			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
 			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, false);
 			curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+			if (debug) { enable_debug(); }
 		}
 
 		bool call_get(const char* data) {
@@ -75,6 +77,12 @@ namespace lcurl {
 			curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path);
 		}
 
+		void enable_debug() {
+			curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+			curl_easy_setopt(curl, CURLOPT_DEBUGDATA, (void*)this);
+			curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, debug_callback);
+		}
+
 		int get_respond(lua_State* L) {
 			long code = 0;
 			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
@@ -99,6 +107,7 @@ namespace lcurl {
 
 	public:
 		string content;
+		string debug;
 
 	private:
 		CURLM* curlm = nullptr;
@@ -124,13 +133,13 @@ namespace lcurl {
 			curl_global_cleanup();
 		}
 
-		int create_request(lua_State* L, string url, size_t timeout_ms) {
+		int create_request(lua_State* L, string url, size_t timeout_ms,bool debug) {
 			CURL* curl = curl_easy_init();
 			if (!curl) {
 				return 0;
 			}
 			curl_request* request = new curl_request(curlm, curl);
-			request->create(url, timeout_ms);
+			request->create(url, timeout_ms,debug);
 			return luakit::variadic_return(L, request, curl);
 		}
 		int update(lua_State* L) {
@@ -166,6 +175,14 @@ namespace lcurl {
 			request->content.append(buffer, length);
 		}
 		return length;
+	}
+
+	static int debug_callback(CURL* handle, curl_infotype type,char* data, size_t size,void* clientp)
+	{
+		curl_request* request = (curl_request*)clientp;
+		if (!request)return 0;
+		request->debug.append(data, size);
+		return 0;
 	}
 
 }

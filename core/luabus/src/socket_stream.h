@@ -50,7 +50,7 @@ struct socket_stream : public socket_object
 	void send_handshake_rpc();
 	void on_error(const char err[]);
 	void on_connect(bool ok, const char reason[]);
-	void reset_dispatch_pkg();
+	void reset_dispatch_pkg(bool init);
 	bool check_flow_ctrl(int64_t now);
 
 	int token = 0;
