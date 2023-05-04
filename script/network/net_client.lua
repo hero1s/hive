@@ -161,6 +161,7 @@ end
 
 function NetClient:write(cmd_id, data, session_id, flag)
     if not self.alive then
+        log_err("[NetClient][write] the socket is not alive! cmd_id:%s", cmd_id)
         return false
     end
     local body, pflag = self:encode(cmd_id, data, flag)
@@ -171,7 +172,7 @@ function NetClient:write(cmd_id, data, session_id, flag)
     -- call lbus
     local send_len = self.socket.call_pack(cmd_id, pflag, session_id or 0, body)
     if send_len < 0 then
-        log_err("[NetClient][write] call_pack failed! code:%s", send_len)
+        log_err("[NetClient][write] call_pack failed! code:%s,cmd_id:%s,len:%s", send_len, cmd_id, #body)
         return false
     end
     return true

@@ -107,8 +107,8 @@ end
 
 local LOG_LEVEL_OPTIONS = {
     --lvl_func,    extend,  swline, max_depth
-    [LOG_LEVEL.TRACE] = { "trace", { llog.trace, true, false, 6, 4096 } },
-    [LOG_LEVEL.DEBUG] = { "debug", { llog.debug, true, false, 8, 4096 } },
+    [LOG_LEVEL.TRACE] = { "trace", { llog.trace, true, false, 6, 40960 } },
+    [LOG_LEVEL.DEBUG] = { "debug", { llog.debug, true, false, 8, 40960 } },
     [LOG_LEVEL.INFO]  = { "info", { llog.info, false, false, 0, 4096 } },
     [LOG_LEVEL.WARN]  = { "warn", { llog.warn, true, true, 8, 4096 } },
     [LOG_LEVEL.ERROR] = { "err", { llog.error, true, true, 8, 4096 } },

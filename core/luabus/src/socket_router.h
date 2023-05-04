@@ -53,7 +53,7 @@ public:
 	void map_router_node(uint32_t router_id, uint32_t target_id, uint8_t status);
 	void set_router_id(uint32_t node_id);
 	uint32_t choose_master(uint32_t service_id);
-	void erase(uint32_t node_id);
+
 	bool do_forward_target(router_header* header, char* data, size_t data_len, std::string& error, bool router);
 	bool do_forward_master(router_header* header, char* data, size_t data_len, std::string& error, bool router);
 	bool do_forward_broadcast(router_header* header, int source, char* data, size_t data_len, size_t& broadcast_num);

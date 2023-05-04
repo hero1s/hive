@@ -1,25 +1,25 @@
 --scheduler.lua
-local lcodec        = require("lcodec")
-local pcall         = pcall
-local log_info      = logger.info
-local log_err       = logger.err
-local tpack         = table.pack
-local tunpack       = table.unpack
+local lcodec           = require("lcodec")
+local pcall            = pcall
+local log_info         = logger.info
+local log_err          = logger.err
+local tpack            = table.pack
+local tunpack          = table.unpack
 
-local lencode       = lcodec.encode_slice
-local ldecode       = lcodec.decode_slice
-local worker_call   = hive.worker_call
-local worker_update = hive.worker_update
+local lencode          = lcodec.encode_slice
+local ldecode          = lcodec.decode_slice
+local worker_call      = hive.worker_call
+local worker_update    = hive.worker_update
 
-local FLAG_REQ      = hive.enum("FlagMask", "REQ")
-local FLAG_RES      = hive.enum("FlagMask", "RES")
-local RPC_TIMEOUT   = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
+local FLAG_REQ         = hive.enum("FlagMask", "REQ")
+local FLAG_RES         = hive.enum("FlagMask", "RES")
+local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 
-local event_mgr     = hive.get("event_mgr")
-local update_mgr    = hive.get("update_mgr")
-local thread_mgr    = hive.get("thread_mgr")
+local event_mgr        = hive.get("event_mgr")
+local update_mgr       = hive.get("update_mgr")
+local thread_mgr       = hive.get("thread_mgr")
 
-local Scheduler     = singleton()
+local Scheduler        = singleton()
 
 function Scheduler:__init()
     update_mgr:attach_frame(self)
@@ -50,10 +50,10 @@ function Scheduler:startup(name, entry)
 end
 
 --访问其他线程任务
-function Scheduler:call(name, rpc, ...)
+function Scheduler:call(timeout, name, rpc, ...)
     local session_id = thread_mgr:build_session_id()
     worker_call(name, lencode(session_id, FLAG_REQ, "master", rpc, ...))
-    return thread_mgr:yield(session_id, "worker_call", RPC_TIMEOUT)
+    return thread_mgr:yield(session_id, "worker_call", timeout or RPC_CALL_TIMEOUT)
 end
 
 --访问其他线程任务

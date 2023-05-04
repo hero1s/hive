@@ -93,6 +93,7 @@ function hive.init()
     environ.init()
     service.init()
     logger.init()
+    logger.info("hive init run version:[%s] \n", environ.get("COMMIT_VERSION"))
     --主循环
     init_coroutine()
     init_mainloop()
@@ -128,7 +129,7 @@ function hive.startup(entry)
     hive.now                   = os.time()
     hive.frame                 = 0
     hive.now_ms, hive.clock_ms = ltime()
-    hive.service_status        = ServiceStatus.STOP
+    hive.service_status        = ServiceStatus.READY
     --初始化随机种子
     math.randomseed(hive.now_ms)
     --初始化hive
@@ -142,8 +143,7 @@ end
 function hive.after_start()
     local timer_mgr = hive.get("timer_mgr")
     timer_mgr:once(10 * 1000, function()
-        local router_mgr = hive.load("router_mgr")
-        hive.change_service_status(ServiceStatus.RUN, router_mgr and router_mgr:is_ready() or false)
+        hive.change_service_status(ServiceStatus.RUN)
     end)
     update_mgr:update(ltime())
     --开启debug模式

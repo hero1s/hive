@@ -3,6 +3,7 @@ local ssub            = string.sub
 local sfind           = string.find
 local log_err         = logger.err
 local log_info        = logger.info
+local split_pos       = string_ext.split_pos
 local hxpcall         = hive.xpcall
 
 local socket_mgr      = hive.get("socket_mgr")
@@ -25,8 +26,10 @@ prop:reader("recvbuf", "")
 prop:reader("port", 0)
 prop:accessor("timeout", NETWORK_TIMEOUT)
 
-function Socket:__init(host)
+function Socket:__init(host, ip, port)
     self.host = host
+    self.port = port
+    self.ip   = ip
 end
 
 function Socket:__release()
@@ -157,11 +160,9 @@ function Socket:peek(len, offset)
     end
 end
 
-function Socket:peek_data(split_char, offset)
-    offset     = offset or 0
-    local i, j = sfind(self.recvbuf, split_char, offset + 1)
-    if i then
-        return ssub(self.recvbuf, offset + 1, i - 1), j - offset
+function Socket:peek_lines(split_char)
+    if #self.recvbuf > 0 then
+        return split_pos(self.recvbuf, split_char)
     end
 end
 

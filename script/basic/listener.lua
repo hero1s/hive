@@ -11,6 +11,7 @@ local dtraceback = debug.traceback
 local Listener   = class()
 function Listener:__init()
     self._triggers  = {}     -- map<event, {{listener, func_name}, ...}
+    self._votes     = {}     -- map<event, {{listener, func_name}, ...}
     self._listeners = {}     -- map<event, listener>
     self._commands  = {}     -- map<cmd, listener>
     self._ignores   = {}     -- map<cmd, bool>
@@ -96,6 +97,22 @@ function Listener:remove_cmd_listener(cmd)
     self._commands[cmd] = nil
 end
 
+function Listener:add_vote(trigger, event, handler)
+    local func_name     = handler or event
+    local callback_func = trigger[func_name]
+    if not callback_func or type(callback_func) ~= "function" then
+        log_err("[Listener][add_vote] event(%s) handler is nil!", event)
+        return
+    end
+    local info  = { trigger, func_name }
+    local votes = self._votes[event]
+    if not votes then
+        self._votes[event] = { info }
+        return
+    end
+    votes[#votes + 1] = info
+end
+
 function Listener:notify_trigger(event, ...)
     for _, trigger_ctx in ipairs(self._triggers[event] or {}) do
         local trigger, func_name = tunpack(trigger_ctx)
@@ -143,6 +160,22 @@ function Listener:notify_command(cmd, ...)
         log_err("[Listener][notify_command] xpcall [%s:%s] failed: %s!,call from:%s", listener:source(), func_name, result[2], hive.where_call())
     end
     return result
+end
+
+function Listener:fire_vote(event, ...)
+    for _, vote_ctx in ipairs(self._votes[event] or {}) do
+        local voter, func_name = tunpack(vote_ctx)
+        local callback_func    = voter[func_name]
+        local ok, ret          = xpcall(callback_func, dtraceback, voter, ...)
+        if not ok then
+            log_err("[Listener][fire_vote] xpcall [%s:%s] failed: %s!,call from:%s", voter:source(), func_name, ret, hive.where_call())
+        end
+        if not ret then
+            log_warn("[Listener][fire_vote] vote down:[%s]", voter:source())
+            return false
+        end
+    end
+    return true
 end
 
 --创建全局监听器

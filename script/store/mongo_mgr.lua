@@ -5,6 +5,7 @@ local SUCCESS      = KernCode.SUCCESS
 local MONGO_FAILED = KernCode.MONGO_FAILED
 local log_err      = logger.err
 local tpack        = table.pack
+local mrandom      = math.random
 local event_mgr    = hive.get("event_mgr")
 local config_mgr   = hive.get("config_mgr")
 
@@ -12,8 +13,10 @@ local MongoMgr     = singleton()
 local prop         = property(MongoMgr)
 prop:accessor("mongo_dbs", {})      -- mongo_dbs
 prop:accessor("default_db", nil)    -- default_db
+prop:accessor("db_count", 1)
 
 function MongoMgr:__init()
+    self.db_count = environ.number("HIVE_DB_POOL_COUNT", 1)
     self:setup()
     -- 注册事件
     event_mgr:add_listener(self, "mongo_find", "find")
@@ -37,10 +40,14 @@ function MongoMgr:setup()
         if drivers and #drivers > 0 then
             local dconf = drivers[1]
             if dconf.driver == "mongodb" then
-                local mongo_db            = MongoDB(dconf, conf.max_ops or 2000)
-                self.mongo_dbs[conf.name] = mongo_db
+                local dbs = {}
+                for i = 1, self.db_count do
+                    local mongo_db = MongoDB(dconf, conf.max_ops or 5000)
+                    table.insert(dbs, mongo_db)
+                end
+                self.mongo_dbs[conf.name] = dbs
                 if conf.default then
-                    self.default_db = mongo_db
+                    self.default_db = dbs
                 end
             end
         end
@@ -50,9 +57,9 @@ end
 --查找mongo db
 function MongoMgr:get_db(db_name)
     if not db_name or db_name == "default" then
-        return self.default_db
+        return self.default_db[mrandom(self.db_count)]
     end
-    return self.mongo_dbs[db_name]
+    return self.mongo_dbs[db_name][mrandom(self.db_count)]
 end
 
 function MongoMgr:find(db_name, coll_name, selector, fields, sortor, limit, skip)

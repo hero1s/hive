@@ -2,7 +2,6 @@
 local sformat     = string.format
 local tunpack     = table.unpack
 local log_warn    = logger.warn
-local log_debug   = logger.debug
 local send_worker = hive.send_worker
 local call_worker = hive.call_worker
 
@@ -44,19 +43,19 @@ function ProxyAgent:dispatch_log(content, lvl_name)
 end
 
 function ProxyAgent:http_get(url, querys, headers, datas, timeout, debug)
-    return self:call("rpc_http_get", url, querys, headers, datas, timeout, debug)
+    return self:call(timeout, "rpc_http_get", url, querys, headers, datas, timeout, debug)
 end
 
 function ProxyAgent:http_post(url, post_data, headers, querys, timeout, debug)
-    return self:call("rpc_http_post", url, post_data, headers, querys, timeout, debug)
+    return self:call(timeout, "rpc_http_post", url, post_data, headers, querys, timeout, debug)
 end
 
 function ProxyAgent:http_put(url, post_data, headers, querys, timeout, debug)
-    return self:call("rpc_http_put", url, post_data, headers, querys, timeout, debug)
+    return self:call(timeout, "rpc_http_put", url, post_data, headers, querys, timeout, debug)
 end
 
 function ProxyAgent:http_del(url, querys, headers, timeout, debug)
-    return self:call("rpc_http_del", url, querys, headers, timeout, debug)
+    return self:call(timeout, "rpc_http_del", url, querys, headers, timeout, debug)
 end
 
 function ProxyAgent:ignore_statis(name)
@@ -76,17 +75,17 @@ end
 function ProxyAgent:evt_change_service_status(service_status)
     local monitor = hive.load("monitor")
     if monitor then
-        self:call("rpc_watch_service", monitor:watch_services())
+        self:call(nil, "rpc_watch_service", monitor:watch_services())
         self:register_nacos(hive.node_info)
     end
 end
 
 function ProxyAgent:register_nacos(node)
-    return self:call("rpc_register_nacos", node)
+    return self:call(nil, "rpc_register_nacos", node)
 end
 
 function ProxyAgent:unregister_nacos()
-    return self:call("register_nacos")
+    return self:call(nil, "rpc_unregister_nacos")
 end
 
 function ProxyAgent:send(rpc, ...)
@@ -99,9 +98,9 @@ function ProxyAgent:send(rpc, ...)
     event_mgr:notify_listener(rpc, ...)
 end
 
-function ProxyAgent:call(rpc, ...)
+function ProxyAgent:call(timeout, rpc, ...)
     if scheduler then
-        return scheduler:call(self.service, rpc, ...)
+        return scheduler:call(timeout, self.service, rpc, ...)
     end
     if WTITLE ~= self.service then
         return call_worker(self.service, rpc, ...)

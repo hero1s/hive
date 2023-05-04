@@ -1,9 +1,10 @@
 --constant.lua
 --服务状态
 local ServiceStatus               = enum("ServiceStatus", 0)
-ServiceStatus.RUN                 = 0  --运行中
-ServiceStatus.WAIT_STOP           = 1  --等待关服
-ServiceStatus.STOP                = 2  --立即停服
+ServiceStatus.READY               = 0  --准备
+ServiceStatus.RUN                 = 1  --运行中
+ServiceStatus.WAIT_STOP           = 2  --等待关服
+ServiceStatus.STOP                = 3  --立即停服
 
 --核心基础错误(1-1000)
 local KernCode                    = enum("KernCode", 0)
@@ -39,8 +40,8 @@ FlagMask.ZIP                      = 0x08  -- 开启zip压缩
 --网络时间常量定义
 local NetwkTime                   = enum("NetwkTime", 0)
 NetwkTime.CONNECT_TIMEOUT         = 3000      --连接等待时间
-NetwkTime.RPC_CALL_TIMEOUT        = 10000     --RPC调用超时时间
-NetwkTime.HTTP_CALL_TIMEOUT       = 10000     --HTTP调用超时时间
+NetwkTime.RPC_CALL_TIMEOUT        = 6000      --RPC调用超时时间
+NetwkTime.HTTP_CALL_TIMEOUT       = 5000      --HTTP调用超时时间
 NetwkTime.DB_CALL_TIMEOUT         = 5000      --DB调用超时时间
 NetwkTime.ROUTER_TIMEOUT          = 10000     --router连接超时时间
 NetwkTime.NETWORK_TIMEOUT         = 35000     --其他网络连接超时时间

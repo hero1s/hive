@@ -7,7 +7,6 @@ local log_debug        = logger.debug
 local signal_quit      = signal.quit
 local tunpack          = table.unpack
 local sformat          = string.format
-local id2sid           = service.id2sid
 local id2nick          = service.id2nick
 local check_success    = hive.success
 local jumphash         = lcodec.jumphash
@@ -23,9 +22,7 @@ local RouterMgr        = singleton()
 local prop             = property(RouterMgr)
 prop:accessor("routers", {})
 prop:accessor("candidates", {})
-prop:accessor("hid", 0)
 function RouterMgr:__init()
-    self.hid = hive.id
     self:setup()
 end
 
@@ -109,9 +106,8 @@ function RouterMgr:get_router(router_id)
 end
 
 --查找hash router
-function RouterMgr:hash_router(service_id)
-    local hash_key = self.hid + service_id
-    local count    = #self.candidates
+function RouterMgr:hash_router(hash_key)
+    local count = #self.candidates
     if count > 0 then
         local index = jumphash(hash_key, count)
         local node  = self.candidates[index]
@@ -134,7 +130,7 @@ end
 function RouterMgr:collect(service_id, rpc, ...)
     local collect_res          = {}
     local session_id           = thread_mgr:build_session_id()
-    local ok, code, target_cnt = self:forward_client(self:hash_router(service_id), "call_broadcast", rpc, session_id, service_id, rpc, ...)
+    local ok, code, target_cnt = self:forward_client(self:hash_router(session_id), "call_broadcast", rpc, session_id, service_id, rpc, ...)
     if check_success(code, ok) then
         while target_cnt > 0 do
             target_cnt              = target_cnt - 1
@@ -160,7 +156,7 @@ function RouterMgr:call_target(target, rpc, ...)
         return tunpack(res)
     end
     local session_id = thread_mgr:build_session_id()
-    return self:forward_client(self:hash_router(id2sid(target)), "call_target", rpc, session_id, target, rpc, ...)
+    return self:forward_client(self:hash_router(target), "call_target", rpc, session_id, target, rpc, ...)
 end
 
 --发送给指定目标
@@ -169,7 +165,7 @@ function RouterMgr:send_target(target, rpc, ...)
         event_mgr:notify_listener(rpc, ...)
         return true
     end
-    return self:forward_client(self:hash_router(id2sid(target)), "call_target", rpc, 0, target, rpc, ...)
+    return self:forward_client(self:hash_router(target), "call_target", rpc, 0, target, rpc, ...)
 end
 
 --指定路由发送给指定目标
@@ -188,12 +184,12 @@ end
 --发送给指定service的hash
 function RouterMgr:call_hash(service_id, hash_key, rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    return self:forward_client(self:hash_router(service_id), "call_hash", rpc, session_id, service_id, hash_key, rpc, ...)
+    return self:forward_client(self:hash_router(hash_key), "call_hash", rpc, session_id, service_id, hash_key, rpc, ...)
 end
 
 --发送给指定service的hash
 function RouterMgr:send_hash(service_id, hash_key, rpc, ...)
-    return self:forward_client(self:hash_router(service_id), "call_hash", rpc, 0, service_id, hash_key, rpc, ...)
+    return self:forward_client(self:hash_router(hash_key), "call_hash", rpc, 0, service_id, hash_key, rpc, ...)
 end
 
 --发送给指定service的master

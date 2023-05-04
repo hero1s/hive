@@ -60,7 +60,9 @@ function RouterServer:update_router_node_info(router_id, target_id, status)
         tinsert(nodes, router_id)
     else
         for _, client in self.rpc_server:iterator() do
-            tinsert(nodes, client.id)
+            if client.id then
+                tinsert(nodes, client.id)
+            end
         end
     end
     for _, client in self.rpc_server:iterator() do

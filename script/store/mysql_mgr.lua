@@ -27,7 +27,7 @@ function MysqlMgr:setup()
         if drivers and #drivers > 0 then
             local dconf = drivers[1]
             if dconf.driver == "mysql" then
-                local mysql_db            = MysqlDB(dconf, conf.max_ops or 2000)
+                local mysql_db            = MysqlDB(dconf, conf.max_ops or 5000)
                 self.mysql_dbs[conf.name] = mysql_db
                 if conf.default then
                     self.default_db = mysql_db

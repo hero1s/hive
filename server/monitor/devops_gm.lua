@@ -35,7 +35,7 @@ function DevopsGmMgr:register_gm()
         { gm_type = GMType.DEV_OPS, name = "gm_hotfix", desc = "代码热更新", args = "" },
         { gm_type = GMType.DEV_OPS, name = "gm_inject", desc = "代码注入",
           args    = "service_name|string index|integer file_name|string code_content|string" },
-        { gm_type = GMType.DEV_OPS, name = "gm_set_server_status", desc = "设置服务器状态", comment = "[0运行1禁开局2强退],延迟(秒),服务/index",
+        { gm_type = GMType.DEV_OPS, name = "gm_set_server_status", desc = "设置服务器状态", comment = "[1运行2禁开局3强退],延迟(秒),服务/index",
           args    = "status|integer delay|integer service_name|string index|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_hive_quit", desc = "关闭服务器", comment = "强踢玩家并停服", args = "reason|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_cfg_reload", desc = "配置表热更新", comment = "(0 本地 1 远程)", args = "is_remote|integer" },

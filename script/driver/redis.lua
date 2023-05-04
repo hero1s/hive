@@ -1,101 +1,89 @@
 --redis.lua
-local Socket     = import("driver/socket.lua")
-local QueueFIFO  = import("container/queue_fifo.lua")
+local Socket       = import("driver/socket.lua")
+local QueueFIFO    = import("container/queue_fifo.lua")
 
-local tonumber   = tonumber
-local log_err    = logger.err
-local log_info   = logger.info
-local ssub       = string.sub
-local sgsub      = string.gsub
-local supper     = string.upper
-local sformat    = string.format
-local tpack      = table.pack
+local tonumber     = tonumber
+local log_err      = logger.err
+local log_info     = logger.info
+local ssub         = string.sub
+local sgsub        = string.gsub
+local supper       = string.upper
+local sformat      = string.format
+local tinsert      = table.insert
+local env_number   = environ.number
+local is_array     = table_ext.is_array
+local tjoin        = table_ext.join
 
-local event_mgr  = hive.get("event_mgr")
-local update_mgr = hive.get("update_mgr")
-local thread_mgr = hive.get("thread_mgr")
+local timer_mgr    = hive.get("timer_mgr")
+local thread_mgr   = hive.get("thread_mgr")
 
-local LineTitle  = "\r\n"
-local DB_TIMEOUT = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
+local LineTitle    = "\r\n"
+local SECOND_MS    = hive.enum("PeriodTime", "SECOND_MS")
+local SECOND_10_MS = hive.enum("PeriodTime", "SECOND_10_MS")
+local DB_TIMEOUT   = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
 
-local function _async_call(context, quote)
-    local session_id = thread_mgr:build_session_id()
-    if not context.commit_id then
-        context.commit_id = session_id
-    end
-    context.session_id = session_id
-    local fquote       = sformat("%s:%s", context.name, quote)
-    return thread_mgr:yield(session_id, fquote, DB_TIMEOUT)
+local function _next_line(resp)
+    resp.cur = resp.cur + 1
+    return resp.elem[resp.cur][1]
 end
 
-local _redis_resp_parser      = {
-    ["+"] = function(context, body)
-        --simple string
-        return true, body
-    end,
-    ["-"] = function(context, body)
-        -- error reply
-        return false, body
-    end,
-    [":"] = function(context, body)
-        -- integer reply
-        return true, tonumber(body)
-    end,
-    ["$"] = function(context, body)
-        -- bulk string
-        if tonumber(body) < 0 then
-            return true
-        end
-        return _async_call(context, "redis parse bulk string")
-    end,
-    ["*"] = function(context, body)
-        -- array
-        local length = tonumber(body)
-        if length < 0 then
-            return true
-        end
-        local array = {}
-        local noerr = true
-        for i = 1, length do
-            local ok, value, session_id = _async_call(context, "redis parse array")
-            if not ok then
-                if session_id then
-                    return ok, value, session_id
-                end
-                noerr = false
-            end
-            array[i] = value
-        end
-        return noerr, array
-    end
-}
+local function _parse_offset(resp)
+    return resp.elem[resp.cur][2]
+end
 
-local _redis_subscribe_replys = {
-    message      = function(self, channel, data)
-        log_info("[RedisDB][_redis_subscribe_replys] subscribe message channel(%s) data: %s", channel, data)
-        event_mgr:notify_trigger("on_redis_subscribe", channel, data)
-    end,
-    pmessage     = function(self, channel, data, date2)
-        log_info("[RedisDB][_redis_subscribe_replys] psubscribe pmessage channel(%s) data: %s, data2: %s", channel, data, date2)
-        event_mgr:notify_trigger("on_redis_psubscribe", channel, data, date2)
-    end,
-    subscribe    = function(self, channel, status)
-        log_info("[RedisDB][_redis_subscribe_replys] subscribe redis channel(%s) status: %s", channel, status)
-        self.subscribes[channel] = true
-    end,
-    psubscribe   = function(self, channel, status)
-        log_info("[RedisDB][_redis_subscribe_replys] psubscribe redis channel(%s) status: %s", channel, status)
-        self.psubscribes[channel] = true
-    end,
-    unsubscribe  = function(self, channel, status)
-        log_info("[RedisDB][_redis_subscribe_replys] unsubscribe redis channel(%s) status: %s", channel, status)
-        self.subscribes[channel] = nil
-    end,
-    punsubscribe = function(self, channel, status)
-        log_info("[RedisDB][_redis_subscribe_replys] punsubscribe redis channel(%s) status: %s", channel, status)
-        self.psubscribes[channel] = nil
+local _redis_proto_parser = {}
+_redis_proto_parser["+"]  = function(body)
+    --simple string
+    return true, body
+end
+
+_redis_proto_parser["-"]  = function(body)
+    -- error reply
+    return true, body
+end
+
+_redis_proto_parser[":"]  = function(body)
+    -- integer reply
+    return true, tonumber(body)
+end
+
+local function _parser_packet(packet)
+    local line = _next_line(packet)
+    if not line then
+        return false
     end
-}
+    local prefix, body = ssub(line, 1, 1), ssub(line, 2)
+    local prefix_func  = _redis_proto_parser[prefix]
+    if prefix_func then
+        return prefix_func(body, packet)
+    end
+    return true, line
+end
+
+_redis_proto_parser["$"] = function(body, packet)
+    -- bulk string
+    if tonumber(body) < 0 then
+        return true
+    end
+    return _parser_packet(packet)
+end
+
+_redis_proto_parser["*"] = function(body, packet)
+    -- array
+    local length = tonumber(body)
+    if length < 0 then
+        return true
+    end
+    local array = {}
+    for i = 1, length do
+        local ok, value = _parser_packet(packet)
+        if not ok then
+            return false
+        end
+        array[i] = value
+    end
+    return true, array
+end
 
 local function _compose_bulk_string(value)
     if not value then
@@ -107,28 +95,32 @@ local function _compose_bulk_string(value)
     return sformat("\r\n$%d\r\n%s", #value, value)
 end
 
-local function _compose_array(cmd, array)
-    local count = 0
-    if array then
-        count = (array.n or #array)
-    end
-    local buff = sformat("*%d%s", count + 1, _compose_bulk_string(cmd))
-    if count > 0 then
-        for i = 1, count do
-            buff = sformat("%s%s", buff, _compose_bulk_string(array[i]))
+local function _format_args(...)
+    local args = {}
+    for _, arg in pairs({ ... }) do
+        if type(arg) ~= "table" then
+            tinsert(args, arg)
+        else
+            if is_array(arg) then
+                tjoin(arg, args)
+            else
+                for key, value in pairs(arg) do
+                    tinsert(args, key)
+                    tinsert(args, value)
+                end
+            end
         end
     end
-    return sformat("%s\r\n", buff)
+    return args
 end
 
-local function _compose_message(cmd, msg)
-    if not msg then
-        return _compose_array(cmd)
+local function _compose_args(cmd, ...)
+    local args = _format_args(...)
+    local buff = sformat("*%d%s", #args + 1, _compose_bulk_string(cmd))
+    for _, arg in ipairs(args) do
+        buff = sformat("%s%s", buff, _compose_bulk_string(arg))
     end
-    if type(msg) == "table" then
-        return _compose_array(cmd, msg)
-    end
-    return _compose_array(cmd, { msg })
+    return sformat("%s\r\n", buff)
 end
 
 local function _tokeys(value)
@@ -164,14 +156,7 @@ local function _toboolean(value)
     return value
 end
 
-local subscribe_commands = {
-    subscribe    = { cmd = "SUBSCRIBE" }, -- >= 2.0
-    unsubscribe  = { cmd = "UNSUBSCRIBE" }, -- >= 2.0
-    psubscribe   = { cmd = "PSUBSCRIBE" }, -- >= 2.0
-    punsubscribe = { cmd = "PUNSUBSCRIBE" }, -- >= 2.0
-}
-
-local redis_commands     = {
+local redis_commands = {
     del              = { cmd = "DEL" },
     set              = { cmd = "SET" },
     type             = { cmd = "TYPE" },
@@ -300,213 +285,142 @@ local redis_commands     = {
     keys             = { cmd = "KEYS", convertor = _tokeys },
 }
 
-local RedisDB            = class()
-local prop               = property(RedisDB)
-prop:reader("ip", nil)          --redis地址
-prop:reader("index", 0)         --db index
-prop:reader("port", 6379)       --redis端口
-prop:reader("passwd", nil)      --passwd
-prop:reader("subscribes", {})           --subscribes
-prop:reader("psubscribes", {})          --psubscribes
-prop:reader("command_sock", nil)        --网络连接对象
-prop:reader("subscribe_sock", nil)      --网络连接对象
-prop:reader("command_sessions", nil)    --command_sessions
-prop:reader("subscribe_sessions", nil)  --subscribe_sessions
-prop:reader("subscribe_context", nil)  --subscribe_sessions
+local RedisDB        = class()
+local prop           = property(RedisDB)
+prop:reader("passwd", nil)              --passwd
+prop:reader("drivers", {})              --drivers
+prop:reader("timer_id", nil)            --next_time
 
 function RedisDB:__init(conf)
-    self.index              = conf.index
-    self.passwd             = conf.passwd
-    self.command_sock       = Socket(self)
-    self.subscribe_sock     = Socket(self)
-    self.command_sessions   = QueueFIFO()
-    self.subscribe_sessions = QueueFIFO()
-    self.subscribe_context  = { name = "subcribe_monitor" }
+    self.passwd = conf.passwd
     self:choose_host(conf.hosts)
-    self:set_options(conf.opts)
-    --update
-    update_mgr:attach_second(self)
-    update_mgr:attach_second30(self)
     --setup
     self:setup()
 end
 
 function RedisDB:__release()
     self:close()
-    update_mgr:detach_second(self)
-    update_mgr:detach_second30(self)
+end
+
+function RedisDB:choose_host(hosts)
+    local pcount = env_number("HIVE_DB_POOL_COUNT", 1)
+    while true do
+        for ip, port in pairs(hosts) do
+            local socket         = Socket(self, ip, port)
+            socket.task_queue    = QueueFIFO()
+            self.drivers[socket] = QueueFIFO()
+            pcount               = pcount - 1
+            if pcount == 0 then
+                return
+            end
+        end
+    end
+end
+
+function RedisDB:set_options(opts)
 end
 
 function RedisDB:setup()
     for cmd, param in pairs(redis_commands) do
         RedisDB[cmd] = function(this, ...)
-            return this:commit(this.command_sock, param, ...)
+            local socket = self:choose_driver()
+            if not socket then
+                return false, "redis not connested"
+            end
+            return this:commit(socket, param, ...)
         end
     end
-    for cmd, param in pairs(subscribe_commands) do
-        RedisDB[cmd] = function(this, ...)
-            return this:commit(this.subscribe_sock, param, ...)
-        end
-    end
+    thread_mgr:entry(self:address(), function()
+        self:check_alive()
+    end)
 end
 
 function RedisDB:close()
-    if self.command_sock then
-        self:clear_session(self.command_sock, "action-close")
-        self.command_sock:close()
+    for sock in pairs(self.drivers) do
+        sock:close()
     end
-    if self.subscribe_sock then
-        self:clear_session(self.subscribe_sock, "action-close")
-        self.subscribe_sock:close()
-    end
-end
-
-function RedisDB:choose_host(hosts)
-    for host, port in pairs(hosts) do
-        self.ip, self.port = host, port
-        break
-    end
-end
-
-function RedisDB:set_options(opts)
-
 end
 
 function RedisDB:login(socket, title)
-    if not socket:connect(self.ip, self.port) then
-        log_err("[RedisDB][login] connect %s db(%s:%s) failed!", title, self.ip, self.port)
+    if not socket:connect(socket.ip, socket.port) then
+        log_err("[MysqlDB][login] connect %s db(%s:%s) failed!", title, socket.ip, socket.port)
         return false
     end
     if self.passwd and self.passwd:len() > 1 then
         local ok, res = self:auth(socket)
         if not ok or res ~= "OK" then
-            log_err("[RedisDB][login] auth %s db(%s:%s) failed! because: %s", title, self.ip, self.port, res)
+            log_err("[RedisDB][login] auth %s db(%s:%s) failed! because: %s", title, socket.ip, socket.port, res)
             return false
         end
     end
-    if self.index then
-        local ok, res = self:select(self.index)
-        if not ok or res ~= "OK" then
-            log_err("[RedisDB][login] select %s db(%s:%s-%s) failed! because: %s", title, self.ip, self.port, self.index, res)
-            return false
-        end
-    end
-    log_info("[RedisDB][login] login %s db(%s:%s-%s) success!", title, self.ip, self.port, self.index)
+    log_info("[RedisDB][login] login %s db(%s:%s:%s) success!", title, socket.ip, socket.port, socket.token)
     return true
 end
 
-function RedisDB:on_second()
-    local command_sock   = self.command_sock
-    local subscribe_sock = self.subscribe_sock
-    if not command_sock:is_alive() then
-        self:login(command_sock, "query")
-    end
-    if not subscribe_sock:is_alive() then
-        if self:login(subscribe_sock, "subcribe") then
-            for channel in pairs(self.subscribes) do
-                self:subscribe(channel)
-            end
-            for channel in pairs(self.psubscribes) do
-                self:psubscribes(channel)
-            end
-        end
-    end
-end
-
-function RedisDB:on_second30()
-    self:ping()
-end
-
 function RedisDB:ping()
-    self:commit(self.command_sock, { cmd = "PING" })
-    self:commit(self.subscribe_sock, { cmd = "PING" })
+    for sock in pairs(self.drivers) do
+        if not sock:is_alive() then
+            self:commit(sock, { cmd = "PING" })
+        end
+    end
 end
 
-function RedisDB:clear_session(sock, err)
-    if sock == self.command_sock then
-        for _, context in self.command_sessions:iter() do
-            thread_mgr:response(context.session_id, false, err)
-        end
-        self.command_sessions:clear()
-    else
-        for _, context in self.subscribe_sessions:iter() do
-            thread_mgr:response(context.session_id, false, err)
-        end
-        self.subscribe_sessions:clear()
+function RedisDB:check_alive()
+    if self.timer_id then
+        timer_mgr:unregister(self.timer_id)
     end
+    local ok = true
+    for sock in pairs(self.drivers) do
+        if not sock:is_alive() then
+            if not self:login(sock, "query") then
+                ok = false
+            end
+        end
+    end
+    self.timer_id = timer_mgr:once(ok and SECOND_10_MS or SECOND_MS, function()
+        self:check_alive()
+    end)
 end
 
 function RedisDB:on_socket_error(sock, token, err)
-    self:clear_session(sock, err)
-    log_err("[RedisDB][on_socket_error] token:%s, error:%s", token, err)
+    local task_queue = self.drivers[sock]
+    local session_id = task_queue:pop()
+    while session_id do
+        thread_mgr:response(session_id, false, err)
+        session_id = task_queue:pop()
+    end
+    --检查活跃
+    thread_mgr:entry(self:address(), function()
+        self:check_alive()
+    end)
 end
 
 function RedisDB:on_socket_recv(sock, token)
     while true do
-        local line, length = sock:peek_data(LineTitle)
-        if not line then
+        local packet = sock:peek_lines(LineTitle)
+        if not packet then
             break
         end
-        sock:pop(length)
-        local context, cur_sessions = self:find_context(sock)
-        if context and cur_sessions then
-            thread_mgr:fork(function()
-                local ok, res, cb_session_id = true, line, nil
-                local session_id             = context.session_id
-                local prefix, body           = ssub(line, 1, 1), ssub(line, 2)
-                local prefix_func            = _redis_resp_parser[prefix]
-                if prefix_func then
-                    ok, res, cb_session_id = prefix_func(context, body)
-                end
-                if ok and sock == self.subscribe_sock then
-                    self:on_subcribe_reply(res)
-                end
-                if session_id then
-                    if session_id == context.commit_id then
-                        if not cb_session_id then
-                            cur_sessions:pop()
-                        end
-                    end
-                    thread_mgr:response(session_id, ok, res)
-                end
-            end)
+        local ok, res = _parser_packet(packet)
+        if not ok then
+            break
+        end
+        sock:pop(_parse_offset(packet))
+        local task_queue = self.drivers[sock]
+        local session_id = task_queue:pop()
+        if session_id then
+            thread_mgr:response(session_id, ok, res)
         end
     end
 end
 
-function RedisDB:on_subcribe_reply(res)
-    if type(res) == "table" then
-        local ttype, channel, data, data2 = res[1], res[2], res[3], res[4]
-        local reply_func                  = _redis_subscribe_replys[ttype]
-        if reply_func then
-            reply_func(self, channel, data, data2)
-        end
-    end
-end
-
-function RedisDB:find_context(sock)
-    local cur_sessions = (sock == self.command_sock) and self.command_sessions or self.subscribe_sessions
-    local context      = cur_sessions:head()
-    if context then
-        return context, cur_sessions
-    end
-    if sock == self.subscribe_sock then
-        return self.subscribe_context, cur_sessions
-    end
-end
-
-function RedisDB:commit(sock, param, ...)
-    if not sock then
-        return false, "sock isn't connected"
-    end
-    local packet = _compose_message(param.cmd, tpack(...))
-    if not sock:send(packet) then
+function RedisDB:wait_response(session_id, socket, packet, param)
+    if not socket:send(packet) then
         return false, "send request failed"
     end
-    local context      = { name = param.cmd }
-    local cur_sessions = (sock == self.command_sock) and self.command_sessions or self.subscribe_sessions
-    cur_sessions:push(context)
-    local ok, res   = _async_call(context, "redis commit")
+    local task_queue = self.drivers[socket]
+    task_queue:push(session_id)
+    local ok, res   = thread_mgr:yield(session_id, sformat("redis_comit:%s", param.cmd), DB_TIMEOUT)
     local convertor = param.convertor
     if ok and convertor then
         return ok, convertor(res)
@@ -514,15 +428,40 @@ function RedisDB:commit(sock, param, ...)
     return ok, res
 end
 
+function RedisDB:commit(socket, param, ...)
+    local session_id = thread_mgr:build_session_id()
+    local packet     = _compose_args(param.cmd, ...)
+    return self:wait_response(session_id, socket, packet, param)
+end
+
 function RedisDB:execute(cmd, ...)
     if RedisDB[cmd] then
         return self[cmd](self, ...)
     end
-    return self:commit(self.command_sock, { cmd = supper(cmd) }, ...)
+    local socket = self:choose_driver()
+    if not socket then
+        return false, "redis not connested"
+    end
+    return self:commit(socket, { cmd = supper(cmd) }, ...)
 end
 
 function RedisDB:auth(socket)
     return self:commit(socket, { cmd = "AUTH" }, self.passwd)
+end
+
+function RedisDB:choose_driver()
+    local socket
+    local task_size = 0
+    for driver, task_queue in pairs(self.drivers) do
+        if driver:is_alive() then
+            local tsize = task_queue:size()
+            if not socket or tsize < task_size then
+                task_size = tsize
+                socket    = driver
+            end
+        end
+    end
+    return socket
 end
 
 return RedisDB

@@ -42,6 +42,7 @@ function CacheMgr:__init()
     event_mgr:add_listener(self, "rpc_cache_flush")
     -- 订阅停服事件
     event_mgr:add_trigger(self, "evt_change_service_status")
+    event_mgr:add_vote(self, "vote_stop_service")
     --定时器
     update_mgr:attach_minute(self)
     update_mgr:attach_second(self)
@@ -74,6 +75,13 @@ function CacheMgr:setup()
             log_err("[CacheMgr:setup] cache row config obj:%s not exist !", cache_name)
         end
     end
+end
+
+function CacheMgr:vote_stop_service()
+    if next(self.dirty_map) then
+        return false
+    end
+    return true
 end
 
 function CacheMgr:evt_change_service_status(status)
@@ -159,6 +167,7 @@ function CacheMgr:save_cache(cache_obj, remove)
         self:set_dirty(cache_obj, false)
         if not cache_obj:save() then
             self:set_dirty(cache_obj, true)
+            return
         end
         if remove then
             self:delete(cache_obj)

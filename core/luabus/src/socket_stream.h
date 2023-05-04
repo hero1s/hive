@@ -71,7 +71,7 @@ struct socket_stream : public socket_object
 	bool    m_need_dispatch_pkg = true;
 	int64_t m_tick_dispatch_time;
 	
-	uint8_t m_seq_id = 0;
+	uint8_t m_recv_seq_id = 0;
 	int64_t m_last_recv_time = 0;
 	int64_t m_connecting_time = 0;
 

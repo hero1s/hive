@@ -89,17 +89,6 @@ uint32_t socket_router::choose_master(uint32_t group_idx) {
 	return 0;
 }
 
-void socket_router::erase(uint32_t node_id) {
-	uint32_t group_idx = get_group_idx(node_id);
-	auto& group = m_groups[group_idx];
-	auto& nodes = group.nodes;
-	auto it = std::lower_bound(nodes.begin(), nodes.end(), node_id, comp_node);
-	if (it != nodes.end() && it->id == node_id) {
-		nodes.erase(it);
-		choose_master(group_idx);
-	}
-}
-
 size_t socket_router::format_header(BYTE* header_data, size_t data_len, router_header* header, rpc_type msgid) {
 	size_t offset = 0;
 	offset += encode_u64(header_data + offset, data_len - offset, (char)msgid);

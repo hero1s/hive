@@ -32,6 +32,7 @@ prop:accessor("db_name", "")            -- db name
 prop:accessor("records", {})            -- records
 prop:accessor("dirty_records", {})      -- dirty records
 prop:accessor("is_doing", false)        -- in doing
+prop:accessor("flush", false)
 
 function CacheObj:__init(cache_conf, primary_value)
     self.primary_value = primary_value
@@ -131,6 +132,9 @@ function CacheObj:need_save(now)
     if self.is_doing then
         return false
     end
+    if self.flush then
+        return true
+    end
     if self.store_count <= self.update_count or self.update_time + self.store_time < now then
         return true
     end
@@ -138,6 +142,9 @@ function CacheObj:need_save(now)
 end
 
 function CacheObj:save()
+    if self.is_doing then
+        return false
+    end
     local _lock<close> = VarLock(self, "is_doing")
     self.active_tick   = hive.clock_ms
     if next(self.dirty_records) then
@@ -146,12 +153,15 @@ function CacheObj:save()
         for record in pairs(self.dirty_records) do
             if check_success(record:save()) then
                 self.dirty_records[record] = nil
+            else
+                break
             end
         end
         if next(self.dirty_records) then
             return false
         end
     end
+    self.flush = false
     return true
 end
 
@@ -163,11 +173,14 @@ function CacheObj:update(tab_name, tab_data, flush)
     end
     self:active()
     self.update_count = self.update_count + 1
-    local code        = record:update(tab_data, flush)
+    record:update(tab_data)
     if record:is_dirty() then
         self.dirty_records[record] = true
     end
-    return code
+    if flush then
+        self.flush = true
+    end
+    return SUCCESS
 end
 
 function CacheObj:update_key(tab_name, table_kvs, flush)
@@ -178,11 +191,14 @@ function CacheObj:update_key(tab_name, table_kvs, flush)
     end
     self:active()
     self.update_count = self.update_count + 1
-    local code        = record:update_key(table_kvs, flush)
+    record:update_key(table_kvs)
     if record:is_dirty() then
         self.dirty_records[record] = true
     end
-    return code
+    if flush then
+        self.flush = true
+    end
+    return SUCCESS
 end
 
 return CacheObj

@@ -111,7 +111,7 @@ end
 
 function ProtobufMgr:define_enum(full_name)
     local pb_enum = _G
-    local nodes = ssplit(full_name, "%.")
+    local nodes = ssplit(full_name, ".")
     for _, name in ipairs(nodes) do
         if not pb_enum[name] then
             pb_enum[name] = {}
@@ -122,7 +122,7 @@ function ProtobufMgr:define_enum(full_name)
 end
 
 function ProtobufMgr:define_command(full_name, proto_name)
-    local package_name = tunpack(ssplit(full_name, "%."))
+    local package_name = tunpack(ssplit(full_name, "."))
     local enum_set = _G[package_name]
     if not enum_set then
         return

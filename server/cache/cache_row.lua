@@ -5,7 +5,6 @@ local log_debug    = logger.debug
 local check_failed = hive.failed
 
 local KernCode     = enum("KernCode")
-local CacheCode    = enum("CacheCode")
 local SUCCESS      = KernCode.SUCCESS
 
 local mongo_mgr    = hive.get("mongo_mgr")
@@ -58,33 +57,17 @@ function CacheRow:save()
 end
 
 --更新数据
-function CacheRow:update(data, flush)
+function CacheRow:update(data)
     self.data  = data
     self.dirty = true
-    if flush or self.save_cnt == 0 then
-        local code = self:save()
-        if check_failed(code) then
-            log_err("[CacheRow][update] flush failed: db: %s, table: %s", self.db_name, self.cache_table)
-            return CacheCode.CACHE_FLUSH_FAILED
-        end
-    end
-    return SUCCESS
 end
 
 --更新子数据
-function CacheRow:update_key(table_kvs, flush)
+function CacheRow:update_key(table_kvs)
     for key, value in pairs(table_kvs) do
         self.data[key] = value
     end
     self.dirty = true
-    if flush then
-        local code = self:save()
-        if check_failed(code) then
-            log_err("[CacheRow][update_key] flush failed: db: %s, table: %s", self.db_name, self.cache_table)
-            return CacheCode.CACHE_FLUSH_FAILED
-        end
-    end
-    return SUCCESS
 end
 
 return CacheRow

@@ -177,8 +177,7 @@ namespace lcurl {
 		return length;
 	}
 
-	static int debug_callback(CURL* handle, curl_infotype type,char* data, size_t size,void* clientp)
-	{
+	static int debug_callback(CURL* handle, curl_infotype type,char* data, size_t size,void* clientp) {
 		curl_request* request = (curl_request*)clientp;
 		if (!request)return 0;
 		request->debug.append(data, size);

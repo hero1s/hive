@@ -1,43 +1,42 @@
 --mongo.lua
-local bson             = require("bson")
-local lmongo           = require("mongo")
-local lcrypt           = require("lcrypt")
-local Socket           = import("driver/socket.lua")
+local bson          = require("bson")
+local lmongo        = require("mongo")
+local lcrypt        = require("lcrypt")
+local Socket        = import("driver/socket.lua")
 
-local log_err          = logger.err
-local log_info         = logger.info
-local tunpack          = table.unpack
-local tinsert          = table.insert
-local tis_array        = table_ext.is_array
-local tdeep_copy       = table_ext.deep_copy
-local tjoin            = table_ext.join
-local ssub             = string.sub
-local sgsub            = string.gsub
-local sformat          = string.format
-local sgmatch          = string.gmatch
-local mtointeger       = math.tointeger
-local lmd5             = lcrypt.md5
-local lsha1            = lcrypt.sha1
-local lrandomkey       = lcrypt.randomkey
-local lb64encode       = lcrypt.b64_encode
-local lb64decode       = lcrypt.b64_decode
-local lhmac_sha1       = lcrypt.hmac_sha1
-local lxor_byte        = lcrypt.xor_byte
+local log_err       = logger.err
+local log_info      = logger.info
+local tunpack       = table.unpack
+local tinsert       = table.insert
+local tis_array     = table_ext.is_array
+local tdeep_copy    = table_ext.deep_copy
+local tjoin         = table_ext.join
+local ssub          = string.sub
+local sgsub         = string.gsub
+local sformat       = string.format
+local sgmatch       = string.gmatch
+local mtointeger    = math.tointeger
+local lmd5          = lcrypt.md5
+local lsha1         = lcrypt.sha1
+local lrandomkey    = lcrypt.randomkey
+local lb64encode    = lcrypt.b64_encode
+local lb64decode    = lcrypt.b64_decode
+local lhmac_sha1    = lcrypt.hmac_sha1
+local lxor_byte     = lcrypt.xor_byte
 
-local mreply           = lmongo.reply
-local mopmsg           = lmongo.op_msg
-local mlength          = lmongo.length
-local bson_decode      = bson.decode
-local bson_encode_o    = bson.encode_order
+local mreply        = lmongo.reply
+local mopmsg        = lmongo.op_msg
+local mlength       = lmongo.length
+local bson_decode   = bson.decode
+local bson_encode_o = bson.encode_order
 
-local update_mgr       = hive.get("update_mgr")
-local thread_mgr       = hive.get("thread_mgr")
+local update_mgr    = hive.get("update_mgr")
+local thread_mgr    = hive.get("thread_mgr")
 
-local DB_TIMEOUT       = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
-local warn_qps <const> = 60 * 200
+local DB_TIMEOUT    = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
 
-local MongoDB          = class()
-local prop             = property(MongoDB)
+local MongoDB       = class()
+local prop          = property(MongoDB)
 prop:reader("ip", nil)          --mongo地址
 prop:reader("sock", nil)        --网络连接对象
 prop:reader("name", "")         --dbname
@@ -50,9 +49,7 @@ prop:reader("session_cnt", 0)    --sessions数量
 prop:reader("readpref", nil)    --readPreference
 prop:reader("auth_source", "admin") --authSource
 prop:reader("is_login", false)
-prop:reader("max_ops", 1000)
-prop:reader("op_qps", 0)
-prop:reader("tb_qps", {})
+prop:reader("max_ops", 5000)
 
 function MongoDB:__init(conf, max_ops)
     self.user      = conf.user
@@ -95,26 +92,10 @@ function MongoDB:set_options(opts)
     end
 end
 
-function MongoDB:add_qps(co_name)
-    self.op_qps = self.op_qps + 1
-    if not self.tb_qps[co_name] then
-        self.tb_qps[co_name] = 1
-    else
-        self.tb_qps[co_name] = self.tb_qps[co_name] + 1
-    end
-end
-
 function MongoDB:on_minute()
     if self.sock:is_alive() then
         self:runCommand("ping")
     end
-    if self.op_qps > warn_qps then
-        log_err("[MongoDB][on_minute] db:%s,qps:%s,is busy,please check logic.%s", self.name, self.op_qps, self.tb_qps)
-    else
-        log_info("[MongoDB][on_minute] db:%s,qps:%s", self.name, self.op_qps)
-    end
-    self.op_qps = 0
-    self.tb_qps = {}
 end
 
 function MongoDB:on_second()
@@ -231,6 +212,7 @@ function MongoDB:auth(username, password)
 end
 
 function MongoDB:on_socket_error(sock, token, err)
+    log_err("[MongoDB][on_socket_error] token:%s,err:%s", token, err)
     self.is_login = false
     for session_id in pairs(self.sessions) do
         thread_mgr:response(session_id, false, err)
@@ -308,14 +290,12 @@ function MongoDB:runCommand(cmd, cmd_v, ...)
 end
 
 function MongoDB:drop_collection(co_name)
-    self:add_qps(co_name)
     return self:runCommand("drop", co_name)
 end
 
 -- 参数说明
 -- indexes={{key={open_id=1,platform_id=1},name="open_id-platform_id",unique=true}, }
 function MongoDB:create_indexes(co_name, indexes)
-    self:add_qps(co_name)
     local tindexs = tdeep_copy(indexes)
     for _, v in ipairs(tindexs) do
         v.key = self:sort_param(v.key)
@@ -328,7 +308,6 @@ function MongoDB:create_indexes(co_name, indexes)
 end
 
 function MongoDB:drop_indexes(co_name, index_name)
-    self:add_qps(co_name)
     local succ, doc = self:runCommand("dropIndexes", co_name, "index", index_name)
     if not succ then
         return succ, doc
@@ -337,24 +316,20 @@ function MongoDB:drop_indexes(co_name, index_name)
 end
 
 function MongoDB:insert(co_name, doc)
-    self:add_qps(co_name)
     return self:runCommand("insert", co_name, "documents", { doc })
 end
 
 function MongoDB:update(co_name, update, selector, upsert, multi)
-    self:add_qps(co_name)
     local cmd_data = { q = selector, u = update, upsert = upsert, multi = multi }
     return self:runCommand("update", co_name, "updates", { cmd_data })
 end
 
 function MongoDB:delete(co_name, selector, onlyone)
-    self:add_qps(co_name)
     local cmd_data = { q = selector, limit = onlyone and 1 or 0 }
     return self:runCommand("delete", co_name, "deletes", { cmd_data })
 end
 
 function MongoDB:count(co_name, query, limit, skip)
-    self:add_qps(co_name)
     local succ, doc = self:runCommand("count", co_name, "query", query, "limit", limit or 0, "skip", skip or 0)
     if not succ then
         return succ, doc
@@ -363,7 +338,6 @@ function MongoDB:count(co_name, query, limit, skip)
 end
 
 function MongoDB:find_one(co_name, query, projection)
-    self:add_qps(co_name)
     local succ, reply = self:runCommand("find", co_name, "$readPreference", self.readpref, "filter", query, "projection" or {}, projection, "limit", 1)
     if not succ then
         return succ, reply
@@ -376,7 +350,6 @@ function MongoDB:find_one(co_name, query, projection)
 end
 
 function MongoDB:find(co_name, query, projection, sortor, limit, skip)
-    self:add_qps(co_name)
     if sortor and next(sortor) then
         sortor = self:sort_param(sortor)
     end
@@ -406,7 +379,6 @@ function MongoDB:find(co_name, query, projection, sortor, limit, skip)
 end
 
 function MongoDB:find_and_modify(co_name, update, selector, upsert, fields, new)
-    self:add_qps(co_name)
     return self:runCommand("findAndModify", co_name, "query", selector, "update", update, "fields", fields, "upsert", upsert, "new", new)
 end
 

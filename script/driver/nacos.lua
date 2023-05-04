@@ -14,12 +14,14 @@ local mtointeger     = math.tointeger
 
 local event_mgr      = hive.get("event_mgr")
 local thread_mgr     = hive.get("thread_mgr")
-local update_mgr     = hive.get("update_mgr")
+local timer_mgr      = hive.get("timer_mgr")
 local http_client    = hive.get("http_client")
 
 local WORD_SEPARATOR = "\x02"
 local LINE_SEPARATOR = "\x01"
-local LISTEN_TIMEOUT = 30000
+local HOUR_MS        = hive.enum("PeriodTime", "HOUR_MS")
+local SECOND_MS      = hive.enum("PeriodTime", "SECOND_MS")
+local SECOND_30_MS   = hive.enum("PeriodTime", "SECOND_30_MS")
 
 local Nacos          = singleton()
 local prop           = property(Nacos)
@@ -63,15 +65,15 @@ function Nacos:__init()
         log_info("[Nacos][setup] setup (%s:%s) success!", ip, port)
     end
     --定时获取token
-    update_mgr:attach_hour(self)
-    thread_mgr:success_call(1000, function()
-        return self:auth()
+    thread_mgr:entry(self:address(), function()
+        self:check_auth()
     end)
 end
 
-function Nacos:on_hour()
-    thread_mgr:success_call(1000, function()
-        return self:auth()
+function Nacos:check_auth()
+    local ok = self:auth()
+    timer_mgr:once(ok and HOUR_MS or SECOND_MS, function()
+        self:check_auth()
     end)
 end
 
@@ -138,14 +140,14 @@ function Nacos:listen_config(data_id, group, md5, on_changed)
     md5                       = md5 or ""
     local rgroup              = group or "DEFAULT_GROUP"
     local lkey                = sformat("%s_%s", data_id, rgroup)
-    local headers             = { ["Long-Pulling-Timeout"] = LISTEN_TIMEOUT }
+    local headers             = { ["Long-Pulling-Timeout"] = SECOND_30_MS }
     self.listen_configs[lkey] = on_changed
     thread_mgr:fork(function()
         while self.listen_configs[lkey] do
             local query           = { accessToken = self.access_token }
             local datas           = { data_id, rgroup, md5, self.config_ns }
             local lisfmt          = sformat("Listening-Configs=%s%s", tconcat(datas, WORD_SEPARATOR), LINE_SEPARATOR)
-            local ok, status, res = http_client:call_post(self.listen_url, lisfmt, headers, query, LISTEN_TIMEOUT + 1000)
+            local ok, status, res = http_client:call_post(self.listen_url, lisfmt, headers, query, SECOND_30_MS + 1000)
             if not ok or status ~= 200 then
                 log_err("[Nacos][listen_config] failed! data_id: %s, code: %s, err: %s", data_id, status, res)
                 thread_mgr:sleep(2000)

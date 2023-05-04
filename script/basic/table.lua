@@ -57,7 +57,7 @@ end
 
 local function tcopy(src, dst)
     local ndst = dst or {}
-    for field, value in pairs(src) do
+    for field, value in pairs(src or {}) do
         ndst[field] = value
     end
     return ndst
@@ -194,9 +194,9 @@ end
 local function shuffle(arr)
     local count = #arr
     while count > 1 do
-        local n = mrandom(1, count-1)
+        local n            = mrandom(1, count - 1)
         arr[count], arr[n] = arr[n], arr[count]
-        count = count - 1
+        count              = count - 1
     end
     return arr
 end

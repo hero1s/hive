@@ -56,8 +56,6 @@ int lua_socket_node::call_pack(lua_State* L) {
 	header.cmd_id = lua_tointeger(L, 1);
 	header.flag = lua_tointeger(L, 2);
 	header.session_id = lua_tointeger(L, 3);
-	header.seq_id = m_seq_id++;
-
 	size_t data_len = 0;
 	const char* data_ptr = lua_tolstring(L, 4, &data_len);
 	if (data_len + sizeof(socket_header) >= NET_PACKET_MAX_LEN) {
@@ -65,6 +63,7 @@ int lua_socket_node::call_pack(lua_State* L) {
 		return 1;
 	}
 	header.len = data_len + sizeof(socket_header);
+	header.seq_id = m_send_seq_id++;
 
 	sendv_item items[] = { { &header, sizeof(socket_header) }, {data_ptr, data_len} };
 	auto send_len = m_mgr->sendv(m_token, items, _countof(items));

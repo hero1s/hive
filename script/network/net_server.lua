@@ -127,7 +127,9 @@ function NetServer:write(session, cmd_id, data, session_id, flag)
         end
         return true
     end
-    --log_err("[NetServer][write] call_pack failed! code:%s", send_len)
+    if send_len < 0 then
+        log_err("[NetServer][write] call_pack failed! code:%s,cmd_id:%s,len:%s", send_len, cmd_id, #body)
+    end
     return false
 end
 
@@ -143,6 +145,8 @@ function NetServer:broadcast(cmd_id, data, filter)
             local send_len = session.call_pack(cmd_id, pflag, 0, body)
             if send_len > 0 then
                 proxy_agent:statistics("on_proto_send", cmd_id, send_len)
+            elseif send_len < 0 then
+                log_err("[NetServer][broadcast] call_pack failed! code:%s,cmd_id:%s,len:%s", send_len, cmd_id, #body)
             end
         end
     end

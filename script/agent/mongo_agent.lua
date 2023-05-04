@@ -74,7 +74,7 @@ end
 
 function MongoAgent:execute(rpc, db_query, hash_key, db_name)
     if self.local_run then
-        return scheduler:call(self.service, rpc, db_name or "default", tunpack(db_query))
+        return scheduler:call(nil, self.service, rpc, db_name or "default", tunpack(db_query))
     end
     if router_mgr then
         return router_mgr:call_dbsvr_hash(hash_key or hive.id, rpc, db_name or "default", tunpack(db_query))

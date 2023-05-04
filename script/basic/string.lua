@@ -36,17 +36,35 @@ end
 
 --切分字符串
 function string_ext.split(str, token)
-    local t = {}
-    while #str > 0 do
-        local pos = sfind(str, token)
-        if not pos then
-            t[#t + 1] = str
-            break
+    local pos, t = 0, {}
+    if #str > 0 then
+        for st, sp in function() return sfind(str, token, pos, true) end do
+            if st > 1 then
+                t[#t + 1] = ssub(str, pos, st - 1)
+            end
+            pos = sp + 1
         end
-        if pos > 1 then
-            t[#t + 1] = ssub(str, 1, pos - 1)
+        if pos <= #str then
+            t[#t + 1] = ssub(str, pos)
         end
-        str = ssub(str, pos + 1, #str)
+    end
+    return t
+end
+
+function string_ext.split_pos(str, token)
+    local pos, t = 0, { cur = 0 }
+    if #str > 0 then
+        local elem = {}
+        for st, sp in function() return sfind(str, token, pos, true) end do
+            if st > 1 then
+                elem[#elem + 1] = {ssub(str, pos, st - 1), sp }
+            end
+            pos = sp + 1
+        end
+        if pos <= #str then
+            elem[#elem + 1] = { ssub(str, pos), #str }
+        end
+        t.elem = elem
     end
     return t
 end

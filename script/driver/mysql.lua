@@ -605,7 +605,7 @@ prop:reader("user", nil)        --user
 prop:reader("passwd", nil)      --passwd
 prop:reader("packet_no", 0)     --passwd
 prop:reader("sessions", nil)                --sessions
-prop:reader("max_ops", 1000)
+prop:reader("max_ops", 5000)
 prop:accessor("charset", "_default")        --charset
 prop:accessor("max_packet_size", 1024 * 1024) --max_packet_size,1mb
 

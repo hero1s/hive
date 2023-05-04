@@ -2,29 +2,29 @@
 import("basic/basic.lua")
 import("kernel/mem_monitor.lua")
 import("kernel/config_mgr.lua")
-local lcodec      = require("lcodec")
-local ltimer      = require("ltimer")
+local lcodec           = require("lcodec")
+local ltimer           = require("ltimer")
 
-local pcall       = pcall
-local log_err     = logger.err
-local tpack       = table.pack
-local tunpack     = table.unpack
-local raw_yield   = coroutine.yield
-local raw_resume  = coroutine.resume
-local lencode     = lcodec.encode_slice
-local ldecode     = lcodec.decode_slice
-local ltime       = ltimer.time
+local pcall            = pcall
+local log_err          = logger.err
+local tpack            = table.pack
+local tunpack          = table.unpack
+local raw_yield        = coroutine.yield
+local raw_resume       = coroutine.resume
+local lencode          = lcodec.encode_slice
+local ldecode          = lcodec.decode_slice
+local ltime            = ltimer.time
 
-local event_mgr   = hive.get("event_mgr")
-local co_hookor   = hive.load("co_hookor")
-local socket_mgr  = hive.load("socket_mgr")
-local update_mgr  = hive.load("update_mgr")
-local thread_mgr  = hive.load("thread_mgr")
+local event_mgr        = hive.get("event_mgr")
+local co_hookor        = hive.load("co_hookor")
+local socket_mgr       = hive.load("socket_mgr")
+local update_mgr       = hive.load("update_mgr")
+local thread_mgr       = hive.load("thread_mgr")
 
-local WTITLE      = hive.worker_title
-local FLAG_REQ    = hive.enum("FlagMask", "REQ")
-local FLAG_RES    = hive.enum("FlagMask", "RES")
-local RPC_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
+local WTITLE           = hive.worker_title
+local FLAG_REQ         = hive.enum("FlagMask", "REQ")
+local FLAG_RES         = hive.enum("FlagMask", "RES")
+local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 
 --初始化网络
 local function init_network()
@@ -136,7 +136,7 @@ local function worker_rpc(session_id, flag, ...)
 end
 
 --rpc调用
-hive.on_worker = function(slice)
+hive.on_worker   = function(slice)
     local rpc_res = tpack(pcall(ldecode, slice))
     if not rpc_res[1] then
         log_err("[hive][on_worker] decode failed %s!", rpc_res[2])
@@ -151,7 +151,7 @@ end
 hive.call_master = function(rpc, ...)
     local session_id = thread_mgr:build_session_id()
     hive.call("master", lencode(session_id, FLAG_REQ, WTITLE, rpc, ...))
-    return thread_mgr:yield(session_id, "call_master", RPC_TIMEOUT)
+    return thread_mgr:yield(session_id, "call_master", RPC_CALL_TIMEOUT)
 end
 
 --通知主线程
@@ -163,7 +163,7 @@ end
 hive.call_worker = function(name, rpc, ...)
     local session_id = thread_mgr:build_session_id()
     hive.call(name, lencode(session_id, FLAG_REQ, WTITLE, rpc, ...))
-    return thread_mgr:yield(session_id, "call_master", RPC_TIMEOUT)
+    return thread_mgr:yield(session_id, "call_master", RPC_CALL_TIMEOUT)
 end
 
 --通知其他线程

@@ -57,16 +57,10 @@ end
 function RpcServer:on_socket_rpc(client, rpc, session_id, rpc_flag, source, ...)
     client.alive_time = hive.clock_ms
     if session_id == 0 or rpc_flag == FLAG_REQ then
-        --todo test
-        local btime = hive.clock_ms
         local function dispatch_rpc_message(...)
             local _<close>  = heval(rpc)
             local rpc_datas = event_mgr:notify_listener(rpc, client, ...)
             if session_id > 0 then
-                local cost_time = hive.clock_ms - btime
-                if cost_time > 3000 then
-                    log_err("[RpcServer][on_socket_rpc] rpc:%s, session:%s,cost_time:%s", rpc, session_id, cost_time)
-                end
                 client.call_rpc(session_id, FLAG_RES, rpc, tunpack(rpc_datas))
             end
         end
@@ -186,12 +180,11 @@ function RpcServer:rpc_heartbeat(client, is_ready, node)
 
     if not client.id then
         -- 检查重复注册
-        local client_id = node.id
-        local eclient   = self:get_client_by_id(client_id)
+        local eclient = self:get_client_by_id(node.id)
         if eclient then
-            eclient.id = nil
-            self:send(eclient, "rpc_client_kickout", hive.id, "service replace")
             log_err("[RpcServer][rpc_heartbeat] client(%s) be kickout, service replace!", eclient.name)
+            self:send(client, "rpc_client_kickout", hive.id, "service replace")
+            return
         end
         -- 通知注册
         client.id           = node.id

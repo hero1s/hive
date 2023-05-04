@@ -200,7 +200,7 @@ end
 --发送数据库请求
 function MysqlAgent:execute(sql, db_name, hash_key)
     if self.local_run then
-        return scheduler:call(self.service, "mysql_execute", db_name or "default", sql)
+        return scheduler:call(nil,self.service, "mysql_execute", db_name or "default", sql)
     end
     if router_mgr then
         return router_mgr:call_dbsvr_hash(hash_key or hive.id, "mysql_execute", db_name or "default", sql)
