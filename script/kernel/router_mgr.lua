@@ -74,7 +74,7 @@ end
 --错误处理
 function RouterMgr:on_socket_error(client, token, err)
     self:check_router()
-    log_err("[RouterMgr][on_socket_error] router lost %s:%s, err=%s", client.ip, client.port, err)
+    log_err("[RouterMgr][on_socket_error] router lost %s:%s,token:%s, err=%s", client.ip, client.port, token, err)
 end
 
 --连接成功

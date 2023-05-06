@@ -70,6 +70,7 @@ namespace luabus {
             "listen", &lua_socket_mgr::listen,
             "connect", &lua_socket_mgr::connect,
             "map_token", &lua_socket_mgr::map_token,
+            "set_node_status",&lua_socket_mgr::set_node_status,
             "map_router_node",&lua_socket_mgr::map_router_node,
             "set_router_id",&lua_socket_mgr::set_router_id,
             "set_rpc_key",&lua_socket_mgr::set_rpc_key

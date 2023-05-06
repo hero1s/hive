@@ -23,8 +23,12 @@ local SECOND_10_MS = hive.enum("PeriodTime", "SECOND_10_MS")
 local DB_TIMEOUT   = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
 
 local function _next_line(resp)
-    resp.cur = resp.cur + 1
-    return resp.elem[resp.cur][1]
+    local nindex = resp.cur + 1
+    local elem   = resp.elem[nindex]
+    if elem then
+        resp.cur = nindex
+        return elem[1]
+    end
 end
 
 local function _parse_offset(resp)
@@ -34,55 +38,55 @@ end
 local _redis_proto_parser = {}
 _redis_proto_parser["+"]  = function(body)
     --simple string
-    return true, body
+    return true, true, body
 end
 
 _redis_proto_parser["-"]  = function(body)
     -- error reply
-    return true, body
+    return true, false, body
 end
 
 _redis_proto_parser[":"]  = function(body)
     -- integer reply
-    return true, tonumber(body)
+    return true, true, tonumber(body)
 end
 
-local function _parser_packet(packet)
+local function _parse_packet(packet)
     local line = _next_line(packet)
     if not line then
-        return false
+        return false, "packet isn't complete"
     end
     local prefix, body = ssub(line, 1, 1), ssub(line, 2)
     local prefix_func  = _redis_proto_parser[prefix]
     if prefix_func then
         return prefix_func(body, packet)
     end
-    return true, line
+    return true, true, line
 end
 
 _redis_proto_parser["$"] = function(body, packet)
     -- bulk string
     if tonumber(body) < 0 then
-        return true
+        return true, true
     end
-    return _parser_packet(packet)
+    return _parse_packet(packet)
 end
 
 _redis_proto_parser["*"] = function(body, packet)
     -- array
     local length = tonumber(body)
     if length < 0 then
-        return true
+        return true, true
     end
     local array = {}
     for i = 1, length do
-        local ok, value = _parser_packet(packet)
+        local ok, err, value = _parse_packet(packet)
         if not ok then
-            return false
+            return false, err
         end
         array[i] = value
     end
-    return true, array
+    return true, true, array
 end
 
 local function _compose_bulk_string(value)
@@ -132,28 +136,26 @@ local function _tokeys(value)
         end)
         return keys
     end
-    return value
+    return {}
 end
 
 local function _tomap(value)
     if (type(value) == 'table') then
-        local new_value = { }
+        local maps = { }
         for i = 1, #value, 2 do
-            new_value[value[i]] = value[i + 1]
+            maps[value[i]] = value[i + 1]
         end
-        return new_value
+        return maps
     end
-    return value
+    return {}
 end
 
 local function _toboolean(value)
     value = tostring(value)
     if value == '1' or value == 'true' or value == 'TRUE' then
         return true
-    elseif value == '0' or value == 'false' or value == 'FALSE' then
-        return false
     end
-    return value
+    return false
 end
 
 local redis_commands = {
@@ -401,15 +403,20 @@ function RedisDB:on_socket_recv(sock, token)
         if not packet then
             break
         end
-        local ok, res = _parser_packet(packet)
+        local ok, succ, rdsucc, res = pcall(_parse_packet, packet)
         if not ok then
+            log_err("[RedisDB][on_socket_recv] exec parse failed: %s", succ)
+            break
+        end
+        if not succ then
+            log_err("[RedisDB][on_socket_recv] parse failed: %s", rdsucc)
             break
         end
         sock:pop(_parse_offset(packet))
         local task_queue = self.drivers[sock]
         local session_id = task_queue:pop()
         if session_id then
-            thread_mgr:response(session_id, ok, res)
+            thread_mgr:response(session_id, rdsucc, res)
         end
     end
 end
@@ -420,9 +427,13 @@ function RedisDB:wait_response(session_id, socket, packet, param)
     end
     local task_queue = self.drivers[socket]
     task_queue:push(session_id)
-    local ok, res   = thread_mgr:yield(session_id, sformat("redis_comit:%s", param.cmd), DB_TIMEOUT)
+    local ok, res = thread_mgr:yield(session_id, sformat("redis_comit:%s", param.cmd), DB_TIMEOUT)
+    if not ok then
+        log_err("[RedisDB][wait_response] exec cmd %s failed: %s", param.cmd, res)
+        return ok, res
+    end
     local convertor = param.convertor
-    if ok and convertor then
+    if convertor then
         return ok, convertor(res)
     end
     return ok, res

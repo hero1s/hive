@@ -248,7 +248,7 @@ function MongoDB:on_socket_recv(sock, token)
         end
         sock:pop(4 + length)
         local reply, session_id, documents = mreply(bdata)
-        local cost_time                    = hive.clock_ms - self.sessions[session_id]
+        local cost_time                    = hive.clock_ms - (self.sessions[session_id] or 0)
         if cost_time > DB_TIMEOUT then
             log_err("[MongoDB][on_socket_recv] the op_session:%s, timeout:%s,session_cnt:%s", session_id, cost_time, self.session_cnt)
         end
@@ -287,6 +287,16 @@ function MongoDB:runCommand(cmd, cmd_v, ...)
     end
     local bson_cmd = bson_encode_o(cmd, cmd_v or 1, "$db", self.name, ...)
     return self:op_msg(bson_cmd)
+end
+
+function MongoDB:sendCommand(cmd, cmd_v, ...)
+    if not self.sock then
+        return false, "db not connected"
+    end
+    local bson_cmd = bson_encode_o(cmd, cmd_v or 1, "$db", self.name, "writeConcern", { w = 0 }, ...)
+    local msg      = mopmsg(0, 0, bson_cmd)
+    self.sock:send(msg)
+    return true
 end
 
 function MongoDB:drop_collection(co_name)
@@ -342,9 +352,11 @@ function MongoDB:find_one(co_name, query, projection)
     if not succ then
         return succ, reply
     end
-    local documents = reply.cursor.firstBatch
-    if #documents > 0 then
-        return succ, documents[1]
+    if reply and reply.cursor then
+        local documents = reply.cursor.firstBatch
+        if #documents > 0 then
+            return succ, documents[1]
+        end
     end
     return succ
 end

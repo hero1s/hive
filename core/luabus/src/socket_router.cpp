@@ -10,39 +10,38 @@
 uint32_t get_group_idx(uint32_t node_id) { return  (node_id >> 16) & 0xff; }
 uint32_t get_node_index(uint32_t node_id) { return node_id & 0x3ff; }
 uint32_t build_service_id(uint16_t group_idx, uint16_t index) { return (group_idx & 0xff) << 16 | index; }
-bool verify_index(uint16_t index) { return index > 0 && index < 0x3ff; }
-
-bool comp_node(service_node& node, uint32_t id) { return node.id < id; }
 
 uint32_t socket_router::map_token(uint32_t node_id, uint32_t token, uint16_t hash) {
 	uint32_t group_idx = get_group_idx(node_id);
 	auto& group = m_groups[group_idx];
-	auto& nodes = group.nodes;
 	if (group.hash < hash) {
 		//启动hash模式
 		group.hash = hash;
-		nodes.resize(hash);
-		for (uint16_t i = 0; i < hash; ++i) {
-			if (nodes[i].id == 0) {
-				nodes[i].id = build_service_id(group_idx, i + 1);
-			}
-		}
 	}
-	auto it = std::lower_bound(nodes.begin(), nodes.end(), node_id, comp_node);
-	if (it != nodes.end() && it->id == node_id) {
-		if (group.hash > 0 || token > 0) {
-			it->token = token;
-			return group.master.id;
-		}
-		nodes.erase(it);
+	if (token == 0) {
+		group.mp_nodes.erase(node_id);
+	}
+	else {
+		service_node node;
+		node.id = node_id;
+		node.token = token;
+		node.index = get_node_index(node_id);
+		group.mp_nodes[node_id] = node;
+	}
+	flush_hash_node(group_idx);
+	return choose_master(group_idx);
+}
+
+uint32_t socket_router::set_node_status(uint32_t node_id, uint8_t status) {
+	uint32_t group_idx = get_group_idx(node_id);
+	auto& group = m_groups[group_idx];
+	auto pTarget = group.get_target(node_id);
+	if (pTarget != nullptr) {
+		pTarget->status = status;
+		flush_hash_node(group_idx);
 		return choose_master(group_idx);
 	}
-	service_node node;
-	node.id = node_id;
-	node.token = token;
-	node.index = get_node_index(node_id);
-	nodes.insert(it, node);
-	return choose_master(group_idx);
+	return 0;
 }
 
 void socket_router::map_router_node(uint32_t router_id, uint32_t target_id, uint8_t status) {
@@ -79,15 +78,40 @@ void socket_router::set_router_id(uint32_t node_id) {
 uint32_t socket_router::choose_master(uint32_t group_idx) {
 	if (group_idx < m_groups.size()) {
 		auto& group = m_groups[group_idx];
-		if (group.nodes.empty()) {
+		if (group.mp_nodes.empty()) {
 			group.master = service_node{};
 			return 0;
 		}
-		group.master = group.nodes.front();
-		return group.master.id;
+		for (auto& [id, node] : group.mp_nodes) {
+			if (node.status == 0) {
+				group.master = node;
+				return group.master.id;
+			}
+		}
 	}
 	return 0;
 }
+
+void socket_router::flush_hash_node(uint32_t group_idx) {
+	if (group_idx < m_groups.size()) {
+		auto& group = m_groups[group_idx];
+		if (group.hash > 0) {//固定hash
+			group.hash_ids.resize(group.hash);
+			for (uint16_t i = 0; i < group.hash; ++i) {
+				group.hash_ids[i] = build_service_id(group_idx, i + 1);
+			}
+		} else {
+			group.hash_ids.clear();
+			for (const auto& [id,node] : group.mp_nodes) {
+				if (node.status == 0) {
+					group.hash_ids.push_back(id);
+				}				
+			}
+			std::sort(group.hash_ids.begin(),group.hash_ids.end());
+		}
+	}
+}
+
 
 size_t socket_router::format_header(BYTE* header_data, size_t data_len, router_header* header, rpc_type msgid) {
 	size_t offset = 0;
@@ -109,16 +133,15 @@ bool socket_router::do_forward_target(router_header* header, char* data, size_t 
 	data_len -= len;
 	uint32_t group_idx = get_group_idx(target_id);
 	auto& group = m_groups[group_idx];
-	auto& nodes = group.nodes;
-	auto it = std::lower_bound(nodes.begin(), nodes.end(), target_id, comp_node);
-	if (it == nodes.end() || it->id != target_id) {
+	auto pTarget = group.get_target(target_id);
+	if (pTarget == nullptr) {
 		error = fmt::format("router forward-target not find,target_id:{}, group:{},index:{}", target_id, group_idx, get_node_index(target_id));
 		return router ? false : do_forward_router(header, data - len, data_len + len, error, rpc_type::forward_target, target_id, group_idx);
 	}
 	size_t header_len = format_header(m_header_data, sizeof(m_header_data), header, rpc_type::remote_call);
 
 	sendv_item items[] = { {m_header_data, header_len}, {data, data_len} };
-	m_mgr->sendv(it->token, items, _countof(items));
+	m_mgr->sendv(pTarget->token, items, _countof(items));
 	return true;
 }
 
@@ -159,9 +182,7 @@ bool socket_router::do_forward_broadcast(router_header* header, int source, char
 	sendv_item items[] = { {m_header_data, header_len}, {data, data_len} };
 
 	auto& group = m_groups[group_idx];
-	auto& nodes = group.nodes;
-	int count = (int)nodes.size();
-	for (auto& target : nodes) {
+	for (auto& [id,target] : group.mp_nodes) {
 		if (target.token != 0 && target.token != source) {
 			m_mgr->sendv(target.token, items, _countof(items));
 			broadcast_num++;
@@ -192,8 +213,7 @@ bool socket_router::do_forward_hash(router_header* header, char* data, size_t da
 	data_len -= hlen;
 
 	auto& group = m_groups[group_idx];
-	auto& nodes = group.nodes;
-	int count = (int)nodes.size();
+	int count = (int)group.hash_ids.size();
 	if (count == 0) {
 		error = fmt::format("router forward-hash not nodes:{}",group_idx);
 		return router ? false : do_forward_router(header, data - hlen - glen, data_len + hlen + glen, error, rpc_type::forward_hash, 0, group_idx);
@@ -202,9 +222,10 @@ bool socket_router::do_forward_hash(router_header* header, char* data, size_t da
 	size_t header_len = format_header(m_header_data, sizeof(m_header_data), header, rpc_type::remote_call);
 	sendv_item items[] = { {m_header_data, header_len}, {data, data_len} };
 
-	auto& target = nodes[hash % count];
-	if (target.token != 0) {
-		m_mgr->sendv(target.token, items, _countof(items));
+	auto& target_id = group.hash_ids[hash % count];
+	auto pTarget = group.get_target(target_id);
+	if (pTarget != nullptr) {
+		m_mgr->sendv(pTarget->token, items, _countof(items));
 		return true;
 	}
 	error = fmt::format("router forward-hash not token");
@@ -219,21 +240,19 @@ bool socket_router::do_forward_router(router_header* header, char* data, size_t 
 		return false;
 	}
 	auto& router_group = m_groups[m_router_idx];
-	auto& nodes = router_group.nodes;
-	int count = (int)nodes.size();
-	if (count == 0) {
+	if (router_group.mp_nodes.empty()) {
 		error += fmt::format(" | router group is empty");
 		return false;
 	}
 	service_node* ptarget = nullptr;
-	for (auto& node : nodes) {
+	for (auto& [id, node] : router_group.mp_nodes) {
 		if (node.id == router_id) {
 			ptarget = &node;
 			break;
 		}
 	}
 	if (ptarget == nullptr) {
-		error += fmt::format(" | not this router:{},{}", router_id, nodes.size());
+		error += fmt::format(" | not this router:{}", router_id);
 		return false;
 	}
 	size_t header_len = format_header(m_header_data, sizeof(m_header_data), header, (rpc_type)((uint8_t)msgid + (uint8_t)rpc_type::forward_router));

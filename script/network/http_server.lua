@@ -58,7 +58,7 @@ function HttpServer:on_socket_error(socket, token, err)
         self.listener = nil
         return
     end
-    log_debug("[HttpServer][on_socket_error] client(token:%s) close!", token)
+    --log_debug("[HttpServer][on_socket_error] client(token:%s) close!", token)
     self.clients[token]  = nil
     self.requests[token] = nil
 end

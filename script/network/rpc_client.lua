@@ -208,7 +208,7 @@ end
 
 --错误处理
 function RpcClient:on_socket_error(token, err)
-    log_info("[RpcClient][on_socket_error] socket %s:%s %s!", self.ip, self.port, err)
+    log_info("[RpcClient][on_socket_error] socket %s:%s,token:%s,err:%s!", self.ip, self.port, token, err)
     self.next_connect_time = hive.clock_ms
     thread_mgr:fork(function()
         self.socket = nil

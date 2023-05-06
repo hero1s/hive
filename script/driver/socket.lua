@@ -1,8 +1,8 @@
 --socket.lua
 local ssub            = string.sub
-local sfind           = string.find
 local log_err         = logger.err
 local log_info        = logger.info
+local ends_with       = string_ext.ends_with
 local split_pos       = string_ext.split_pos
 local hxpcall         = hive.xpcall
 
@@ -128,7 +128,6 @@ function Socket:on_socket_error(token, err)
     if self.session then
         self.session = nil
         self.alive   = false
-        log_info("[Socket][on_socket_error] err: %s - %s!", err, token)
         self.host:on_socket_error(self, token, err)
         self.token = nil
     end
@@ -161,8 +160,10 @@ function Socket:peek(len, offset)
 end
 
 function Socket:peek_lines(split_char)
-    if #self.recvbuf > 0 then
-        return split_pos(self.recvbuf, split_char)
+    if #self.recvbuf >= #split_char then
+        if ends_with(self.recvbuf, split_char) then
+            return split_pos(self.recvbuf, split_char)
+        end
     end
 end
 

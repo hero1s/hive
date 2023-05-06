@@ -12,7 +12,6 @@ local mrandom       = math_ext.random
 local tsize         = table_ext.size
 local hxpcall       = hive.xpcall
 local log_err       = logger.err
-local log_info      = logger.info
 
 local QueueFIFO     = import("container/queue_fifo.lua")
 local SyncLock      = import("kernel/object/sync_lock.lua")
@@ -66,7 +65,7 @@ function ThreadMgr:leave(key)
     self.entry_pools[key] = nil
 end
 
-function ThreadMgr:lock(key)
+function ThreadMgr:lock(key, waiting)
     local queue = self.syncqueue_map[key]
     if not queue then
         queue                   = QueueFIFO()
@@ -79,13 +78,13 @@ function ThreadMgr:lock(key)
         local lock = SyncLock(self, key)
         queue:push(lock)
         return lock
-    else
-        if head.co == co_running() then
-            --防止重入
-            log_info("[ThreadMgr][lock] the lock repeat lock:[%s],count:%s,queue:%s", key, head:get_count(), queue:size())
-            head:increase()
-            return head
-        end
+    end
+    if head.co == co_running() then
+        --防止重入
+        head:increase()
+        return head
+    end
+    if waiting or waiting == nil then
         --等待则挂起
         local lock = SyncLock(self, key)
         queue:push(lock)
@@ -205,7 +204,7 @@ function ThreadMgr:on_second(clock_ms)
     end
 end
 
-function ThreadMgr:on_frame(clock_ms)
+function ThreadMgr:on_fast(clock_ms)
     --检查协程超时
     local timeout_coroutines = {}
     for co, ms_to in pairs(self.coroutine_waitings) do

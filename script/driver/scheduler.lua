@@ -50,10 +50,10 @@ function Scheduler:startup(name, entry)
 end
 
 --访问其他线程任务
-function Scheduler:call(timeout, name, rpc, ...)
+function Scheduler:call(name, rpc, ...)
     local session_id = thread_mgr:build_session_id()
     worker_call(name, lencode(session_id, FLAG_REQ, "master", rpc, ...))
-    return thread_mgr:yield(session_id, "worker_call", timeout or RPC_CALL_TIMEOUT)
+    return thread_mgr:yield(session_id, "worker_call", RPC_CALL_TIMEOUT)
 end
 
 --访问其他线程任务

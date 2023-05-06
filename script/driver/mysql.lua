@@ -737,7 +737,7 @@ function MysqlDB:auth()
 end
 
 function MysqlDB:on_socket_error(sock, token, err)
-    log_err("[MysqlDB][on_socket_error] mysql server lost")
+    log_err("[MysqlDB][on_socket_error] mysql server lost, token:%s,err:%s", token, err)
     for _, context in self.sessions:iter() do
         thread_mgr:response(context.session_id, false, err)
     end

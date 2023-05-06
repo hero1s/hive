@@ -51,7 +51,7 @@ local gc_step = 10
 function UpdateMgr:__init()
     --注册订阅
     self:attach_frame(timer_mgr)
-    self:attach_frame(thread_mgr)
+    self:attach_fast(thread_mgr)
     self:attach_second(thread_mgr)
     self:attach_minute(thread_mgr)
     --注册5秒定时器
