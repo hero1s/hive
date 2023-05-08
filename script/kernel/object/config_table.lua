@@ -62,7 +62,7 @@ end
 function ConfigTable:setup(name, ...)
     local file_name = self:name_to_filename(name)
     if self.load_time > 0 and import_file_time(file_name) == self.load_time then
-        return
+        return false
     end
     if self.load_time > 0 then
         log_info("[ConfigTable][setup] reload config %s", file_name)
@@ -70,6 +70,7 @@ function ConfigTable:setup(name, ...)
     if self:setup_nil(name, ...) then
         self:set_records(file_name)
     end
+    return true
 end
 
 function ConfigTable:setup_nil(name, ...)

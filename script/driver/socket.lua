@@ -179,8 +179,7 @@ end
 
 function Socket:send(data)
     if self.alive and data then
-        local send_len = self.session.call_text(data)
-        return send_len == #data
+        return self.session.call_text(data) > 0
     end
     log_err("[Socket][send] the socket not alive, can't send")
     return false

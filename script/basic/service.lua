@@ -32,6 +32,7 @@ function service.make_node(port, domain)
         host         = domain or hive.host,
         pid          = hive.pid,
         is_ready     = false,
+        status       = hive.service_status
     }
 end
 
@@ -50,7 +51,7 @@ function service.init()
     local name       = environ.get("HIVE_SERVICE")
     local index      = environ.number("HIVE_INDEX", 1)
     local service_id = service.name2sid(name)
-    assert(service_id ~= nil,"service is not config")
+    assert(service_id ~= nil, "service is not config")
     hive.index        = index
     hive.id           = service.make_id(name, index)
     hive.service_name = name

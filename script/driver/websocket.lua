@@ -216,8 +216,7 @@ end
 --发送数据
 function WebSocket:send(data)
     if self.alive and data then
-        local send_len = self.session.call_text(data)
-        return send_len > 0
+        return self.session.call_text(data) > 0
     end
     log_err("[WebSocket][send] the socket not alive, can't send")
     return false

@@ -29,7 +29,7 @@ local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 --初始化网络
 local function init_network()
     local lbus      = require("luabus")
-    local max_conn  = environ.number("HIVE_MAX_CONN", 10000)
+    local max_conn  = environ.number("HIVE_MAX_CONN", 4096)
     socket_mgr      = lbus.create_socket_mgr(max_conn)
     hive.socket_mgr = socket_mgr
 end

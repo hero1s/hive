@@ -69,11 +69,11 @@ function MonitorMgr:on_client_accept(client)
 end
 
 -- 心跳
-function MonitorMgr:on_client_beat(client, is_ready)
+function MonitorMgr:on_client_beat(client, node_info)
     local node = self.monitor_nodes[client.token]
-    if node.is_ready ~= is_ready then
+    if node and node.is_ready ~= node_info.is_ready then
         --广播其它服务
-        if is_ready then
+        if node_info.is_ready then
             local readys      = {}
             readys[client.id] = { id = node.id, ip = node.host, port = node.port }
             self:add_service(node.service_name, node)
@@ -82,7 +82,7 @@ function MonitorMgr:on_client_beat(client, is_ready)
             self:remove_service(node.service_name, node.id)
             self:broadcast_service_status(client.service_name, {}, { [client.id] = { id = client.id } })
         end
-        node.is_ready = is_ready
+        node.is_ready = node_info.is_ready
     end
 end
 

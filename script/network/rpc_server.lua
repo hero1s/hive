@@ -170,11 +170,11 @@ end
 --rpc回执
 -----------------------------------------------------------------------------
 --服务器心跳协议
-function RpcServer:rpc_heartbeat(client, is_ready, node)
+function RpcServer:rpc_heartbeat(client, is_init, node)
     self:send(client, "on_heartbeat", hive.id)
-    if not node then
+    if not is_init then
         --正常心跳
-        self.holder:on_client_beat(client, is_ready)
+        self.holder:on_client_beat(client, node)
         return
     end
 

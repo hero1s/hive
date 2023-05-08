@@ -16,24 +16,28 @@ end
 
 --- 配置热更新
 function ConfigMgr:reload(notify)
+    local reload_cfg_map = {}
     for name in pairs(self.table_list) do
         local load_info = self.table_load_info[name]
         if load_info then
             local load_func = load_info.func
             local params    = load_info.params
-            ConfigMgr[load_func](self, tunpack(params))
+            local _, reload = ConfigMgr[load_func](self, tunpack(params))
+            if reload then
+                reload_cfg_map[name] = true
+            end
         end
     end
     if notify then
         local event_mgr = hive.load("event_mgr")
         if event_mgr then
-            event_mgr:notify_trigger("reload_config")
+            event_mgr:notify_trigger("reload_config", reload_cfg_map)
         end
     end
 end
 
 function ConfigMgr:load_enum_table(name, ename, main_key, ...)
-    local conf_tab = self:load_table(name, main_key, ...)
+    local conf_tab, reload = self:load_table(name, main_key, ...)
     if conf_tab then
         local enum_obj = enum(ename, 0)
         for _, conf in conf_tab:iterator() do
@@ -46,7 +50,7 @@ function ConfigMgr:load_enum_table(name, ename, main_key, ...)
         params = tpack(name, ename, main_key, ...),
     }
 
-    return conf_tab
+    return conf_tab, reload
 end
 
 --加载配置表并生成枚举
@@ -60,8 +64,9 @@ end
 
 function ConfigMgr:load_table(name, ...)
     local conf_tab = self.table_list[name]
+    local reload   = true
     if conf_tab then
-        conf_tab:setup(name, ...)
+        reload = conf_tab:setup(name, ...)
     else
         conf_tab              = ConfigTable()
         self.table_list[name] = conf_tab
@@ -75,7 +80,7 @@ function ConfigMgr:load_table(name, ...)
         }
     end
 
-    return conf_tab
+    return conf_tab, reload
 end
 
 -- 初始化配置表

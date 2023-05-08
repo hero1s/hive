@@ -161,6 +161,10 @@ function MonitorAgent:rpc_inject(code_string)
 end
 
 function MonitorAgent:rpc_set_server_status(status)
+    if status <= hive.service_status then
+        log_err("[MonitorAgent][rpc_set_server_status] change status irreversible: %s --> %s ", status, hive.service_status)
+        return
+    end
     hive.change_service_status(status)
 end
 

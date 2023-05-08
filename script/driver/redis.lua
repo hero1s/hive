@@ -345,7 +345,7 @@ end
 
 function RedisDB:login(socket, title)
     if not socket:connect(socket.ip, socket.port) then
-        log_err("[MysqlDB][login] connect %s db(%s:%s) failed!", title, socket.ip, socket.port)
+        log_err("[RedisDB][login] connect %s db(%s:%s) failed!", title, socket.ip, socket.port)
         return false
     end
     if self.passwd and self.passwd:len() > 1 then

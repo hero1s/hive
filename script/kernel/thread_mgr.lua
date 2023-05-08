@@ -2,6 +2,7 @@
 local select        = select
 local tunpack       = table.unpack
 local tpack         = table.pack
+local tremove       = table.remove
 local sformat       = string.format
 local co_yield      = coroutine.yield
 local co_create     = coroutine.create
@@ -31,11 +32,11 @@ prop:reader("coroutine_pool", nil)
 
 function ThreadMgr:__init()
     self.session_id     = mrandom()
-    self.coroutine_pool = QueueFIFO()
+    self.coroutine_pool = setmetatable({}, { __mode = "kv" })
 end
 
 function ThreadMgr:size()
-    local co_idle_size  = self.coroutine_pool:size()
+    local co_idle_size  = #self.coroutine_pool
     local co_yield_size = tsize(self.coroutine_yields)
     local co_wait_size  = tsize(self.coroutine_waitings)
     return co_yield_size + co_wait_size + 1, co_idle_size
@@ -120,13 +121,13 @@ end
 
 function ThreadMgr:co_create(f)
     local pool = self.coroutine_pool
-    local co   = pool:pop()
+    local co   = tremove(pool)
     if co == nil then
         co = co_create(function(...)
             hxpcall(f, "[ThreadMgr][co_create] fork error: %s", ...)
             while true do
                 f = nil
-                pool:push(co)
+                pool[#pool+1] = co
                 f = co_yield()
                 if type(f) == "function" then
                     hxpcall(f, "[ThreadMgr][co_create] fork error: %s", co_yield())

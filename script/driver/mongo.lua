@@ -294,7 +294,7 @@ function MongoDB:sendCommand(cmd, cmd_v, ...)
         return false, "db not connected"
     end
     local bson_cmd = bson_encode_o(cmd, cmd_v or 1, "$db", self.name, "writeConcern", { w = 0 }, ...)
-    local msg      = mopmsg(0, 0, bson_cmd)
+    local msg      = mopmsg(0, 2, bson_cmd)
     self.sock:send(msg)
     return true
 end
@@ -352,7 +352,7 @@ function MongoDB:find_one(co_name, query, projection)
     if not succ then
         return succ, reply
     end
-    if reply and reply.cursor then
+    if type(reply) == "table" and reply.cursor then
         local documents = reply.cursor.firstBatch
         if #documents > 0 then
             return succ, documents[1]

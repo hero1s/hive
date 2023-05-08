@@ -21,7 +21,7 @@ local event_mgr     = hive.get("event_mgr")
 --初始化网络
 local function init_network()
     local lbus     = require("luabus")
-    local max_conn = environ.number("HIVE_MAX_CONN", 10000)
+    local max_conn = environ.number("HIVE_MAX_CONN", 4096)
     local rpc_key  = environ.get("HIVE_RPC_KEY", "hive2022")
     socket_mgr     = lbus.create_socket_mgr(max_conn)
     socket_mgr.set_rpc_key(rpc_key)
@@ -156,6 +156,7 @@ end
 function hive.change_service_status(status)
     hive.service_status     = status
     hive.node_info.is_ready = hive.is_ready()
+    hive.node_info.status   = hive.service_status
     logger.warn("[hive][change_service_status] %s,service_status:%s,is_ready:%s", hive.name, status, hive.is_ready())
     event_mgr:notify_trigger("evt_change_service_status", hive.service_status)
 end

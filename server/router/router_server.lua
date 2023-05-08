@@ -1,20 +1,21 @@
 --router_server.lua
-local log_err      = logger.err
-local log_info     = logger.info
-local log_debug    = logger.debug
-local sidhash      = service.hash
-local tinsert      = table.insert
+local log_err       = logger.err
+local log_info      = logger.info
+local log_debug     = logger.debug
+local sidhash       = service.hash
+local tinsert       = table.insert
 
-local FlagMask     = enum("FlagMask")
-local KernCode     = enum("KernCode")
-local RpcServer    = import("network/rpc_server.lua")
+local FlagMask      = enum("FlagMask")
+local KernCode      = enum("KernCode")
+local ServiceStatus = enum("ServiceStatus")
+local RpcServer     = import("network/rpc_server.lua")
 
-local socket_mgr   = hive.get("socket_mgr")
-local thread_mgr   = hive.get("thread_mgr")
-local event_mgr    = hive.get("event_mgr")
+local socket_mgr    = hive.get("socket_mgr")
+local thread_mgr    = hive.get("thread_mgr")
+local event_mgr     = hive.get("event_mgr")
 
-local RouterServer = singleton()
-local prop         = property(RouterServer)
+local RouterServer  = singleton()
+local prop          = property(RouterServer)
 prop:accessor("rpc_server", nil)
 function RouterServer:__init()
     self:setup()
@@ -96,9 +97,13 @@ function RouterServer:on_client_register(client, node_info)
 end
 
 -- 心跳
-function RouterServer:on_client_beat(client, is_ready)
-
-
+function RouterServer:on_client_beat(client, node_info)
+    local status = node_info.status
+    --设置hash限流
+    if status > ServiceStatus.RUN then
+        log_info("[RouterServer][on_client_beat] the server is not dispatch:%s,%s", client.name, status)
+        socket_mgr.set_node_status(client.id, status)
+    end
 end
 
 hive.router_server = RouterServer()
