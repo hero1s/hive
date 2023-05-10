@@ -16,7 +16,8 @@ prop:accessor("cache_key", "")          -- cache key
 prop:accessor("primary_value", nil)     -- primary value
 prop:accessor("db_name", "default")     -- database name
 prop:accessor("dirty", false)           -- dirty
-prop:accessor("save_cnt", 0)            -- 存储次数
+prop:accessor("fail_cnt", 0)            -- 存储失败次数
+prop:accessor("retry_time", 0)          -- 重试时间
 prop:accessor("data", {})               -- data
 
 --构造函数
@@ -42,15 +43,20 @@ end
 --保存数据库
 function CacheRow:save()
     if self.dirty then
+        if self.fail_cnt > 0 and hive.now < self.retry_time then
+            return KernCode.MONGO_FAILED
+        end
         local selector  = { [self.cache_key] = self.primary_value }
         local code, res = mongo_mgr:update(self.db_name, self.cache_table, self.data, selector, true)
         if check_failed(code) then
-            log_err("[CacheRow][save] failed: %s=> db: %s, table: %s", res, self.db_name, self.cache_table)
+            self.fail_cnt   = self.fail_cnt + 1
+            self.retry_time = hive.now + self.fail_cnt * 60
+            log_err("[CacheRow][save] failed: cnt:%s, %s=> db: %s, table: %s", self.fail_cnt, res, self.db_name, self.cache_table)
             return code
         end
-        self.save_cnt = self.save_cnt + 1
+        self.fail_cnt = 0
         self.dirty    = false
-        log_debug("[CacheRow][save] %s:%s,save_cnt:%s", self.cache_table, self.primary_value, self.save_cnt)
+        log_debug("[CacheRow][save] %s:%s", self.cache_table, self.primary_value)
         return code
     end
     return SUCCESS

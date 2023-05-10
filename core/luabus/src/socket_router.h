@@ -16,7 +16,7 @@ enum class rpc_type : uint8_t {
 	forward_router,
 };
 
-const int MAX_SERVICE_GROUP = 255;
+const int MAX_SERVICE_GROUP = (UCHAR_MAX + 1);
 
 struct service_node {
 	uint32_t id		= 0;

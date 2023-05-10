@@ -81,9 +81,13 @@ static std::string add_lua_path(std::string path) {
 	return cur_path;
 }
 
-void hive_app::set_signal(uint32_t n) {
+void hive_app::set_signal(uint32_t n, bool b) {
 	uint32_t mask = 1 << n;
-	m_signal |= mask;
+	if (b) {
+		m_signal |= mask;
+	} else {
+		m_signal ^= mask;
+	}
 }
 
 void hive_app::setup(int argc, const char* argv[]) {
@@ -169,7 +173,7 @@ void hive_app::run() {
 	hive.set("platform", get_platform());
 	
 	hive.set_function("get_signal", [&]() { return m_signal; });
-	hive.set_function("set_signal", [&](int n) { set_signal(n); });
+	hive.set_function("set_signal", [&](int n, bool b) { set_signal(n, b); });
 	hive.set_function("ignore_signal", [](int n) { signal(n, SIG_IGN); });
 	hive.set_function("default_signal", [](int n) { signal(n, SIG_DFL); });
 	hive.set_function("register_signal", [](int n) { signal(n, on_signal); });

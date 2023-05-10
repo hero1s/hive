@@ -14,7 +14,7 @@ public:
 	void run();
 	void setup(int argc, const char* argv[]);
 	bool load(int argc, const char* argv[]);
-	void set_signal(uint32_t n);
+	void set_signal(uint32_t n, bool b = true);
 protected:
 	std::string get_environ_def(const std::string& key, const std::string& def) { auto value = getenv(key.c_str()); return value ? value : def; };
 	void exception_handler(const std::string& msg, std::string& err);

@@ -11,6 +11,7 @@ local log_warn       = logger.warn
 local log_err        = logger.err
 local sig_check      = signal.check
 local signal_quit    = signal.quit
+local sig_reload     = signal.reload
 local tunpack        = table.unpack
 local tinsert        = table.insert
 local collectgarbage = collectgarbage
@@ -54,20 +55,8 @@ function UpdateMgr:__init()
     self:attach_fast(thread_mgr)
     self:attach_second(thread_mgr)
     self:attach_minute(thread_mgr)
-    --注册5秒定时器
-    self.hotfix_able = environ.status("HIVE_HOTFIX")
-end
 
-function UpdateMgr:check_hotfix()
-    --检查文件更新
-    if self.hotfix_able then
-        if hive.reload() > 0 then
-            local config_mgr = hive.load("config_mgr")
-            if config_mgr then
-                config_mgr:reload(true)
-            end
-        end
-    end
+    self.hotfix_able = environ.status("HIVE_HOTFIX")
 end
 
 function UpdateMgr:collect_gc()
@@ -252,6 +241,27 @@ function UpdateMgr:check_signal()
         return true
     end
     return false
+end
+
+--检查文件更新
+function UpdateMgr:check_hotfix()
+    local hotfix_func = function(notify)
+        if hive.reload() > 0 then
+            local config_mgr = hive.load("config_mgr")
+            if config_mgr then
+                config_mgr:reload(true)
+            end
+            --todo 通知子线程 toney
+            return true
+        end
+        return false
+    end
+    if not WTITLE and sig_reload() then
+        return hotfix_func(true)
+    end
+    if self.hotfix_able then
+        return hotfix_func()
+    end
 end
 
 function UpdateMgr:check_new_day()

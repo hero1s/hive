@@ -1,5 +1,4 @@
 --router_server.lua
-local log_err       = logger.err
 local log_info      = logger.info
 local log_debug     = logger.debug
 local sidhash       = service.hash
@@ -42,7 +41,6 @@ function RouterServer:on_client_accept(client)
     log_info("[RouterServer][on_client_accept] new connection, token=%s", client.token)
     client.on_forward_error     = function(session_id, error_msg)
         thread_mgr:fork(function()
-            log_err("[RouterServer][on_client_accept] on_forward_error:%s, session_id=%s,%s", error_msg, session_id, client.name)
             client.call(session_id, FlagMask.RES, hive.id, "on_forward_error", false, KernCode.RPC_UNREACHABLE, error_msg)
         end)
     end

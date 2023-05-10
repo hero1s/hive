@@ -12,7 +12,6 @@ local log_debug    = logger.debug
 local check_failed = hive.failed
 
 local event_mgr    = hive.get("event_mgr")
-local config_mgr   = hive.get("config_mgr")
 local update_mgr   = hive.get("update_mgr")
 local mem_monitor  = hive.get("mem_monitor")
 local thread_mgr   = hive.get("thread_mgr")
@@ -131,10 +130,8 @@ end
 
 function MonitorAgent:rpc_reload()
     log_info("[MonitorAgent][rpc_reload]")
-    if hive.reload() > 0 then
-        hive.protobuf_mgr:reload()
-        config_mgr:reload(true)
-    end
+    signal.hotfix()
+    --hive.protobuf_mgr:reload() todo 暂时不热更协议 toney
 end
 
 function MonitorAgent:rpc_collect_gc()

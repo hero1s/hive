@@ -153,8 +153,6 @@ function CacheObj:save()
         for record in pairs(self.dirty_records) do
             if check_success(record:save()) then
                 self.dirty_records[record] = nil
-            else
-                break
             end
         end
         if next(self.dirty_records) then

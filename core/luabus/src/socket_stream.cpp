@@ -670,7 +670,7 @@ void socket_stream::reset_dispatch_pkg(bool init) {
 bool socket_stream::check_flow_ctrl(int64_t now) {
 	if (m_fc_ctrl_package < 1 || m_fc_ctrl_bytes < 1)return false;
 	auto escape_time = (now - m_last_fc_time)/1000;//秒
-	if (escape_time > 10) {
+	if (escape_time > 5) {
 		if ((m_fc_package / escape_time) > m_fc_ctrl_package || m_fc_bytes / escape_time > m_fc_ctrl_bytes) {
 			return true;
 		}
