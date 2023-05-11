@@ -36,6 +36,13 @@ namespace lworker {
             }
             return false;
         }
+
+        void broadcast(slice* buf) {
+            std::unique_lock<spin_mutex> lock(m_mutex);
+            for (auto it : m_worker_map) {
+                it.second->call(buf);
+            }
+        }
         
         bool call(std::string& name, slice* buf) {
             if (name == "master") {

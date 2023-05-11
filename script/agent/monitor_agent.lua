@@ -10,7 +10,7 @@ local log_warn     = logger.warn
 local log_info     = logger.info
 local log_debug    = logger.debug
 local check_failed = hive.failed
-
+local smake_id     = service.make_id
 local event_mgr    = hive.get("event_mgr")
 local update_mgr   = hive.get("update_mgr")
 local mem_monitor  = hive.get("mem_monitor")
@@ -23,6 +23,7 @@ local prop         = property(MonitorAgent)
 prop:reader("client", nil)
 prop:reader("ready_watchers", {})
 prop:reader("close_watchers", {})
+prop:reader("services", {})
 
 function MonitorAgent:__init()
     --创建连接
@@ -68,6 +69,11 @@ function MonitorAgent:watch_services()
     return services
 end
 
+function MonitorAgent:exist_service(service_name, index)
+    local sid = smake_id(service_name, index)
+    return self.services[sid] and true or false
+end
+
 -- 连接关闭回调
 function MonitorAgent:on_socket_error(client, token, err)
     log_info("[MonitorAgent][on_socket_error] disconnect monitor fail!:[%s:%s],err:%s", self.client.ip, self.client.port, err)
@@ -102,6 +108,12 @@ function MonitorAgent:rpc_service_changed(service_name, readys, closes)
 
     self:notify_service_event(self.close_watchers[service_name], service_name, closes, false)
     self:notify_service_event(self.close_watchers["*"], service_name, closes, false)
+    for id, _ in pairs(readys) do
+        self.services[id] = true
+    end
+    for id, _ in pairs(closes) do
+        self.services[id] = nil
+    end
 end
 
 -- 处理Monitor通知退出消息

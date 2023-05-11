@@ -440,9 +440,9 @@ namespace lzset
 				{
 					if (timestamp == val.timestamp)
 					{
-						return key < val.key;
+						return key > val.key;
 					}
-					return timestamp < val.timestamp;
+					return timestamp > val.timestamp;
 				}
 				return score < val.score;
 			}
@@ -503,10 +503,7 @@ namespace lzset
 			auto iter = dict_.find(key);
 			if (iter != dict_.end())
 			{
-				if (reverse_) {
-					return -(iter->second->score);
-				}
-				return iter->second->score;
+				return reverse_ ? -iter->second->score : iter->second->score;
 			}
 			return 0;
 		}

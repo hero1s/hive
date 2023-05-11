@@ -305,6 +305,10 @@ function RedisDB:__release()
 end
 
 function RedisDB:choose_host(hosts)
+    if not next(hosts) then
+        log_err("[RedisDB][choose_host] redis config err: hosts is empty")
+        return
+    end
     local pcount = env_number("HIVE_DB_POOL_COUNT", 1)
     while true do
         for ip, port in pairs(hosts) do

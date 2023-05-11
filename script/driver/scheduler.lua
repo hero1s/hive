@@ -9,6 +9,7 @@ local tunpack          = table.unpack
 local lencode          = lcodec.encode_slice
 local ldecode          = lcodec.decode_slice
 local worker_call      = hive.worker_call
+local worker_broadcast = hive.worker_broadcast
 local worker_update    = hive.worker_update
 
 local FLAG_REQ         = hive.enum("FlagMask", "REQ")
@@ -16,27 +17,20 @@ local FLAG_RES         = hive.enum("FlagMask", "RES")
 local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 
 local event_mgr        = hive.get("event_mgr")
-local update_mgr       = hive.get("update_mgr")
 local thread_mgr       = hive.get("thread_mgr")
 
 local Scheduler        = singleton()
 
 function Scheduler:__init()
-    update_mgr:attach_frame(self)
-    update_mgr:attach_quit(self)
     hive.worker_setup("hive")
 end
 
-function Scheduler:on_quit()
+function Scheduler:quit()
     hive.worker_shutdown()
 end
 
-function Scheduler:on_frame()
+function Scheduler:update()
     worker_update()
-end
-
-function Scheduler:setup(service)
-    hive.worker_setup(service)
 end
 
 function Scheduler:startup(name, entry)
@@ -47,6 +41,11 @@ function Scheduler:startup(name, entry)
     end
     log_info("[Scheduler][startup] startup %s: %s", name, entry)
     return ok
+end
+
+--访问其他线程任务
+function Scheduler:broadcast(rpc, ...)
+    worker_broadcast(lencode(0, FLAG_REQ, "master", rpc, ...))
 end
 
 --访问其他线程任务

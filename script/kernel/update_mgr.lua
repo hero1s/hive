@@ -9,6 +9,7 @@ local odate          = os.date
 local log_info       = logger.info
 local log_warn       = logger.warn
 local log_err        = logger.err
+local sig_get        = signal.get
 local sig_check      = signal.check
 local signal_quit    = signal.quit
 local sig_reload     = signal.reload
@@ -132,7 +133,7 @@ function UpdateMgr:update_hour(clock_ms, cur_hour, time)
     end
 end
 
-function UpdateMgr:update(now_ms, clock_ms)
+function UpdateMgr:update(scheduler, now_ms, clock_ms)
     --业务更新
     thread_mgr:fork(function()
         local diff_ms = clock_ms - hive.clock_ms
@@ -159,7 +160,7 @@ function UpdateMgr:update(now_ms, clock_ms)
         end
         self:update_fast(clock_ms)
         --检查信号
-        if self:check_signal() then
+        if self:check_signal(scheduler) then
             return
         end
         --秒更新
@@ -184,7 +185,9 @@ function UpdateMgr:update_by_time(now, clock_ms)
             obj:on_second5(clock_ms)
         end)
     end
-    self:check_hotfix()
+    if self.hotfix_able then
+        self:check_hotfix()
+    end
     --30秒更新
     if time.sec % 30 > 0 then
         return
@@ -227,41 +230,42 @@ function UpdateMgr:check_service_stop()
     end
 end
 
-function UpdateMgr:check_signal()
-    if not WTITLE and sig_check() then
-        if hive.run then
-            hive.run = nil
-            log_info("[UpdateMgr][check_signal]service quit for signal !")
-            for obj in pairs(self.quit_objs) do
-                thread_mgr:fork(function()
-                    obj:on_quit()
-                end)
-            end
+function UpdateMgr:check_signal(scheduler)
+    if scheduler then
+        local signal = sig_get()
+        if sig_reload(signal) then
+            self:check_hotfix()
+            --通知woker更新
+            scheduler:broadcast("on_reload")
         end
-        return true
+        if sig_check(signal) then
+            if hive.run then
+                hive.run = nil
+                log_info("[UpdateMgr][check_signal]service quit for signal !")
+                for obj in pairs(self.quit_objs) do
+                    thread_mgr:fork(function()
+                        obj:on_quit()
+                    end)
+                end
+                --通知woker退出
+                scheduler:quit()
+            end
+            return true
+        end
     end
     return false
 end
 
 --检查文件更新
 function UpdateMgr:check_hotfix()
-    local hotfix_func = function(notify)
-        if hive.reload() > 0 then
-            local config_mgr = hive.load("config_mgr")
-            if config_mgr then
-                config_mgr:reload(true)
-            end
-            --todo 通知子线程 toney
-            return true
+    if hive.reload() > 0 then
+        local config_mgr = hive.load("config_mgr")
+        if config_mgr then
+            config_mgr:reload(true)
         end
-        return false
+        return true
     end
-    if not WTITLE and sig_reload() then
-        return hotfix_func(true)
-    end
-    if self.hotfix_able then
-        return hotfix_func()
-    end
+    return false
 end
 
 function UpdateMgr:check_new_day()

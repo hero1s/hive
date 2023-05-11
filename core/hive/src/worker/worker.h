@@ -45,6 +45,7 @@ namespace lworker {
     class worker;
     class ischeduler {
     public:
+        virtual void broadcast(slice* buf) = 0;
         virtual bool call(std::string& name, slice* buf) = 0;
         virtual void destory(std::string& name, std::shared_ptr<worker> workor) = 0;
     };

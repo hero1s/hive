@@ -14,6 +14,7 @@ local HiveMode      = enum("HiveMode")
 local ServiceStatus = enum("ServiceStatus")
 
 local co_hookor     = hive.load("co_hookor")
+local scheduler     = hive.load("scheduler")
 local socket_mgr    = hive.load("socket_mgr")
 local update_mgr    = hive.load("update_mgr")
 local event_mgr     = hive.get("event_mgr")
@@ -73,12 +74,9 @@ local function init_mainloop()
     import("kernel/thread_mgr.lua")
     import("kernel/timer_mgr.lua")
     import("kernel/update_mgr.lua")
-    update_mgr = hive.get("update_mgr")
-end
-
---初始化调度器
-local function init_scheduler()
     import("driver/scheduler.lua")
+    update_mgr = hive.get("update_mgr")
+    scheduler  = hive.get("scheduler")
 end
 
 --初始化统计
@@ -97,11 +95,7 @@ function hive.init()
     --主循环
     init_coroutine()
     init_mainloop()
-    if hive.mode <= HiveMode.TINY then
-        --加载调度器
-        init_scheduler()
-        init_statis()
-    end
+    init_statis()
     if hive.mode <= HiveMode.TOOL then
         init_network()
         --加载协议
@@ -145,7 +139,7 @@ function hive.after_start()
     timer_mgr:once(10 * 1000, function()
         hive.change_service_status(ServiceStatus.RUN)
     end)
-    update_mgr:update(ltime())
+    update_mgr:update(scheduler, ltime())
     --开启debug模式
     if environ.status("HIVE_DEBUG") then
         hive.check_endless_loop()
@@ -182,7 +176,8 @@ hive.run  = function()
         socket_mgr.wait(10)
     end
     --系统更新
-    update_mgr:update(ltime())
+    update_mgr:update(scheduler, ltime())
+    scheduler:update()
 end
 
 hive.exit = function()

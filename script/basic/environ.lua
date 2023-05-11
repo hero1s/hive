@@ -13,7 +13,7 @@ local protoaddr = string_ext.protoaddr
 
 environ         = {}
 
-local pattern   = "(%a+)://([^:]+):([^@]+)@([^/]+)/?([^?]*)[%?]?(.*)"
+local pattern   = "(%a+)://([^:]-):([^@]-)@([^/]+)/?([^?]*)[%?]?(.*)"
 
 function environ.init()
     hive.mode   = environ.number("HIVE_MODE", 1)

@@ -6,6 +6,8 @@ local lcodec           = require("lcodec")
 local ltimer           = require("ltimer")
 
 local pcall            = pcall
+local hxpcall          = hive.xpcall
+local log_info         = logger.info
 local log_err          = logger.err
 local tpack            = table.pack
 local tunpack          = table.unpack
@@ -113,13 +115,21 @@ hive.run = function()
     if socket_mgr then
         socket_mgr.wait(10)
     end
-    hive.update()
     --系统更新
-    update_mgr:update(ltime())
+    hxpcall(function()
+        hive.update()
+        update_mgr:update(nil, ltime())
+    end)
 end
 
 --事件分发
 local function notify_rpc(session_id, title, rpc, ...)
+    if rpc == "on_reload" then
+        log_info("[Worker][on_reload]worker:%s reload for signal !", WTITLE)
+        --重新加载脚本
+        update_mgr:check_hotfix()
+        return
+    end
     local rpc_datas = event_mgr:notify_listener(rpc, ...)
     if session_id > 0 then
         hive.call(title, lencode(session_id, FLAG_RES, tunpack(rpc_datas)))
