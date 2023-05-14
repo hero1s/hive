@@ -3,9 +3,9 @@
 
 namespace luakit {
 
-    constexpr size_t BUFFER_DEF     = 64 * 1024;         //64K
-    constexpr size_t BUFFER_RECYCLE = BUFFER_DEF * 64;    
-    constexpr size_t BUFFER_MAX     = 128 * 1024 * 1024; //128M
+    const size_t BUFFER_DEF = 64 * 1024;        //64K
+    const size_t BUFFER_MAX = 64 * 1024 * 1024; //16M
+    const size_t ALIGN_SIZE = 16;               //水位
 
     class var_buffer {
     public:
@@ -31,6 +31,14 @@ namespace luakit {
 
         size_t empty() {
             return m_tail == m_head;
+        }
+        
+        void clean() {
+            size_t data_len = m_tail - m_head;
+            if (m_size > m_max && data_len < BUFFER_DEF) {
+                _resize(m_size / 2);
+            }
+            m_head = m_tail = m_data;
         }
 
         size_t copy(size_t offset, const uint8_t* src, size_t src_len) {
@@ -66,11 +74,9 @@ namespace luakit {
             if (m_head + erase_len <= m_tail) {
                 m_head += erase_len;
                 size_t data_len = (size_t)(m_tail - m_head);
-                if (m_size > BUFFER_DEF && data_len < m_size / 4) {
+                if (m_size > m_max && data_len < BUFFER_DEF) {
                     _regularize();
-                    if (m_size > BUFFER_RECYCLE) {
-                        _resize(m_size / 2);
-                    }
+                    _resize(m_size / 2);
                 }
                 return erase_len;
             }
@@ -167,12 +173,14 @@ namespace luakit {
 
         void _alloc() {
             m_data = (uint8_t*)malloc(BUFFER_DEF);
+            m_size = BUFFER_DEF;
             m_head = m_tail = m_data;
             m_end = m_data + BUFFER_DEF;
-            m_size = BUFFER_DEF;
+            m_max = m_size * ALIGN_SIZE;
         }
 
     private:
+        size_t m_max;
         size_t m_size;
         uint8_t* m_head;
         uint8_t* m_tail;

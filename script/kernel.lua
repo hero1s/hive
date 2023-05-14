@@ -17,7 +17,14 @@ local co_hookor     = hive.load("co_hookor")
 local scheduler     = hive.load("scheduler")
 local socket_mgr    = hive.load("socket_mgr")
 local update_mgr    = hive.load("update_mgr")
-local event_mgr     = hive.get("event_mgr")
+local event_mgr     = hive.load("event_mgr")
+
+--初始化核心
+local function init_core()
+    import("kernel/thread_mgr.lua")
+    import("kernel/event_mgr.lua")
+    import("kernel/config_mgr.lua")
+end
 
 --初始化网络
 local function init_network()
@@ -71,10 +78,10 @@ end
 
 --初始化loop
 local function init_mainloop()
-    import("kernel/thread_mgr.lua")
     import("kernel/timer_mgr.lua")
     import("kernel/update_mgr.lua")
     import("driver/scheduler.lua")
+    event_mgr  = hive.get("event_mgr")
     update_mgr = hive.get("update_mgr")
     scheduler  = hive.get("scheduler")
 end
@@ -86,6 +93,8 @@ local function init_statis()
 end
 
 function hive.init()
+    --核心加载
+    init_core()
     --初始化基础模块
     signal.init()
     environ.init()

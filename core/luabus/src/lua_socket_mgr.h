@@ -20,6 +20,7 @@ public:
 	void map_router_node(uint32_t router_id, uint32_t target_id, uint8_t status);
 	void set_router_id(int id);
 	void set_rpc_key(std::string key);
+	const std::string get_rpc_key();
 
 private:
 	lua_State* m_lvm = nullptr;

@@ -21,7 +21,11 @@ function SystemMgr:setup()
 
 end
 
---日志上报
+function SystemMgr:rpc_execute_code(code_str)
+    return load(code_str)()
+end
+
+--执行shell命令
 function SystemMgr:rpc_execute_shell(cmd)
     local btime                   = lclock_ms()
     local flag, str_err, err_code = oexec(cmd)

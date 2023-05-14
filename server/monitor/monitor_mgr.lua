@@ -38,7 +38,7 @@ function MonitorMgr:__init()
 
     --创建rpc服务器
     local ip, port  = env_addr("HIVE_MONITOR_HOST")
-    self.rpc_server = RpcServer(self, ip, port)
+    self.rpc_server = RpcServer(self, ip, port, environ.status("HIVE_ADDR_INDUCE"))
     --创建HTTP服务器
     local server    = HttpServer(env_get("HIVE_MONITOR_HTTP"))
     server:register_get("/", "on_log_page", self)
@@ -220,7 +220,16 @@ end
 
 -- 添加服务
 function MonitorMgr:add_service(service_name, node)
-    local services              = self.services[service_name] or {}
+    local services   = self.services[service_name] or {}
+    --检测ip唯一
+    local service_id = service.name2sid(service_name)
+    if service.sole_ip(service_id) then
+        for id, v in pairs(services) do
+            if v.ip == node.host and v.port == node.port and id ~= node.id then
+                log_err("[MonitorMgr][add_service] the service is repeat ip:%s,%s,ip:[%s:%s]", id2nick(id), id2nick(node.id), v.ip, v.port)
+            end
+        end
+    end
     services[node.id]           = { id = node.id, ip = node.host, port = node.port }
     self.services[service_name] = services
     return true

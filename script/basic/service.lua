@@ -120,3 +120,8 @@ end
 function service.hash(service_id)
     return SERVICE_HASHS[service_id]
 end
+
+--唯一ip限制
+function service.sole_ip(service_id)
+    return SERVICE_CONFS[service_id].sole_ip
+end

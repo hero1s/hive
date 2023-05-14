@@ -14,7 +14,7 @@ local sig_check      = signal.check
 local signal_quit    = signal.quit
 local sig_reload     = signal.reload
 local tunpack        = table.unpack
-local tinsert        = table.insert
+local tweak          = table_ext.weak
 local collectgarbage = collectgarbage
 local guid_new       = lcodec.guid_new
 local cut_tail       = math_ext.cut_tail
@@ -44,16 +44,24 @@ prop:reader("minute_objs", {})
 prop:reader("second_objs", {})
 prop:reader("second5_objs", {})
 prop:reader("second30_objs", {})
-prop:reader("next_events", {})
-prop:reader("next_seconds", {})
-prop:reader("next_handlers", {})
 
 local gc_step = 10
 
 function UpdateMgr:__init()
+    --设置弱表
+    tweak(self.quit_objs)
+    tweak(self.hour_objs)
+    tweak(self.fast_objs)
+    tweak(self.frame_objs)
+    tweak(self.second_objs)
+    tweak(self.second5_objs)
+    tweak(self.second30_objs)
+    tweak(self.minute_objs)
     --注册订阅
     self:attach_frame(timer_mgr)
+    self:attach_frame(event_mgr)
     self:attach_fast(thread_mgr)
+    self:attach_second(event_mgr)
     self:attach_second(thread_mgr)
     self:attach_minute(thread_mgr)
 
@@ -69,37 +77,11 @@ function UpdateMgr:collect_gc()
     log_warn("[UpdateMgr][collect_gc] %s m,lua:%s m --> %s m,cost time:%s", mem, lua_mem_s, lua_mem_e, lclock_ms() - clock_ms)
 end
 
-function UpdateMgr:update_next()
-    local next_events   = self.next_events
-    local next_handlers = self.next_handlers
-    self.next_events    = {}
-    self.next_handlers  = {}
-    for _, handler in pairs(next_handlers) do
-        thread_mgr:fork(handler)
-    end
-    for _, events in pairs(next_events) do
-        for event, args in pairs(events) do
-            thread_mgr:fork(function()
-                event_mgr:notify_trigger(event, tunpack(args))
-            end)
-        end
-    end
-end
-
 function UpdateMgr:update_second(clock_ms)
     for obj, key in pairs(self.second_objs) do
         thread_mgr:entry(key, function()
             obj:on_second(clock_ms)
         end)
-    end
-    local next_seconds = self.next_seconds
-    self.next_seconds  = {}
-    for _, events in pairs(next_seconds) do
-        for event, args in pairs(events) do
-            thread_mgr:fork(function()
-                event_mgr:notify_trigger(event, tunpack(args))
-            end)
-        end
     end
 end
 
@@ -152,8 +134,6 @@ function UpdateMgr:update(scheduler, now_ms, clock_ms)
                 obj:on_frame(clock_ms, frame)
             end)
         end
-        --更新帧逻辑
-        self:update_next()
         --快帧更新
         if clock_ms < self.last_frame then
             return
@@ -367,31 +347,6 @@ end
 
 function UpdateMgr:detach_fast(obj)
     self.fast_objs[obj] = nil
-end
-
---下一帧执行一个函数
-function UpdateMgr:attach_next(func)
-    tinsert(self.next_handlers, func)
-end
-
---下一帧执行一个事件
-function UpdateMgr:attach_event(eid, event, ...)
-    local events = self.next_events[eid]
-    if not events then
-        self.next_events[eid] = { [event] = { ... } }
-        return
-    end
-    events[event] = { ... }
-end
-
---下一秒执行一个事件
-function UpdateMgr:attach_second_event(eid, event, ...)
-    local events = self.next_seconds[eid]
-    if not events then
-        self.next_seconds[eid] = { [event] = { ... } }
-        return
-    end
-    events[event] = { ... }
 end
 
 --添加对象到程序退出通知列表

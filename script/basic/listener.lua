@@ -4,6 +4,7 @@ local ipairs     = ipairs
 local tpack      = table.pack
 local tunpack    = table.unpack
 local tremove    = table.remove
+local tweak      = table_ext.weak
 local log_err    = logger.err
 local log_warn   = logger.warn
 local dtraceback = debug.traceback
@@ -17,12 +18,6 @@ function Listener:__init()
     self._ignores   = {}     -- map<cmd, bool>
 end
 
-function Listener:verify_trigger(trigger)
-    if not is_singleton(trigger) and not trigger.trigger then
-        log_warn("[Listener][verify_trigger] the trigger is not singleton,dot forget remove listen:%s", tostring(trigger))
-    end
-end
-
 function Listener:add_trigger(trigger, event, handler)
     local func_name     = handler or event
     local callback_func = trigger[func_name]
@@ -30,7 +25,7 @@ function Listener:add_trigger(trigger, event, handler)
         log_err("[Listener][add_trigger] event(%s) handler is nil!", event)
         return
     end
-    local info     = { trigger, func_name }
+    local info     = tweak({ trigger, func_name })
     local triggers = self._triggers[event]
     if not triggers then
         self._triggers[event] = { info }
@@ -60,7 +55,6 @@ function Listener:remove_trigger(trigger, event)
 end
 
 function Listener:add_listener(listener, event, handler)
-    self:verify_trigger(listener)
     if self._listeners[event] then
         log_err("[Listener][add_listener] event(%s) repeat!", event)
         return
@@ -71,7 +65,7 @@ function Listener:add_listener(listener, event, handler)
         log_err("[Listener][add_listener] event(%s) callback is nil!", event)
         return
     end
-    self._listeners[event] = { listener, func_name }
+    self._listeners[event] = tweak({ listener, func_name })
 end
 
 function Listener:remove_listener(event)
@@ -79,7 +73,6 @@ function Listener:remove_listener(event)
 end
 
 function Listener:add_cmd_listener(listener, cmd, handler)
-    self:verify_trigger(listener)
     if self._commands[cmd] then
         log_err("[Listener][add_cmd_listener] cmd(%s) repeat!", cmd)
         return
@@ -90,7 +83,7 @@ function Listener:add_cmd_listener(listener, cmd, handler)
         log_err("[Listener][add_cmd_listener] cmd(%s) handler is nil!", cmd)
         return
     end
-    self._commands[cmd] = { listener, func_name }
+    self._commands[cmd] = tweak({ listener, func_name })
 end
 
 function Listener:remove_cmd_listener(cmd)
@@ -104,7 +97,7 @@ function Listener:add_vote(trigger, event, handler)
         log_err("[Listener][add_vote] event(%s) handler is nil!", event)
         return
     end
-    local info  = { trigger, func_name }
+    local info  = tweak({ trigger, func_name })
     local votes = self._votes[event]
     if not votes then
         self._votes[event] = { info }
@@ -177,8 +170,5 @@ function Listener:fire_vote(event, ...)
     end
     return true
 end
-
---创建全局监听器
-hive.event_mgr = Listener()
 
 return Listener

@@ -8,7 +8,7 @@
 constexpr int IO_BUFFER_DEF		= 64 * 1024;             //64K
 constexpr int IO_BUFFER_MAX		= 128 * 1024 * 1024;	 //128M
 constexpr int IO_BUFFER_SEND	= 8 * 1024;
-constexpr size_t ALIGN_SIZE		= 4;					 //水位
+constexpr size_t IO_ALIGN_SIZE	= 16;					 //水位
 
 class io_buffer
 {
@@ -30,7 +30,7 @@ public:
 		m_buffer_end = m_buffer + m_buffer_size;
 		if (align) {
 			m_align_size = size;
-			m_align_max = m_align_size * ALIGN_SIZE;
+			m_align_max = m_align_size * IO_ALIGN_SIZE;
 		}
 		return m_buffer_size - data_len;
 	}
@@ -141,7 +141,7 @@ protected:
 	void alloc_buffer(size_t align_size)
 	{
 		m_align_size = align_size;
-		m_align_max = m_align_size * ALIGN_SIZE;
+		m_align_max = m_align_size * IO_ALIGN_SIZE;
 		m_buffer = (BYTE*)malloc(align_size);
 		m_buffer_size = align_size;
 		m_data_begin = m_buffer;

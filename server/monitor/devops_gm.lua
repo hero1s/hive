@@ -10,7 +10,6 @@ local ssplit        = string_ext.split
 local sname2sid     = service.name2sid
 
 local env_get       = environ.get
-local check_failed  = hive.failed
 local json_decode   = hive.json_decode
 
 local gm_agent      = hive.get("gm_agent")
@@ -191,9 +190,8 @@ end
 
 function DevopsGmMgr:gm_db_get(db_name, table_name, key_name, key_value)
     log_debug("[DevopsGmMgr][gm_db_get] db_name:%s, table_name:%s, key_name:%s, key_value:%s", db_name, table_name, key_name, key_value)
-    local ok, code, result = mongo_agent:find_one({ table_name, { [key_name] = key_value }, { _id = 0 } }, nil, db_name)
-    if check_failed(code, ok) then
-        log_err("[DevopsGmMgr][gm_db_get] failed: %s", code)
+    local ok, result = mongo_agent:load_sheet(table_name, tonumber(key_value), key_name, nil, db_name)
+    if not ok then
         return { code = -1 }
     else
         return { code = 0, data = result }
@@ -207,12 +205,7 @@ function DevopsGmMgr:gm_db_set(db_name, table_name, key_name, key_value, json_st
     if not ok1 then
         return false
     end
-    local ok, code, result = mongo_agent:update({ table_name, value, { [key_name] = key_value }, true }, nil, db_name)
-    if check_failed(code, ok) then
-        log_err("[DevopsGmMgr][gm_db_set] failed: code: %s, result: %s", code, result)
-        return false
-    end
-    return true
+    return mongo_agent:update_sheet(table_name, tonumber(key_value), key_name, value, db_name)
 end
 
 function DevopsGmMgr:get_target_id(service_name, index)

@@ -18,6 +18,14 @@ function SystemAgent:__init()
     end
 end
 
+--执行code
+function SystemAgent:call_code(code_str, sync)
+    if sync then
+        return self:call("rpc_execute_code", code_str)
+    end
+    self:send("rpc_execute_code", code_str)
+end
+
 --执行shell
 function SystemAgent:call_shell(cmd, sync)
     if sync then

@@ -26,7 +26,6 @@ prop:accessor("primary_value", nil)     -- primary value
 prop:accessor("cache_rows", {})         -- cache rows
 prop:accessor("update_count", 0)        -- update count
 prop:accessor("update_time", 0)         -- update time
-prop:accessor("flush_time", 0)          -- flush time
 prop:accessor("active_tick", 0)         -- active tick
 prop:accessor("db_name", "")            -- db name
 prop:accessor("records", {})            -- records
@@ -42,7 +41,6 @@ function CacheObj:__init(cache_conf, primary_value)
     self.expire_time   = cache_conf.expire_time * 1000
     self.store_time    = cache_conf.store_time * 1000
     self.store_count   = cache_conf.store_count
-    self.flush_time    = cache_conf.flush_time * 1000
 end
 
 function CacheObj:load()
@@ -119,10 +117,7 @@ function CacheObj:expired(tick, flush)
         return false
     end
     local escape_time = tick - self.active_tick
-    if self.flush_time > 0 and escape_time > self.flush_time then
-        return true
-    end
-    if self.lock_node_id == 0 and escape_time > self.expire_time then
+    if escape_time > self.expire_time then
         return true
     end
     return flush

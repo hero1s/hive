@@ -593,8 +593,8 @@ void socket_stream::dispatch_package(bool reset) {
 		m_recv_buffer.pop_data(header_len + (size_t)package_size);
 		m_last_recv_time = steady_ms();
 
-		// 防止单个连接处理太久，不能大于20ms
-		if (m_last_recv_time - m_tick_dispatch_time > 20) {
+		// 防止单个连接处理太久，不能大于50ms
+		if (m_last_recv_time - m_tick_dispatch_time > 50) {
 			m_need_dispatch_pkg = true;
 			break;
 		}

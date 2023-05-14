@@ -73,7 +73,8 @@ namespace luabus {
             "set_node_status",&lua_socket_mgr::set_node_status,
             "map_router_node",&lua_socket_mgr::map_router_node,
             "set_router_id",&lua_socket_mgr::set_router_id,
-            "set_rpc_key",&lua_socket_mgr::set_rpc_key
+            "set_rpc_key",&lua_socket_mgr::set_rpc_key,
+            "get_rpc_key",&lua_socket_mgr::get_rpc_key
             );
         kit_state.new_class<lua_socket_node>(
             "ip", &lua_socket_node::m_ip,

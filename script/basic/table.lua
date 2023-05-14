@@ -273,6 +273,10 @@ local function treverse(arr)
     return tmp
 end
 
+local function tweak(src, mode)
+    return setmetatable(src, { __mode = mode or "kv" })
+end
+
 table_ext                   = _ENV.table_ext or {}
 
 table_ext.random            = trandom
@@ -300,6 +304,7 @@ table_ext.indexof           = indexof
 table_ext.find_key_by_value = findKeyByValue
 table_ext.filter            = tfilter
 table_ext.reverse           = treverse
+table_ext.weak              = tweak
 
 -- 按哈希key排序
 --[[ 使用示例:

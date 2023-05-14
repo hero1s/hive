@@ -182,7 +182,8 @@ function RpcServer:rpc_heartbeat(client, is_init, node)
         -- 检查重复注册
         local eclient = self:get_client_by_id(node.id)
         if eclient then
-            log_err("[RpcServer][rpc_heartbeat] client(%s) be kickout, service replace!", eclient.name)
+            local rpc_key = hive.socket_mgr.get_rpc_key()
+            log_err("[RpcServer][rpc_heartbeat] client(%s) be kickout, same service is run!,rpckey:%s", eclient.name, rpc_key)
             self:send(client, "rpc_client_kickout", hive.id, "service replace")
             return
         end

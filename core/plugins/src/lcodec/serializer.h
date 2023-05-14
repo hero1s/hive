@@ -32,7 +32,7 @@ namespace lcodec {
     class serializer {
     public:
         slice* encode_slice(lua_State* L) {
-            m_buffer.reset();
+            m_buffer.clean();
             m_sshares.clear();
             int n = lua_gettop(L);
             for (int i = 1; i <= n; i++) {
@@ -63,13 +63,13 @@ namespace lcodec {
         }
 
         int decode(lua_State* L, const char* buf, size_t len) {
-            m_buffer.reset();
+            m_buffer.clean();
             m_buffer.push_data((uint8_t*)buf, len);
             return decode_slice(L, m_buffer.get_slice());
         }
 
         int serialize(lua_State* L) {
-            m_buffer.reset();
+            m_buffer.clean();
             size_t data_len = 0;
             int line = luaL_optinteger(L, 2, 0);
             int max_depth = luaL_optinteger(L, 3, 6);

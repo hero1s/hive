@@ -24,7 +24,7 @@ end
 function RouterServer:setup()
     local port      = environ.number("HIVE_ROUTER_PORT", 9001)
     --启动server
-    self.rpc_server = RpcServer(self, "0.0.0.0", port, true)
+    self.rpc_server = RpcServer(self, "0.0.0.0", port, environ.status("HIVE_ADDR_INDUCE"))
     service.make_node(self.rpc_server:get_port())
     socket_mgr.set_router_id(hive.id)
 end

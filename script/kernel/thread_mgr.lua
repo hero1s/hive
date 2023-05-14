@@ -55,8 +55,8 @@ function ThreadMgr:entry(key, func)
         return false
     end
     self:fork(function()
-        local lock<close>     = EntryLock(self, key)
-        self.entry_pools[key] = lock
+        local _lock<close>    = EntryLock(self, key)
+        self.entry_pools[key] = true
         func()
     end)
     return true
@@ -126,9 +126,9 @@ function ThreadMgr:co_create(f)
         co = co_create(function(...)
             hxpcall(f, "[ThreadMgr][co_create] fork error: %s", ...)
             while true do
-                f = nil
-                pool[#pool+1] = co
-                f = co_yield()
+                f               = nil
+                pool[#pool + 1] = co
+                f               = co_yield()
                 if type(f) == "function" then
                     hxpcall(f, "[ThreadMgr][co_create] fork error: %s", co_yield())
                 end

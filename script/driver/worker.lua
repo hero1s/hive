@@ -17,7 +17,7 @@ local lencode          = lcodec.encode_slice
 local ldecode          = lcodec.decode_slice
 local ltime            = ltimer.time
 
-local event_mgr        = hive.get("event_mgr")
+local event_mgr        = hive.load("event_mgr")
 local co_hookor        = hive.load("co_hookor")
 local socket_mgr       = hive.load("socket_mgr")
 local update_mgr       = hive.load("update_mgr")
@@ -27,6 +27,13 @@ local WTITLE           = hive.worker_title
 local FLAG_REQ         = hive.enum("FlagMask", "REQ")
 local FLAG_RES         = hive.enum("FlagMask", "RES")
 local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
+
+--初始化核心
+local function init_core()
+    import("kernel/thread_mgr.lua")
+    import("kernel/event_mgr.lua")
+    import("kernel/config_mgr.lua")
+end
 
 --初始化网络
 local function init_network()
@@ -70,14 +77,16 @@ end
 
 --初始化loop
 local function init_mainloop()
-    import("kernel/thread_mgr.lua")
     import("kernel/timer_mgr.lua")
     import("kernel/update_mgr.lua")
+    event_mgr  = hive.get("event_mgr")
     thread_mgr = hive.get("thread_mgr")
     update_mgr = hive.get("update_mgr")
 end
 
 function hive.init()
+    --核心加载
+    init_core()
     --初始化基础模块
     environ.init()
     service.init()

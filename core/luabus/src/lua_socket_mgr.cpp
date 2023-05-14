@@ -68,3 +68,8 @@ void lua_socket_mgr::set_router_id(int id) {
 void lua_socket_mgr::set_rpc_key(std::string key) {
 	m_mgr->set_handshake_verify(key);
 }
+
+const std::string lua_socket_mgr::get_rpc_key() {
+	return m_mgr->get_handshake_verify();
+}
+
