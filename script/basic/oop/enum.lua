@@ -125,3 +125,7 @@ function enum(name, base, ...)
     return enum_tpls[name]
 end
 
+function enum_kv_list(enum_obj)
+    return enum_obj.__vlist
+end
+

@@ -4,7 +4,7 @@
 namespace luakit {
 
     const size_t BUFFER_DEF = 64 * 1024;        //64K
-    const size_t BUFFER_MAX = 64 * 1024 * 1024; //16M
+    const size_t BUFFER_MAX = 64 * 1024 * 1024; //64M
     const size_t ALIGN_SIZE = 16;               //水位
 
     class var_buffer {
@@ -114,6 +114,9 @@ namespace luakit {
                     size_t data_len = m_tail - m_head;
                     while (nsize - data_len < len) {
                         nsize *= 2;
+                    }
+                    if (nsize >= BUFFER_MAX) {
+                        return nullptr;
                     }
                     space_len = _resize(nsize);
                     if (space_len < len) {

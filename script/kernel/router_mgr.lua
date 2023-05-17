@@ -42,11 +42,6 @@ end
 --服务关闭
 function RouterMgr:on_service_close(id, name)
     log_debug("[RouterMgr][on_service_close] node: %s", id2nick(id))
-    local router = self.routers[id]
-    if router then
-        router.client:close()
-        self.routers[id] = nil
-    end
 end
 
 --服务上线
@@ -60,15 +55,23 @@ function RouterMgr:add_router(router_id, host, port)
     if router_id == hive.id then
         return
     end
-    if not self.routers[router_id] then
-        log_debug("[RouterMgr][add_router] %s --> %s,%s:%s", hive.name, id2nick(router_id), host, port)
-        local RpcClient         = import("network/rpc_client.lua")
-        self.routers[router_id] = {
-            addr      = host,
-            router_id = router_id,
-            client    = RpcClient(self, host, port)
-        }
+    local router = self.routers[router_id]
+    if router then
+        if router.client.ip ~= host or router.client.port ~= port then
+            router.client:close()
+            self.routers[router_id] = nil
+            log_err("[RouterMgr][add_router] replace new router:%s,%s,%s", id2nick(router_id), host, port)
+        else
+            return
+        end
     end
+    log_debug("[RouterMgr][add_router] %s --> %s,%s:%s", hive.name, id2nick(router_id), host, port)
+    local RpcClient         = import("network/rpc_client.lua")
+    self.routers[router_id] = {
+        addr      = host,
+        router_id = router_id,
+        client    = RpcClient(self, host, port)
+    }
 end
 
 --错误处理

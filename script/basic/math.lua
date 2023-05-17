@@ -3,6 +3,8 @@ local mfloor     = math.floor
 local mtointeger = math.tointeger
 local msqrt      = math.sqrt
 local mrandom    = math.random
+local tconcat    = table.concat
+local tinsert    = table.insert
 
 math_ext         = _ENV.math_ext or {}
 
@@ -58,5 +60,21 @@ end
 
 function math_ext.conv_number(v)
     return mtointeger(v) or tonumber(v) or 0
+end
+
+-- 返回指定长度的字符串(数字+字母)
+local WORD_ARR = {
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+    'a', 'b', 'c', 'd', 'e', 'f', 'g',
+    'h', 'i', 'j', 'k', 'l', 'm', 'n',
+    'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
+}
+function math_ext.random_str(len)
+    local result_arr = {}
+    for i = 1, len do
+        tinsert(result_arr, mrandom(1, #WORD_ARR))
+    end
+
+    return tconcat(result_arr, "")
 end
 

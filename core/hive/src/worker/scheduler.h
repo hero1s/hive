@@ -56,19 +56,18 @@ namespace lworker {
         }
 
         bool call(slice* buf) {
-            if (buf->size() < BUFFER_MAX) {
+            uint8_t* target = m_write_buf->peek_space(buf->size() + sizeof(uint32_t));
+            if (target) {
                 std::unique_lock<spin_mutex> lock(m_mutex);
-                if (m_write_buf->write<uint32_t>(buf->size()) > 0) {
-                    if (m_write_buf->push_data(buf->head(), buf->size()) > 0) {
-                        return true;
-                    }
-                    m_write_buf->pop_size(sizeof(uint32_t));
-                }                
+                m_write_buf->write<uint32_t>(buf->size());
+                m_write_buf->push_data(buf->head(), buf->size());
+                return true;
             }
             return false;
         }
 
         void update() {
+            uint64_t clock_ms = ltimer::steady_ms();
             if (m_read_buf->empty()) {
                 if (m_write_buf->empty()) {
                     return;
@@ -83,6 +82,7 @@ namespace lworker {
                 m_lua->table_call(service, "on_scheduler", nullptr, std::tie(), slice);
                 m_read_buf->pop_size(plen);
                 slice = read_slice(m_read_buf, &plen);
+                if (ltimer::steady_ms() - clock_ms > 100) break;
             }
         }
 

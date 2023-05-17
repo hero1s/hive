@@ -304,6 +304,7 @@ int socket_stream::stream_send(const char* data, size_t data_len)
 	if (m_link_status != elink_status::link_connected || data_len == 0)
 		return 0;
 
+#ifndef DELAY_SEND
 	if (m_send_buffer.empty()) {
 		while (data_len > 0) {
 			int send_len = ::send(m_socket, data, (int)data_len, 0);
@@ -321,11 +322,16 @@ int socket_stream::stream_send(const char* data, size_t data_len)
 			return total_len;
 		}
 	}
-
+#endif // DELAY_SEND
 	if (!m_send_buffer.push_data(data, data_len)) {
 		on_error(fmt::format("send-buffer-full:{},data:{},want:{}", m_send_buffer.capacity(), m_send_buffer.data_len(),data_len).c_str());
 		return 0;
 	}
+#ifdef DELAY_SEND
+	if (m_send_buffer.data_len() > IO_BUFFER_SEND) {
+		do_send(UINT_MAX, false);
+	}
+#endif // DELAY_SEND
 
 #if _MSC_VER
 	if (!wsa_send_empty(m_socket, m_send_ovl)) {
@@ -593,8 +599,8 @@ void socket_stream::dispatch_package(bool reset) {
 		m_recv_buffer.pop_data(header_len + (size_t)package_size);
 		m_last_recv_time = steady_ms();
 
-		// 防止单个连接处理太久，不能大于50ms
-		if (m_last_recv_time - m_tick_dispatch_time > 50) {
+		// 防止单个连接处理太久，不能大于100ms
+		if (m_last_recv_time - m_tick_dispatch_time > 100) {
 			m_need_dispatch_pkg = true;
 			break;
 		}

@@ -1,15 +1,17 @@
 -- cache_agent.lua
 
-local log_err      = logger.err
-local check_failed = hive.failed
+local log_err          = logger.err
+local check_failed     = hive.failed
 
-local router_mgr   = hive.get("router_mgr")
+local router_mgr       = hive.get("router_mgr")
+local thread_mgr       = hive.get("thread_mgr")
 
-local RPC_FAILED   = hive.enum("KernCode", "RPC_FAILED")
-local CACHE_BOTH   = hive.enum("CacheType", "BOTH")
-local CACHE_READ   = hive.enum("CacheType", "READ")
+local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
+local RPC_FAILED       = hive.enum("KernCode", "RPC_FAILED")
+local CACHE_BOTH       = hive.enum("CacheType", "BOTH")
+local CACHE_READ       = hive.enum("CacheType", "READ")
 
-local CacheAgent   = singleton()
+local CacheAgent       = singleton()
 function CacheAgent:__init()
 end
 
@@ -48,25 +50,107 @@ function CacheAgent:update_key(primary_key, table_name, table_kvs, cache_name, f
 end
 
 -- 删除
-function CacheAgent:delete(primary_key, cache_name)
+function CacheAgent:delete(primary_key, cache_name, sync)
     local req_data = { cache_name, primary_key }
-    local ok, code = router_mgr:call_cachesvr_hash(primary_key, "rpc_cache_delete", hive.id, req_data)
-    if check_failed(code, ok) then
-        log_err("[CacheAgent][delete] faild: code=%s,cache_name=%s,primary_key=%s", code, cache_name, primary_key)
-        return ok and code or RPC_FAILED
+    if sync then
+        local ok, code = router_mgr:call_cachesvr_hash(primary_key, "rpc_cache_delete", hive.id, req_data)
+        if check_failed(code, ok) then
+            log_err("[CacheAgent][delete] faild: code=%s,cache_name=%s,primary_key=%s", code, cache_name, primary_key)
+            return ok and code or RPC_FAILED
+        end
+        return code
+    else
+        router_mgr:send_cachesvr_hash(primary_key, "rpc_cache_delete", hive.id, req_data)
     end
-    return code
 end
 
 -- flush
-function CacheAgent:flush(primary_key, cache_name)
+function CacheAgent:flush(primary_key, cache_name, sync)
     local req_data = { cache_name, primary_key }
-    local ok, code = router_mgr:call_cachesvr_hash(primary_key, "rpc_cache_flush", hive.id, req_data)
-    if check_failed(code, ok) then
-        log_err("[CacheAgent][flush] faild: code=%s,cache_name=%s,primary_key=%s", code, cache_name, primary_key)
-        return ok and code or RPC_FAILED
+    if sync then
+        local ok, code = router_mgr:call_cachesvr_hash(primary_key, "rpc_cache_flush", hive.id, req_data)
+        if check_failed(code, ok) then
+            log_err("[CacheAgent][flush] faild: code=%s,cache_name=%s,primary_key=%s", code, cache_name, primary_key)
+            return ok and code or RPC_FAILED
+        end
+        return code
+    else
+        router_mgr:send_cachesvr_hash(primary_key, "rpc_cache_flush", hive.id, req_data)
     end
-    return code
+end
+
+-- 拉取集合
+function CacheAgent:load_collect_by_cname(primary_key, cache_names, read_only)
+    local tab_cnt    = 0
+    local ret        = true
+    local adata      = {}
+    local session_id = thread_mgr:build_session_id()
+    for _, cache_name in ipairs(cache_names or {}) do
+        tab_cnt = tab_cnt + 1
+        thread_mgr:fork(function()
+            local ok, data = self:load(primary_key, cache_name, read_only)
+            if ok then
+                adata[cache_name] = data[cache_name]
+            else
+                thread_mgr:response(session_id, false)
+                return
+            end
+            thread_mgr:response(session_id, true)
+        end)
+    end
+    while tab_cnt > 0 do
+        local ok = thread_mgr:yield(session_id, "load_collect_name", RPC_CALL_TIMEOUT)
+        if not ok then
+            ret = false
+        end
+        tab_cnt = tab_cnt - 1
+    end
+    if not ret then
+        if not read_only then
+            for _, cache_name in ipairs(cache_names) do
+                self:flush(primary_key, cache_name)
+            end
+        end
+        return false
+    end
+    return true, adata
+end
+
+-- 拉取集合
+function CacheAgent:load_collect_by_key(primary_keys, cache_name, read_only)
+    local tab_cnt    = 0
+    local ret        = true
+    local adata      = {}
+    local session_id = thread_mgr:build_session_id()
+    for _, primary_key in ipairs(primary_keys or {}) do
+        tab_cnt = tab_cnt + 1
+        thread_mgr:fork(function()
+            local ok, data = self:load(primary_key, cache_name, read_only)
+            if ok then
+                adata[primary_key] = data[cache_name]
+            else
+                thread_mgr:response(session_id, false)
+                return
+            end
+            thread_mgr:response(session_id, true)
+        end)
+    end
+    while tab_cnt > 0 do
+        local ok = thread_mgr:yield(session_id, "load_collect_key", RPC_CALL_TIMEOUT)
+        if not ok then
+            ret = false
+        end
+        tab_cnt = tab_cnt - 1
+    end
+    if not ret then
+        if not read_only then
+            for _, primary_key in ipairs(primary_keys) do
+                self:flush(primary_key, cache_name)
+            end
+        end
+        return false
+    end
+    return true, adata
 end
 
 -- export

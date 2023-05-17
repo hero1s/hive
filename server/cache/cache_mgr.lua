@@ -227,7 +227,9 @@ function CacheMgr:get_cache_obj(hive_id, cache_name, primary_key, cache_type)
         end
         return SUCCESS, cobj
     end
-    log_err("[CacheMgr][get_cache_obj] cache object not exist! cache_name=%s,primary=%s,cache_type=%s", cache_name, primary_key, cache_type)
+    if cache_type ~= CAWRITE then
+        log_err("[CacheMgr][get_cache_obj] cache object not exist! cache_name=%s,primary=%s,cache_type=%s,from:%s", cache_name, primary_key, cache_type, hive.where_call())
+    end
     return CacheCode.CACHE_IS_NOT_EXIST
 end
 
@@ -277,6 +279,9 @@ function CacheMgr:rpc_cache_delete(hive_id, req_data)
     local cache_name, primary_key = tunpack(req_data)
     local code, cache_obj         = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.WRITE)
     if SUCCESS ~= code then
+        if code == CacheCode.CACHE_IS_NOT_EXIST then
+            return SUCCESS
+        end
         log_err("[CacheMgr][rpc_cache_delete] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return code
     end
@@ -293,6 +298,9 @@ function CacheMgr:rpc_cache_flush(hive_id, req_data)
     local cache_name, primary_key = tunpack(req_data)
     local code, cache_obj         = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.WRITE)
     if SUCCESS ~= code then
+        if code == CacheCode.CACHE_IS_NOT_EXIST then
+            return SUCCESS
+        end
         log_err("[CacheMgr][rpc_cache_flush] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return code
     end

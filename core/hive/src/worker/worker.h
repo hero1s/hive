@@ -4,6 +4,7 @@
 #include <atomic>
 #include <thread>
 #include "../sandbox.h"
+#include "ltimer/ltimer.h"
 #include "fmt/core.h"
 #include "thread_name.hpp"
 #include "lua_kit.h"
@@ -69,18 +70,17 @@ namespace lworker {
 
         bool call(slice* buf) {
             std::unique_lock<spin_mutex> lock(m_mutex);
-            if (buf->size() < BUFFER_MAX) {
-                if (m_write_buf->write<uint32_t>(buf->size()) > 0) {
-                    if (m_write_buf->push_data(buf->head(), buf->size()) > 0) {
-                        return true;
-                    }
-                    m_write_buf->pop_size(sizeof(uint32_t));
-                }               
+            uint8_t* target = m_write_buf->peek_space(buf->size() + sizeof(uint32_t));
+            if (target) {
+                m_write_buf->write<uint32_t>(buf->size());
+                m_write_buf->push_data(buf->head(), buf->size());
+                return true;
             }
             return false;
         }
 
         void update() {
+            uint64_t clock_ms = ltimer::steady_ms();
             if (m_read_buf->empty()) {
                 if (m_write_buf->empty()) {
                     return;
@@ -95,6 +95,7 @@ namespace lworker {
                 m_lua->table_call(service, "on_worker", nullptr, std::tie(), slice);
                 m_read_buf->pop_size(plen);
                 slice = read_slice(m_read_buf, &plen);
+                if (ltimer::steady_ms() - clock_ms > 100) break;
             }
         }
 

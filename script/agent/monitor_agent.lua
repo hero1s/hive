@@ -120,7 +120,7 @@ end
 function MonitorAgent:rpc_hive_quit(reason)
     -- 发个退出通知
     event_mgr:notify_trigger("evt_hive_quit", reason)
-    update_mgr:attach_next(function()
+    event_mgr:fire_next_frame(function()
         log_warn("[MonitorAgent][on_hive_quit]->service:%s,reason:%s", hive.name, reason)
         signal_quit()
     end)

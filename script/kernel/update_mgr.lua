@@ -13,7 +13,6 @@ local sig_get        = signal.get
 local sig_check      = signal.check
 local signal_quit    = signal.quit
 local sig_reload     = signal.reload
-local tunpack        = table.unpack
 local tweak          = table_ext.weak
 local collectgarbage = collectgarbage
 local guid_new       = lcodec.guid_new

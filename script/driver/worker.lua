@@ -169,8 +169,10 @@ end
 --访问主线程
 hive.call_master = function(rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    hive.call("master", lencode(session_id, FLAG_REQ, WTITLE, rpc, ...))
-    return thread_mgr:yield(session_id, "call_master", RPC_CALL_TIMEOUT)
+    if hive.call("master", lencode(session_id, FLAG_REQ, WTITLE, rpc, ...)) then
+        return thread_mgr:yield(session_id, "call_master", RPC_CALL_TIMEOUT)
+    end
+    return false, "call failed!"
 end
 
 --通知主线程
@@ -181,8 +183,10 @@ end
 --访问其他线程
 hive.call_worker = function(name, rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    hive.call(name, lencode(session_id, FLAG_REQ, WTITLE, rpc, ...))
-    return thread_mgr:yield(session_id, "call_master", RPC_CALL_TIMEOUT)
+    if hive.call(name, lencode(session_id, FLAG_REQ, WTITLE, rpc, ...)) then
+        return thread_mgr:yield(session_id, "call_master", RPC_CALL_TIMEOUT)
+    end
+    return false, "call failed!"
 end
 
 --通知其他线程
