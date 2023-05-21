@@ -1,9 +1,10 @@
---cfg_mgr.lua
-
 -- 配置管理器
+local iopen       = io.open
 local tpack       = table.pack
 local tunpack     = table.unpack
-
+local tsort       = table.sort
+local sformat     = string.format
+local log_err     = logger.err
 local ConfigTable = import("kernel/object/config_table.lua")
 
 local ConfigMgr   = singleton()
@@ -36,28 +37,26 @@ function ConfigMgr:reload(notify)
     end
 end
 
-function ConfigMgr:load_enum_table(name, ename, main_key, ...)
-    local conf_tab, reload = self:load_table(name, main_key, ...)
+function ConfigMgr:load_enum_table(name, ename, enum_key, main_key)
+    local conf_tab, reload = self:load_table(name, main_key)
     if conf_tab then
         local enum_obj = enum(ename, 0)
         for _, conf in conf_tab:iterator() do
-            enum_obj[conf["enum_key"]] = conf[main_key]
+            enum_obj[conf[enum_key]] = conf[main_key]
         end
     end
-
     self.table_load_info[name] = {
         func   = "load_enum_table",
-        params = tpack(name, ename, main_key, ...),
+        params = tpack(name, ename, enum_key, main_key),
     }
-
     return conf_tab, reload
 end
 
 --加载配置表并生成枚举
-function ConfigMgr:init_enum_table(name, ename, main_key, ...)
+function ConfigMgr:init_enum_table(name, ename, enum_key, main_key)
     local conf_tab = self.table_list[name]
     if not conf_tab then
-        conf_tab = self:load_enum_table(name, ename, main_key, ...)
+        conf_tab = self:load_enum_table(name, ename, enum_key, main_key)
     end
     return conf_tab
 end
@@ -117,6 +116,78 @@ function ConfigMgr:select(name, query)
         return conf_tab:select(query)
     end
 end
+
+-- 生成枚举lua文件
+function ConfigMgr:gen_enum_file(name, ename, enum_key, main_key, desc)
+    logger.debug("gen_enum_file:%s,ename:%s,enum_key:%s,main_key:%s,desc:%s", name, ename, enum_key, main_key, desc)
+    local conf_tab, reload = self:load_table(name, main_key)
+    local gen_objs         = {}
+    local max_key_len      = 20
+    if conf_tab then
+        for _, conf in conf_tab:iterator() do
+            local rename = ename
+            if conf[ename] then
+                --存在配置列则用配置列名,否则以指定名为枚举名
+                rename = conf[ename]
+            end
+            if string.len(rename) > 1 then
+                if not gen_objs[rename] then
+                    gen_objs[rename] = {}
+                end
+                local key_len = string.len(conf[enum_key])
+                if key_len > 1 then
+                    table.insert(gen_objs[rename], { conf[enum_key], conf[main_key], conf[desc] })
+                    if key_len > max_key_len then
+                        max_key_len = key_len
+                    end
+                end
+            end
+        end
+    end
+    local out_f    = sformat("../server/constant/enum_%s.lua", name)
+    local out_file = iopen(out_f, "w")
+    if not out_file then
+        log_err("[ConfigMgr][gen_enum_file] open out file (%s) failed!", out_f)
+        return
+    end
+    --移除空类型
+    for k, v in pairs(gen_objs) do
+        if #v == 0 then
+            gen_objs[k] = nil
+        end
+    end
+    gen_objs = table_ext.kvarray(gen_objs)
+    tsort(gen_objs, function(a, b)
+        return a[2][1][2] < b[2][1][2]
+    end)
+    local function cat_string(str, len, expr)
+        str = tostring(str)
+        if #str < len then
+            for i = 1, len - #str do
+                str = str .. expr
+            end
+        end
+        return str
+    end
+    local buff = sformat("\n\n-----表格:%s 自动生成\n\n", name)
+    local mf   = '%s.%s\t=\t%s  --%s\n'
+    for _, obj in ipairs(gen_objs) do
+        local en   = obj[1]
+        local objs = obj[2]
+        tsort(objs, function(a, b)
+            return a[2] < b[2]
+        end)
+        buff = buff .. sformat("local %s    = enum(\"%s\",0)\n", en, en)
+        for _, v in ipairs(objs) do
+            buff = buff .. mf:format(en, cat_string(v[1], max_key_len, " "), cat_string(v[2], 6, " "), v[3])
+        end
+        buff = buff .. "\n\n"
+    end
+    out_file:write(buff)
+    out_file:close()
+end
+
+
 
 -- export
 hive.config_mgr = ConfigMgr()

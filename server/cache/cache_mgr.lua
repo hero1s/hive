@@ -21,14 +21,13 @@ local config_mgr   = hive.get("config_mgr")
 local update_mgr   = hive.get("update_mgr")
 local monitor      = hive.get("monitor")
 
-local obj_table    = config_mgr:init_table("cache_obj", "cache_name")
-local row_table    = config_mgr:init_table("cache_row", "cache_table")
+local obj_table    = config_mgr:init_table("dbcache", "cache_name")
 
 local CacheMgr     = singleton()
 local prop         = property(CacheMgr)
 prop:reader("cache_confs", {})        -- cache_confs
 prop:reader("cache_lists", {})        -- cache_lists
-prop:reader("dirty_map", {})          -- dirty objects
+prop:reader("dirty_map", nil)         -- dirty objects
 prop:reader("flush", false)           -- 立即存盘
 
 function CacheMgr:__init()
@@ -44,41 +43,27 @@ function CacheMgr:__init()
     event_mgr:add_trigger(self, "evt_change_service_status")
     event_mgr:add_vote(self, "vote_stop_service")
     --定时器
-    update_mgr:attach_minute(self)
     update_mgr:attach_second(self)
-    -- 退出通知
-    update_mgr:attach_quit(self)
+    update_mgr:attach_second5(self)
 
     monitor:watch_service_close(self, "*")
     monitor:watch_service_ready(self, "*")
 end
 
-function CacheMgr:on_quit()
-
-end
-
 function CacheMgr:setup()
+    local WheelMap = import("container/wheel_map.lua")
+    self.dirty_map = WheelMap(20)
     --加载配置
     for _, obj_conf in obj_table:iterator() do
         obj_conf.rows                = {}
         local cache_name             = obj_conf.cache_name
         self.cache_confs[cache_name] = obj_conf
-        self.cache_lists[cache_name] = {}
-    end
-    for _, row_conf in row_table:iterator() do
-        local cache_name = row_conf.cache_name
-        local obj_conf   = self.cache_confs[cache_name]
-        if obj_conf then
-            local rows      = obj_conf.rows
-            rows[#rows + 1] = row_conf
-        else
-            log_err("[CacheMgr:setup] cache row config obj:%s not exist !", cache_name)
-        end
+        self.cache_lists[cache_name] = WheelMap(20)
     end
 end
 
 function CacheMgr:vote_stop_service()
-    if next(self.dirty_map) then
+    if self.dirty_map:get_count() > 0 then
         return false
     end
     return true
@@ -96,7 +81,7 @@ end
 function CacheMgr:on_service_close(id, service_name)
     log_info("[CacheMgr][on_service_close] disconnect:%s", sid2nick(id))
     for cache_name, obj_list in pairs(self.cache_lists) do
-        for primary_key, obj in pairs(obj_list) do
+        for primary_key, obj in obj_list:iterator() do
             if obj:get_lock_node_id() == id then
                 log_info("[CacheMgr][on_service_close] %s unlock by service close!", primary_key)
                 obj:set_lock_node_id(0)
@@ -109,7 +94,7 @@ end
 function CacheMgr:on_service_ready(id, service_name)
     log_info("[CacheMgr][on_service_ready] connect:%s", sid2nick(id))
     for cache_name, obj_list in pairs(self.cache_lists) do
-        for primary_key, obj in pairs(obj_list) do
+        for primary_key, obj in obj_list:iterator() do
             if obj:get_lock_node_id() == id then
                 log_info("[CacheMgr][on_service_ready] %s unlock by service close!", primary_key)
                 obj:set_lock_node_id(0)
@@ -121,7 +106,7 @@ end
 
 function CacheMgr:on_second()
     local now_tick = hive.clock_ms
-    for _, obj in pairs(self.dirty_map) do
+    for _, obj in self.dirty_map:wheel_iterator() do
         if self.flush or obj:need_save(now_tick) then
             self:save_cache(obj)
         end
@@ -129,10 +114,10 @@ function CacheMgr:on_second()
 end
 
 --清理超时的记录
-function CacheMgr:on_minute()
+function CacheMgr:on_second5()
     local now_tick = hive.clock_ms
     for cache_name, obj_list in pairs(self.cache_lists) do
-        for primary_key, obj in pairs(obj_list) do
+        for primary_key, obj in obj_list:wheel_iterator() do
             if obj:expired(now_tick, self.flush) then
                 log_info("[CacheMgr][on_timer_expire] cache(%s)'s data(%s) expired!", cache_name, primary_key)
                 obj_list[primary_key] = nil
@@ -143,11 +128,7 @@ end
 
 --设置标记
 function CacheMgr:set_dirty(cache_obj, is_dirty)
-    if is_dirty then
-        self.dirty_map[cache_obj:get_primary_value()] = cache_obj
-    else
-        self.dirty_map[cache_obj:get_primary_value()] = nil
-    end
+    self.dirty_map:set(cache_obj:get_primary_value(), is_dirty and cache_obj or nil)
 end
 
 function CacheMgr:delete(cache_obj)
@@ -158,7 +139,7 @@ function CacheMgr:delete(cache_obj)
         log_err("[CacheMgr][delete] cache list not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return false
     end
-    cache_list[primary_key] = nil
+    cache_list:set(primary_key, nil)
     log_info("[CacheMgr][delete] cache=%s,primary=%s", cache_name, primary_key)
 end
 
@@ -178,11 +159,11 @@ end
 
 --缓存加载
 function CacheMgr:load_cache_impl(cache_list, conf, primary_key)
-    local cache_obj         = CacheObj(conf, primary_key)
-    cache_list[primary_key] = cache_obj
-    local code              = cache_obj:load_async()
+    local cache_obj = CacheObj(conf, primary_key)
+    cache_list:set(primary_key, cache_obj)
+    local code = cache_obj:load()
     if check_failed(code) then
-        cache_list[primary_key] = nil
+        cache_list:set(primary_key, nil)
         return code
     end
     return SUCCESS, cache_obj
@@ -194,7 +175,7 @@ function CacheMgr:get_cache_obj(hive_id, cache_name, primary_key, cache_type)
         log_err("[CacheMgr][get_cache_obj] cache list not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return CacheCode.CACHE_NOT_SUPPERT
     end
-    local cache_obj = cache_list[primary_key]
+    local cache_obj = cache_list:get(primary_key)
     if cache_obj then
         if cache_obj:is_holding() then
             log_err("[CacheMgr][get_cache_obj] cache is holding! cache_name=%s,primary=%s", cache_name, primary_key)
@@ -246,13 +227,13 @@ end
 
 --更新缓存
 function CacheMgr:rpc_cache_update(hive_id, req_data)
-    local cache_name, primary_key, table_name, table_data, flush = tunpack(req_data)
-    local code, cache_obj                                        = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.BOTH)
+    local cache_name, primary_key, table_data, flush = tunpack(req_data)
+    local code, cache_obj                            = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.BOTH)
     if SUCCESS ~= code then
         log_err("[CacheMgr][rpc_cache_update] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return code
     end
-    local ucode = cache_obj:update(table_name, table_data, flush)
+    local ucode = cache_obj:update(table_data, flush)
     if cache_obj:is_dirty() then
         self:set_dirty(cache_obj, true)
     end
@@ -261,13 +242,13 @@ end
 
 --更新缓存kv
 function CacheMgr:rpc_cache_update_key(hive_id, req_data)
-    local cache_name, primary_key, table_name, table_kvs, flush = tunpack(req_data)
-    local code, cache_obj                                       = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.BOTH)
+    local cache_name, primary_key, table_kvs, flush = tunpack(req_data)
+    local code, cache_obj                           = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.BOTH)
     if SUCCESS ~= code then
         log_err("[CacheMgr][rpc_cache_update_key] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return code
     end
-    local ucode = cache_obj:update_key(table_name, table_kvs, flush)
+    local ucode = cache_obj:update_key(table_kvs, flush)
     if cache_obj:is_dirty() then
         self:set_dirty(cache_obj, true)
     end

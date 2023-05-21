@@ -16,7 +16,7 @@ prop:accessor("default_db", nil)    -- default_db
 prop:accessor("db_count", 1)
 
 function MongoMgr:__init()
-    self.db_count = environ.number("HIVE_DB_POOL_COUNT", 1)
+    self.db_count = environ.number("HIVE_DB_POOL_COUNT", 5)
     self:setup()
     -- 注册事件
     event_mgr:add_listener(self, "mongo_find", "find")

@@ -3,6 +3,7 @@ import("agent/rmsg_agent.lua")
 
 local log_err       = logger.err
 local log_info      = logger.info
+local log_warn      = logger.warn
 local check_success = hive.success
 local monitor       = hive.get("monitor")
 local mongo_agent   = hive.get("mongo_agent")
@@ -60,7 +61,19 @@ function DBIndexMgr:build_index()
         if check_success(code, ok) then
             log_info("[DBIndexMgr][build_index] db[%s],table[%s],key[%s] build index success", db_name, table_name, index.name)
         else
-            log_err("[DBIndexMgr][build_index] db[%s],table[%s] build index[%s] faild:%s", db_name, table_name, index, code)
+            log_err("[DBIndexMgr][build_index] db[%s],table[%s] build index[%s] fail:%s", db_name, table_name, index, code)
+            ok, code = mongo_agent:drop_indexes({ table_name, index.name }, 1, db_name)
+            if check_success(code, ok) then
+                log_warn("[DBIndexMgr][build_index] db[%s],table[%s],key[%s] drop index success", db_name, table_name, index.name)
+                ok, code = mongo_agent:create_indexes(query, 1, db_name)
+                if check_success(code, ok) then
+                    log_info("[DBIndexMgr][build_index] db[%s],table[%s],key[%s] drop and build index success", db_name, table_name, index.name)
+                else
+                    log_err("[DBIndexMgr][build_index] db[%s],table[%s] drop and build index[%s] fail:%s", db_name, table_name, index, code)
+                end
+            else
+                log_err("[DBIndexMgr][build_index] db[%s],table[%s],key[%s] drop index fail:%s", db_name, table_name, index.name, code)
+            end
         end
     end
 end

@@ -56,9 +56,9 @@ namespace lworker {
         }
 
         bool call(slice* buf) {
+            std::unique_lock<spin_mutex> lock(m_mutex);
             uint8_t* target = m_write_buf->peek_space(buf->size() + sizeof(uint32_t));
-            if (target) {
-                std::unique_lock<spin_mutex> lock(m_mutex);
+            if (target) {                
                 m_write_buf->write<uint32_t>(buf->size());
                 m_write_buf->push_data(buf->head(), buf->size());
                 return true;
@@ -81,8 +81,8 @@ namespace lworker {
             while (slice) {
                 m_lua->table_call(service, "on_scheduler", nullptr, std::tie(), slice);
                 m_read_buf->pop_size(plen);
-                slice = read_slice(m_read_buf, &plen);
                 if (ltimer::steady_ms() - clock_ms > 100) break;
+                slice = read_slice(m_read_buf, &plen);                
             }
         }
 

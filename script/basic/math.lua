@@ -72,7 +72,7 @@ local WORD_ARR = {
 function math_ext.random_str(len)
     local result_arr = {}
     for i = 1, len do
-        tinsert(result_arr, mrandom(1, #WORD_ARR))
+        tinsert(result_arr, WORD_ARR[mrandom(1, #WORD_ARR)])
     end
 
     return tconcat(result_arr, "")

@@ -75,7 +75,7 @@ end
 function ProxyAgent:evt_change_service_status(service_status)
     local monitor = hive.load("monitor")
     if monitor then
-        self:call("rpc_watch_service", monitor:watch_services())
+        self:call("rpc_watch_service", monitor:watch_services(), hive.pre_services)
         self:register_nacos(hive.node_info)
     end
 end

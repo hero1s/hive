@@ -60,6 +60,9 @@ function service.init()
     hive.host         = environ.get("HIVE_HOST_IP")
     hive.mode         = SERVICE_CONFS[service_id].mode
     hive.rely_router  = SERVICE_CONFS[service_id].rely_router
+    hive.safe_stop    = SERVICE_CONFS[service_id].safe_stop
+    hive.pre_services = SERVICE_CONFS[service_id].pre_services
+
     service.make_node()
 end
 

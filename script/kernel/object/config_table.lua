@@ -40,12 +40,8 @@ function ConfigTable:set_records(file_name)
         log_err("[ConfigTable][set_records] config is not correct:%s", file_name)
         return
     end
-    if not self:check_index(records) then
-        log_err("[ConfigTable][set_records] check_index error")
-        --return
-    end
+    self:check_index(records)
     for _, row in pairs(records) do
-        --logger.debug("[ConfigTable][setup] set table %s cfg:%s", file_name, row)
         self:upsert(row)
     end
     self.load_time = import_file_time(file_name)

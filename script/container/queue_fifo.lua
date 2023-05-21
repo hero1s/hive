@@ -1,18 +1,20 @@
 --queue_fifo.lua
 
 local QueueFIFO = class()
-local prop = property(QueueFIFO)
+local prop      = property(QueueFIFO)
+prop:reader("max", nil)
 prop:reader("first", 1)
 prop:reader("tail", 0)
 prop:reader("datas", {})
 
-function QueueFIFO:__init()
+function QueueFIFO:__init(max)
+    self.max = max
 end
 
 function QueueFIFO:clear()
     self.datas = {}
     self.first = 1
-    self.tail = 0
+    self.tail  = 0
 end
 
 function QueueFIFO:size()
@@ -36,8 +38,11 @@ function QueueFIFO:elem(pos)
 end
 
 function QueueFIFO:push(value)
-    self.tail = self.tail + 1
+    self.tail             = self.tail + 1
     self.datas[self.tail] = value
+    if self.max and self:size() > self.max then
+        return self:pop()
+    end
 end
 
 function QueueFIFO:pop()
@@ -45,15 +50,15 @@ function QueueFIFO:pop()
     if first > tail then
         return
     end
-    local value = self.datas[first]
+    local value       = self.datas[first]
     self.datas[first] = nil
-    self.first = first + 1
+    self.first        = first + 1
     return value
 end
 
 --迭代器
 function QueueFIFO:iter()
-    local datas = self.datas
+    local datas       = self.datas
     local index, tail = self.first - 1, self.tail
     local function _iter()
         index = index + 1

@@ -86,14 +86,8 @@ function QueueLRU:set(key, value)
         self:push(tuple)
         if self.size > self.max_size then
             self:del(self.oldest.key)
+            return self.oldest.key, self.oldest.value
         end
-    end
-end
-
-function QueueLRU:update(key, value)
-    local tuple = self.tuples[key]
-    if tuple then
-        self:set(key, value)
     end
 end
 

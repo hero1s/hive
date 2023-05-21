@@ -30,6 +30,7 @@ function MonitorAgent:__init()
     local ip, port = env_addr("HIVE_MONITOR_ADDR")
     self.client    = RpcClient(self, ip, port)
     --注册事件
+    event_mgr:add_vote(self, "vote_stop_service")
     event_mgr:add_listener(self, "rpc_service_changed")
     event_mgr:add_listener(self, "rpc_hive_quit")
     event_mgr:add_listener(self, "on_remote_message")
@@ -40,6 +41,18 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "rpc_collect_gc")
     event_mgr:add_listener(self, "rpc_snapshot")
     event_mgr:add_listener(self, "rpc_count_lua_obj")
+end
+
+--检测是否可以自动退出
+function MonitorAgent:vote_stop_service()
+    for _, name in ipairs(hive.pre_services or {}) do
+        if self:exist_service(name) then
+            log_warn("[MonitorAgent][vote_stop_service] pre service [%s] has runing,wait next check", name)
+            return false
+        end
+        log_debug("[MonitorAgent][vote_stop_service] pre service [%s] has stop", name)
+    end
+    return true
 end
 
 --监听服务断开
@@ -70,8 +83,15 @@ function MonitorAgent:watch_services()
 end
 
 function MonitorAgent:exist_service(service_name, index)
-    local sid = smake_id(service_name, index)
-    return self.services[sid] and true or false
+    local services = self.services[service_name]
+    if services then
+        if index then
+            local sid = smake_id(service_name, index)
+            return services[sid] and true or false
+        end
+        return next(services) and true or false
+    end
+    return false
 end
 
 -- 连接关闭回调
@@ -109,10 +129,15 @@ function MonitorAgent:rpc_service_changed(service_name, readys, closes)
     self:notify_service_event(self.close_watchers[service_name], service_name, closes, false)
     self:notify_service_event(self.close_watchers["*"], service_name, closes, false)
     for id, _ in pairs(readys) do
-        self.services[id] = true
+        if not self.services[service_name] then
+            self.services[service_name] = {}
+        end
+        self.services[service_name][id] = true
     end
     for id, _ in pairs(closes) do
-        self.services[id] = nil
+        if self.services[service_name] then
+            self.services[service_name][id] = nil
+        end
     end
 end
 

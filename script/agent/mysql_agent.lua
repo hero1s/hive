@@ -2,6 +2,7 @@
 local sformat     = string.format
 local assert      = assert
 local readfile    = io_ext.readfile
+local mrandom     = math.random
 local KernCode    = enum("KernCode")
 local router_mgr  = hive.load("router_mgr")
 local scheduler   = hive.load("scheduler")
@@ -203,7 +204,7 @@ function MysqlAgent:execute(sql, db_name, hash_key)
         return scheduler:call(self.service, "mysql_execute", db_name or "default", sql)
     end
     if router_mgr then
-        return router_mgr:call_dbsvr_hash(hash_key or hive.id, "mysql_execute", db_name or "default", sql)
+        return router_mgr:call_dbsvr_hash(hash_key or mrandom(), "mysql_execute", db_name or "default", sql)
     end
     return false, KernCode.FAILED, "init not right"
 end

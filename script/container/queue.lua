@@ -1,10 +1,11 @@
 --queue.lua
 --队列: 普通双端队列，元素可重复
 --索引队列： 支持索引，元素不能重复
-local log_warn  = logger.warn
+local tweak    = table_ext.weak
+local log_warn = logger.warn
 
-local Queue = class()
-local prop = property(Queue)
+local Queue    = class()
+local prop     = property(Queue)
 prop:reader("first", 1)
 prop:reader("tail", 0)
 prop:reader("index", nil)
@@ -13,16 +14,16 @@ prop:reader("datas", {})
 
 function Queue:__init(index)
     if index then
-        self.index = index
-        self.indexs = {}
+        self.index  = index
+        self.indexs = tweak({})
     end
 end
 
 function Queue:clear()
-    self.indexs = {}
-    self.datas = {}
-    self.first = 1
-    self.tail = 0
+    self.indexs = tweak({})
+    self.datas  = {}
+    self.first  = 1
+    self.tail   = 0
 end
 
 function Queue:size()
@@ -62,7 +63,7 @@ end
 
 function Queue:remove_index(value)
     if self.index then
-        local idxkey = value[self.index]
+        local idxkey        = value[self.index]
         self.indexs[idxkey] = nil
     end
 end
@@ -77,7 +78,7 @@ function Queue:push_front(value)
     if not self:build_index(value) then
         return false
     end
-    self.first = self.first - 1
+    self.first             = self.first - 1
     self.datas[self.first] = value
     return true
 end
@@ -87,9 +88,9 @@ function Queue:pop_front()
     if first > tail then
         return
     end
-    local value = self.datas[first]
+    local value       = self.datas[first]
     self.datas[first] = nil
-    self.first = first + 1
+    self.first        = first + 1
     self:remove_index(value)
     return value
 end
@@ -98,7 +99,7 @@ function Queue:push_back(value)
     if not self:build_index(value) then
         return false
     end
-    self.tail = self.tail + 1
+    self.tail             = self.tail + 1
     self.datas[self.tail] = value
     return true
 end
@@ -108,9 +109,9 @@ function Queue:pop_back()
     if first > tail then
         return
     end
-    local value = self.datas[tail]
+    local value      = self.datas[tail]
     self.datas[tail] = nil
-    self.tail = tail - 1
+    self.tail        = tail - 1
     self:remove_index(value)
     return value
 end
@@ -127,16 +128,16 @@ function Queue:insert(pos, value)
     local realp = first + pos - 1
     if realp <= (first + tail) / 2 then
         for i = first, realp do
-            self.datas[i- 1] = self.datas[i]
+            self.datas[i - 1] = self.datas[i]
         end
-        self.datas[realp- 1] = value
-        self.first = first - 1
+        self.datas[realp - 1] = value
+        self.first            = first - 1
     else
         for i = tail, realp, -1 do
-            self.datas[i+ 1] = self.datas[i]
+            self.datas[i + 1] = self.datas[i]
         end
         self.datas[realp] = value
-        self.tail = tail + 1
+        self.tail         = tail + 1
     end
     return true
 end
@@ -183,7 +184,7 @@ end
 
 --迭代器
 function Queue:iter()
-    local datas = self.datas
+    local datas       = self.datas
     local index, tail = self.first - 1, self.tail
     local function _iter()
         index = index + 1

@@ -2,6 +2,7 @@
 
 local log_err          = logger.err
 local check_failed     = hive.failed
+local check_success    = hive.success
 
 local router_mgr       = hive.get("router_mgr")
 local thread_mgr       = hive.get("thread_mgr")
@@ -28,22 +29,22 @@ function CacheAgent:load(primary_key, cache_name, read_only)
 end
 
 -- 修改
-function CacheAgent:update(primary_key, table_name, table_data, cache_name, flush)
-    local req_data = { cache_name, primary_key, table_name, table_data, flush }
+function CacheAgent:update(primary_key, table_data, cache_name, flush)
+    local req_data = { cache_name, primary_key, table_data, flush }
     local ok, code = router_mgr:call_cachesvr_hash(primary_key, "rpc_cache_update", hive.id, req_data)
     if check_failed(code, ok) then
-        log_err("[CacheAgent][update] faild: code=%s cache_name=%s,table_name=%s,primary_key=%s", code, cache_name, table_name, primary_key)
+        log_err("[CacheAgent][update] faild: code=%s cache_name=%s,primary_key=%s", code, cache_name, primary_key)
         return ok and code or RPC_FAILED
     end
     return code
 end
 
 -- 修改kv
-function CacheAgent:update_key(primary_key, table_name, table_kvs, cache_name, flush)
-    local req_data = { cache_name, primary_key, table_name, table_kvs, flush }
+function CacheAgent:update_key(primary_key, table_kvs, cache_name, flush)
+    local req_data = { cache_name, primary_key, table_kvs, flush }
     local ok, code = router_mgr:call_cachesvr_hash(primary_key, "rpc_cache_update_key", hive.id, req_data)
     if check_failed(code, ok) then
-        log_err("[CacheAgent][update_key] faild: code=%s,cache_name=%s,table_name=%s,primary_key=%s", code, cache_name, table_name, primary_key)
+        log_err("[CacheAgent][update_key] faild: code=%s,cache_name=%s,primary_key=%s", code, cache_name, primary_key)
         return ok and code or RPC_FAILED
     end
     return code
@@ -88,9 +89,9 @@ function CacheAgent:load_collect_by_cname(primary_key, cache_names, read_only)
     for _, cache_name in ipairs(cache_names or {}) do
         tab_cnt = tab_cnt + 1
         thread_mgr:fork(function()
-            local ok, data = self:load(primary_key, cache_name, read_only)
-            if ok then
-                adata[cache_name] = data[cache_name]
+            local code, data = self:load(primary_key, cache_name, read_only)
+            if check_success(code) then
+                adata[cache_name] = data
             else
                 thread_mgr:response(session_id, false)
                 return
@@ -125,9 +126,9 @@ function CacheAgent:load_collect_by_key(primary_keys, cache_name, read_only)
     for _, primary_key in ipairs(primary_keys or {}) do
         tab_cnt = tab_cnt + 1
         thread_mgr:fork(function()
-            local ok, data = self:load(primary_key, cache_name, read_only)
-            if ok then
-                adata[primary_key] = data[cache_name]
+            local code, data = self:load(primary_key, cache_name, read_only)
+            if check_success(code) then
+                adata[primary_key] = data
             else
                 thread_mgr:response(session_id, false)
                 return

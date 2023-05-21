@@ -60,11 +60,11 @@ namespace lcodec {
             //种子溢出以后，时钟往前推
             if (serial_index >= MAX_SNUM) {
                 serial_inedx_table[group] = 0;
-                last_time = ++now_time;
+                last_time++;
                 serial_index = 0;
             }
         }
-        return ((last_time - BASE_TIME) << (SNUM_BITS + TYPE_BITS + GROUP_BITS + INDEX_BITS)) | 
+        return ((last_time - BASE_TIME) << (SNUM_BITS + TYPE_BITS + GROUP_BITS + INDEX_BITS)) |
                 (serial_index << (TYPE_BITS + GROUP_BITS + INDEX_BITS)) | 
                 (gtype << (GROUP_BITS + INDEX_BITS)) |
                 (index << GROUP_BITS) | group;

@@ -94,8 +94,8 @@ namespace lworker {
             while (slice) {
                 m_lua->table_call(service, "on_worker", nullptr, std::tie(), slice);
                 m_read_buf->pop_size(plen);
-                slice = read_slice(m_read_buf, &plen);
                 if (ltimer::steady_ms() - clock_ms > 100) break;
+                slice = read_slice(m_read_buf, &plen);                
             }
         }
 

@@ -3,16 +3,13 @@
 local VarLock       = import("kernel/object/var_lock.lua")
 
 local log_err       = logger.err
-local log_debug     = logger.debug
 local check_failed  = hive.failed
 local check_success = hive.success
 
 local KernCode      = enum("KernCode")
 local CacheCode     = enum("CacheCode")
-local DB_TIMEOUT    = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
 local SUCCESS       = KernCode.SUCCESS
-local thread_mgr    = hive.get("thread_mgr")
-local CacheRow      = import("cache/cache_row.lua")
+local mongo_mgr     = hive.get("mongo_mgr")
 
 local CacheObj      = class()
 local prop          = property(CacheObj)
@@ -22,22 +19,26 @@ prop:accessor("expire_time", 600)       -- expire time
 prop:accessor("store_time", 300)        -- store time
 prop:accessor("store_count", 200)       -- store count
 prop:accessor("cache_name", "")         -- cache name
+prop:accessor("cache_table", nil)       -- cache table
+prop:accessor("cache_key", "")          -- cache key
 prop:accessor("primary_value", nil)     -- primary value
-prop:accessor("cache_rows", {})         -- cache rows
 prop:accessor("update_count", 0)        -- update count
 prop:accessor("update_time", 0)         -- update time
 prop:accessor("active_tick", 0)         -- active tick
-prop:accessor("db_name", "")            -- db name
-prop:accessor("records", {})            -- records
-prop:accessor("dirty_records", {})      -- dirty records
+prop:accessor("db_name", "default")     -- database name
+prop:accessor("dirty", false)           -- dirty
+prop:accessor("fail_cnt", 0)            -- 存储失败次数
+prop:accessor("retry_time", 0)          -- 重试时间
+prop:accessor("data", {})               -- data
 prop:accessor("is_doing", false)        -- in doing
 prop:accessor("flush", false)
 
 function CacheObj:__init(cache_conf, primary_value)
     self.primary_value = primary_value
-    self.cache_rows    = cache_conf.rows
     self.db_name       = cache_conf.cache_db
     self.cache_name    = cache_conf.cache_name
+    self.cache_table   = cache_conf.cache_table
+    self.cache_key     = cache_conf.cache_key
     self.expire_time   = cache_conf.expire_time * 1000
     self.store_time    = cache_conf.store_time * 1000
     self.store_count   = cache_conf.store_count
@@ -46,54 +47,15 @@ end
 function CacheObj:load()
     self.active_tick = hive.clock_ms
     self.update_time = hive.clock_ms
-    for _, row_conf in pairs(self.cache_rows) do
-        local tab_name         = row_conf.cache_table
-        local record           = CacheRow(row_conf, self.primary_value)
-        self.records[tab_name] = record
-        local code             = record:load(self.db_name)
-        if check_failed(code) then
-            log_err("[CacheObj][load] load row failed: tab_name=%s", tab_name)
-            return code
-        end
+    local query      = { [self.cache_key] = self.primary_value }
+    local code, res  = mongo_mgr:find_one(self.db_name, self.cache_table, query, { _id = 0 })
+    if check_failed(code) then
+        log_err("[CacheRow][load] failed: %s=> db: %s, table: %s", res, self.db_name, self.cache_table)
+        return code
     end
+    self.data    = res
     self.holding = false
-    log_debug("[CacheObj][load] %s,cost time:%s", self.cache_name, hive.clock_ms - self.update_time)
     return SUCCESS
-end
-
---异步
-function CacheObj:load_async()
-    self.active_tick = hive.clock_ms
-    self.update_time = hive.clock_ms
-    local tab_cnt    = 0
-    local ret        = SUCCESS
-    local session_id = thread_mgr:build_session_id()
-    for _, row_conf in pairs(self.cache_rows) do
-        tab_cnt = tab_cnt + 1
-        thread_mgr:fork(function()
-            local tab_name         = row_conf.cache_table
-            local record           = CacheRow(row_conf, self.primary_value)
-            self.records[tab_name] = record
-            local code             = record:load(self.db_name)
-            if check_failed(code) then
-                log_err("[CacheObj][load] load row failed: tab_name=%s", tab_name)
-                thread_mgr:response(session_id, false, code)
-                return
-            end
-            thread_mgr:response(session_id, true, code)
-        end)
-    end
-    while tab_cnt > 0 do
-        local ok, code = thread_mgr:yield(session_id, "load_async", DB_TIMEOUT)
-        if check_failed(code, ok) then
-            log_err("[CacheObj][load] load response:%s,%s", ok, code)
-            ret = code
-        end
-        tab_cnt = tab_cnt - 1
-    end
-    log_debug("[CacheObj][load_async] %s,cost time:%s", self.cache_name, hive.clock_ms - self.update_time)
-    self.holding = false
-    return ret
 end
 
 function CacheObj:active()
@@ -101,19 +63,15 @@ function CacheObj:active()
 end
 
 function CacheObj:pack()
-    local res = {}
-    for tab_name, record in pairs(self.records) do
-        res[tab_name] = record:get_data()
-    end
-    return res
+    return self.data
 end
 
 function CacheObj:is_dirty()
-    return next(self.dirty_records)
+    return self.dirty
 end
 
 function CacheObj:expired(tick, flush)
-    if next(self.dirty_records) then
+    if self.dirty then
         return false
     end
     local escape_time = tick - self.active_tick
@@ -142,52 +100,59 @@ function CacheObj:save()
     end
     local _lock<close> = VarLock(self, "is_doing")
     self.active_tick   = hive.clock_ms
-    if next(self.dirty_records) then
+    if self.dirty then
         self.update_count = 0
         self.update_time  = hive.clock_ms
-        for record in pairs(self.dirty_records) do
-            if check_success(record:save()) then
-                self.dirty_records[record] = nil
-            end
-        end
-        if next(self.dirty_records) then
-            return false
+        if check_success(self:save_impl()) then
+            self.dirty = false
         end
     end
     self.flush = false
     return true
 end
 
-function CacheObj:update(tab_name, tab_data, flush)
-    local record = self.records[tab_name]
-    if not record then
-        log_err("[CacheObj][update] cannot find record! cache:%s, table:%s", self.cache_name, tab_name)
-        return CacheCode.CACHE_KEY_IS_NOT_EXIST
+function CacheObj:save_impl()
+    if self.dirty then
+        if self.fail_cnt > 0 and hive.now < self.retry_time then
+            return KernCode.MONGO_FAILED
+        end
+        local selector  = { [self.cache_key] = self.primary_value }
+        local code, res = mongo_mgr:update(self.db_name, self.cache_table, self.data, selector, true)
+        if check_failed(code) then
+            self.fail_cnt   = self.fail_cnt + 1
+            self.retry_time = hive.now + self.fail_cnt * 60
+            log_err("[CacheObj][save_impl] failed: cnt:%s, %s=> db: %s, table: %s", self.fail_cnt, res, self.db_name, self.cache_table)
+            return code
+        end
+        self.fail_cnt = 0
+        self.dirty    = false
+        return code
     end
+    return SUCCESS
+end
+
+function CacheObj:update(tab_data, flush)
     self:active()
     self.update_count = self.update_count + 1
-    record:update(tab_data)
-    if record:is_dirty() then
-        self.dirty_records[record] = true
-    end
+    self.data         = tab_data
+    self.dirty        = true
     if flush then
         self.flush = true
     end
     return SUCCESS
 end
 
-function CacheObj:update_key(tab_name, table_kvs, flush)
-    local record = self.records[tab_name]
-    if not record then
-        log_err("[CacheObj][update_key] cannot find record! cache:%s, table:%s", self.cache_name, tab_name)
+function CacheObj:update_key(table_kvs, flush)
+    if not self.data then
+        log_err("[CacheObj][update_key] cannot find record! cache:%s, table:%s", self.cache_name, self.cache_table)
         return CacheCode.CACHE_KEY_IS_NOT_EXIST
     end
     self:active()
     self.update_count = self.update_count + 1
-    record:update_key(table_kvs)
-    if record:is_dirty() then
-        self.dirty_records[record] = true
+    for key, value in pairs(table_kvs) do
+        self.data[key] = value
     end
+    self.dirty = true
     if flush then
         self.flush = true
     end

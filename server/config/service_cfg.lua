@@ -9,6 +9,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = false, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 2, --[[ 服务id ]]
@@ -16,6 +19,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = false, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 3, --[[ 服务id ]]
@@ -23,6 +29,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = false, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 4, --[[ 服务id ]]
@@ -30,6 +39,9 @@ return {
         mode = 3, --[[ 模式 ]]
         rely_router = false, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 5, --[[ 服务id ]]
@@ -37,6 +49,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = false, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 7, --[[ 服务id ]]
@@ -44,6 +59,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 8, --[[ 服务id ]]
@@ -51,6 +69,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 9, --[[ 服务id ]]
@@ -58,6 +79,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = true, --[[ 依赖路由 ]]
         hash = 1, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {"lobby"}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 10, --[[ 服务id ]]
@@ -65,6 +89,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 11, --[[ 服务id ]]
@@ -72,6 +99,19 @@ return {
         mode = 3, --[[ 模式 ]]
         rely_router = false, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
+    },
+    {
+        id = 12, --[[ 服务id ]]
+        name = 'tool', --[[ 服务名字 ]]
+        mode = 3, --[[ 模式 ]]
+        rely_router = false, --[[ 依赖路由 ]]
+        hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 101, --[[ 服务id ]]
@@ -79,6 +119,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = true, --[[ 校验ip ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 102, --[[ 服务id ]]
@@ -86,6 +129,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {"lobby"}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 104, --[[ 服务id ]]
@@ -93,13 +139,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
-    },
-    {
-        id = 105, --[[ 服务id ]]
-        name = 'chat', --[[ 服务名字 ]]
-        mode = 1, --[[ 模式 ]]
-        rely_router = true, --[[ 依赖路由 ]]
-        hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {"lobby"}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 106, --[[ 服务id ]]
@@ -107,6 +149,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 107, --[[ 服务id ]]
@@ -114,6 +159,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = true, --[[ 校验ip ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 108, --[[ 服务id ]]
@@ -121,6 +169,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 109, --[[ 服务id ]]
@@ -128,6 +179,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {"lobby"}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 201, --[[ 服务id ]]
@@ -135,6 +189,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = true, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 202, --[[ 服务id ]]
@@ -142,6 +199,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 203, --[[ 服务id ]]
@@ -149,6 +209,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 204, --[[ 服务id ]]
@@ -156,6 +219,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 205, --[[ 服务id ]]
@@ -163,6 +229,9 @@ return {
         mode = 3, --[[ 模式 ]]
         rely_router = false, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 206, --[[ 服务id ]]
@@ -170,6 +239,9 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 207, --[[ 服务id ]]
@@ -177,5 +249,18 @@ return {
         mode = 1, --[[ 模式 ]]
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
+    },
+    {
+        id = 208, --[[ 服务id ]]
+        name = 'cdkey', --[[ 服务名字 ]]
+        mode = 1, --[[ 模式 ]]
+        rely_router = true, --[[ 依赖路由 ]]
+        hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = false, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
     },
 }

@@ -42,7 +42,7 @@ thread_mgr:fork(function()
     --测试jumphash均衡性
     local count_jump = { 0, 0, 0, 0, 0, 0 }
     for i = 1, 100 do
-        local value     = "toney" .. i
+        local value     = "abcde" .. i
         local pos       = jumphash(value, #count_jump)
         count_jump[pos] = count_jump[pos] + 1
     end

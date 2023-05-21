@@ -48,6 +48,8 @@ function DevopsGmMgr:register_gm()
           args    = "db_name|string table_name|string key_name|string key_value|string" },
         { gm_type = GMType.TOOLS, name = "gm_db_set", desc = "数据库更新",
           args    = "db_name|string table_name|string key_name|string key_value|string json_value|string" },
+        { gm_type = GMType.GLOBAL, name = "gm_update_rank", desc = "立即更新排行榜", comment="(星星排行榜 1)", args = "type|integer" },
+        { gm_type = GMType.GLOBAL, name = "gm_update_rank_season_to_rank", desc = "立即更新排行榜赛季", comment="(更新到下一个赛季)", args = "" },
     }
     gm_agent:insert_command(cmd_list, self)
 end
@@ -215,6 +217,14 @@ function DevopsGmMgr:get_target_id(service_name, index)
             return service.make_sid(service_id, index)
         end
     end
+end
+
+function DevopsGmMgr:gm_update_rank(type)
+    return monitor_mgr:broadcast("rpc_gm_update_rank", "rank", type)
+end
+
+function DevopsGmMgr:gm_update_rank_season_to_rank()
+    return monitor_mgr:broadcast("rpc_gm_rank_season_update", "rank")
 end
 
 function DevopsGmMgr:call_target_rpc(service_name, index, rpc, ...)

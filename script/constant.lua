@@ -59,6 +59,7 @@ PeriodTime.SECOND_5_MS            = 5000      --5秒（ms）
 PeriodTime.SECOND_10_MS           = 10000     --10秒（ms）
 PeriodTime.SECOND_30_MS           = 30000     --30秒（ms）
 PeriodTime.MINUTE_MS              = 60000     --60秒（ms）
+PeriodTime.MINUTE_3_MS            = 180000     --60秒（ms）
 PeriodTime.MINUTE_5_MS            = 300000    --5分钟（ms）
 PeriodTime.MINUTE_10_MS           = 600000    --10分钟（ms）
 PeriodTime.MINUTE_30_MS           = 1800000   --30分钟（ms）

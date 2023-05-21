@@ -1,5 +1,6 @@
 --redis_agent.lua
 local tunpack    = table.unpack
+local mrandom    = math.random
 
 local KernCode   = enum("KernCode")
 local router_mgr = hive.load("router_mgr")
@@ -28,7 +29,7 @@ function RedisAgent:execute(db_query, hash_key, db_name)
         return scheduler:call(self.service, "redis_execute", db_name or "default", tunpack(db_query))
     end
     if router_mgr then
-        return router_mgr:call_dbsvr_hash(hash_key or hive.id, "redis_execute", db_name or "default", tunpack(db_query))
+        return router_mgr:call_dbsvr_hash(hash_key or mrandom(), "redis_execute", db_name or "default", tunpack(db_query))
     end
     return false, KernCode.FAILED, "init not right"
 end

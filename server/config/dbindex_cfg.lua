@@ -312,6 +312,15 @@ return {
     {
         id = 35, --[[ id ]]
         db_name = 'klbq', --[[ 数据库 ]]
+        table_name = 'player_task', --[[ 数据表 ]]
+        keys = {"player_id"}, --[[ key ]]
+        name = 'player_id', --[[ 索引名称 ]]
+        unique = true, --[[ 唯一 ]]
+        expireAfterSeconds = 0, --[[ 过期时间(s) ]]
+    },
+    {
+        id = 36, --[[ id ]]
+        db_name = 'klbq', --[[ 数据库 ]]
         table_name = 'recharge_order', --[[ 数据表 ]]
         keys = {"player_id"}, --[[ key ]]
         name = 'player_id', --[[ 索引名称 ]]
@@ -319,7 +328,7 @@ return {
         expireAfterSeconds = 0, --[[ 过期时间(s) ]]
     },
     {
-        id = 36, --[[ id ]]
+        id = 37, --[[ id ]]
         db_name = 'klbq', --[[ 数据库 ]]
         table_name = 'recharge_order', --[[ 数据表 ]]
         keys = {"order_id"}, --[[ key ]]
@@ -328,7 +337,7 @@ return {
         expireAfterSeconds = 0, --[[ 过期时间(s) ]]
     },
     {
-        id = 37, --[[ id ]]
+        id = 38, --[[ id ]]
         db_name = 'klbq', --[[ 数据库 ]]
         table_name = 'recharge_order', --[[ 数据表 ]]
         keys = {"pay_order_id"}, --[[ key ]]
@@ -337,7 +346,7 @@ return {
         expireAfterSeconds = 0, --[[ 过期时间(s) ]]
     },
     {
-        id = 38, --[[ id ]]
+        id = 39, --[[ id ]]
         db_name = 'klbq', --[[ 数据库 ]]
         table_name = 'recharge_order', --[[ 数据表 ]]
         keys = {"insert_time"}, --[[ key ]]
@@ -346,43 +355,25 @@ return {
         expireAfterSeconds = 0, --[[ 过期时间(s) ]]
     },
     {
-        id = 39, --[[ id ]]
+        id = 40, --[[ id ]]
         db_name = 'klbq', --[[ 数据库 ]]
         table_name = 'standings', --[[ 数据表 ]]
         keys = {"room_id"}, --[[ key ]]
         name = 'room_id', --[[ 索引名称 ]]
         unique = true, --[[ 唯一 ]]
         expireAfterSeconds = 0, --[[ 过期时间(s) ]]
-    },
-    {
-        id = 40, --[[ id ]]
-        db_name = 'klbq', --[[ 数据库 ]]
-        table_name = 'standings', --[[ 数据表 ]]
-        keys = {"ttl"}, --[[ key ]]
-        name = 'ttl', --[[ 索引名称 ]]
-        unique = false, --[[ 唯一 ]]
-        expireAfterSeconds = 7776000, --[[ 过期时间(s) ]]
     },
     {
         id = 41, --[[ id ]]
         db_name = 'klbq', --[[ 数据库 ]]
-        table_name = 'standings_tipoff', --[[ 数据表 ]]
-        keys = {"room_id"}, --[[ key ]]
-        name = 'room_id', --[[ 索引名称 ]]
-        unique = true, --[[ 唯一 ]]
-        expireAfterSeconds = 0, --[[ 过期时间(s) ]]
-    },
-    {
-        id = 42, --[[ id ]]
-        db_name = 'klbq', --[[ 数据库 ]]
-        table_name = 'standings_tipoff', --[[ 数据表 ]]
+        table_name = 'standings', --[[ 数据表 ]]
         keys = {"ttl"}, --[[ key ]]
         name = 'ttl', --[[ 索引名称 ]]
         unique = false, --[[ 唯一 ]]
         expireAfterSeconds = 7776000, --[[ 过期时间(s) ]]
     },
     {
-        id = 43, --[[ id ]]
+        id = 44, --[[ id ]]
         db_name = 'klbq', --[[ 数据库 ]]
         table_name = 'stars_rank', --[[ 数据表 ]]
         keys = {"rank_id"}, --[[ key ]]
@@ -391,7 +382,7 @@ return {
         expireAfterSeconds = 0, --[[ 过期时间(s) ]]
     },
     {
-        id = 44, --[[ id ]]
+        id = 45, --[[ id ]]
         db_name = 'klbq', --[[ 数据库 ]]
         table_name = 'sta_activity', --[[ 数据表 ]]
         keys = {"open_id"}, --[[ key ]]
@@ -401,10 +392,28 @@ return {
     },
     {
         id = 45, --[[ id ]]
+        db_name = 'klbq', --[[ 数据库 ]]
+        table_name = 'activity_beta_recharge_rebate', --[[ 数据表 ]]
+        keys = {"open_id"}, --[[ key ]]
+        name = 'open_id', --[[ 索引名称 ]]
+        unique = true, --[[ 唯一 ]]
+        expireAfterSeconds = 0, --[[ 过期时间(s) ]]
+    },
+    {
+        id = 46, --[[ id ]]
         db_name = 'common', --[[ 数据库 ]]
         table_name = 'ai_data', --[[ 数据表 ]]
         keys = {"rank"}, --[[ key ]]
         name = 'rank', --[[ 索引名称 ]]
+        unique = true, --[[ 唯一 ]]
+        expireAfterSeconds = 0, --[[ 过期时间(s) ]]
+    },
+    {
+        id = 47, --[[ id ]]
+        db_name = 'common', --[[ 数据库 ]]
+        table_name = 'cdkey_data', --[[ 数据表 ]]
+        keys = {"cdkey"}, --[[ key ]]
+        name = 'cdkey', --[[ 索引名称 ]]
         unique = true, --[[ 唯一 ]]
         expireAfterSeconds = 0, --[[ 过期时间(s) ]]
     },
