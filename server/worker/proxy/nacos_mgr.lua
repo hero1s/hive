@@ -99,6 +99,13 @@ function NacosMgr:need_watch(service_name)
     return false
 end
 
+function NacosMgr:can_add_service(service_name)
+    if self.node.is_ready then
+        return true
+    end
+    return service_name == "router"
+end
+
 function NacosMgr:on_nacos_tick()
     thread_mgr:entry("on_nacos_tick", function()
         if not self.nacos:get_access_token() or not self.status then
@@ -120,8 +127,10 @@ function NacosMgr:on_nacos_tick()
                         end
                     end
                     for id, node in pairs(curr) do
-                        if node.is_ready == 1 and not old[id] then
-                            sadd[id] = node
+                        if self:can_add_service(service_name) then
+                            if node.is_ready == 1 and not old[id] then
+                                sadd[id] = node
+                            end
                         end
                     end
                     for id, node in pairs(sadd) do
