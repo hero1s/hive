@@ -5,6 +5,8 @@ local pairs             = pairs
 local log_err           = logger.err
 local log_debug         = logger.debug
 local tconcat           = table.concat
+local tinsert           = table.insert
+local tunpack           = table.unpack
 local sformat           = string.format
 local hxpcall           = hive.xpcall
 local luencode          = lcurl.url_encode
@@ -21,6 +23,7 @@ local HTTP_CALL_TIMEOUT = hive.enum("NetwkTime", "HTTP_CALL_TIMEOUT")
 local HttpClient        = singleton()
 local prop              = property(HttpClient)
 prop:reader("contexts", {})
+prop:reader("results", {})
 
 function HttpClient:__init()
     --加入帧更新
@@ -42,6 +45,12 @@ end
 function HttpClient:on_frame(clock_ms)
     if next(self.contexts) then
         curlm_mgr.update()
+        thread_mgr:fork(function()
+            for _, result in pairs(self.results) do
+                thread_mgr:response(tunpack(result))
+            end
+            self.results = {}
+        end)
         --清除超时请求
         for handle, context in pairs(self.contexts) do
             if clock_ms >= context.time then
@@ -54,15 +63,15 @@ end
 function HttpClient:on_respond(curl_handle, result)
     local context = self.contexts[curl_handle]
     if context then
-        local request            = context.request
-        local session_id         = context.session_id
-        local content, code, err = request.get_respond()
-        if result == 0 then
-            thread_mgr:response(session_id, true, code, content)
-        else
-            thread_mgr:response(session_id, false, code, err)
-        end
         self.contexts[curl_handle] = nil
+        local request              = context.request
+        local session_id           = context.session_id
+        local content, code, err   = request.get_respond()
+        if result == 0 then
+            tinsert(self.results, { session_id, true, code, content })
+        else
+            tinsert(self.results, { session_id, false, code, err })
+        end
         if context.debug then
             log_debug("[http: \n %s \n]", request.debug)
         end

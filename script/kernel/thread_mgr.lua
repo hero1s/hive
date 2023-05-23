@@ -140,6 +140,14 @@ function ThreadMgr:co_create(f)
     return co
 end
 
+function ThreadMgr:try_response(session_id, ...)
+    local context = self.coroutine_yields[session_id]
+    if context then
+        self.coroutine_yields[session_id] = nil
+        self:resume(context.co, ...)
+    end
+end
+
 function ThreadMgr:response(session_id, ...)
     local context = self.coroutine_yields[session_id]
     if not context then

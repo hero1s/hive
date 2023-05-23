@@ -92,6 +92,13 @@ function NacosMgr:unregister()
     end
 end
 
+function NacosMgr:need_watch(service_name)
+    if self.watch_services[service_name] or self.watch_services["*"] then
+        return true
+    end
+    return false
+end
+
 function NacosMgr:on_nacos_tick()
     thread_mgr:entry("on_nacos_tick", function()
         if not self.nacos:get_access_token() or not self.status then
@@ -99,7 +106,7 @@ function NacosMgr:on_nacos_tick()
         end
         self.nacos:sent_beat(self.node.service_name, self.node.host, self.node.port)
         for _, service_name in pairs(self.nacos:query_services() or {}) do
-            if self.watch_services[service_name] or self.watch_services["*"] then
+            if self:need_watch(service_name) then
                 local curr = self.nacos:query_instances(service_name)
                 if curr then
                     if not self.services[service_name] then

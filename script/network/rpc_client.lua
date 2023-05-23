@@ -1,12 +1,11 @@
 -- rpc_client.lua
 local lcodec         = require("lcodec")
-
+local jumphash       = lcodec.jumphash
 local tunpack        = table.unpack
 local tpack          = table.pack
 local log_err        = logger.err
 local log_info       = logger.info
 local hxpcall        = hive.xpcall
-local hhash_code     = lcodec.hash_code
 
 local event_mgr      = hive.get("event_mgr")
 local socket_mgr     = hive.get("socket_mgr")
@@ -121,7 +120,7 @@ function RpcClient:connect()
         end
     end
     socket.call_hash        = function(session_id, service_id, hash_key, rpc, ...)
-        local hash_value = hhash_code(hash_key)
+        local hash_value = jumphash(hash_key, 0xffff)
         local send_len   = socket.forward_hash(session_id, FlagMask.REQ, hive.id, service_id, hash_value, rpc, ...)
         return self:on_call_router(rpc, send_len, ...)
     end

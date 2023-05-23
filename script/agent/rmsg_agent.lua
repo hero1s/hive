@@ -1,6 +1,8 @@
---chat_agent.lua
 local ReliableMsg = import("store/reliable_msg.lua")
+
 local config_mgr  = hive.get("config_mgr")
+local thread_mgr  = hive.get("thread_mgr")
+local sformat     = string.format
 
 local RmsgAgent   = singleton()
 local prop        = property(RmsgAgent)
@@ -21,6 +23,10 @@ function RmsgAgent:build_index()
     for _, rmsg in pairs(self.rmsgs or {}) do
         rmsg:build_index()
     end
+end
+
+function RmsgAgent:lock_msg(rmsg_type, to)
+    return thread_mgr:lock(sformat("RMSG:%s:%s", rmsg_type, to))
 end
 
 function RmsgAgent:list_message(rmsg_type, to)

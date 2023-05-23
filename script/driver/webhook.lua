@@ -3,15 +3,11 @@ import("network/http_client.lua")
 
 local sformat     = string.format
 
-local LIMIT_COUNT = 3    -- 周期内最大次数
-
 local http_client = hive.get("http_client")
-local HOUR_S      = hive.enum("PeriodTime", "HOUR_S")
 
 local Webhook     = singleton()
 local prop        = property(Webhook)
 prop:reader("hooks", {})            --webhook通知接口
-prop:reader("notify_limit", {})     --控制同样消息的发送频率
 prop:reader("lan_ip", "")
 
 function Webhook:__init()
@@ -48,20 +44,7 @@ end
 
 function Webhook:notify(title, content, ...)
     if next(self.hooks) then
-        title        = title .. " host:" .. self.lan_ip
-        local now    = hive.now
-        local notify = self.notify_limit[content]
-        if not notify then
-            notify                     = { time = now, count = 0 }
-            self.notify_limit[content] = notify
-        end
-        if now - notify.time > HOUR_S then
-            notify = { time = now, count = 0 }
-        end
-        if notify.count > LIMIT_COUNT then
-            return
-        end
-        notify.count = notify.count + 1
+        title = title .. " host:" .. self.lan_ip
         for hook_api, url in pairs(self.hooks) do
             self[hook_api](self, url, title, content, ...)
         end

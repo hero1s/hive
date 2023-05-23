@@ -1,11 +1,11 @@
 --hive.lua
-local lcodec   = require("lcodec")
-local guid_new = lcodec.guid_new
-
-local odate    = os.date
-local log_err  = logger.err
-local sformat  = string.format
-local dgetinfo = debug.getinfo
+local lcodec    = require("lcodec")
+local guid_new  = lcodec.guid_new
+local hash_code = lcodec.hash_code
+local odate     = os.date
+local log_err   = logger.err
+local sformat   = string.format
+local dgetinfo  = debug.getinfo
 
 function hive.load(name)
     return hive[name]
@@ -112,3 +112,12 @@ function hive.new_guid()
     return guid_new(hive.service_id, hive.index)
 end
 
+function hive.hash(key, mod)
+    return hash_code(key, mod)
+end
+
+--创建聚合器
+function hive.make_converger(title)
+    local Converger = import("kernel/object/converger.lua")
+    return Converger(title)
+end

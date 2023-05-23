@@ -28,7 +28,6 @@ HiveMode.STANDLONE                = 0     --独立模式(不加载lua框架,此�
 HiveMode.SERVICE                  = 1     --服务模式(加载全量)
 HiveMode.ROUTER                   = 2     --路由模式(加载路由)
 HiveMode.TOOL                     = 3     --工具模式(加载基础和网络)
-HiveMode.TINY                     = 4     --精简模式(加载基础)
 
 --协议投flag掩码
 local FlagMask                    = enum("FlagMask", 0)

@@ -121,12 +121,9 @@ end
 
 --底层驱动
 hive.run = function()
-    if socket_mgr then
-        socket_mgr.wait(10)
-    end
-    --系统更新
     hxpcall(function()
         hive.update()
+        socket_mgr.wait(10)
         update_mgr:update(nil, ltime())
     end)
 end

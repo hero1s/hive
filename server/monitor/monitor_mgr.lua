@@ -250,6 +250,7 @@ function MonitorMgr:send_all_service_status(client)
     if self.open_nacos then
         return
     end
+    log_debug("[MonitorMgr][send_all_service_status] %s", client.service_name)
     for service_name, curr_services in pairs(self.services) do
         if next(curr_services) then
             self.rpc_server:send(client, "rpc_service_changed", service_name, curr_services, {})
@@ -261,6 +262,7 @@ function MonitorMgr:broadcast_service_status(service_name, readys, closes)
     if self.open_nacos then
         return
     end
+    log_debug("[MonitorMgr][broadcast_service_status] %s", service_name)
     self.rpc_server:broadcast("rpc_service_changed", service_name, readys, closes)
 end
 

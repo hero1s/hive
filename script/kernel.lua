@@ -104,12 +104,8 @@ function hive.init()
     --主循环
     init_coroutine()
     init_mainloop()
+    init_network()
     init_statis()
-    if hive.mode <= HiveMode.TOOL then
-        init_network()
-        --加载协议
-        import("kernel/protobuf_mgr.lua")
-    end
     if hive.mode <= HiveMode.ROUTER then
         --加载monotor
         init_monitor()
@@ -117,6 +113,8 @@ function hive.init()
     --其他模块加载
     if hive.mode == HiveMode.SERVICE then
         init_router()
+        --加载协议
+        import("kernel/protobuf_mgr.lua")
     end
     --挂载运维附加逻辑
     import("devops/devops_mgr.lua")
@@ -181,12 +179,10 @@ end
 
 --底层驱动
 hive.run  = function()
-    if socket_mgr then
-        socket_mgr.wait(10)
-    end
+    scheduler:update()
+    socket_mgr.wait(10)
     --系统更新
     update_mgr:update(scheduler, ltime())
-    scheduler:update()
 end
 
 hive.exit = function()

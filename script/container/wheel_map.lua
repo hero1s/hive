@@ -1,9 +1,9 @@
 -- wheel_map.lua
-local lcodec     = require("lcodec")
-local hhash_code = lcodec.hash_code
+local lcodec   = require("lcodec")
+local jumphash = lcodec.jumphash
 
-local WheelMap   = class()
-local prop       = property(WheelMap)
+local WheelMap = class()
+local prop     = property(WheelMap)
 prop:reader("host_maps", {})    -- 真实的map
 prop:reader("wheel_cnt", 1)     -- 轮子数量（最小为1）
 prop:reader("wheel_cur", 1)     -- 当前轮子号
@@ -18,7 +18,7 @@ end
 
 -- 设置指定key的值
 function WheelMap:set(key, value)
-    local wheel_no = hhash_code(key, self.wheel_cnt)
+    local wheel_no = jumphash(key, self.wheel_cnt)
     local host_map = self.host_maps[wheel_no]
     if not host_map[key] and value then
         self.count = self.count + 1
@@ -33,7 +33,7 @@ function WheelMap:get(key)
     if not key then
         return nil
     end
-    local wheel_no = hhash_code(key, self.wheel_cnt)
+    local wheel_no = jumphash(key, self.wheel_cnt)
     local host_map = self.host_maps[wheel_no]
     return host_map[key]
 end

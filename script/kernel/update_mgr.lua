@@ -4,6 +4,7 @@ local ltimer         = require("ltimer")
 local lhelper        = require("lhelper")
 local mem_usage      = lhelper.mem_usage
 local lclock_ms      = ltimer.clock_ms
+local ltime          = ltimer.time
 local pairs          = pairs
 local odate          = os.date
 local log_info       = logger.info
@@ -65,6 +66,15 @@ function UpdateMgr:__init()
     self:attach_minute(thread_mgr)
 
     self.hotfix_able = environ.status("HIVE_HOTFIX")
+    self:setup()
+end
+
+function UpdateMgr:setup()
+    hive.now_ms, hive.clock_ms = ltime()
+    hive.now                   = hive.now_ms // 1000
+    local time                 = odate("*t", hive.now)
+    self.last_minute           = time.min
+    self.last_hour             = time.hour
 end
 
 function UpdateMgr:collect_gc()

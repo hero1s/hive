@@ -120,9 +120,9 @@ end
 -- 生成枚举lua文件
 function ConfigMgr:gen_enum_file(name, ename, enum_key, main_key, desc)
     logger.debug("gen_enum_file:%s,ename:%s,enum_key:%s,main_key:%s,desc:%s", name, ename, enum_key, main_key, desc)
-    local conf_tab, reload = self:load_table(name, main_key)
-    local gen_objs         = {}
-    local max_key_len      = 20
+    local conf_tab    = self:load_table(name, main_key)
+    local gen_objs    = {}
+    local max_key_len = 20
     if conf_tab then
         for _, conf in conf_tab:iterator() do
             local rename = ename

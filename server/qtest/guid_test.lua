@@ -22,14 +22,27 @@ thread_mgr:fork(function()
     log_info("ssource-> group: %s, index: %s,gtype:%s, time:%s,serail:%s", group, index, gtype, datetime_ext.time_str(time), serail)
 
     thread_mgr:sleep(2000)
-    guid = lcodec.guid_new(5, 34, 8)
+    guid = lcodec.guid_new(5, 34, 16)
     log_info("newguid: %s", guid)
     local group2, index2, gtype2, time2, serail = lcodec.guid_source(guid)
     log_info("nsource-> group: %s, index: %s,gtype:%s, time:%s,%s", group2, index2, gtype2, datetime_ext.time_str(time2), serail)
 
+    logger.debug("---------test repeat------")
+    local guids = {}
+    for i = 1, 10 do
+        for i = 1, 10000 do
+            local t = lcodec.guid_new(1,2)
+            if guids[t] then
+                logger.error("the guid is repeat:%s",t)
+            end
+            guids[t] = true
+        end
+        thread_mgr:sleep(1000)
+    end
+
     logger.debug("-------test code---------")
 
-    local guid      = lcodec.guid_new(2, 3, 4)
+    local guid      = lcodec.guid_new(2, 3, 16)
     local guid_code = lcodec.guid_encode(guid)
     local guid_num  = lcodec.guid_decode(guid_code)
     log_info("guid=%s --> %s -- > %s", guid, guid_code, guid_num)
