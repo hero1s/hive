@@ -52,13 +52,12 @@ end
 
 function CacheMgr:setup()
     local WheelMap = import("container/wheel_map.lua")
-    self.dirty_map = WheelMap(20)
+    self.dirty_map = WheelMap(10)
     --加载配置
     for _, obj_conf in obj_table:iterator() do
-        obj_conf.rows                = {}
         local cache_name             = obj_conf.cache_name
         self.cache_confs[cache_name] = obj_conf
-        self.cache_lists[cache_name] = WheelMap(20)
+        self.cache_lists[cache_name] = WheelMap(10)
     end
 end
 
@@ -73,6 +72,9 @@ function CacheMgr:evt_change_service_status(status)
     if not hive.is_runing() then
         log_info("[CacheMgr][evt_change_service_status] enter flush mode,wait stop service:%s", hive.index)
         self.flush = true
+        for _, obj in self.dirty_map:iterator() do
+            self:save_cache(obj)
+        end
         return
     end
     self.flush = false
@@ -234,8 +236,9 @@ function CacheMgr:rpc_cache_update(hive_id, req_data)
         return code
     end
     local ucode = cache_obj:update(table_data, flush)
-    if cache_obj:is_dirty() then
-        self:set_dirty(cache_obj, true)
+    self:set_dirty(cache_obj, true)
+    if cache_obj:need_save(hive.now) then
+        self:save_cache(cache_obj)
     end
     return ucode
 end
@@ -249,8 +252,9 @@ function CacheMgr:rpc_cache_update_key(hive_id, req_data)
         return code
     end
     local ucode = cache_obj:update_key(table_kvs, flush)
-    if cache_obj:is_dirty() then
-        self:set_dirty(cache_obj, true)
+    self:set_dirty(cache_obj, true)
+    if cache_obj:need_save(hive.now) then
+        self:save_cache(cache_obj)
     end
     return ucode
 end

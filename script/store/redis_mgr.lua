@@ -1,7 +1,8 @@
 --redis_mgr.lua
 local sformat      = string.format
-local tpack         = table.pack
-local log_err       = logger.err
+local tpack        = table.pack
+local mrandom      = math.random
+local log_err      = logger.err
 local KernCode     = enum("KernCode")
 local SUCCESS      = KernCode.SUCCESS
 local REDIS_FAILED = KernCode.REDIS_FAILED
@@ -29,7 +30,7 @@ function RedisMgr:setup()
         if drivers and #drivers > 0 then
             local dconf = drivers[1]
             if dconf.driver == "redis" then
-                local redis_db          = RedisDB(dconf)
+                local redis_db            = RedisDB(dconf)
                 self.redis_dbs[conf.name] = redis_db
                 if conf.default then
                     self.default_db = redis_db
@@ -47,9 +48,10 @@ function RedisMgr:get_db(db_name)
     return self.redis_dbs[db_name]
 end
 
-function RedisMgr:execute(db_name, cmd, ...)
+function RedisMgr:execute(db_name, primary_id, cmd, ...)
     local redisdb = self:get_db(db_name)
     if redisdb then
+        redisdb:set_executer(primary_id or mrandom())
         local ok, res_oe = redisdb:execute(cmd, ...)
         if not ok then
             log_err("[RedisMgr][execute] execute %s (%s) failed, because: %s", cmd, tpack(...), res_oe)

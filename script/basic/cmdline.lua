@@ -76,9 +76,9 @@ end
 --command : command command定义
 --command 示例
 --command = "player_id|integer aa|table bb|string dd|number"
-function Cmdline:register_command(name, command, desc, comment, cmd_type, service)
+function Cmdline:register_command(name, command, desc, comment, cmd_type, service, service_name)
     if self.command_defines[name] then
-        log_warn("[Cmdline][register_command] command (%s) repeat registered!", name)
+        log_warn("[Cmdline][register_command] command (%s) repeat registered!,from:%s", name, service_name)
         return false
     end
     local def_args   = {}
@@ -88,7 +88,7 @@ function Cmdline:register_command(name, command, desc, comment, cmd_type, servic
     end
     cmd_define.args            = def_args
     self.command_defines[name] = cmd_define
-    log_info("[Cmdline][register_command] command (%s) registered!", name)
+    log_info("[Cmdline][register_command] command (%s) registered!,from:%s", name, service_name)
     return true
 end
 

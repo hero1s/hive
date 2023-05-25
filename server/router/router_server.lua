@@ -6,7 +6,6 @@ local tinsert       = table.insert
 
 local FlagMask      = enum("FlagMask")
 local KernCode      = enum("KernCode")
-local ServiceStatus = enum("ServiceStatus")
 local RpcServer     = import("network/rpc_server.lua")
 
 local socket_mgr    = hive.get("socket_mgr")
@@ -96,12 +95,12 @@ end
 
 -- 心跳
 function RouterServer:on_client_beat(client, node_info)
-    local status = node_info.status
-    --设置hash限流
-    if status > ServiceStatus.RUN then
+--[[    local status = node_info.status
+    --设置hash限流 todo 影响安全退出,后续优化 toney
+    if status > ServiceStatus.RUN and hive.is_runing() then
         log_info("[RouterServer][on_client_beat] the server is not dispatch:%s,%s", client.name, status)
         socket_mgr.set_node_status(client.id, status)
-    end
+    end]]
 end
 
 hive.router_server = RouterServer()

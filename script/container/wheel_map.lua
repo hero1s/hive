@@ -60,18 +60,21 @@ function WheelMap:iterator()
 end
 
 -- 带轮遍历
-function WheelMap:wheel_iterator()
+function WheelMap:wheel_iterator(wheel)
     local key       = nil
-    local wheel_cur = self.wheel_cur
+    local wheel_cur = wheel or self.wheel_cur
     local host_map  = self.host_maps[wheel_cur]
-    self.wheel_cur  = (wheel_cur < self.wheel_cnt) and wheel_cur + 1 or 1
+    local wheel_nxt = (wheel_cur < self.wheel_cnt) and wheel_cur + 1 or 1
+    if not wheel then
+        self.wheel_cur = wheel_nxt
+    end
     local function iter()
         key = next(host_map, key)
         if key then
             return key, host_map[key]
         end
     end
-    return iter
+    return iter, wheel_nxt
 end
 
 -- export

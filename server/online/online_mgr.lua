@@ -222,22 +222,22 @@ function OnlineMgr:rpc_send_lobby(player_id, rpc, ...)
 end
 
 --根据玩家所在的lobby转发消息，然后转发给客户端
-function OnlineMgr:rpc_call_client(player_id, ...)
+function OnlineMgr:rpc_call_client(player_id, cmd_id, msg)
     local lobby = self.lobbys[player_id]
     if not lobby then
         return KernCode.PLAYER_NOT_EXIST, "player not online!"
     end
-    local ok, codeoe, res = router_mgr:call_target(lobby, "rpc_forward_client", player_id, ...)
+    local ok, codeoe, res = router_mgr:call_target(lobby, "rpc_forward_client", player_id, cmd_id, msg)
     if not ok then
         return KernCode.RPC_FAILED, codeoe
     end
     return codeoe, res
 end
 
-function OnlineMgr:rpc_send_client(player_id, ...)
+function OnlineMgr:rpc_send_client(player_id, cmd_id, msg)
     local lobby = self.lobbys[player_id]
     if lobby then
-        router_mgr:send_target(lobby, "rpc_forward_client", player_id, ...)
+        router_mgr:send_target(lobby, "rpc_forward_client", player_id, cmd_id, msg)
     end
 end
 

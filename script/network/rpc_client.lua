@@ -10,15 +10,16 @@ local hxpcall        = hive.xpcall
 local event_mgr      = hive.get("event_mgr")
 local socket_mgr     = hive.get("socket_mgr")
 local thread_mgr     = hive.get("thread_mgr")
-local update_mgr     = hive.get("update_mgr")
 local proxy_agent    = hive.get("proxy_agent")
+local timer_mgr      = hive.get("timer_mgr")
 local heval          = hive.eval
 
 local FlagMask       = enum("FlagMask")
 local KernCode       = enum("KernCode")
 local NetwkTime      = enum("NetwkTime")
+
+local SECOND_MS      = hive.enum("PeriodTime", "SECOND_MS")
 local HEARTBEAT_TIME = hive.enum("NetwkTime", "HEARTBEAT_TIME")
-local RECONNECT_TIME = hive.enum("NetwkTime", "RECONNECT_TIME")
 
 local SUCCESS        = KernCode.SUCCESS
 
@@ -28,16 +29,30 @@ prop:reader("ip", nil)
 prop:reader("port", nil)
 prop:reader("alive", false)
 prop:reader("alive_time", 0)
-prop:reader("next_connect_time", 0)
-prop:reader("last_heart_time", 0)
 prop:reader("socket", nil)
 prop:reader("holder", nil)    --持有者
-prop:reader("auto_reconnect", true)
+
 function RpcClient:__init(holder, ip, port)
     self.holder = holder
     self.port   = port
     self.ip     = ip
-    self:setup()
+    thread_mgr:entry(self:address(), function()
+        self:check_heartbeat()
+    end)
+end
+
+function RpcClient:check_heartbeat()
+    if not self.holder then
+        return
+    end
+    if self.alive then
+        self:heartbeat()
+    else
+        self:connect()
+    end
+    self.timer_id = timer_mgr:once(self.alive and HEARTBEAT_TIME or SECOND_MS, function()
+        self:check_heartbeat()
+    end)
 end
 
 function RpcClient:__release()
@@ -45,22 +60,6 @@ function RpcClient:__release()
         self.socket.close()
         self.socket = nil
         self.alive  = false
-    end
-    update_mgr:detach_second5(self)
-end
-
-function RpcClient:setup()
-    update_mgr:attach_second5(self)
-end
-
-function RpcClient:on_second5(clock_ms)
-    if self.alive then
-        self:heartbeat(false, clock_ms)
-        return
-    end
-    if self.auto_reconnect and clock_ms >= self.next_connect_time then
-        self.next_connect_time = clock_ms + RECONNECT_TIME
-        self:connect()
     end
 end
 
@@ -75,15 +74,11 @@ function RpcClient:on_call_router(rpc, send_len, ...)
 end
 
 --发送心跳
-function RpcClient:heartbeat(initial, clock_ms)
+function RpcClient:heartbeat(initial)
     if initial then
-        self:send("rpc_heartbeat", true, hive.node_info)
-        return
+        return self:send("rpc_heartbeat", true, hive.node_info)
     end
-    if clock_ms - self.last_heart_time > HEARTBEAT_TIME then
-        self.last_heart_time = clock_ms
-        self:send("rpc_heartbeat", false, hive.node_info)
-    end
+    self:send("rpc_heartbeat", false, hive.node_info)
 end
 
 --连接服务器
@@ -160,15 +155,16 @@ function RpcClient:connect()
 end
 
 -- 主动关闭连接
-function RpcClient:close(auto_reconnect)
-    if auto_reconnect ~= nil then
-        self.auto_reconnect = auto_reconnect
-    end
+function RpcClient:close()
     if self.socket then
         self.socket.close()
         thread_mgr:fork(function()
             hxpcall(self.on_socket_error, "on_socket_error: %s", self, self.socket.token, "rpc-action-close")
         end)
+    end
+    if self.timer_id then
+        timer_mgr:unregister(self.timer_id)
+        self.timer_id = nil
     end
 end
 
@@ -208,7 +204,6 @@ end
 --错误处理
 function RpcClient:on_socket_error(token, err)
     log_info("[RpcClient][on_socket_error] socket %s:%s,token:%s,err:%s!", self.ip, self.port, token, err)
-    self.next_connect_time = hive.clock_ms
     thread_mgr:fork(function()
         self.socket = nil
         self.alive  = false
@@ -223,7 +218,7 @@ function RpcClient:on_socket_connect(socket)
     self.alive_time = hive.clock_ms
     thread_mgr:fork(function()
         self.holder:on_socket_connect(self)
-        self:heartbeat(true, hive.clock_ms)
+        self:heartbeat(true)
     end)
 end
 

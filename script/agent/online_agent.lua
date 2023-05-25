@@ -5,6 +5,7 @@ local tunpack       = table.unpack
 local event_mgr     = hive.get("event_mgr")
 local router_mgr    = hive.get("router_mgr")
 local monitor       = hive.get("monitor")
+local protobuf_mgr  = hive.get("protobuf_mgr")
 
 local SUCCESS       = hive.enum("KernCode", "SUCCESS")
 local LOGIC_FAILED  = hive.enum("KernCode", "LOGIC_FAILED")
@@ -70,20 +71,22 @@ function OnlineAgent:send_lobby(player_id, rpc, ...)
     return router_mgr:send_online_hash(player_id, "rpc_send_lobby", player_id, rpc, ...)
 end
 
-function OnlineAgent:call_client(player_id, ...)
-    return router_mgr:call_online_hash(player_id, "rpc_call_client", player_id, ...)
+function OnlineAgent:call_client(player_id, cmd_id, msg)
+    msg = protobuf_mgr:encode(cmd_id, msg)
+    return router_mgr:call_online_hash(player_id, "rpc_call_client", player_id, cmd_id, msg)
 end
 
-function OnlineAgent:send_client(player_id, ...)
-    return router_mgr:send_online_hash(player_id, "rpc_send_client", player_id, ...)
+function OnlineAgent:send_client(player_id, cmd_id, msg)
+    msg = protobuf_mgr:encode(cmd_id, msg)
+    return router_mgr:send_online_hash(player_id, "rpc_send_client", player_id, cmd_id, msg)
 end
 
 --rpc处理
 ------------------------------------------------------------------
 --透传给client的消息
 --需由player_mgr实现on_forward_client，给client发消息
-function OnlineAgent:rpc_forward_client(player_id, ...)
-    local ok, res = tunpack(event_mgr:notify_listener("on_forward_client", player_id, ...))
+function OnlineAgent:rpc_forward_client(player_id, cmd_id, msg)
+    local ok, res = tunpack(event_mgr:notify_listener("on_forward_client", player_id, cmd_id, msg))
     return ok and SUCCESS or LOGIC_FAILED, res
 end
 

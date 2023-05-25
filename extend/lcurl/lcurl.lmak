@@ -19,9 +19,14 @@ INCLUDES = {
     "../luakit/include"
 }
 
+--LINUX需要的include目录
+LINUX_INCLUDES = {
+    "./linux"
+}
+
 --WINDOWS需要include目录
 WINDOWS_INCLUDES = {
-    "./"
+    "./win64"
 }
 
 --需要连接的库文件
@@ -31,11 +36,6 @@ LIBS = {
 
 --需要连接的库文件
 LINUX_LIBS = {
-    "curl"
-}
-
---需要连接的库文件
-DARWIN_LIBS = {
     "curl"
 }
 
@@ -51,12 +51,12 @@ WINDOWS_DEFINES = {
 
 --WINDOWS需要附加link库目录
 WINDOWS_LIBRARY_DIR = {
-    "bin"
+    "win64"
 }
 
 --WINDOWS预编译命令
 WINDOWS_PREBUILDS = {
-    { "copy /y", "bin/libcurl-x64.dll $(SolutionDir)bin" },
+    { "copy /y", "win64/libcurl-x64.dll $(SolutionDir)bin" },
 }
 
 --依赖项目

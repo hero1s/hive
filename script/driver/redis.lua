@@ -6,21 +6,22 @@ local tonumber     = tonumber
 local log_err      = logger.err
 local log_info     = logger.info
 local ssub         = string.sub
-local sgsub        = string.gsub
-local supper       = string.upper
+local slower       = string.lower
 local sformat      = string.format
 local tinsert      = table.insert
-local env_number   = environ.number
 local is_array     = table_ext.is_array
 local tjoin        = table_ext.join
+local hhash        = hive.hash
 
 local timer_mgr    = hive.get("timer_mgr")
 local thread_mgr   = hive.get("thread_mgr")
+local update_mgr   = hive.get("update_mgr")
 
 local LineTitle    = "\r\n"
 local SECOND_MS    = hive.enum("PeriodTime", "SECOND_MS")
 local SECOND_10_MS = hive.enum("PeriodTime", "SECOND_10_MS")
 local DB_TIMEOUT   = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
+local POOL_COUNT   = environ.number("HIVE_DB_POOL_COUNT", 5)
 
 local function _next_line(resp)
     local nindex = resp.cur + 1
@@ -127,18 +128,6 @@ local function _compose_args(cmd, ...)
     return sformat("%s\r\n", buff)
 end
 
-local function _tokeys(value)
-    if type(value) == 'string' then
-        -- backwards compatibility path for Redis < 2.0
-        local keys = {}
-        sgsub(value, '[^%s]+', function(key)
-            keys[#keys + 1] = key
-        end)
-        return keys
-    end
-    return {}
-end
-
 local function _tomap(value)
     if (type(value) == 'table') then
         local maps = { }
@@ -161,7 +150,10 @@ end
 local redis_commands = {
     del              = { cmd = "DEL" },
     set              = { cmd = "SET" },
+    keys             = { cmd = "KEYS" },
     type             = { cmd = "TYPE" },
+    incr             = { cmd = "INCR" },
+    incrby           = { cmd = "INCRBY", },
     rename           = { cmd = "RENAME" },
     ttl              = { cmd = "TTL" },
     dbsize           = { cmd = "DBSIZE" },
@@ -171,8 +163,6 @@ local redis_commands = {
     get              = { cmd = "GET" },
     mget             = { cmd = "MGET" },
     getset           = { cmd = "GETSET" },
-    incr             = { cmd = "INCR" },
-    incrby           = { cmd = "INCRBY" },
     decr             = { cmd = "DECR" },
     decrby           = { cmd = "DECRBY" },
     append           = { cmd = "APPEND" }, -- >= 2.0
@@ -214,11 +204,11 @@ local redis_commands = {
     zrank            = { cmd = "ZRANK" }, -- >= 2.0
     zrevrank         = { cmd = "ZREVRANK" }, -- >= 2.0
     hget             = { cmd = "HGET" }, -- >= 2.0
-    hincrby          = { cmd = "HINCRBY" }, -- >= 2.0
     hdel             = { cmd = "HDEL" }, -- >= 2.0
     hlen             = { cmd = "HLEN" }, -- >= 2.0
     hkeys            = { cmd = "HKEYS" }, -- >= 2.0
     hvals            = { cmd = "HVALS" }, -- >= 2.0
+    hincrby          = { cmd = "HINCRBY" }, -- >= 2.0
     echo             = { cmd = "ECHO" },
     select           = { cmd = "SELECT" },
     multi            = { cmd = "MULTI" }, -- >= 2.0
@@ -284,18 +274,22 @@ local redis_commands = {
     msetnx           = { cmd = "MSETNX", convertor = _toboolean },
     hgetall          = { cmd = "HGETALL", convertor = _tomap }, -- >= 2.0
     config           = { cmd = "CONFIG", convertor = _tomap }, -- >= 2.0
-    keys             = { cmd = "KEYS", convertor = _tokeys },
 }
 
 local RedisDB        = class()
 local prop           = property(RedisDB)
-prop:reader("passwd", nil)              --passwd
-prop:reader("drivers", {})              --drivers
-prop:reader("timer_id", nil)            --next_time
+prop:reader("id", nil)              --id
+prop:reader("passwd", nil)          --passwd
+prop:reader("executer", nil)        --执行者
+prop:reader("timer_id", nil)        --timer_id
+prop:reader("connections", {})      --connections
 
-function RedisDB:__init(conf)
+function RedisDB:__init(conf, id)
+    self.id     = id
     self.passwd = conf.passwd
     self:choose_host(conf.hosts)
+    --attach_hour
+    update_mgr:attach_hour(self)
     --setup
     self:setup()
 end
@@ -304,21 +298,23 @@ function RedisDB:__release()
     self:close()
 end
 
+function RedisDB:set_executer(id)
+    local index   = hhash(id, POOL_COUNT)
+    self.executer = self.connections[index]
+end
+
 function RedisDB:choose_host(hosts)
     if not next(hosts) then
         log_err("[RedisDB][choose_host] redis config err: hosts is empty")
         return
     end
-    local pcount = env_number("HIVE_DB_POOL_COUNT", 5)
-    while true do
+    local count = POOL_COUNT
+    while count > 0 do
         for ip, port in pairs(hosts) do
-            local socket         = Socket(self, ip, port)
-            socket.task_queue    = QueueFIFO()
-            self.drivers[socket] = QueueFIFO()
-            pcount               = pcount - 1
-            if pcount == 0 then
-                return
-            end
+            local socket            = Socket(self, ip, port)
+            socket.task_queue       = QueueFIFO()
+            self.connections[count] = socket
+            count                   = count - 1
         end
     end
 end
@@ -329,11 +325,7 @@ end
 function RedisDB:setup()
     for cmd, param in pairs(redis_commands) do
         RedisDB[cmd] = function(this, ...)
-            local socket = self:choose_driver()
-            if not socket then
-                return false, "redis not connested"
-            end
-            return this:commit(socket, param, ...)
+            return this:commit(param, ...)
         end
     end
     thread_mgr:entry(self:address(), function()
@@ -342,31 +334,20 @@ function RedisDB:setup()
 end
 
 function RedisDB:close()
-    for sock in pairs(self.drivers) do
+    for _, sock in pairs(self.connections) do
         sock:close()
     end
+    if self.timer_id then
+        timer_mgr:unregister(self.timer_id)
+        self.timer_id = nil
+    end
 end
 
-function RedisDB:login(socket, title)
-    if not socket:connect(socket.ip, socket.port) then
-        log_err("[RedisDB][login] connect %s db(%s:%s) failed!", title, socket.ip, socket.port)
-        return false
-    end
-    if self.passwd and self.passwd:len() > 1 then
-        local ok, res = self:auth(socket)
-        if not ok or res ~= "OK" then
-            log_err("[RedisDB][login] auth %s db(%s:%s) failed! because: %s", title, socket.ip, socket.port, res)
-            return false
-        end
-    end
-    log_info("[RedisDB][login] login %s db(%s:%s:%s) success!", title, socket.ip, socket.port, socket.token)
-    return true
-end
-
-function RedisDB:ping()
-    for sock in pairs(self.drivers) do
+function RedisDB:on_hour()
+    for _, sock in pairs(self.connections) do
         if not sock:is_alive() then
-            self:commit(sock, { cmd = "PING" })
+            self.executer = sock
+            self:commit({ cmd = "PING" })
         end
     end
 end
@@ -376,9 +357,9 @@ function RedisDB:check_alive()
         timer_mgr:unregister(self.timer_id)
     end
     local ok = true
-    for sock in pairs(self.drivers) do
+    for no, sock in pairs(self.connections) do
         if not sock:is_alive() then
-            if not self:login(sock, "query") then
+            if not self:login(sock, no) then
                 ok = false
             end
         end
@@ -388,8 +369,32 @@ function RedisDB:check_alive()
     end)
 end
 
+function RedisDB:login(socket, no)
+    local ip, port = socket.ip, socket.port
+    if not socket:connect(ip, port) then
+        log_err("[RedisDB][login] connect db(%s:%s:%s) failed!", ip, port, no)
+        return false
+    end
+    self.executer = socket
+    if self.passwd and #self.passwd > 1 then
+        self.executer = socket
+        local ok, res = self:auth()
+        if not ok or res ~= "OK" then
+            log_err("[RedisDB][login] auth db(%s:%s:%s) auth failed! because: %s", ip, port, no, res)
+            socket:close()
+            return false
+        end
+    end
+    log_info("[RedisDB][login] login db(%s:%s:%s) success!", ip, port, no)
+    return true
+end
+
+function RedisDB:auth()
+    return self:commit({ cmd = "AUTH" }, self.passwd)
+end
+
 function RedisDB:on_socket_error(sock, token, err)
-    local task_queue = self.drivers[sock]
+    local task_queue = sock.task_queue
     local session_id = task_queue:pop()
     while session_id do
         thread_mgr:response(session_id, false, err)
@@ -417,20 +422,22 @@ function RedisDB:on_socket_recv(sock, token)
             break
         end
         sock:pop(_parse_offset(packet))
-        local task_queue = self.drivers[sock]
-        local session_id = task_queue:pop()
+        local session_id = sock.task_queue:pop()
         if session_id then
             thread_mgr:response(session_id, rdsucc, res)
         end
     end
 end
 
-function RedisDB:wait_response(session_id, socket, packet, param)
+function RedisDB:wait_response(session_id, packet, param)
+    local socket = self.executer
+    if not socket then
+        return false, "db not connected"
+    end
     if not socket:send(packet) then
         return false, "send request failed"
     end
-    local task_queue = self.drivers[socket]
-    task_queue:push(session_id)
+    socket.task_queue:push(session_id)
     local ok, res = thread_mgr:yield(session_id, sformat("redis_comit:%s", param.cmd), DB_TIMEOUT)
     if not ok then
         log_err("[RedisDB][wait_response] exec cmd %s failed: %s", param.cmd, res)
@@ -443,40 +450,18 @@ function RedisDB:wait_response(session_id, socket, packet, param)
     return ok, res
 end
 
-function RedisDB:commit(socket, param, ...)
+function RedisDB:commit(param, ...)
     local session_id = thread_mgr:build_session_id()
     local packet     = _compose_args(param.cmd, ...)
-    return self:wait_response(session_id, socket, packet, param)
+    return self:wait_response(session_id, packet, param)
 end
 
 function RedisDB:execute(cmd, ...)
-    if RedisDB[cmd] then
-        return self[cmd](self, ...)
+    local lcmd = slower(cmd)
+    if RedisDB[lcmd] then
+        return self[lcmd](self, ...)
     end
-    local socket = self:choose_driver()
-    if not socket then
-        return false, "redis not connested"
-    end
-    return self:commit(socket, { cmd = supper(cmd) }, ...)
-end
-
-function RedisDB:auth(socket)
-    return self:commit(socket, { cmd = "AUTH" }, self.passwd)
-end
-
-function RedisDB:choose_driver()
-    local socket
-    local task_size = 0
-    for driver, task_queue in pairs(self.drivers) do
-        if driver:is_alive() then
-            local tsize = task_queue:size()
-            if not socket or tsize < task_size then
-                task_size = tsize
-                socket    = driver
-            end
-        end
-    end
-    return socket
+    return self:commit({ cmd = cmd }, ...)
 end
 
 return RedisDB

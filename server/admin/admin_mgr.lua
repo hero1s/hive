@@ -76,7 +76,7 @@ function AdminMgr:rpc_register_command(command_list, service_id)
         return SUCCESS
     end
     for _, cmd in pairs(command_list) do
-        cmdline:register_command(cmd.name, cmd.args, cmd.desc, cmd.comment or "", cmd.gm_type, service_id)
+        cmdline:register_command(cmd.name, cmd.args, cmd.desc, cmd.comment or "", cmd.gm_type, service_id, service.sid2name(service_id))
     end
     self.services[service_id] = true
     return SUCCESS

@@ -57,8 +57,8 @@ function RouterMgr:add_router(router_id, host, port)
     end
     local router = self.routers[router_id]
     if router then
-        if router.client.ip ~= host or router.client.port ~= port then
-            router.client:close()
+        if router.ip ~= host or router.port ~= port then
+            router:close()
             self.routers[router_id] = nil
             log_err("[RouterMgr][add_router] replace new router:%s,%s,%s", id2nick(router_id), host, port)
         else
@@ -67,11 +67,7 @@ function RouterMgr:add_router(router_id, host, port)
     end
     log_debug("[RouterMgr][add_router] %s --> %s,%s:%s", hive.name, id2nick(router_id), host, port)
     local RpcClient         = import("network/rpc_client.lua")
-    self.routers[router_id] = {
-        addr      = host,
-        router_id = router_id,
-        client    = RpcClient(self, host, port)
-    }
+    self.routers[router_id] = RpcClient(self, host, port)
 end
 
 --错误处理
@@ -89,9 +85,9 @@ end
 function RouterMgr:check_router()
     local old_ready = self:is_ready()
     self.candidates = {}
-    for _, node in pairs(self.routers) do
-        if node.client:is_alive() then
-            self.candidates[#self.candidates + 1] = node
+    for _, client in pairs(self.routers) do
+        if client:is_alive() then
+            self.candidates[#self.candidates + 1] = client
         end
     end
     if old_ready ~= self:is_ready() then
@@ -124,7 +120,7 @@ end
 --通过router发送点对点消息
 function RouterMgr:forward_client(router, method, rpc, session_id, ...)
     if router then
-        return router.client:forward_socket(method, rpc, session_id, ...)
+        return router:forward_socket(method, rpc, session_id, ...)
     end
     return false, "router not connected"
 end

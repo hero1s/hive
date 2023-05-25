@@ -84,7 +84,7 @@ function GMAgent:on_service_ready(id, service_name)
     -- 上报gm列表
     thread_mgr:success_call(PeriodTime.SECOND_10_MS, function()
         return self:report_command()
-    end, PeriodTime.SECOND_5_MS)
+    end, PeriodTime.SECOND_10_MS)
 end
 
 hive.gm_agent = GMAgent()

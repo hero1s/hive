@@ -113,9 +113,9 @@ function hive.init()
     --其他模块加载
     if hive.mode == HiveMode.SERVICE then
         init_router()
-        --加载协议
-        import("kernel/protobuf_mgr.lua")
     end
+    --加载协议
+    import("kernel/protobuf_mgr.lua")
     --挂载运维附加逻辑
     import("devops/devops_mgr.lua")
 end

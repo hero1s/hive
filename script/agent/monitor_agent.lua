@@ -3,7 +3,6 @@ local RpcClient    = import("network/rpc_client.lua")
 
 local tunpack      = table.unpack
 local tinsert      = table.insert
-local signal_quit  = signal.quit
 local env_addr     = environ.addr
 local log_err      = logger.err
 local log_warn     = logger.warn
@@ -11,6 +10,7 @@ local log_info     = logger.info
 local log_debug    = logger.debug
 local check_failed = hive.failed
 local smake_id     = service.make_id
+
 local event_mgr    = hive.get("event_mgr")
 local update_mgr   = hive.get("update_mgr")
 local mem_monitor  = hive.get("mem_monitor")
@@ -32,7 +32,6 @@ function MonitorAgent:__init()
     --注册事件
     event_mgr:add_vote(self, "vote_stop_service")
     event_mgr:add_listener(self, "rpc_service_changed")
-    event_mgr:add_listener(self, "rpc_hive_quit")
     event_mgr:add_listener(self, "on_remote_message")
     event_mgr:add_listener(self, "rpc_reload")
     event_mgr:add_listener(self, "rpc_inject")
@@ -45,6 +44,9 @@ end
 
 --检测是否可以自动退出
 function MonitorAgent:vote_stop_service()
+    if not hive.is_ready() then
+        return true
+    end
     for _, name in ipairs(hive.pre_services or {}) do
         if self:exist_service(name) then
             log_warn("[MonitorAgent][vote_stop_service] pre service [%s] has runing,wait next check", name)
@@ -139,17 +141,6 @@ function MonitorAgent:rpc_service_changed(service_name, readys, closes)
             self.services[service_name][id] = nil
         end
     end
-end
-
--- 处理Monitor通知退出消息
-function MonitorAgent:rpc_hive_quit(reason)
-    -- 发个退出通知
-    event_mgr:notify_trigger("evt_hive_quit", reason)
-    event_mgr:fire_next_frame(function()
-        log_warn("[MonitorAgent][on_hive_quit]->service:%s,reason:%s", hive.name, reason)
-        signal_quit()
-    end)
-    return { code = 0 }
 end
 
 --执行远程rpc消息

@@ -37,6 +37,9 @@ STDCPP = -std=c++17
 #需要的include目录
 MYCFLAGS += -I../lua/lua
 MYCFLAGS += -I../luakit/include
+ifeq ($(UNAME_S), Linux)
+MYCFLAGS += -I./linux
+endif
 
 #需要定义的选项
 
@@ -55,9 +58,6 @@ LIBS =
 #自定义库
 LIBS += -llua
 ifeq ($(UNAME_S), Linux)
-LIBS += -lcurl
-endif
-ifeq ($(UNAME_S), Darwin)
 LIBS += -lcurl
 endif
 #系统库

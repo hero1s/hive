@@ -50,6 +50,8 @@ function DevopsGmMgr:register_gm()
           args    = "db_name|string table_name|string key_name|string key_value|string json_value|string" },
         { gm_type = GMType.GLOBAL, name = "gm_update_rank", desc = "立即更新排行榜", comment="(星星排行榜 1)", args = "type|integer" },
         { gm_type = GMType.GLOBAL, name = "gm_update_rank_season_to_rank", desc = "立即更新排行榜赛季", comment="(更新到下一个赛季)", args = "" },
+        { gm_type = GMType.GLOBAL, name = "gm_mmr_stat_clear", desc = "mmr:统计信息清除(跳段专用)", args = "division|integer"},
+        { gm_type = GMType.GLOBAL, name = "gm_mmr_stat_update", desc = "mmr:统计信息(跳段专用)", args = "division|integer count|integer min_mmr|integer max_mmr|integer update|integer", comment = "division:段位,update=1:更新mmr均值"},
     }
     gm_agent:insert_command(cmd_list, self)
 end
@@ -118,8 +120,6 @@ end
 function DevopsGmMgr:gm_hive_quit(reason)
     log_warn("[DevopsGmMgr][gm_hive_quit] exit hive exe time:%s ", time_str(hive.now))
     monitor_mgr:broadcast("rpc_set_server_status", 0, ServiceStatus.STOP)
-    thread_mgr:sleep(3000)
-    monitor_mgr:broadcast("rpc_hive_quit", 0, reason)
     return { code = 0 }
 end
 
@@ -225,6 +225,14 @@ end
 
 function DevopsGmMgr:gm_update_rank_season_to_rank()
     return monitor_mgr:broadcast("rpc_gm_rank_season_update", "rank")
+end
+
+function DevopsGmMgr:gm_mmr_stat_clear(division)
+    return monitor_mgr:broadcast("rpc_gm_mmr_clear", "center", division)
+end
+
+function DevopsGmMgr:gm_mmr_stat_update(division, count, min_mmr, max_mmr, update)
+    return monitor_mgr:broadcast("rpc_gm_mmr_update", "center", division, count, min_mmr, max_mmr, update)
 end
 
 function DevopsGmMgr:call_target_rpc(service_name, index, rpc, ...)

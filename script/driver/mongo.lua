@@ -6,6 +6,7 @@ local Socket        = import("driver/socket.lua")
 
 local log_err       = logger.err
 local log_info      = logger.info
+local qhash         = hive.hash
 local tunpack       = table.unpack
 local tinsert       = table.insert
 local tis_array     = table_ext.is_array
@@ -30,39 +31,37 @@ local mlength       = lmongo.length
 local bson_decode   = bson.decode
 local bson_encode_o = bson.encode_order
 
+local timer_mgr     = hive.get("timer_mgr")
 local update_mgr    = hive.get("update_mgr")
 local thread_mgr    = hive.get("thread_mgr")
 
+local SECOND_MS     = hive.enum("PeriodTime", "SECOND_MS")
+local SECOND_10_MS  = hive.enum("PeriodTime", "SECOND_10_MS")
 local DB_TIMEOUT    = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
+local POOL_COUNT    = environ.number("HIVE_DB_POOL_COUNT", 9)
 
 local MongoDB       = class()
 local prop          = property(MongoDB)
-prop:reader("ip", nil)          --mongo地址
-prop:reader("sock", nil)        --网络连接对象
 prop:reader("name", "")         --dbname
-prop:reader("port", 27017)      --mongo端口
 prop:reader("user", nil)        --user
 prop:reader("passwd", nil)      --passwd
+prop:reader("executer", nil)    --执行者
+prop:reader("timer_id", nil)    --timer_id
 prop:reader("cursor_id", nil)   --cursor_id
+prop:reader("connections", {})  --connections
 prop:reader("sessions", {})     --sessions
-prop:reader("session_cnt", 0)    --sessions数量
 prop:reader("readpref", nil)    --readPreference
 prop:reader("auth_source", "admin") --authSource
-prop:reader("is_login", false)
-prop:reader("max_ops", 5000)
 
-function MongoDB:__init(conf, max_ops)
+function MongoDB:__init(conf)
     self.user      = conf.user
     self.passwd    = conf.passwd
     self.name      = conf.db
-    self.max_ops   = max_ops
-    self.sock      = Socket(self)
     self.cursor_id = bson.int64(0)
     self:choose_host(conf.hosts)
     self:set_options(conf.opts)
-    --attach_second
-    update_mgr:attach_minute(self)
-    update_mgr:attach_second(self)
+    --attach_hour
+    update_mgr:attach_hour(self)
 end
 
 function MongoDB:__release()
@@ -70,16 +69,38 @@ function MongoDB:__release()
 end
 
 function MongoDB:close()
-    if self.sock then
-        self.sock:close()
+    for sock in pairs(self.connections) do
+        sock:close()
+    end
+    if self.timer_id then
+        timer_mgr:unregister(self.timer_id)
+        self.timer_id = nil
     end
 end
 
+function MongoDB:set_executer(id)
+    local index   = qhash(id, POOL_COUNT)
+    self.executer = self.connections[index]
+end
+
 function MongoDB:choose_host(hosts)
-    for host, port in pairs(hosts) do
-        self.ip, self.port = host, port
-        break
+    if not next(hosts) then
+        log_err("[MongoDB][choose_host] mongo config err: hosts is empty")
+        return
     end
+    local count = POOL_COUNT
+    while count > 0 do
+        for ip, port in pairs(hosts) do
+            local socket            = Socket(self, ip, port)
+            socket.sessions         = {}
+            self.connections[count] = socket
+            count                   = count - 1
+            break
+        end
+    end
+    thread_mgr:entry(self:address(), function()
+        self:check_alive()
+    end)
 end
 
 function MongoDB:set_options(opts)
@@ -92,30 +113,49 @@ function MongoDB:set_options(opts)
     end
 end
 
-function MongoDB:on_minute()
-    if self.sock:is_alive() then
-        self:runCommand("ping")
+function MongoDB:check_alive()
+    if self.timer_id then
+        timer_mgr:unregister(self.timer_id)
+    end
+    local ok = true
+    for no, sock in pairs(self.connections) do
+        if not sock:is_alive() then
+            if not self:login(sock, no) then
+                ok = false
+            end
+        end
+    end
+    self.timer_id = timer_mgr:once(ok and SECOND_10_MS or SECOND_MS, function()
+        self:check_alive()
+    end)
+end
+
+function MongoDB:on_hour()
+    for _, sock in pairs(self.connections) do
+        if not sock:is_alive() then
+            self.executer = sock
+            self:runCommand("ping")
+        end
     end
 end
 
-function MongoDB:on_second()
-    if not self.sock:is_alive() then
-        local ok, err = self.sock:connect(self.ip, self.port)
-        if not ok then
-            log_err("[MongoDB][on_second] connect db(%s:%s:%s) failed: %s!", self.ip, self.port, self.name, err)
+function MongoDB:login(socket, no)
+    local ip, port = socket.ip, socket.port
+    local ok, err  = socket:connect(ip, port)
+    if not ok then
+        log_err("[MongoDB][login] connect db(%s:%s:%s:%s) failed: %s!", ip, port, self.name, no, err)
+        return
+    end
+    self.executer = socket
+    if #self.user > 1 and #self.passwd > 1 then
+        local aok, aerr = self:auth(self.user, self.passwd)
+        if not aok then
+            socket:close()
+            log_err("[MongoDB][login] auth db(%s:%s:%s:%s,[%s:%s]) failed! because: %s", ip, port, self.name, no, self.user, self.passwd, aerr)
             return
         end
-        if self.user and self.passwd and self.user:len() > 1 and self.passwd:len() > 1 then
-            local aok, aerr = self:auth(self.user, self.passwd)
-            if not aok then
-                log_err("[MongoDB][on_second] auth db(%s:%s) failed! because: %s", self.ip, self.port, aerr)
-                self:close()
-                return
-            end
-        end
-        self.is_login = true
-        log_info("[MongoDB][on_second] connect db(%s:%s:%s) success!", self.ip, self.port, self.name)
     end
+    log_info("[MongoDB][on_second] connect db(%s:%s:%s:%s) success!", ip, port, self.name, no)
 end
 
 local function salt_password(password, salt, iter)
@@ -213,12 +253,14 @@ end
 
 function MongoDB:on_socket_error(sock, token, err)
     log_err("[MongoDB][on_socket_error] token:%s,err:%s", token, err)
-    self.is_login = false
-    for session_id in pairs(self.sessions) do
+    for session_id in pairs(sock.sessions) do
         thread_mgr:response(session_id, false, err)
     end
-    self.sessions    = {}
-    self.session_cnt = 0
+    sock.sessions = {}
+    --检查活跃
+    thread_mgr:entry(self:address(), function()
+        self:check_alive()
+    end)
 end
 
 function MongoDB:decode_reply(succ, documents)
@@ -236,6 +278,7 @@ function MongoDB:decode_reply(succ, documents)
 end
 
 function MongoDB:on_socket_recv(sock, token)
+    local sessions = sock.sessions
     while true do
         local hdata = sock:peek(4)
         if not hdata then
@@ -248,28 +291,27 @@ function MongoDB:on_socket_recv(sock, token)
         end
         sock:pop(4 + length)
         local reply, session_id, documents = mreply(bdata)
-        local cost_time                    = hive.clock_ms - (self.sessions[session_id] or 0)
+        local cost_time                    = hive.clock_ms - (sessions[session_id] or 0)
         if cost_time > DB_TIMEOUT then
-            log_err("[MongoDB][on_socket_recv] the op_session:%s, timeout:%s,session_cnt:%s", session_id, cost_time, self.session_cnt)
+            log_err("[MongoDB][on_socket_recv] the op_session:%s, timeout:%s", session_id, cost_time)
         end
-        self.sessions[session_id] = nil
-        self.session_cnt          = self.session_cnt - 1
-        local succ, doc           = self:decode_reply(reply, documents)
+        sessions[session_id] = nil
+        local succ, doc      = self:decode_reply(reply, documents)
         thread_mgr:response(session_id, succ, doc)
     end
 end
 
 function MongoDB:op_msg(bson_cmd)
-    if not self.sock then
+    local sock = self.executer
+    if not sock then
         return false, "db not connected"
     end
     local session_id = thread_mgr:build_session_id()
     local msg        = mopmsg(session_id, 0, bson_cmd)
-    if not self.sock:send(msg) then
+    if not sock:send(msg) then
         return false, "send failed"
     end
-    self.sessions[session_id] = hive.clock_ms
-    self.session_cnt          = self.session_cnt + 1
+    sock.sessions[session_id] = hive.clock_ms
     return thread_mgr:yield(session_id, "mongo_op_msg", DB_TIMEOUT)
 end
 
@@ -279,23 +321,17 @@ function MongoDB:adminCommand(cmd, cmd_v, ...)
 end
 
 function MongoDB:runCommand(cmd, cmd_v, ...)
-    if not self.is_login then
-        return false, sformat("[%s] is not login:%s:%s,ip:%s:%d", self.name, self.user, self.passwd, self.ip, self.port)
-    end
-    if self.session_cnt > self.max_ops then
-        return false, sformat("mongo is busy:%d,max_ops:%s", self.session_cnt, self.max_ops)
-    end
     local bson_cmd = bson_encode_o(cmd, cmd_v or 1, "$db", self.name, ...)
     return self:op_msg(bson_cmd)
 end
 
 function MongoDB:sendCommand(cmd, cmd_v, ...)
-    if not self.sock then
+    if not self.executer then
         return false, "db not connected"
     end
     local bson_cmd = bson_encode_o(cmd, cmd_v or 1, "$db", self.name, "writeConcern", { w = 0 }, ...)
     local msg      = mopmsg(0, 2, bson_cmd)
-    self.sock:send(msg)
+    self.executer:send(msg)
     return true
 end
 

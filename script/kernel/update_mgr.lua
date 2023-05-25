@@ -177,6 +177,8 @@ function UpdateMgr:update_by_time(now, clock_ms)
     if self.hotfix_able then
         self:check_hotfix()
     end
+    --检测停服
+    self:check_service_stop()
     --30秒更新
     if time.sec % 30 > 0 then
         return
@@ -186,8 +188,6 @@ function UpdateMgr:update_by_time(now, clock_ms)
             obj:on_second30(clock_ms)
         end)
     end
-    --检测停服
-    self:check_service_stop()
     --执行gc
     collectgarbage("step", gc_step)
     --分更新

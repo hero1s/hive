@@ -1,6 +1,5 @@
 local log_debug  = logger.debug
 local log_warn   = logger.warn
-local tmerge     = table_ext.merge
 local PeriodTime = enum("PeriodTime")
 
 local event_mgr  = hive.get("event_mgr")
@@ -56,10 +55,13 @@ end
 function NacosMgr:rpc_watch_service(watch_services, pre_services)
     log_debug("[NacosMgr][rpc_watch_service] %s,%s", watch_services, pre_services)
     self.watch_services = {}
-    tmerge(pre_services, watch_services)
     for _, service_name in ipairs(watch_services) do
         self.watch_services[service_name] = 1
     end
+    for _, service_name in ipairs(pre_services) do
+        self.watch_services[service_name] = 1
+    end
+    log_debug("[NacosMgr][rpc_watch_service] watch:%s", self.watch_services)
 end
 
 function NacosMgr:on_nacos_ready()

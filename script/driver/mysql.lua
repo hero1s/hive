@@ -605,15 +605,13 @@ prop:reader("user", nil)        --user
 prop:reader("passwd", nil)      --passwd
 prop:reader("packet_no", 0)     --passwd
 prop:reader("sessions", nil)                --sessions
-prop:reader("max_ops", 5000)
 prop:accessor("charset", "_default")        --charset
 prop:accessor("max_packet_size", 1024 * 1024) --max_packet_size,1mb
 
-function MysqlDB:__init(conf, max_ops)
+function MysqlDB:__init(conf)
     self.db       = conf.db
     self.user     = conf.user
     self.passwd   = conf.passwd
-    self.max_ops  = max_ops
     self.sessions = QueueFIFO()
     self.sock     = Socket(self)
     self:choose_host(conf.hosts)
@@ -791,9 +789,6 @@ end
 function MysqlDB:request(packet, callback, quote, param)
     if not self.sock:send(packet) then
         return false, "send request failed"
-    end
-    if self.sessions:size() > self.max_ops then
-        return false, sformat("mysql is busy:%d,max_ops:%d", self.sessions:size(), self.max_ops)
     end
     local context = { cmd = quote }
     self.sessions:push(context)
