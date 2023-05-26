@@ -35,12 +35,7 @@ end
 function Gateway:rpc_forward_client(token, cmd_id, data, session_id)
     local session = self.client_mgr:get_session_by_token(token)
     if session then
-        if session_id and session_id > 0 then
-            self.client_mgr:callback_pack(session, cmd_id, data, session_id)
-        else
-            self.client_mgr:send_pack(session, cmd_id, data, session_id)
-        end
-        return true
+        return self.client_mgr:send_pack(session, cmd_id, data, session_id)
     end
     return false
 end
@@ -61,7 +56,7 @@ end
 function Gateway:on_heartbeat_req(session, body, session_id)
     local sserial  = body.serial
     local data_res = { serial = sserial, time = hive.now }
-    self.client_mgr:callback_pack(session, CSCmdID.NID_HEARTBEAT_RES, data_res, session_id)
+    self.client_mgr:send_pack(session, CSCmdID.NID_HEARTBEAT_RES, data_res, session_id)
 end
 
 --连接信息

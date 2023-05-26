@@ -158,12 +158,24 @@ end
 
 -- 发送数据
 function NetServer:send_pack(session, cmd_id, data, session_id)
-    return self:write(session, cmd_id, data, session_id, FLAG_REQ)
+    local flag = (session_id and session_id > 0) and FLAG_RES or FLAG_REQ
+    return self:write(session, cmd_id, data, session_id, flag)
 end
 
--- 回调数据
-function NetServer:callback_pack(session, cmd_id, data, session_id)
-    return self:write(session, cmd_id, data, session_id, FLAG_RES)
+-- 发送buff消息
+function NetServer:send_buff(session, cmd_id, data, session_id)
+    local flag     = (session_id and session_id > 0) and FLAG_RES or FLAG_REQ
+    local send_len = session.call_pack(cmd_id, flag, session_id or 0, data)
+    if send_len > 0 then
+        proxy_agent:statistics("on_proto_send", cmd_id, send_len)
+        if self.log_client_msg then
+            self.log_client_msg(session, cmd_id, "binary buff", session_id, send_len, false)
+        end
+        return true
+    end
+    if send_len < 0 then
+        log_err("[NetServer][send_buff] call_pack failed! code:%s,cmd_id:%s,len:%s", send_len, cmd_id, #data)
+    end
 end
 
 -- 发起远程调用

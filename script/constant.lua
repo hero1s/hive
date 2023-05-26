@@ -3,8 +3,8 @@
 local ServiceStatus               = enum("ServiceStatus", 0)
 ServiceStatus.READY               = 0  --准备
 ServiceStatus.RUN                 = 1  --运行中
-ServiceStatus.WAIT_STOP           = 2  --等待关服
-ServiceStatus.STOP                = 3  --立即停服
+ServiceStatus.HALT                = 2  --挂起
+ServiceStatus.STOP                = 3  --停服
 
 --核心基础错误(1-1000)
 local KernCode                    = enum("KernCode", 0)
@@ -87,7 +87,7 @@ local GMType                      = enum("GMType", 0)
 GMType.GLOBAL                     = 0       -- 全局相关
 GMType.PLAYER                     = 1       -- 玩家相关,ID为玩家的ID
 GMType.SERVICE                    = 2       -- 服务相关,ID按hash分发
-GMType.SYSTEM                     = 3       -- 业务相关,ID为队伍ID,房间ID等
+GMType.SYSTEM                     = 3       -- 系统相关,全服务分发
 GMType.DEV_OPS                    = 4       -- 开发运维相关
 GMType.TOOLS                      = 5       -- 工具相关
 

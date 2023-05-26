@@ -6,9 +6,17 @@ local cjson       = require("lcjson")
 
 local log_debug   = logger.debug
 local new_guid    = lcodec.guid_new
-local json_encode = hive.json_encode
-local json_decode = hive.json_decode
+local json_encode = cjson.encode
+local json_decode = cjson.decode
+local lencode     = lcodec.encode_slice
+local ldecode     = lcodec.decode_slice
 local lclock_ms   = ltimer.clock_ms
+
+local func_list   = {
+    ["cjson"]  = { json_encode, json_decode },
+    ["yyjson"] = { yyjson.encode, yyjson.decode },
+    ["lua"]    = { lencode, ldecode },
+}
 
 local test        = {
     tid       = 3.1415926,
@@ -26,13 +34,9 @@ print(type(b.tid), b.tid)
 print(type(b.player_id), b.player_id)
 
 local function test_big(json_type, test_code)
-    local str     = io_ext.readfile("./twitter.json")
-    local jdecode = cjson.decode
-    local jencode = cjson.encode
-    if json_type == "yyjson" then
-        jdecode = yyjson.decode
-        jencode = yyjson.encode
-    end
+    local str      = io_ext.readfile("./twitter.json")
+    local jencode  = func_list[json_type][1]
+    local jdecode  = func_list[json_type][2]
     local tmp      = jdecode(str)
     local clock_ms = lclock_ms()
     local count    = 1000
@@ -48,7 +52,7 @@ local function test_big(json_type, test_code)
 end
 
 local function test_small(json_type, test_code)
-    local t       = {
+    local t        = {
         group_id      = 23432, friend_type = 1, player = {
             player_id     = 3232,
             nick          = "fdajlk",
@@ -79,12 +83,8 @@ local function test_small(json_type, test_code)
         social_secret = 2,
         friend_time   = hive.now
     }
-    local jdecode = cjson.decode
-    local jencode = cjson.encode
-    if json_type == "yyjson" then
-        jdecode = yyjson.decode
-        jencode = yyjson.encode
-    end
+    local jencode  = func_list[json_type][1]
+    local jdecode  = func_list[json_type][2]
     local str      = jencode(t)
     local clock_ms = lclock_ms()
     local count    = 10000
@@ -110,3 +110,8 @@ test_big(test_type, "encode")
 test_small(test_type, "decode")
 test_small(test_type, "encode")
 
+test_type = "lua"
+--test_big(test_type, "decode")
+--test_big(test_type, "encode")
+--test_small(test_type, "decode")
+test_small(test_type, "encode")

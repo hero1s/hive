@@ -1,5 +1,6 @@
 --online_agent.lua
 local log_info      = logger.info
+local log_debug     = logger.debug
 local tunpack       = table.unpack
 
 local event_mgr     = hive.get("event_mgr")
@@ -72,13 +73,18 @@ function OnlineAgent:send_lobby(player_id, rpc, ...)
 end
 
 function OnlineAgent:call_client(player_id, cmd_id, msg)
-    msg = protobuf_mgr:encode(cmd_id, msg)
+    msg = self:encode_msg(player_id, cmd_id, msg)
     return router_mgr:call_online_hash(player_id, "rpc_call_client", player_id, cmd_id, msg)
 end
 
 function OnlineAgent:send_client(player_id, cmd_id, msg)
-    msg = protobuf_mgr:encode(cmd_id, msg)
+    msg = self:encode_msg(player_id, cmd_id, msg)
     return router_mgr:send_online_hash(player_id, "rpc_send_client", player_id, cmd_id, msg)
+end
+
+function OnlineAgent:encode_msg(player_id, cmd_id, msg)
+    log_debug("[S2C] player_id:%s,cmd:%s,msg:%s", player_id, protobuf_mgr:msg_name(cmd_id), msg)
+    return protobuf_mgr:encode(cmd_id, msg)
 end
 
 --rpc处理

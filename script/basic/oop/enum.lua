@@ -47,6 +47,10 @@ local function enum_new(emobj, field, value)
 end
 
 local function enum_index(emobj, field)
+    local value = emobj.__vlist[field]
+    if not value then
+        log_err("the enum field is nil:%s.%s", emobj.__name, field)
+    end
     return emobj.__vlist[field]
 end
 

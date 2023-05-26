@@ -211,7 +211,7 @@ function UpdateMgr:update_by_time(now, clock_ms)
 end
 
 function UpdateMgr:check_service_stop()
-    if not WTITLE and hive.service_status > ServiceStatus.RUN then
+    if not WTITLE and hive.service_status == ServiceStatus.STOP then
         if hive.safe_stop and event_mgr:fire_vote("vote_stop_service") then
             log_err("[UpdateMgr][check_service_stop] all vote agree,will stop service:%s", hive.name)
             signal_quit()

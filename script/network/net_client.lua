@@ -180,12 +180,8 @@ end
 
 -- 发送数据
 function NetClient:send_pack(cmd_id, data, session_id)
-    return self:write(cmd_id, data, session_id, FlagMask.REQ)
-end
-
--- 回调数据
-function NetClient:callback_pack(cmd_id, data, session_id)
-    return self:write(cmd_id, data, session_id, FlagMask.RES)
+    local flag = (session_id and session_id > 0) and FlagMask.RES or FlagMask.REQ
+    return self:write(cmd_id, data, session_id, flag)
 end
 
 -- 发起远程调用

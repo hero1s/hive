@@ -2,15 +2,12 @@
 import("basic/cmdline.lua")
 import("agent/online_agent.lua")
 
-local lcodec       = require("lcodec")
 local gm_page      = nil
 local HttpServer   = import("network/http_server.lua")
 
 local json_decode  = hive.json_decode
-local guid_index   = lcodec.guid_index
 local tunpack      = table.unpack
 local env_get      = environ.get
-local smake_id     = service.make_id
 local log_err      = logger.err
 local log_debug    = logger.debug
 local readfile     = io_ext.readfile
@@ -202,14 +199,12 @@ end
 
 --system command
 function AdminMgr:exec_system_cmd(service_id, cmd_name, target_id, ...)
-    local index           = guid_index(target_id)
-    local hive_id         = smake_id(service_id, index)
-    local ok, codeoe, res = router_mgr:call_target(hive_id, "rpc_command_execute", cmd_name, target_id, ...)
+    local ok, code, res = router_mgr:collect(service_id, "rpc_command_execute", cmd_name, target_id, ...)
     if not ok then
         log_err("[AdminMgr][exec_system_cmd] call_target(rpc_command_execute) failed! target_id=%s", target_id)
-        return { code = 1, msg = codeoe }
+        return { code = 1, msg = code }
     end
-    return { code = codeoe, msg = res }
+    return { code = code, msg = res }
 end
 
 --service command

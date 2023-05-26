@@ -152,7 +152,7 @@ function CacheObj:update_key(table_kvs, flush)
     end
     self:active()
     self.update_count = self.update_count + 1
-    if flush or self.data == nil or not next(self.data) then
+    if flush or not next(self.data) then
         self.flush = true
     end
     for key, value in pairs(table_kvs) do

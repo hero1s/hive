@@ -1,25 +1,26 @@
 --monitor_agent.lua
-local RpcClient    = import("network/rpc_client.lua")
+local RpcClient     = import("network/rpc_client.lua")
 
-local tunpack      = table.unpack
-local tinsert      = table.insert
-local env_addr     = environ.addr
-local log_err      = logger.err
-local log_warn     = logger.warn
-local log_info     = logger.info
-local log_debug    = logger.debug
-local check_failed = hive.failed
-local smake_id     = service.make_id
+local tunpack       = table.unpack
+local tinsert       = table.insert
+local env_addr      = environ.addr
+local log_err       = logger.err
+local log_warn      = logger.warn
+local log_info      = logger.info
+local log_debug     = logger.debug
+local check_failed  = hive.failed
+local smake_id      = service.make_id
 
-local event_mgr    = hive.get("event_mgr")
-local update_mgr   = hive.get("update_mgr")
-local mem_monitor  = hive.get("mem_monitor")
-local thread_mgr   = hive.get("thread_mgr")
+local event_mgr     = hive.get("event_mgr")
+local update_mgr    = hive.get("update_mgr")
+local mem_monitor   = hive.get("mem_monitor")
+local thread_mgr    = hive.get("thread_mgr")
 
-local RPC_FAILED   = hive.enum("KernCode", "RPC_FAILED")
+local RPC_FAILED    = hive.enum("KernCode", "RPC_FAILED")
+local ServiceStatus = enum("ServiceStatus")
 
-local MonitorAgent = singleton()
-local prop         = property(MonitorAgent)
+local MonitorAgent  = singleton()
+local prop          = property(MonitorAgent)
 prop:reader("client", nil)
 prop:reader("ready_watchers", {})
 prop:reader("close_watchers", {})
@@ -186,7 +187,7 @@ function MonitorAgent:rpc_inject(code_string)
 end
 
 function MonitorAgent:rpc_set_server_status(status)
-    if status <= hive.service_status then
+    if hive.service_status == ServiceStatus.STOP then
         log_err("[MonitorAgent][rpc_set_server_status] change status irreversible: %s --> %s ", status, hive.service_status)
         return
     end

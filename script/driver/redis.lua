@@ -52,17 +52,20 @@ _redis_proto_parser[":"]  = function(body)
     return true, true, tonumber(body)
 end
 
-local function _parse_packet(packet)
+local function _parse_packet(packet, istext)
     local line = _next_line(packet)
     if not line then
         return false, "packet isn't complete"
+    end
+    if istext then
+        return true, true, line
     end
     local prefix, body = ssub(line, 1, 1), ssub(line, 2)
     local prefix_func  = _redis_proto_parser[prefix]
     if prefix_func then
         return prefix_func(body, packet)
     end
-    return true, true, line
+    return false, "packet format err"
 end
 
 _redis_proto_parser["$"] = function(body, packet)
@@ -70,7 +73,7 @@ _redis_proto_parser["$"] = function(body, packet)
     if tonumber(body) < 0 then
         return true, true
     end
-    return _parse_packet(packet)
+    return _parse_packet(packet, true)
 end
 
 _redis_proto_parser["*"] = function(body, packet)
