@@ -19,6 +19,7 @@ prop:reader("player_ids", {})
 
 function OnlineAgent:__init()
     event_mgr:add_listener(self, "rpc_forward_client")
+    event_mgr:add_listener(self, "rpc_forward_group_client")
     monitor:watch_service_ready(self, "online")
 end
 
@@ -82,8 +83,25 @@ function OnlineAgent:send_client(player_id, cmd_id, msg)
     return router_mgr:send_online_hash(player_id, "rpc_send_client", player_id, cmd_id, msg)
 end
 
+function OnlineAgent:send_group_client(players, cmd_id, msg)
+    msg = self:encode_msg(0, cmd_id, msg)
+    if players and #players < 5 then
+        --人少直接1v1转发
+        for _, player_id in pairs(players) do
+            router_mgr:send_online_hash(player_id, "rpc_send_client", player_id, cmd_id, msg)
+        end
+    else
+        router_mgr:send_lobby_all_self(players, "rpc_forward_group_client", players, cmd_id, msg)
+    end
+end
+
+function OnlineAgent:send_lobby_client(lobby_id, player_id, cmd_id, msg)
+    msg = self:encode_msg(player_id, cmd_id, msg)
+    router_mgr:send_target(lobby_id, "rpc_forward_client", player_id, cmd_id, msg)
+end
+
 function OnlineAgent:encode_msg(player_id, cmd_id, msg)
-    log_debug("[S2C] player_id:%s,cmd:%s,msg:%s", player_id, protobuf_mgr:msg_name(cmd_id), msg)
+    log_debug("[S2C] player_id:%s,cmd_id:%s,cmd:%s,msg:%s", player_id, cmd_id, protobuf_mgr:msg_name(cmd_id), msg)
     return protobuf_mgr:encode(cmd_id, msg)
 end
 
@@ -93,6 +111,11 @@ end
 --需由player_mgr实现on_forward_client，给client发消息
 function OnlineAgent:rpc_forward_client(player_id, cmd_id, msg)
     local ok, res = tunpack(event_mgr:notify_listener("on_forward_client", player_id, cmd_id, msg))
+    return ok and SUCCESS or LOGIC_FAILED, res
+end
+
+function OnlineAgent:rpc_forward_group_client(player_ids, cmd_id, msg)
+    local ok, res = tunpack(event_mgr:notify_listener("on_forward_group_client", player_ids, cmd_id, msg))
     return ok and SUCCESS or LOGIC_FAILED, res
 end
 
