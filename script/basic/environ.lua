@@ -23,6 +23,10 @@ function environ.get(key, def)
     return ogetenv(key) or def
 end
 
+function environ.set(key, value)
+    set_env(key, value)
+end
+
 function environ.number(key, def)
     return tonumber(ogetenv(key) or def)
 end

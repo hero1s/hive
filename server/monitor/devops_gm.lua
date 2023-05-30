@@ -34,6 +34,8 @@ function DevopsGmMgr:register_gm()
         { gm_type = GMType.DEV_OPS, name = "gm_hotfix", desc = "代码热更新", args = "" },
         { gm_type = GMType.DEV_OPS, name = "gm_inject", desc = "代码注入",
           args    = "service_name|string index|integer file_name|string code_content|string" },
+        { gm_type = GMType.DEV_OPS, name = "gm_set_env", desc = "设置环境变量", comment = "临时修改环境变量",
+          args    = "key|string value|string service_name|string index|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_set_server_status", desc = "设置服务器状态", comment = "[1运行2禁开局3强退],延迟(秒),服务/index",
           args    = "status|integer delay|integer service_name|string index|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_hive_quit", desc = "关闭服务器", comment = "强踢玩家并停服", args = "reason|integer" },
@@ -87,28 +89,20 @@ function DevopsGmMgr:gm_inject(service_name, index, file_name, code_content)
     return { code = -1 }
 end
 
+function DevopsGmMgr:gm_set_env(key, value, service_name, index)
+    log_warn("[DevopsGmMgr][gm_set_env]:[%s:%s],service:%s,index:%s ",
+             key, value, service_name, index)
+    return self:call_service_index(service_name, index, "rpc_set_env", key, value)
+end
+
 function DevopsGmMgr:gm_set_server_status(status, delay, service_name, index)
     log_warn("[DevopsGmMgr][gm_set_server_status]:%s,exe time:%s,service:%s,index:%s ",
              status, time_str(hive.now + delay), service_name, index)
     if status < ServiceStatus.RUN or status > ServiceStatus.STOP then
         return { code = 1, msg = "status is more than" }
     end
-    local service_id = 0
-    if service_name ~= "" then
-        service_id = sname2sid(service_name)
-        if not service_id then
-            return { code = 1, msg = "the service_name is error" }
-        end
-    end
-
     timer_mgr:once(delay * 1000, function()
-        if service_id > 0 and index ~= 0 then
-            --指定目标
-            local target_id = service.make_sid(service_id, index)
-            return monitor_mgr:send_by_sid(target_id, "rpc_set_server_status", status)
-        else
-            monitor_mgr:broadcast("rpc_set_server_status", service_id, status)
-        end
+        self:call_service_index(service_name, index, "rpc_set_server_status", status)
     end)
     return { code = 0 }
 end
@@ -221,6 +215,25 @@ function DevopsGmMgr:call_target_rpc(service_name, index, rpc, ...)
         return { code = 1, msg = "the service_name is error" }
     end
     return monitor_mgr:call_by_sid(target_id, rpc, ...)
+end
+
+function DevopsGmMgr:call_service_index(service_name, index, rpc, ...)
+    log_debug("[DevopsGmMgr][call_service_index] call:%s,index:%s,rpc:%s", service_name, index, rpc)
+    local service_id = 0
+    if service_name ~= "" then
+        service_id = sname2sid(service_name)
+        if not service_id then
+            return { code = 1, msg = "the service_name is error" }
+        end
+    end
+    if service_id > 0 and index ~= 0 then
+        --指定目标
+        local target_id = service.make_sid(service_id, index)
+        return monitor_mgr:send_by_sid(target_id, rpc, ...)
+    else
+        monitor_mgr:broadcast(rpc, service_id, ...)
+    end
+    return { code = 0 }
 end
 
 hive.devops_gm_mgr = DevopsGmMgr()

@@ -36,6 +36,7 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "on_remote_message")
     event_mgr:add_listener(self, "rpc_reload")
     event_mgr:add_listener(self, "rpc_inject")
+    event_mgr:add_listener(self, "rpc_set_env")
     event_mgr:add_listener(self, "rpc_set_server_status")
     event_mgr:add_listener(self, "rpc_set_log_level")
     event_mgr:add_listener(self, "rpc_collect_gc")
@@ -184,6 +185,13 @@ end
 function MonitorAgent:rpc_inject(code_string)
     local func = load(code_string)
     return func()
+end
+
+function MonitorAgent:rpc_set_env(key, value)
+    local old = environ.get(key)
+    environ.set(key, value)
+    log_debug("[MonitorAgent][rpc_set_env] %s:%s,old:%s --> new:%s", key, value, old, environ.get(key))
+    event_mgr:notify_trigger("evt_change_env", key)
 end
 
 function MonitorAgent:rpc_set_server_status(status)

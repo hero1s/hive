@@ -86,7 +86,7 @@ namespace lworker {
             }
         }
 
-        void destory(std::string& name, std::shared_ptr<worker> workor) {
+        void destory(std::string& name) {
             std::unique_lock<spin_mutex> lock(m_mutex);
             auto it = m_worker_map.find(name);
             if (it != m_worker_map.end()) {
@@ -99,6 +99,7 @@ namespace lworker {
             for (auto it : m_worker_map) {
                 it.second->stop();
             }
+            m_worker_map.clear();
         }
 
     private:

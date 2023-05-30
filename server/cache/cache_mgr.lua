@@ -27,7 +27,7 @@ local CacheMgr     = singleton()
 local prop         = property(CacheMgr)
 prop:reader("cache_confs", {})        -- cache_confs
 prop:reader("cache_lists", {})        -- cache_lists
-prop:reader("dirty_map", nil)         -- dirty objects
+prop:reader("dirty_maps", {})          -- dirty objects
 prop:reader("flush", false)           -- 立即存盘
 
 function CacheMgr:__init()
@@ -52,18 +52,20 @@ end
 
 function CacheMgr:setup()
     local WheelMap = import("container/wheel_map.lua")
-    self.dirty_map = WheelMap(10)
     --加载配置
     for _, obj_conf in obj_table:iterator() do
         local cache_name             = obj_conf.cache_name
         self.cache_confs[cache_name] = obj_conf
         self.cache_lists[cache_name] = WheelMap(10)
+        self.dirty_maps[cache_name]  = WheelMap(10)
     end
 end
 
 function CacheMgr:vote_stop_service()
-    if self.dirty_map:get_count() > 0 then
-        return false
+    for _, dirty_map in pairs(self.dirty_maps) do
+        if dirty_map:get_count() > 0 then
+            return false
+        end
     end
     return true
 end
@@ -72,8 +74,10 @@ function CacheMgr:evt_change_service_status(status)
     if not hive.is_runing() then
         log_info("[CacheMgr][evt_change_service_status] enter flush mode,wait stop service:%s", hive.index)
         self.flush = true
-        for _, obj in self.dirty_map:iterator() do
-            self:save_cache(obj)
+        for _, dirty_map in pairs(self.dirty_maps) do
+            for _, obj in dirty_map:iterator() do
+                self:save_cache(obj)
+            end
         end
         return
     end
@@ -106,23 +110,23 @@ function CacheMgr:on_service_ready(id, service_name)
     end
 end
 
-function CacheMgr:on_second()
-    local now_tick = hive.clock_ms
-    for _, obj in self.dirty_map:wheel_iterator() do
-        if self.flush or obj:need_save(now_tick) then
-            self:save_cache(obj)
+function CacheMgr:on_second(clock_ms)
+    for _, dirty_map in pairs(self.dirty_maps) do
+        for _, obj in dirty_map:wheel_iterator() do
+            if self.flush or obj:need_save(clock_ms) then
+                self:save_cache(obj)
+            end
         end
     end
 end
 
 --清理超时的记录
-function CacheMgr:on_second5()
-    local now_tick = hive.clock_ms
+function CacheMgr:on_second5(clock_ms)
     for cache_name, obj_list in pairs(self.cache_lists) do
         for primary_key, obj in obj_list:wheel_iterator() do
-            if obj:expired(now_tick, self.flush) then
-                log_info("[CacheMgr][on_timer_expire] cache(%s)'s data(%s) expired!", cache_name, primary_key)
-                obj_list[primary_key] = nil
+            if obj:expired(clock_ms, self.flush) then
+                log_info("[CacheMgr][on_second5] cache(%s)'s data(%s) expired!", cache_name, primary_key)
+                obj_list:set(primary_key, nil)
             end
         end
     end
@@ -130,7 +134,8 @@ end
 
 --设置标记
 function CacheMgr:set_dirty(cache_obj, is_dirty)
-    self.dirty_map:set(cache_obj:get_primary_value(), is_dirty and cache_obj or nil)
+    local dirty_map = self.dirty_maps[cache_obj.cache_name]
+    dirty_map:set(cache_obj:get_primary_value(), is_dirty and cache_obj or nil)
 end
 
 function CacheMgr:delete(cache_obj)
@@ -150,10 +155,9 @@ function CacheMgr:save_cache(cache_obj, remove)
         self:set_dirty(cache_obj, false)
         if not cache_obj:save() then
             self:set_dirty(cache_obj, true)
-            return
         end
         if remove then
-            self:delete(cache_obj)
+            cache_obj:set_expire_time(1)
         end
     end)
     return true
@@ -237,7 +241,7 @@ function CacheMgr:rpc_cache_update(hive_id, req_data)
     end
     local ucode = cache_obj:update(table_data, flush)
     self:set_dirty(cache_obj, true)
-    if cache_obj:need_save(hive.now) then
+    if cache_obj:need_save(hive.clock_ms) then
         self:save_cache(cache_obj)
     end
     return ucode
@@ -253,7 +257,7 @@ function CacheMgr:rpc_cache_update_key(hive_id, req_data)
     end
     local ucode = cache_obj:update_key(table_kvs, flush)
     self:set_dirty(cache_obj, true)
-    if cache_obj:need_save(hive.now) then
+    if cache_obj:need_save(hive.clock_ms) then
         self:save_cache(cache_obj)
     end
     return ucode

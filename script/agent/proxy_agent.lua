@@ -34,6 +34,7 @@ function ProxyAgent:__init()
     end
     --添加忽略的rpc统计事件
     self:ignore_statis("rpc_heartbeat")
+    self:ignore_statis("on_heartbeat")
 end
 
 --日志分发

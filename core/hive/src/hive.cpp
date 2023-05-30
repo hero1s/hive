@@ -165,6 +165,7 @@ void hive_app::run() {
 	}
 	luakit::kit_state lua;
 	lua.set("platform", get_platform());
+	lua.set_function("set_env", lset_env);
 
 	open_custom_libs(lua.L());//添加扩展库
 	auto hive = lua.new_table("hive");

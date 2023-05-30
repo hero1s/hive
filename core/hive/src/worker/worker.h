@@ -48,10 +48,10 @@ namespace lworker {
     public:
         virtual void broadcast(slice* buf) = 0;
         virtual bool call(std::string& name, slice* buf) = 0;
-        virtual void destory(std::string& name, std::shared_ptr<worker> workor) = 0;
+        virtual void destory(std::string& name) = 0;
     };
 
-    class worker :public std::enable_shared_from_this<worker>
+    class worker
     {
     public:
         worker(ischeduler* schedulor, std::string& name, std::string& entry, std::string& service)
@@ -60,7 +60,7 @@ namespace lworker {
         virtual ~worker() {
             m_running = false;
             if (m_thread.joinable()) {
-                m_thread.detach();
+                m_thread.join();
             }
         }
 
@@ -110,7 +110,7 @@ namespace lworker {
             hive.set("pid", ::getpid());
             hive.set("worker_title", m_name);
             hive.set("logtag", fmt::format("[{}]", m_name));
-            hive.set_function("stop", [&]() { stop(); });
+            hive.set_function("stop", [&]() { m_running = false; });
             hive.set_function("update", [&]() { update(); });
             hive.set_function("getenv", [&](const char* key) { return get_env(key); });
             hive.set_function("call", [&](std::string name, slice* buf) { 
@@ -119,29 +119,33 @@ namespace lworker {
                 });
             m_lua->run_script(g_sandbox, [&](std::string err) {
                 printf("worker load sandbox failed, because: %s", err.c_str());
-                m_schedulor->destory(m_name, shared_from_this());
+                m_schedulor->destory(m_name);
                 return;
             });
             m_lua->run_script(fmt::format("require '{}'", m_entry), [&](std::string err) {
                 printf("worker load %s failed, because: %s", m_entry.c_str(), err.c_str());
-                m_schedulor->destory(m_name, shared_from_this());
+                m_schedulor->destory(m_name);
                 return;
             });
             m_running = true;
             const char* service = m_service.c_str();
             while (m_running) {
+                if (m_stop) break;
                 m_lua->table_call(service, "run");
             }
-            m_schedulor->destory(m_name, shared_from_this());
+            if (!m_stop) {
+                m_schedulor->destory(m_name);
+            }
         }
 
         void stop(){
-            m_running = false;
+            m_stop = true;
         }
 
     private:
         spin_mutex m_mutex;
         std::thread m_thread;
+        bool m_stop = false;
         bool m_running = false;
         ischeduler* m_schedulor = nullptr;
         std::string m_name, m_entry, m_service;

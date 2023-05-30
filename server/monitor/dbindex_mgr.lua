@@ -42,7 +42,7 @@ function DBIndexMgr:gm_build_db_index()
 end
 
 function DBIndexMgr:build_index()
-    local dbindex_db = config_mgr:init_table("dbindex", "id")
+    local dbindex_db = config_mgr:init_table("dbindex", "db_name", "table_name", "name")
     for _, conf in dbindex_db:iterator() do
         local db_name    = conf.db_name
         local table_name = conf.table_name

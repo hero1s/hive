@@ -3,6 +3,7 @@
 local VarLock       = import("kernel/object/var_lock.lua")
 
 local log_err       = logger.err
+local log_info      = logger.info
 local check_failed  = hive.failed
 local check_success = hive.success
 
@@ -32,6 +33,7 @@ prop:accessor("retry_time", 0)          -- 重试时间
 prop:accessor("data", {})               -- data
 prop:accessor("is_doing", false)        -- in doing
 prop:accessor("flush", false)
+prop:reader("save_cnt", 0)
 
 function CacheObj:__init(cache_conf, primary_value)
     self.primary_value = primary_value
@@ -70,25 +72,25 @@ function CacheObj:is_dirty()
     return self.dirty
 end
 
-function CacheObj:expired(tick, flush)
+function CacheObj:expired(clock_ms, flush)
     if self.dirty then
         return false
     end
-    local escape_time = tick - self.active_tick
+    local escape_time = clock_ms - self.active_tick
     if escape_time > self.expire_time then
         return true
     end
     return flush
 end
 
-function CacheObj:need_save(now)
+function CacheObj:need_save(clock_ms)
     if self.is_doing then
         return false
     end
     if self.flush then
         return true
     end
-    if self.store_count <= self.update_count or self.update_time + self.store_time < now then
+    if self.store_count <= self.update_count or self.update_time + self.store_time < clock_ms then
         return true
     end
     return false
@@ -99,15 +101,11 @@ function CacheObj:save()
         return false
     end
     local _lock<close> = VarLock(self, "is_doing")
-    self.active_tick   = hive.clock_ms
     if self.dirty then
-        self.update_count = 0
-        self.update_time  = hive.clock_ms
         if check_success(self:save_impl()) then
-            self.dirty = false
+            self.flush = false
         end
     end
-    self.flush = false
     return true
 end
 
@@ -124,8 +122,13 @@ function CacheObj:save_impl()
             log_err("[CacheObj][save_impl] failed: cnt:%s, %s=> db: %s, table: %s", self.fail_cnt, res, self.db_name, self.cache_table)
             return code
         end
-        self.fail_cnt = 0
-        self.dirty    = false
+        log_info("[CacheObj][save_impl] save:%s,%s,save_cnt:%s,update:%s", self.cache_name, self.primary_value, self.save_cnt, self.update_count)
+        self.fail_cnt     = 0
+        self.save_cnt     = self.save_cnt + 1
+        self.update_count = 0
+        self.update_time  = hive.clock_ms
+        self.active_tick  = hive.clock_ms
+        self.dirty        = false
         return code
     end
     return SUCCESS
