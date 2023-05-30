@@ -41,6 +41,17 @@ namespace lcurl {
 			}
 			return 0;
 			});
+
+		luacurl.set_function("url_decode", [&](lua_State* L, string str) {
+			int length = 0;
+			char* output = curl_easy_unescape(curle, str.c_str(), str.size(), &length);
+			if (output) {
+				lua_pushlstring(L, output, length);
+				curl_free(output);
+				return 1;
+			}
+			return 0;
+			});
 		return luacurl;
 	}
 }
