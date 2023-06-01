@@ -4,6 +4,7 @@ local tpack       = table.pack
 local tunpack     = table.unpack
 local tsort       = table.sort
 local sformat     = string.format
+local tkvarray    = table_ext.kvarray
 local log_err     = logger.err
 local ConfigTable = import("kernel/object/config_table.lua")
 
@@ -156,7 +157,7 @@ function ConfigMgr:gen_enum_file(name, ename, enum_key, main_key, desc)
             gen_objs[k] = nil
         end
     end
-    gen_objs = table_ext.kvarray(gen_objs)
+    gen_objs = tkvarray(gen_objs)
     tsort(gen_objs, function(a, b)
         return a[2][1][2] < b[2][1][2]
     end)

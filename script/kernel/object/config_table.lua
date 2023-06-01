@@ -100,6 +100,10 @@ function ConfigTable:check_index(records)
             row_indexs[#row_indexs + 1] = v[index]
         end
         local row_index = self:build_index(tunpack(row_indexs))
+        if not row_index then
+            log_err("[ConfigTable][check_index] row_index is nil:%s", self.name)
+            return false
+        end
         if not tmp_indexs[row_index] then
             tmp_indexs[row_index] = true
         else

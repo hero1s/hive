@@ -91,7 +91,7 @@ function OnlineAgent:send_group_client(players, cmd_id, msg)
             router_mgr:send_online_hash(player_id, "rpc_send_client", player_id, cmd_id, msg)
         end
     else
-        router_mgr:send_lobby_all_self(players, "rpc_forward_group_client", players, cmd_id, msg)
+        router_mgr:send_lobby_all_self("rpc_forward_group_client", players, cmd_id, msg)
     end
 end
 

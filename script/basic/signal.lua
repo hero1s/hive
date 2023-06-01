@@ -60,7 +60,7 @@ signal.init       = function()
     end
     hive.register_signal(SIG_HOTFIX)
     hive.ignore_signal(SYS_SIGNAL.SIGPIPE)
-    hive.ignore_signal(SYS_SIGNAL.SIGCHLD)
+    hive.default_signal(SYS_SIGNAL.SIGCHLD)
 end
 
 signal.clean      = function(signal)

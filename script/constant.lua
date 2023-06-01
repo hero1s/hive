@@ -3,8 +3,9 @@
 local ServiceStatus               = enum("ServiceStatus", 0)
 ServiceStatus.READY               = 0  --准备
 ServiceStatus.RUN                 = 1  --运行中
-ServiceStatus.HALT                = 2  --挂起
-ServiceStatus.STOP                = 3  --停服
+ServiceStatus.BUSY                = 2  --繁忙
+ServiceStatus.HALT                = 3  --挂起
+ServiceStatus.STOP                = 4  --停服
 
 --核心基础错误(1-1000)
 local KernCode                    = enum("KernCode", 0)

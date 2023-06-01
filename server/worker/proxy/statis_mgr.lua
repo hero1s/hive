@@ -4,6 +4,7 @@ local InfluxDB    = import("driver/influx.lua")
 
 local tsort       = table.sort
 local tremove_out = table_ext.tremove_out
+local tkvarray    = table_ext.kvarray
 local log_warn    = logger.warn
 
 local env_get     = environ.get
@@ -195,7 +196,7 @@ end
 -- 打印分析日志
 function StatisMgr:report_msg_count()
     for k, v in pairs(self.local_counts) do
-        local msgs = table_ext.kvarray(v)
+        local msgs = tkvarray(v)
         tsort(msgs, function(a, b)
             if a[2].len == b[2].len then
                 return a[2].count > b[2].count

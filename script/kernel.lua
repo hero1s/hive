@@ -163,7 +163,7 @@ function hive.change_service_status(status)
 end
 
 function hive.is_runing()
-    if hive.service_status ~= ServiceStatus.RUN then
+    if hive.service_status < ServiceStatus.RUN or hive.service_status > ServiceStatus.BUSY then
         return false
     end
     return hive.is_ready()
