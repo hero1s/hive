@@ -115,11 +115,13 @@ function CacheObj:save_impl()
             return KernCode.MONGO_FAILED
         end
         local selector  = { [self.cache_key] = self.primary_value }
+        self.dirty      = false
         local code, res = mongo_mgr:update(self.db_name, self.cache_table, self.data, selector, true)
         if check_failed(code) then
             self.fail_cnt   = self.fail_cnt + 1
             self.retry_time = hive.now + self.fail_cnt * 60
             log_err("[CacheObj][save_impl] failed: cnt:%s, %s=> db: %s, table: %s", self.fail_cnt, res, self.db_name, self.cache_table)
+            self.dirty = true
             return code
         end
         log_info("[CacheObj][save_impl] save:%s,%s,save_cnt:%s,update:%s", self.cache_name, self.primary_value, self.save_cnt, self.update_count)
@@ -128,7 +130,6 @@ function CacheObj:save_impl()
         self.update_count = 0
         self.update_time  = hive.clock_ms
         self.active_tick  = hive.clock_ms
-        self.dirty        = false
         return code
     end
     return SUCCESS

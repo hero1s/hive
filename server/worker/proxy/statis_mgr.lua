@@ -203,7 +203,7 @@ function StatisMgr:report_msg_count()
             end
             return a[2].len > b[2].len
         end)
-        tremove_out(msgs, 10)
+        tremove_out(msgs, 10, true)
         if #msgs > 0 then
             log_warn("top msg:%s,%s", k, msgs)
         end

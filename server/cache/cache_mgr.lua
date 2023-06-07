@@ -184,7 +184,7 @@ function CacheMgr:get_cache_obj(hive_id, cache_name, primary_key, cache_type)
     local cache_obj = cache_list:get(primary_key)
     if cache_obj then
         if cache_obj:is_holding() then
-            log_err("[CacheMgr][get_cache_obj] cache is holding! cache_name=%s,primary=%s", cache_name, primary_key)
+            log_err("[CacheMgr][get_cache_obj] cache is holding! cache_name=%s,primary=%s,cache_type:%s", cache_name, primary_key, cache_type)
             return CacheCode.CACHE_IS_HOLDING
         end
         if cache_type & CAWRITE == CAWRITE then

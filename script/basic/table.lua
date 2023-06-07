@@ -274,9 +274,20 @@ local function treverse(arr)
 end
 
 --移除超出元素
-local function tremove_out(arr, size)
-    while #arr > size do
-        tremove(arr, 1)
+local function tremove_out(arr, size, reverse)
+    if reverse then
+        --移除后面元素
+        if #arr > size then
+            local msize = #arr - size
+            for i = 1, msize do
+                tremove(arr)
+            end
+        end
+    else
+        --移除前面元素
+        while #arr > size do
+            tremove(arr, 1)
+        end
     end
 end
 

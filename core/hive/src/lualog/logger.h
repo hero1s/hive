@@ -119,24 +119,26 @@ namespace logger {
         bool is_grow() const { return grow_; }
         void set_grow(bool grow) { grow_ = grow; }
         log_level level() const { return level_; }
+        cstring tag() const { return tag_; }
         cstring msg() const { return msg_; }
         cstring source() const { return source_; }
         cstring feature() const { return feature_; }
         const log_time& get_log_time()const { return log_time_; }
-        void option(log_level level, cstring& msg, cstring& feature, const char* source, int line) {
+        void option(log_level level, cstring& msg, cstring& tag, cstring& feature, const char* source, int line) {
             log_time_ = log_time::now();
             feature_ = feature;
             source_ = source;
             level_ = level;
             line_ = line;
             msg_ = msg;
+            tag_ = tag;
         }
 
     private:
         int                 line_ = 0;
         bool                grow_ = false;
         log_time            log_time_;
-        sstring             msg_, feature_;
+        sstring             msg_, feature_, tag_;
         const char*         source_;
         log_level           level_ = log_level::LOG_LEVEL_DEBUG;
     }; // class log_message
@@ -305,9 +307,6 @@ namespace logger {
             feature_ = feature;
             log_path_ = log_path;
             clean_time_ = clean_time;
-            if (feature != service) {
-                log_path_.append(feature);
-            }
         }
 
         virtual void write(sptr<log_message> logmsg) {
@@ -353,23 +352,36 @@ namespace logger {
             log_path_ = log_path, service_ = service; rolling_type_ = type;
             log_path_.append(fmt::format("{}-{}", service, index));
         }
+
+        path build_path(cstring& feature, cstring& lpath) {
+            if (lpath.empty()) {
+                path log_path = log_path_;
+                if (feature != service_) {
+                    log_path.append(feature);
+                }
+                return log_path;
+            }
+            return lpath;
+        }
+
         log_filter* get_filter() { return &log_filter_; }
         log_message_pool* message_pool() { return message_pool_.get(); }
 
         void set_max_line(size_t max_line) { max_line_ = max_line; }
         void set_clean_time(size_t clean_time) { clean_time_ = clean_time; }
 
-        bool add_dest(sstring& feature) {
+        bool add_dest(sstring& feature, cstring& log_path) {
             std::unique_lock<spin_mutex> lock(mutex_);
             if (dest_features_.find(feature) == dest_features_.end()) {
                 sptr<log_dest> logfile = nullptr;
+                path logger_path = build_path(feature, log_path);
                 if (rolling_type_ == rolling_type::DAYLY) {
                     auto dlogfile = std::make_shared<log_dailyrollingfile>(log_pid_, max_line_);
-                    dlogfile->setup(log_path_, service_, feature, clean_time_);
+                    dlogfile->setup(logger_path, service_, feature, clean_time_);
                     logfile = dlogfile;
                 } else {
                     auto hlogfile = std::make_shared<log_hourlyrollingfile>(log_pid_, max_line_);
-                    hlogfile->setup(log_path_, service_, feature, clean_time_);
+                    hlogfile->setup(logger_path, service_, feature, clean_time_);
                     logfile = hlogfile;
                 }
                 if (!def_dest_) {
@@ -386,15 +398,16 @@ namespace logger {
             auto names = level_names<log_level>()();
             sstring feature = names[(int)log_lvl];
             std::transform(feature.begin(), feature.end(), feature.begin(), [](auto c) { return std::tolower(c); });
+            path logger_path = build_path(feature, "");
             std::unique_lock<spin_mutex> lock(mutex_);
             if (rolling_type_ == rolling_type::DAYLY) {
                 auto logfile = std::make_shared<log_dailyrollingfile>(log_pid_, max_line_);
-                logfile->setup(log_path_, service_, feature, clean_time_);
+                logfile->setup(logger_path, service_, feature, clean_time_);
                 dest_lvls_.insert(std::make_pair(log_lvl, logfile));
             }
             else {
                 auto logfile = std::make_shared<log_hourlyrollingfile>(log_pid_, max_line_);
-                logfile->setup(log_path_, service_, feature, clean_time_);
+                logfile->setup(logger_path, service_, feature, clean_time_);
                 dest_lvls_.insert(std::make_pair(log_lvl, logfile));
             }
             return true;
@@ -500,10 +513,10 @@ namespace logger {
             return &service;
         }
 
-        void output(log_level level, const cstring& msg, cstring& feature, const char* source = nullptr, int line = 0) {
+        void output(log_level level, const cstring& msg, cstring& tag, cstring& feature, const char* source = nullptr, int line = 0) {
             if (!log_filter_.is_filter(level)) {
                 auto logmsg_ = message_pool_->allocate();
-                logmsg_->option(level, msg, feature, source, line);
+                logmsg_->option(level, msg, tag, feature, source, line);
                 submit(logmsg_);
             }
         }
@@ -558,7 +571,7 @@ namespace logger {
     // class log_dest
     // --------------------------------------------------------------------------------
     inline void log_dest::write(sptr<log_message> logmsg) {
-        auto logtxt = fmt::format("{} {}{}\n", build_prefix(logmsg), logmsg->msg(), build_suffix(logmsg));
+        auto logtxt = fmt::format("{}{}{}\n", build_prefix(logmsg), logmsg->msg(), build_suffix(logmsg));
         raw_write(logtxt, logmsg->level());
     }
 
@@ -566,8 +579,8 @@ namespace logger {
         if (!ignore_prefix_) {
             auto names = level_names<log_level>()();
             const log_time& t = logmsg->get_log_time();
-            return fmt::format("[{:4d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}.{:03d}][{}]",
-                t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec, t.tm_usec, names[(int)logmsg->level()]);
+            return fmt::format("[{:4d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}.{:03d}]{}[{}]",
+                t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec, t.tm_usec, logmsg->tag(), names[(int)logmsg->level()]);
         }
         return "";
     }
@@ -580,16 +593,16 @@ namespace logger {
     }
 }
 
-#define LOG_TRACE(msg) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_TRACE, msg,"", __FILE__, __LINE__)
-#define LOG_DEBUG(msg) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_DEBUG, msg,"", __FILE__, __LINE__)
-#define LOG_WARN(msg) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_WARN, msg,"", __FILE__, __LINE__)
-#define LOG_INFO(msg) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_INFO, msg,"", __FILE__, __LINE__)
-#define LOG_ERROR(msg) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_ERROR, msg,"", __FILE__, __LINE__)
-#define LOG_FATAL(msg) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_FATAL, msg,"", __FILE__, __LINE__)
+#define LOG_TRACE(msg) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_TRACE, msg,"","", __FILE__, __LINE__)
+#define LOG_DEBUG(msg) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_DEBUG, msg,"","", __FILE__, __LINE__)
+#define LOG_WARN(msg) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_WARN, msg,"","", __FILE__, __LINE__)
+#define LOG_INFO(msg) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_INFO, msg,"","", __FILE__, __LINE__)
+#define LOG_ERROR(msg) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_ERROR, msg,"","", __FILE__, __LINE__)
+#define LOG_FATAL(msg) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_FATAL, msg,"","", __FILE__, __LINE__)
 
-#define LOGF_TRACE(msg, feature) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_TRACE, msg,feature, __FILE__, __LINE__)
-#define LOGF_DEBUG(msg, feature) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_DEBUG, msg,feature, __FILE__, __LINE__)
-#define LOGF_WARN(msg, feature)  logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_WARN, msg,feature, __FILE__, __LINE__)
-#define LOGF_INFO(msg, feature)  logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_INFO, msg,feature, __FILE__, __LINE__)
-#define LOGF_ERROR(msg, feature) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_ERROR, msg,feature, __FILE__, __LINE__)
-#define LOGF_FATAL(msg, feature) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_FATAL, msg,feature, __FILE__, __LINE__)
+#define LOGF_TRACE(msg, tag, feature) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_TRACE, msg,tag,feature, __FILE__, __LINE__)
+#define LOGF_DEBUG(msg, tag, feature) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_DEBUG, msg,tag,feature, __FILE__, __LINE__)
+#define LOGF_WARN(msg, tag, feature)  logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_WARN, msg,tag,feature, __FILE__, __LINE__)
+#define LOGF_INFO(msg, tag, feature)  logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_INFO, msg,tag,feature, __FILE__, __LINE__)
+#define LOGF_ERROR(msg, tag, feature) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_ERROR, msg,tag,feature, __FILE__, __LINE__)
+#define LOGF_FATAL(msg, tag, feature) logger::log_service::instance()->output(logger::log_level::LOG_LEVEL_FATAL, msg,tag,feature, __FILE__, __LINE__)

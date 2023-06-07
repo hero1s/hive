@@ -37,7 +37,7 @@ function SystemMgr:rpc_execute_shell(cmd)
         log_err("[SystemMgr][rpc_execute_shell] execute fail,cmd:%s, flag:%s, str_err:%s err_code:%s", cmd, flag, str_err, err_code)
         return false, str_err
     end
-    log_info("[SystemMgr][rpc_execute_shell] execute success,cmd:%s", cmd)
+    log_info("[SystemMgr][rpc_execute_shell] execute success,cmd:%s,flag:%s,msg:%s,code:%s", cmd, flag, str_err, err_code)
     return true
 end
 

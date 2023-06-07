@@ -79,7 +79,7 @@ local function logger_output(feature, notify, lvl, lvl_name, fmt, log_conf, ...)
     else
         content = sformat(fmt, ...)
     end
-    lvl_func(logtag .. content, feature)
+    lvl_func(content, logtag, feature)
     if notify and not dispatching then
         --防止重入
         dispatching = true
@@ -107,8 +107,8 @@ end
 
 local LOG_LEVEL_OPTIONS = {
     --lvl_func,    extend,  swline, max_depth
-    [LOG_LEVEL.TRACE] = { "trace", { llog.trace, true, false, 6, 40960 } },
-    [LOG_LEVEL.DEBUG] = { "debug", { llog.debug, true, false, 8, 40960 } },
+    [LOG_LEVEL.TRACE] = { "trace", { llog.trace, true, false, 6, 4096 } },
+    [LOG_LEVEL.DEBUG] = { "debug", { llog.debug, true, false, 8, 4096 } },
     [LOG_LEVEL.INFO]  = { "info", { llog.info, false, false, 0, 4096 } },
     [LOG_LEVEL.WARN]  = { "warn", { llog.warn, true, true, 8, 4096 } },
     [LOG_LEVEL.ERROR] = { "err", { llog.error, true, true, 8, 4096 } },
@@ -133,12 +133,12 @@ end
 
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl_name, log_conf = tunpack(conf)
-    logfeature[lvl_name]     = function(feature, prefix)
+    logfeature[lvl_name]     = function(feature, path, prefix)
         if not feature then
             local info = dgetinfo(2, "S")
             feature    = fsstem(info.short_src)
         end
-        llog.add_dest(feature)
+        llog.add_dest(feature, path)
         llog.ignore_prefix(feature, prefix)
         return function(fmt, ...)
             local ok, res = pcall(logger_output, feature, false, lvl, lvl_name, fmt, log_conf, ...)

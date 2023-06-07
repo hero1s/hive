@@ -16,7 +16,6 @@ local log_err       = logger.err
 
 local QueueFIFO     = import("container/queue_fifo.lua")
 local SyncLock      = import("kernel/object/sync_lock.lua")
-local EntryLock     = import("kernel/object/entry_lock.lua")
 
 local MINUTE_10_MS  = hive.enum("PeriodTime", "MINUTE_10_MS")
 local SYNC_PERFRAME = 5
@@ -50,20 +49,16 @@ function ThreadMgr:lock_size()
     return count
 end
 
-function ThreadMgr:entry(key, func)
+function ThreadMgr:entry(key, func, ...)
     if self.entry_pools[key] then
         return false
     end
-    self:fork(function()
-        local _lock<close>    = EntryLock(self, key)
+    self:fork(function(...)
         self.entry_pools[key] = true
-        func()
+        hxpcall(func, "entry:%s", ...)
+        self.entry_pools[key] = nil
     end)
     return true
-end
-
-function ThreadMgr:leave(key)
-    self.entry_pools[key] = nil
 end
 
 function ThreadMgr:lock(key, waiting)
