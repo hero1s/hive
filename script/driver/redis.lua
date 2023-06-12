@@ -21,7 +21,7 @@ local LineTitle    = "\r\n"
 local SECOND_MS    = hive.enum("PeriodTime", "SECOND_MS")
 local SECOND_10_MS = hive.enum("PeriodTime", "SECOND_10_MS")
 local DB_TIMEOUT   = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
-local POOL_COUNT   = environ.number("HIVE_DB_POOL_COUNT", 5)
+local POOL_COUNT   = environ.number("HIVE_DB_POOL_COUNT", 10)
 
 local function _next_line(resp)
     local nindex = resp.cur + 1

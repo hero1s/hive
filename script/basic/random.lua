@@ -1,5 +1,5 @@
 --random.lua
-local mrandom = math.random
+local random  = math.random
 local tcopy   = table_ext.copy
 local tinsert = table.insert
 local tunpack = table.unpack
@@ -43,7 +43,7 @@ end
 
 --万分比是否命中
 function Random:ttratio(val)
-    return val > mrandom(1, 10000)
+    return val > random(1, 10000)
 end
 
 --执行独立随机，返回命中对象
@@ -51,7 +51,7 @@ function Random:rand_alone()
     local targets = {}
     for i, child in pairs(self.childs) do
         local obj, rate = tunpack(child)
-        if rate > mrandom(1, 10000) then
+        if rate > random(1, 10000) then
             tinsert(targets, obj)
         end
     end
@@ -63,7 +63,7 @@ function Random:rand_wheel()
     if self.weight <= 0 then
         return
     end
-    local weight = mrandom(1, self.weight)
+    local weight = random(1, self.weight)
     for i, child in pairs(self.childs) do
         local obj, wght, excl = tunpack(child)
         if wght >= weight then

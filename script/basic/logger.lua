@@ -20,7 +20,7 @@ local LOG_LEVEL   = llog.LOG_LEVEL
 
 logger            = {}
 logfeature        = {}
-local logtag      = hive.logtag
+local title       = hive.title
 local monitors    = _ENV.monitors or {}
 local dispatching = false
 local logshow     = 0
@@ -79,7 +79,7 @@ local function logger_output(feature, notify, lvl, lvl_name, fmt, log_conf, ...)
     else
         content = sformat(fmt, ...)
     end
-    lvl_func(content, logtag, feature)
+    lvl_func(content, title, feature)
     if notify and not dispatching then
         --防止重入
         dispatching = true
@@ -133,13 +133,14 @@ end
 
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl_name, log_conf = tunpack(conf)
-    logfeature[lvl_name]     = function(feature, path, prefix)
+    logfeature[lvl_name]     = function(feature, path, prefix, def)
         if not feature then
             local info = dgetinfo(2, "S")
             feature    = fsstem(info.short_src)
         end
         llog.add_dest(feature, path)
         llog.ignore_prefix(feature, prefix)
+        llog.ignore_def(feature, def)
         return function(fmt, ...)
             local ok, res = pcall(logger_output, feature, false, lvl, lvl_name, fmt, log_conf, ...)
             if not ok then

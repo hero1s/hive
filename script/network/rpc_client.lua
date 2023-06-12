@@ -33,10 +33,10 @@ prop:reader("socket", nil)
 prop:reader("holder", nil)    --持有者
 
 function RpcClient:__init(holder, ip, port)
-    self.holder = holder
-    self.port   = port
-    self.ip     = ip
-    thread_mgr:entry(self:address(), function()
+    self.holder   = holder
+    self.port     = port
+    self.ip       = ip
+    self.timer_id = timer_mgr:loop(SECOND_MS, function()
         self:check_heartbeat()
     end)
 end
@@ -47,12 +47,11 @@ function RpcClient:check_heartbeat()
     end
     if self.alive then
         self:heartbeat()
+        timer_mgr:set_period(self.timer_id, HEARTBEAT_TIME)
     else
         self:connect()
+        timer_mgr:set_period(self.timer_id, SECOND_MS)
     end
-    self.timer_id = timer_mgr:once(self.alive and HEARTBEAT_TIME or SECOND_MS, function()
-        self:check_heartbeat()
-    end)
 end
 
 function RpcClient:__release()
@@ -207,7 +206,9 @@ function RpcClient:on_socket_error(token, err)
     thread_mgr:fork(function()
         self.socket = nil
         self.alive  = false
-        self.holder:on_socket_error(self, token, err)
+        if self.holder then
+            self.holder:on_socket_error(self, token, err)
+        end
     end)
 end
 

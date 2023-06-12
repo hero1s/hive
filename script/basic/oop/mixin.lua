@@ -59,8 +59,11 @@ local function collect(class, object, method, ...)
         local mixin_method = mixin[method]
         if mixin_method then
             local ok, res = xpcall(mixin_method, dtraceback, object, ...)
-            if (not ok) or (not res) then
+            if not ok then
                 error(sformat("mixin: %s collect '%s' failed: %s.", mixin.__source, method, res))
+                return false
+            end
+            if not res then
                 return false
             end
         end

@@ -1,22 +1,22 @@
 --random.lua
-local ipairs    = ipairs
-local mrandom   = math.random
+local ipairs     = ipairs
+local random     = math.random
 
-local WAITING   = luabt.WAITING
+local WAITING    = luabt.WAITING
 
-local Node      = luabt.Node
+local Node       = luabt.Node
 
 local RandomNode = class(Node)
 function RandomNode:__init(...)
-    self.name = "random"
-    self.childs = {...}
+    self.name    = "random"
+    self.childs  = { ... }
     self.current = nil
 end
 
 function RandomNode:run(tree)
     if not self.current then
-        local index = mrandom(#self.childs)
-        local node = self.childs[index]
+        local index  = random(#self.childs)
+        local node   = self.childs[index]
         self.current = node
         node:open(tree)
         return WAITING

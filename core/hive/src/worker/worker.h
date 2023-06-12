@@ -108,8 +108,7 @@ namespace lworker {
         void run(){
             auto hive = m_lua->new_table(m_service.c_str());
             hive.set("pid", ::getpid());
-            hive.set("worker_title", m_name);
-            hive.set("logtag", fmt::format("[{}]", m_name));
+            hive.set("title", fmt::format("[{}]", m_name));
             hive.set_function("stop", [&]() { m_running = false; });
             hive.set_function("update", [&]() { update(); });
             hive.set_function("getenv", [&](const char* key) { return get_env(key); });

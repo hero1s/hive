@@ -62,6 +62,7 @@ function service.init()
     hive.rely_router  = SERVICE_CONFS[service_id].rely_router
     hive.safe_stop    = SERVICE_CONFS[service_id].safe_stop
     hive.pre_services = SERVICE_CONFS[service_id].pre_services
+    hive.is_publish   = environ.status("HIVE_PUBLISH_ENV")
 
     service.make_node()
 end

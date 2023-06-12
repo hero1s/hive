@@ -1,9 +1,6 @@
 --update_mgr.lua
 local lcodec         = require("lcodec")
 local ltimer         = require("ltimer")
-local lhelper        = require("lhelper")
-local mem_usage      = lhelper.mem_usage
-local lclock_ms      = ltimer.clock_ms
 local ltime          = ltimer.time
 local pairs          = pairs
 local odate          = os.date
@@ -17,14 +14,13 @@ local sig_reload     = signal.reload
 local tweak          = table_ext.weak
 local collectgarbage = collectgarbage
 local guid_new       = lcodec.guid_new
-local cut_tail       = math_ext.cut_tail
 local is_same_day    = datetime_ext.is_same_day
 
 local timer_mgr      = hive.get("timer_mgr")
 local thread_mgr     = hive.get("thread_mgr")
 local event_mgr      = hive.get("event_mgr")
+local gc_mgr         = hive.get("gc_mgr")
 
-local WTITLE         = hive.worker_title
 local FAST_MS        = hive.enum("PeriodTime", "FAST_MS")
 local HALF_MS        = hive.enum("PeriodTime", "HALF_MS")
 local ServiceStatus  = enum("ServiceStatus")
@@ -45,8 +41,6 @@ prop:reader("second_objs", {})
 prop:reader("second5_objs", {})
 prop:reader("second30_objs", {})
 
-local gc_step = 10
-
 function UpdateMgr:__init()
     --设置弱表
     tweak(self.quit_objs)
@@ -61,6 +55,7 @@ function UpdateMgr:__init()
     self:attach_frame(timer_mgr)
     self:attach_frame(event_mgr)
     self:attach_fast(thread_mgr)
+    self:attach_fast(gc_mgr)
     self:attach_second(event_mgr)
     self:attach_second(thread_mgr)
     self:attach_minute(thread_mgr)
@@ -75,15 +70,6 @@ function UpdateMgr:setup()
     local time                 = odate("*t", hive.now)
     self.last_minute           = time.min
     self.last_hour             = time.hour
-end
-
-function UpdateMgr:collect_gc()
-    local clock_ms  = lclock_ms()
-    local mem       = cut_tail(mem_usage(), 1)
-    local lua_mem_s = cut_tail(collectgarbage("count") / 1024, 1)
-    collectgarbage("collect")
-    local lua_mem_e = cut_tail(collectgarbage("count") / 1024, 1)
-    log_warn("[UpdateMgr][collect_gc] %s m,lua:%s m --> %s m,cost time:%s", mem, lua_mem_s, lua_mem_e, lclock_ms() - clock_ms)
 end
 
 function UpdateMgr:update_second(clock_ms)
@@ -120,7 +106,7 @@ function UpdateMgr:update_hour(clock_ms, cur_hour, time)
     end
     --每日4点执行一次全量更新
     if cur_hour == 4 then
-        self:collect_gc()
+        gc_mgr:collect_gc()
     end
 end
 
@@ -130,8 +116,8 @@ function UpdateMgr:update(scheduler, now_ms, clock_ms)
         local diff_ms = clock_ms - hive.clock_ms
         if diff_ms > HALF_MS and hive.frame > 1 then
             local cur_size, idle_size = thread_mgr:size()
-            log_err("[UpdateMgr][update] last frame exec too long(%d ms)!,service:%s,threads:%s/%s,lock size:%s,gc_step:%s",
-                    diff_ms, hive.name, cur_size, idle_size, thread_mgr:lock_size(), gc_step)
+            log_err("[UpdateMgr][update] last frame exec too long(%d ms)!,service:%s,threads:%s/%s,lock size:%s",
+                    diff_ms, hive.name, cur_size, idle_size, thread_mgr:lock_size())
         end
         --帧更新
         local frame   = hive.frame + 1
@@ -159,11 +145,11 @@ function UpdateMgr:update(scheduler, now_ms, clock_ms)
         end
         hive.now = now
         self:update_second(clock_ms)
-        self:update_by_time(now, clock_ms)
+        self:update_by_time(scheduler, now, clock_ms)
     end)
 end
 
-function UpdateMgr:update_by_time(now, clock_ms)
+function UpdateMgr:update_by_time(scheduler, now, clock_ms)
     --5秒更新
     local time = odate("*t", now)
     if time.sec % 5 > 0 then
@@ -178,7 +164,7 @@ function UpdateMgr:update_by_time(now, clock_ms)
         self:check_hotfix()
     end
     --检测停服
-    self:check_service_stop()
+    self:check_service_stop(scheduler)
     --30秒更新
     if time.sec % 30 > 0 then
         return
@@ -188,8 +174,6 @@ function UpdateMgr:update_by_time(now, clock_ms)
             obj:on_second30(clock_ms)
         end)
     end
-    --执行gc
-    collectgarbage("step", gc_step)
     --分更新
     if time.min == self.last_minute then
         return
@@ -210,8 +194,8 @@ function UpdateMgr:update_by_time(now, clock_ms)
     log_info("[UpdateMgr][update]now lua mem: %s m", collectgarbage("count") / 1024)
 end
 
-function UpdateMgr:check_service_stop()
-    if not WTITLE and hive.service_status == ServiceStatus.STOP then
+function UpdateMgr:check_service_stop(scheduler)
+    if scheduler and hive.service_status == ServiceStatus.STOP then
         if hive.safe_stop and event_mgr:fire_vote("vote_stop_service") then
             log_err("[UpdateMgr][check_service_stop] all vote agree,will stop service:%s", hive.name)
             signal_quit()

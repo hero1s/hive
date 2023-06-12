@@ -34,6 +34,7 @@ prop:accessor("data", {})               -- data
 prop:accessor("is_doing", false)        -- in doing
 prop:accessor("flush", false)
 prop:reader("save_cnt", 0)
+prop:reader("old_time", 0)
 
 function CacheObj:__init(cache_conf, primary_value)
     self.primary_value = primary_value
@@ -42,6 +43,7 @@ function CacheObj:__init(cache_conf, primary_value)
     self.cache_table   = cache_conf.cache_table
     self.cache_key     = cache_conf.cache_key
     self.expire_time   = cache_conf.expire_time * 1000
+    self.old_time      = self.expire_time
     self.store_time    = cache_conf.store_time * 1000
     self.store_count   = cache_conf.store_count
 end
@@ -62,6 +64,7 @@ end
 
 function CacheObj:active()
     self.active_tick = hive.clock_ms
+    self.expire_time = self.old_time
 end
 
 function CacheObj:pack()

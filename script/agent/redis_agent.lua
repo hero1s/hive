@@ -1,6 +1,6 @@
 --redis_agent.lua
 local tunpack    = table.unpack
-local mrandom    = math.random
+local mrandom    = math_ext.random
 
 local KernCode   = enum("KernCode")
 local router_mgr = hive.load("router_mgr")

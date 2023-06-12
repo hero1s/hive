@@ -1,7 +1,7 @@
 --redis_mgr.lua
 local sformat      = string.format
 local tpack        = table.pack
-local mrandom      = math.random
+local mrandom      = math_ext.random
 local log_err      = logger.err
 local KernCode     = enum("KernCode")
 local SUCCESS      = KernCode.SUCCESS

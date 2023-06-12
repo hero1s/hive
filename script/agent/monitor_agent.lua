@@ -12,7 +12,7 @@ local check_failed  = hive.failed
 local smake_id      = service.make_id
 
 local event_mgr     = hive.get("event_mgr")
-local update_mgr    = hive.get("update_mgr")
+local gc_mgr        = hive.get("gc_mgr")
 local mem_monitor   = hive.get("mem_monitor")
 local thread_mgr    = hive.get("thread_mgr")
 
@@ -165,7 +165,7 @@ function MonitorAgent:rpc_reload()
 end
 
 function MonitorAgent:rpc_collect_gc()
-    update_mgr:collect_gc()
+    gc_mgr:collect_gc()
 end
 
 function MonitorAgent:rpc_snapshot(snap)

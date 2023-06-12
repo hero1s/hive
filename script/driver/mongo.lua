@@ -38,7 +38,7 @@ local thread_mgr    = hive.get("thread_mgr")
 local SECOND_MS     = hive.enum("PeriodTime", "SECOND_MS")
 local SECOND_10_MS  = hive.enum("PeriodTime", "SECOND_10_MS")
 local DB_TIMEOUT    = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
-local POOL_COUNT    = environ.number("HIVE_DB_POOL_COUNT", 9)
+local POOL_COUNT    = environ.number("HIVE_DB_POOL_COUNT", 10)
 
 local MongoDB       = class()
 local prop          = property(MongoDB)

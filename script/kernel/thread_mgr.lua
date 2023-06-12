@@ -17,7 +17,7 @@ local log_err       = logger.err
 local QueueFIFO     = import("container/queue_fifo.lua")
 local SyncLock      = import("kernel/object/sync_lock.lua")
 
-local MINUTE_10_MS  = hive.enum("PeriodTime", "MINUTE_10_MS")
+local MINUTE_MS     = hive.enum("PeriodTime", "MINUTE_MS")
 local SYNC_PERFRAME = 5
 
 local ThreadMgr     = singleton()
@@ -68,7 +68,7 @@ function ThreadMgr:lock(key, waiting)
         queue.sync_num          = 0
         self.syncqueue_map[key] = queue
     end
-    queue.ttl  = hive.clock_ms + MINUTE_10_MS
+    queue.ttl  = hive.clock_ms + MINUTE_MS
     local head = queue:head()
     if not head then
         local lock = SyncLock(self, key)

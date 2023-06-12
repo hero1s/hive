@@ -5,7 +5,7 @@ local SUCCESS      = KernCode.SUCCESS
 local MONGO_FAILED = KernCode.MONGO_FAILED
 local log_err      = logger.err
 local tpack        = table.pack
-local mrandom      = math.random
+local mrandom      = math_ext.random
 local event_mgr    = hive.get("event_mgr")
 local config_mgr   = hive.get("config_mgr")
 

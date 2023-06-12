@@ -52,6 +52,8 @@ struct socket_stream : public socket_object
 	void on_connect(bool ok, const char reason[]);
 	void reset_dispatch_pkg(bool init);
 	bool check_flow_ctrl(int64_t now);
+	bool need_delay_send();
+	int64_t max_process_time();
 
 	int token = 0;
 	socket_mgr* m_mgr = nullptr;

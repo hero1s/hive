@@ -3,7 +3,7 @@ local type    = type
 local pairs   = pairs
 local ipairs  = ipairs
 local tsort   = table.sort
-local mrandom = math.random
+local random  = math.random
 local tremove = table.remove
 
 local function trandom(tab)
@@ -12,14 +12,14 @@ local function trandom(tab)
         keys[#keys + 1] = k
     end
     if #keys > 0 then
-        local key = keys[mrandom(#keys)]
+        local key = keys[random(#keys)]
         return key, tab[key]
     end
 end
 
 local function trandom_array(tab)
     if tab and #tab > 0 then
-        return tab[mrandom(#tab)]
+        return tab[random(#tab)]
     end
 end
 
@@ -194,7 +194,7 @@ end
 local function shuffle(arr)
     local count = #arr
     while count > 1 do
-        local n            = mrandom(1, count - 1)
+        local n            = random(1, count - 1)
         arr[count], arr[n] = arr[n], arr[count]
         count              = count - 1
     end

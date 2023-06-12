@@ -21,6 +21,7 @@ local event_mgr     = hive.load("event_mgr")
 
 --初始化核心
 local function init_core()
+    import("kernel/gc_mgr.lua")
     import("kernel/thread_mgr.lua")
     import("kernel/event_mgr.lua")
     import("kernel/config_mgr.lua")
@@ -127,9 +128,9 @@ end
 
 --启动
 function hive.startup(entry)
-    hive.now                   = os.time()
     hive.frame                 = 0
     hive.now_ms, hive.clock_ms = ltime()
+    hive.now                   = hive.now_ms // 1000
     hive.service_status        = ServiceStatus.READY
     --初始化随机种子
     math.randomseed(hive.now_ms)

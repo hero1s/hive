@@ -26,6 +26,7 @@ namespace logger {
         lualog.set_function("add_lvl_dest", [](int lv) { return log_service::instance()->add_lvl_dest((log_level)lv); });
         lualog.set_function("ignore_prefix", [](std::string feature, bool prefix) { log_service::instance()->ignore_prefix(feature, prefix); });
         lualog.set_function("ignore_suffix", [](std::string feature, bool suffix) { log_service::instance()->ignore_suffix(feature, suffix); });
+        lualog.set_function("ignore_def", [](std::string feature, bool def) { log_service::instance()->ignore_def(feature, def); });        
         lualog.set_function("trace", [](std::string msg, std::string tag, std::string feature) { log_service::instance()->output(log_level::LOG_LEVEL_TRACE,msg,tag, feature); });
         lualog.set_function("debug", [](std::string msg, std::string tag, std::string feature) { log_service::instance()->output(log_level::LOG_LEVEL_DEBUG,msg, tag, feature); });
         lualog.set_function("info", [](std::string msg, std::string tag, std::string feature) { log_service::instance()->output(log_level::LOG_LEVEL_INFO,msg, tag, feature); });

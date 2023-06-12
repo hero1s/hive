@@ -9,6 +9,8 @@ local tunpack         = table.unpack
 local new_guid        = lcodec.guid_new
 local lclock_ms       = ltimer.clock_ms
 local lcron_next      = ltimer.cron_next
+local ltinsert        = ltimer.insert
+local ltupdate        = ltimer.update
 
 --定时器精度，20ms
 local TIMER_ACCURYACY = 20
@@ -28,20 +30,17 @@ function TimerMgr:trigger(handle, clock_ms)
     if handle.times > 0 then
         handle.times = handle.times - 1
     end
-    local function timer_cb()
-        handle.params[#handle.params] = clock_ms - handle.last
-        handle.cb(tunpack(handle.params))
-    end
     --防止在定时器中阻塞
-    thread_mgr:fork(timer_cb)
+    handle.params[#handle.params] = clock_ms - handle.last
+    thread_mgr:fork(handle.cb, tunpack(handle.params))
     --更新定时器数据
-    handle.last = clock_ms
     if handle.times == 0 then
         self.timers[handle.timer_id] = nil
         return
     end
     --继续注册
-    ltimer.insert(handle.timer_id, handle.period)
+    handle.last = clock_ms
+    ltinsert(handle.timer_id, handle.period)
 end
 
 function TimerMgr:on_frame(clock_ms)
@@ -49,7 +48,7 @@ function TimerMgr:on_frame(clock_ms)
     self.escape_ms  = escape_ms % TIMER_ACCURYACY
     self.last_ms    = clock_ms
     if escape_ms >= TIMER_ACCURYACY then
-        local timers = ltimer.update(escape_ms // TIMER_ACCURYACY)
+        local timers = ltupdate(escape_ms // TIMER_ACCURYACY)
         for _, timer_id in ipairs(timers or {}) do
             local handle = self.timers[timer_id]
             if handle then
@@ -87,7 +86,7 @@ function TimerMgr:register(interval, period, times, cb, ...)
     local timer_id = new_guid(period, interval)
     --矫正时间误差
     interval       = interval + (reg_ms - self.last_ms)
-    ltimer.insert(timer_id, interval // TIMER_ACCURYACY)
+    ltinsert(timer_id, interval // TIMER_ACCURYACY)
     --包装回调参数
     local params          = tpack(...)
     params[#params + 1]   = 0
@@ -106,6 +105,13 @@ end
 function TimerMgr:unregister(timer_id)
     if timer_id then
         self.timers[timer_id] = nil
+    end
+end
+
+function TimerMgr:set_period(timer_id, period)
+    local info = self.timers[timer_id]
+    if info then
+        info.period = period // TIMER_ACCURYACY
     end
 end
 

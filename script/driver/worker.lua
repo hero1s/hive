@@ -23,13 +23,14 @@ local socket_mgr       = hive.load("socket_mgr")
 local update_mgr       = hive.load("update_mgr")
 local thread_mgr       = hive.load("thread_mgr")
 
-local WTITLE           = hive.worker_title
+local TITLE            = hive.title
 local FLAG_REQ         = hive.enum("FlagMask", "REQ")
 local FLAG_RES         = hive.enum("FlagMask", "RES")
 local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 
 --初始化核心
 local function init_core()
+    import("kernel/gc_mgr.lua")
     import("kernel/thread_mgr.lua")
     import("kernel/event_mgr.lua")
     import("kernel/config_mgr.lua")
@@ -108,9 +109,9 @@ end
 
 --启动
 function hive.startup(entry)
-    hive.now                   = 0
     hive.frame                 = 0
     hive.now_ms, hive.clock_ms = ltime()
+    hive.now                   = hive.now_ms // 1000
     --初始化随机种子
     math.randomseed(hive.now_ms)
     --初始化hive
@@ -131,7 +132,7 @@ end
 --事件分发
 local function notify_rpc(session_id, title, rpc, ...)
     if rpc == "on_reload" then
-        log_info("[Worker][on_reload]worker:%s reload for signal !", WTITLE)
+        log_info("[Worker][on_reload]worker:%s reload for signal !", TITLE)
         --重新加载脚本
         update_mgr:check_hotfix()
         return
@@ -166,7 +167,7 @@ end
 --访问主线程
 hive.call_master = function(rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    if hive.call("master", lencode(session_id, FLAG_REQ, WTITLE, rpc, ...)) then
+    if hive.call("master", lencode(session_id, FLAG_REQ, TITLE, rpc, ...)) then
         return thread_mgr:yield(session_id, "call_master", RPC_CALL_TIMEOUT)
     end
     return false, "call failed!"
@@ -174,13 +175,13 @@ end
 
 --通知主线程
 hive.send_master = function(rpc, ...)
-    hive.call("master", lencode(0, FLAG_REQ, WTITLE, rpc, ...))
+    hive.call("master", lencode(0, FLAG_REQ, TITLE, rpc, ...))
 end
 
 --访问其他线程
 hive.call_worker = function(name, rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    if hive.call(name, lencode(session_id, FLAG_REQ, WTITLE, rpc, ...)) then
+    if hive.call(name, lencode(session_id, FLAG_REQ, TITLE, rpc, ...)) then
         return thread_mgr:yield(session_id, "call_master", RPC_CALL_TIMEOUT)
     end
     return false, "call failed!"
@@ -188,5 +189,5 @@ end
 
 --通知其他线程
 hive.send_worker = function(name, rpc, ...)
-    hive.call(name, lencode(0, FLAG_REQ, WTITLE, rpc, ...))
+    hive.call(name, lencode(0, FLAG_REQ, TITLE, rpc, ...))
 end

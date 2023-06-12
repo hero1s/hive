@@ -2,7 +2,7 @@
 local mfloor     = math.floor
 local mtointeger = math.tointeger
 local msqrt      = math.sqrt
-local mrandom    = math.random
+local random     = math.random
 local tconcat    = table.concat
 local tinsert    = table.insert
 
@@ -14,12 +14,11 @@ function math_ext.round(n)
 end
 
 --随机函数
-function math_ext.rand(a, b)
-    return mrandom(a, b)
-end
-
-function math_ext.random()
-    return mrandom(0xffff, 0xfffffff)
+function math_ext.random(a, b)
+    if a then
+        return random(a, b)
+    end
+    return random(0xffff, 0xfffffff)
 end
 
 --计算距离
@@ -72,7 +71,7 @@ local WORD_ARR = {
 function math_ext.random_str(len)
     local result_arr = {}
     for i = 1, len do
-        tinsert(result_arr, WORD_ARR[mrandom(1, #WORD_ARR)])
+        tinsert(result_arr, WORD_ARR[random(1, #WORD_ARR)])
     end
 
     return tconcat(result_arr, "")

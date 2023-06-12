@@ -6,6 +6,7 @@ local log_info     = logger.info
 local tunpack      = table.unpack
 local check_failed = hive.failed
 local sid2nick     = service.id2nick
+local mrandom      = math_ext.random
 
 local KernCode     = enum("KernCode")
 local CacheCode    = enum("CacheCode")
@@ -27,8 +28,9 @@ local CacheMgr     = singleton()
 local prop         = property(CacheMgr)
 prop:reader("cache_confs", {})        -- cache_confs
 prop:reader("cache_lists", {})        -- cache_lists
-prop:reader("dirty_maps", {})          -- dirty objects
+prop:reader("dirty_maps", {})         -- dirty objects
 prop:reader("flush", false)           -- 立即存盘
+prop:reader("rwlock", false)          -- 开启读写锁
 
 function CacheMgr:__init()
     --初始化cache
@@ -91,7 +93,6 @@ function CacheMgr:on_service_close(id, service_name)
             if obj:get_lock_node_id() == id then
                 log_info("[CacheMgr][on_service_close] %s unlock by service close!", primary_key)
                 obj:set_lock_node_id(0)
-                self:save_cache(obj, true)
             end
         end
     end
@@ -104,17 +105,23 @@ function CacheMgr:on_service_ready(id, service_name)
             if obj:get_lock_node_id() == id then
                 log_info("[CacheMgr][on_service_ready] %s unlock by service close!", primary_key)
                 obj:set_lock_node_id(0)
-                self:save_cache(obj, true)
             end
         end
     end
 end
 
 function CacheMgr:on_second(clock_ms)
+    local count = 0
     for _, dirty_map in pairs(self.dirty_maps) do
         for _, obj in dirty_map:wheel_iterator() do
             if self.flush or obj:need_save(clock_ms) then
                 self:save_cache(obj)
+                count = count + 1
+            end
+            --限流每次2000
+            if count > 2000 then
+                log_err("[CacheMgr][on_second] is very busy")
+                return
             end
         end
     end
@@ -139,15 +146,8 @@ function CacheMgr:set_dirty(cache_obj, is_dirty)
 end
 
 function CacheMgr:delete(cache_obj)
-    local cache_name  = cache_obj:get_cache_name()
-    local primary_key = cache_obj:get_primary_value()
-    local cache_list  = self.cache_lists[cache_name]
-    if not cache_list then
-        log_err("[CacheMgr][delete] cache list not find! cache_name=%s,primary=%s", cache_name, primary_key)
-        return false
-    end
-    cache_list:set(primary_key, nil)
-    log_info("[CacheMgr][delete] cache=%s,primary=%s", cache_name, primary_key)
+    cache_obj:set_lock_node_id(0)
+    cache_obj:set_expire_time(mrandom(1000, 60000))
 end
 
 function CacheMgr:save_cache(cache_obj, remove)
@@ -157,7 +157,7 @@ function CacheMgr:save_cache(cache_obj, remove)
             self:set_dirty(cache_obj, true)
         end
         if remove then
-            cache_obj:set_expire_time(1)
+            self:delete(cache_obj)
         end
     end)
     return true
@@ -188,14 +188,16 @@ function CacheMgr:get_cache_obj(hive_id, cache_name, primary_key, cache_type)
             return CacheCode.CACHE_IS_HOLDING
         end
         if cache_type & CAWRITE == CAWRITE then
-            local lock_node_id = cache_obj:get_lock_node_id()
-            if lock_node_id == 0 then
-                log_info("[CacheMgr][get_cache_obj] set lock node id:%s, cache_name=%s,primary=%s,cache_type=:%s", sid2nick(hive_id), cache_name, primary_key, cache_type)
-                cache_obj:set_lock_node_id(hive_id)
-            else
-                if hive_id ~= lock_node_id then
-                    log_err("[CacheMgr][get_cache_obj] cache node not match! %s != %s, cache_name=%s,primary=%s", sid2nick(hive_id), sid2nick(lock_node_id), cache_name, primary_key)
-                    return CacheCode.CACHE_KEY_LOCK_FAILD
+            if self.rwlock then
+                local lock_node_id = cache_obj:get_lock_node_id()
+                if lock_node_id == 0 then
+                    log_info("[CacheMgr][get_cache_obj] set lock node id:%s, cache_name=%s,primary=%s,cache_type=:%s", sid2nick(hive_id), cache_name, primary_key, cache_type)
+                    cache_obj:set_lock_node_id(hive_id)
+                else
+                    if hive_id ~= lock_node_id then
+                        log_err("[CacheMgr][get_cache_obj] cache node not match! %s != %s, cache_name=%s,primary=%s", sid2nick(hive_id), sid2nick(lock_node_id), cache_name, primary_key)
+                        return CacheCode.CACHE_KEY_LOCK_FAILD
+                    end
                 end
             end
         end
@@ -209,8 +211,10 @@ function CacheMgr:get_cache_obj(hive_id, cache_name, primary_key, cache_type)
             return code
         end
         if cache_type & CAWRITE == CAWRITE then
-            log_info("[CacheMgr][get_cache_obj] init set lock node id:%s, cache_name=%s,primary=%s,cache_type=:%s", sid2nick(hive_id), cache_name, primary_key, cache_type)
-            cobj:set_lock_node_id(hive_id)
+            if self.rwlock then
+                log_info("[CacheMgr][get_cache_obj] init set lock node id:%s, cache_name=%s,primary=%s,cache_type=:%s", sid2nick(hive_id), cache_name, primary_key, cache_type)
+                cobj:set_lock_node_id(hive_id)
+            end
         end
         return SUCCESS, cobj
     end
@@ -241,7 +245,7 @@ function CacheMgr:rpc_cache_update(hive_id, req_data)
     end
     local ucode = cache_obj:update(table_data, flush)
     self:set_dirty(cache_obj, true)
-    if cache_obj:need_save(hive.clock_ms) then
+    if flush then
         self:save_cache(cache_obj)
     end
     return ucode
@@ -257,7 +261,7 @@ function CacheMgr:rpc_cache_update_key(hive_id, req_data)
     end
     local ucode = cache_obj:update_key(table_kvs, flush)
     self:set_dirty(cache_obj, true)
-    if cache_obj:need_save(hive.clock_ms) then
+    if flush then
         self:save_cache(cache_obj)
     end
     return ucode
@@ -274,12 +278,8 @@ function CacheMgr:rpc_cache_delete(hive_id, req_data)
         log_err("[CacheMgr][rpc_cache_delete] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return code
     end
-    if self:save_cache(cache_obj, true) then
-        log_info("[CacheMgr][rpc_cache_delete] cache=%s,primary=%s", cache_name, primary_key)
-        return SUCCESS
-    end
-    log_err("[CacheMgr][rpc_cache_delete] save failed: cache=%s,primary=%s", cache_name, primary_key)
-    return CacheCode.CACHE_DELETE_SAVE_FAILD
+    self:delete(cache_obj)
+    return SUCCESS
 end
 
 --缓存落地
@@ -293,13 +293,8 @@ function CacheMgr:rpc_cache_flush(hive_id, req_data)
         log_err("[CacheMgr][rpc_cache_flush] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return code
     end
-    cache_obj:set_lock_node_id(0)
-    if self:save_cache(cache_obj, true) then
-        log_info("[CacheMgr][rpc_cache_flush] cache=%s,primary=%s", cache_name, primary_key)
-        return SUCCESS
-    end
-    log_err("[CacheMgr][rpc_cache_flush] save failed: cache=%s,primary=%s", cache_name, primary_key)
-    return CacheCode.CACHE_DELETE_SAVE_FAILD
+    self:delete(cache_obj)
+    return SUCCESS
 end
 
 hive.cache_mgr = CacheMgr()

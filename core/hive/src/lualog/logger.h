@@ -227,12 +227,15 @@ namespace logger {
         virtual void write(sptr<log_message> logmsg);
         virtual void ignore_prefix(bool prefix) { ignore_prefix_ = prefix; }
         virtual void ignore_suffix(bool suffix) { ignore_suffix_ = suffix; }
+        virtual void ignore_def(bool def) { ignore_def_ = def; }
         virtual cstring build_prefix(sptr<log_message> logmsg);
         virtual cstring build_suffix(sptr<log_message> logmsg);
+        virtual bool log_def() { return !ignore_def_; }
 
     protected:
         bool ignore_suffix_ = true;
         bool ignore_prefix_ = false;
+        bool ignore_def_ = false;
     }; // class log_dest
 
     class stdio_dest : public log_dest {
@@ -451,6 +454,14 @@ namespace logger {
             for (auto dest : dest_lvls_) dest.second->ignore_suffix(suffix);
         }
 
+        void ignore_def(cstring& feature, bool def) {
+            auto iter = dest_features_.find(feature);
+            if (iter != dest_features_.end()) {
+                iter->second->ignore_def(def);
+                return;
+            }
+        }
+
         void start() {
             if (!stop_msg_ && !std_dest_) {
                 log_pid_ = ::getpid();
@@ -541,9 +552,15 @@ namespace logger {
                     auto itFea = dest_features_.find(logmsg->feature());
                     if (itFea != dest_features_.end()) {
                         itFea->second->write(logmsg);
-                    }
-                    if (def_dest_) {
-                        def_dest_->write(logmsg);
+                        if (itFea->second->log_def()) {
+                            if (def_dest_) {
+                                def_dest_->write(logmsg);
+                            }
+                        }
+                    } else {
+                        if (def_dest_) {
+                            def_dest_->write(logmsg);
+                        }
                     }
                     message_pool_->release(logmsg);
                 }
