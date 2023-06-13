@@ -1,18 +1,18 @@
 -- cache_agent.lua
 
-local log_err          = logger.err
-local check_failed     = hive.failed
-local check_success    = hive.success
+local log_err       = logger.err
+local check_failed  = hive.failed
+local check_success = hive.success
+local makechan      = hive.make_channel
 
-local router_mgr       = hive.get("router_mgr")
-local thread_mgr       = hive.get("thread_mgr")
+local router_mgr    = hive.get("router_mgr")
 
-local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
-local RPC_FAILED       = hive.enum("KernCode", "RPC_FAILED")
-local CACHE_BOTH       = hive.enum("CacheType", "BOTH")
-local CACHE_READ       = hive.enum("CacheType", "READ")
+local SUCCESS       = hive.enum("KernCode", "SUCCESS")
+local RPC_FAILED    = hive.enum("KernCode", "RPC_FAILED")
+local CACHE_BOTH    = hive.enum("CacheType", "BOTH")
+local CACHE_READ    = hive.enum("CacheType", "READ")
 
-local CacheAgent       = singleton()
+local CacheAgent    = singleton()
 function CacheAgent:__init()
 end
 
@@ -82,76 +82,56 @@ end
 
 -- 拉取集合
 function CacheAgent:load_collect_by_cname(primary_key, cache_names, read_only)
-    local tab_cnt    = 0
-    local ret        = true
-    local adata      = {}
-    local session_id = thread_mgr:build_session_id()
+    local adata   = {}
+    local channel = makechan("load_names")
     for _, cache_name in ipairs(cache_names or {}) do
-        tab_cnt = tab_cnt + 1
-        thread_mgr:fork(function()
+        channel:push(function()
             local code, data = self:load(primary_key, cache_name, read_only)
             if check_success(code) then
                 adata[cache_name] = data
-            else
-                thread_mgr:response(session_id, false)
-                return
+                return true, SUCCESS
             end
-            thread_mgr:response(session_id, true)
+            return false, code
         end)
     end
-    while tab_cnt > 0 do
-        local ok = thread_mgr:yield(session_id, "load_collect_name", RPC_CALL_TIMEOUT)
-        if not ok then
-            ret = false
-        end
-        tab_cnt = tab_cnt - 1
-    end
-    if not ret then
+    if channel:execute(true) then
+        return true, adata
+    else
         if not read_only then
             for _, cache_name in ipairs(cache_names) do
                 self:flush(primary_key, cache_name)
             end
         end
-        return false
     end
-    return true, adata
+    log_err("[CacheAgent][load_collect_by_cname] fail:%s,%s,%s", read_only, primary_key, cache_names)
+    return false, {}
 end
 
 -- 拉取集合
 function CacheAgent:load_collect_by_key(primary_keys, cache_name, read_only)
-    local tab_cnt    = 0
-    local ret        = true
-    local adata      = {}
-    local session_id = thread_mgr:build_session_id()
+    local adata   = {}
+    local channel = makechan("load_keys")
     for _, primary_key in ipairs(primary_keys or {}) do
-        tab_cnt = tab_cnt + 1
-        thread_mgr:fork(function()
+        channel:push(function()
             local code, data = self:load(primary_key, cache_name, read_only)
             if check_success(code) then
                 adata[primary_key] = data
-            else
-                thread_mgr:response(session_id, false)
-                return
+                return true, SUCCESS
             end
-            thread_mgr:response(session_id, true)
+            return false, code
         end)
     end
-    while tab_cnt > 0 do
-        local ok = thread_mgr:yield(session_id, "load_collect_key", RPC_CALL_TIMEOUT)
-        if not ok then
-            ret = false
-        end
-        tab_cnt = tab_cnt - 1
-    end
-    if not ret then
+    if channel:execute(true) then
+        return true, adata
+    else
         if not read_only then
             for _, primary_key in ipairs(primary_keys) do
                 self:flush(primary_key, cache_name)
             end
         end
-        return false
     end
-    return true, adata
+    log_err("[CacheAgent][load_collect_by_key] fail:%s,%s,%s", read_only, cache_name, primary_keys)
+    return false, {}
 end
 
 -- export

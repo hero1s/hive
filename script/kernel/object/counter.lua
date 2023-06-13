@@ -1,14 +1,15 @@
 --countor.lua
-local log_info      = logger.info
+local log_info   = logger.info
+local cut_tail   = math_ext.cut_tail
 
-local timer_mgr     = hive.get("timer_mgr")
-local update_mgr    = hive.get("update_mgr")
+local timer_mgr  = hive.get("timer_mgr")
+local update_mgr = hive.get("update_mgr")
 
-local SECOND_MS     = hive.enum("PeriodTime", "SECOND_MS")
-local MINUTE_MS     = hive.enum("PeriodTime", "MINUTE_MS")
+local SECOND_MS  = hive.enum("PeriodTime", "SECOND_MS")
+local MINUTE_MS  = hive.enum("PeriodTime", "MINUTE_MS")
 
-local Counter = class()
-local prop = property(Counter)
+local Counter    = class()
+local prop       = property(Counter)
 prop:reader("title", "")
 prop:reader("time", 0)          --采样次数
 prop:reader("min", 0)           --统计周期最小值
@@ -25,9 +26,9 @@ end
 
 --设置采样周期
 function Counter:sampling(period, counter)
-    self.counter = counter
+    self.counter   = counter
     local sampling = period or SECOND_MS
-    self.time = MINUTE_MS / sampling
+    self.time      = MINUTE_MS / sampling
     timer_mgr:loop(sampling, function()
         self:on_update()
     end)
@@ -52,11 +53,11 @@ end
 --输出统计
 function Counter:on_minute()
     if self.time > 0 then
-        local avg = self.total / self.time
+        local avg = cut_tail(self.total / self.time, 1)
         log_info("[Counter][on_minute] last minute %s count => total:%s, avg:%s range:%s-%s!", self.title, self.total, avg, self.min, self.max)
         self.total = 0
-        self.max = 0
-        self.min = 0
+        self.max   = 0
+        self.min   = 0
     else
         log_info("[Counter][on_minute] last minute %s count => cur:%s range:%s-%s!", self.title, self.count, self.min, self.max)
         self.max = self.count

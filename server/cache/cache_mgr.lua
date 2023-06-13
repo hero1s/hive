@@ -31,6 +31,7 @@ prop:reader("cache_lists", {})        -- cache_lists
 prop:reader("dirty_maps", {})         -- dirty objects
 prop:reader("flush", false)           -- 立即存盘
 prop:reader("rwlock", false)          -- 开启读写锁
+prop:reader("req_counter", nil)
 
 function CacheMgr:__init()
     --初始化cache
@@ -50,6 +51,8 @@ function CacheMgr:__init()
 
     monitor:watch_service_close(self, "*")
     monitor:watch_service_ready(self, "*")
+    --counter
+    self.req_counter = hive.make_sampling("cache_req")
 end
 
 function CacheMgr:setup()
@@ -225,6 +228,7 @@ function CacheMgr:get_cache_obj(hive_id, cache_name, primary_key, cache_type)
 end
 
 function CacheMgr:rpc_cache_load(hive_id, req_data)
+    self.req_counter:count_increase()
     local cache_name, primary_key, cache_type = tunpack(req_data)
     local code, cache_obj                     = self:get_cache_obj(hive_id, cache_name, primary_key, cache_type or CacheType.READ)
     if SUCCESS ~= code then
@@ -237,6 +241,7 @@ end
 
 --更新缓存
 function CacheMgr:rpc_cache_update(hive_id, req_data)
+    self.req_counter:count_increase()
     local cache_name, primary_key, table_data, flush = tunpack(req_data)
     local code, cache_obj                            = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.BOTH)
     if SUCCESS ~= code then
@@ -253,6 +258,7 @@ end
 
 --更新缓存kv
 function CacheMgr:rpc_cache_update_key(hive_id, req_data)
+    self.req_counter:count_increase()
     local cache_name, primary_key, table_kvs, flush = tunpack(req_data)
     local code, cache_obj                           = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.BOTH)
     if SUCCESS ~= code then
@@ -269,6 +275,7 @@ end
 
 --删除缓存，通常由运维指令执行
 function CacheMgr:rpc_cache_delete(hive_id, req_data)
+    self.req_counter:count_increase()
     local cache_name, primary_key = tunpack(req_data)
     local code, cache_obj         = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.WRITE)
     if SUCCESS ~= code then
@@ -284,6 +291,7 @@ end
 
 --缓存落地
 function CacheMgr:rpc_cache_flush(hive_id, req_data)
+    self.req_counter:count_increase()
     local cache_name, primary_key = tunpack(req_data)
     local code, cache_obj         = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.WRITE)
     if SUCCESS ~= code then
