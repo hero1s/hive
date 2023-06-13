@@ -4,17 +4,22 @@ local QueueFIFO    = import("container/queue_fifo.lua")
 
 local tonumber     = tonumber
 local log_err      = logger.err
+local log_warn     = logger.warn
 local log_info     = logger.info
 local ssub         = string.sub
 local slower       = string.lower
 local sformat      = string.format
 local tinsert      = table.insert
-local is_array     = table_ext.is_array
+local mrandom      = math_ext.random
 local tjoin        = table_ext.join
+local tdelete      = table_ext.delete
+local is_array     = table_ext.is_array
 local hhash        = hive.hash
+local makechan     = hive.make_channel
 
 local timer_mgr    = hive.get("timer_mgr")
 local thread_mgr   = hive.get("thread_mgr")
+local event_mgr    = hive.get("event_mgr")
 local update_mgr   = hive.get("update_mgr")
 
 local LineTitle    = "\r\n"
@@ -286,114 +291,122 @@ prop:reader("passwd", nil)          --passwd
 prop:reader("executer", nil)        --执行者
 prop:reader("timer_id", nil)        --timer_id
 prop:reader("connections", {})      --connections
+prop:reader("alives", {})           --alives
+prop:reader("req_counter", nil)
+prop:reader("res_counter", nil)
 
 function RedisDB:__init(conf, id)
     self.id     = id
     self.passwd = conf.passwd
-    self:choose_host(conf.hosts)
     --attach_hour
     update_mgr:attach_hour(self)
     --setup
-    self:setup()
+    self:setup(conf)
 end
 
 function RedisDB:__release()
     self:close()
 end
 
-function RedisDB:set_executer(id)
-    local index   = hhash(id, POOL_COUNT)
-    self.executer = self.connections[index]
+function RedisDB:close()
+    for _, sock in pairs(self.alives) do
+        sock:close()
+    end
+    for _, sock in pairs(self.connections) do
+        sock:close()
+    end
+    self.connections = {}
+    self.alives      = {}
 end
 
-function RedisDB:choose_host(hosts)
+function RedisDB:setup(conf)
+    self:setup_pool(conf.hosts)
+    self.timer_id = timer_mgr:register(0, SECOND_MS, -1, function()
+        self:check_alive()
+    end)
+    for cmd, param in pairs(redis_commands) do
+        RedisDB[cmd] = function(this, ...)
+            return this:commit(self.executer, param, ...)
+        end
+    end
+    self.req_counter = hive.make_sampling(sformat("redis %s req", self.id))
+    self.res_counter = hive.make_sampling(sformat("redis %s res", self.id))
+end
+
+function RedisDB:setup_pool(hosts)
     if not next(hosts) then
-        log_err("[RedisDB][choose_host] redis config err: hosts is empty")
+        log_err("[RedisDB][setup_pool] redis config err: hosts is empty")
         return
     end
     local count = POOL_COUNT
     while count > 0 do
         for ip, port in pairs(hosts) do
             local socket            = Socket(self, ip, port)
-            socket.task_queue       = QueueFIFO()
             self.connections[count] = socket
-            count                   = count - 1
+            socket.task_queue       = QueueFIFO()
+            socket:set_id(count)
+            count = count - 1
         end
+    end
+end
+
+function RedisDB:set_executer(id)
+    local count = #self.alives
+    if count > 0 then
+        local index   = hhash(id or mrandom(), count)
+        self.executer = self.alives[index]
     end
 end
 
 function RedisDB:set_options(opts)
 end
 
-function RedisDB:setup()
-    for cmd, param in pairs(redis_commands) do
-        RedisDB[cmd] = function(this, ...)
-            return this:commit(param, ...)
-        end
-    end
-    thread_mgr:entry(self:address(), function()
-        self:check_alive()
-    end)
-end
-
-function RedisDB:close()
-    for _, sock in pairs(self.connections) do
-        sock:close()
-    end
-    if self.timer_id then
-        timer_mgr:unregister(self.timer_id)
-        self.timer_id = nil
-    end
-end
-
 function RedisDB:on_hour()
-    for _, sock in pairs(self.connections) do
-        if not sock:is_alive() then
-            self.executer = sock
-            self:commit({ cmd = "PING" })
-        end
+    for _, sock in pairs(self.alives) do
+        self.executer = sock
+        self:send({ cmd = "PING" })
     end
 end
 
 function RedisDB:check_alive()
-    if self.timer_id then
-        timer_mgr:unregister(self.timer_id)
-    end
-    local ok = true
-    for no, sock in pairs(self.connections) do
-        if not sock:is_alive() then
-            if not self:login(sock, no) then
-                ok = false
+    if next(self.connections) then
+        thread_mgr:entry(self:address(), function()
+            local channel = makechan("check redis")
+            for _, sock in pairs(self.connections) do
+                channel:push(function()
+                    return self:login(sock)
+                end)
             end
-        end
+            if channel:execute(true) then
+                timer_mgr:set_period(self.timer_id, SECOND_10_MS)
+            end
+            self:set_executer()
+        end)
     end
-    self.timer_id = timer_mgr:once(ok and SECOND_10_MS or SECOND_MS, function()
-        self:check_alive()
-    end)
 end
 
-function RedisDB:login(socket, no)
-    local ip, port = socket.ip, socket.port
+function RedisDB:login(socket)
+    local id, ip, port = socket.id, socket.ip, socket.port
     if not socket:connect(ip, port) then
-        log_err("[RedisDB][login] connect db(%s:%s:%s) failed!", ip, port, no)
+        log_err("[RedisDB][login] connect db(%s:%s:%s) failed!", ip, port, id)
         return false
     end
-    self.executer = socket
     if self.passwd and #self.passwd > 1 then
-        self.executer = socket
-        local ok, res = self:auth()
+        local ok, res = self:auth(socket)
         if not ok or res ~= "OK" then
-            log_err("[RedisDB][login] auth db(%s:%s:%s) auth failed! because: %s", ip, port, no, res)
+            log_err("[RedisDB][login] auth db(%s:%s:%s) auth failed! because: %s", ip, port, id, res)
             socket:close()
             return false
         end
     end
-    log_info("[RedisDB][login] login db(%s:%s:%s) success!", ip, port, no)
+    self.connections[id] = nil
+    tinsert(self.alives, socket)
+    log_info("[RedisDB][login] login db(%s:%s:%s) success!", ip, port, id)
     return true
 end
 
-function RedisDB:auth()
-    return self:commit({ cmd = "AUTH" }, self.passwd)
+function RedisDB:auth(sock)
+    return self:commit(sock, { cmd = "AUTH" }, self.passwd)
 end
 
 function RedisDB:on_socket_error(sock, token, err)
@@ -403,8 +416,16 @@ function RedisDB:on_socket_error(sock, token, err)
         thread_mgr:response(session_id, false, err)
         session_id = task_queue:pop()
     end
-    --检查活跃
-    thread_mgr:entry(self:address(), function()
+    --清空状态
+    if sock == self.executer then
+        self.executer = nil
+        self:set_executer()
+    end
+    tdelete(self.alives, sock)
+    self.connections[sock.id] = sock
+    --设置重连
+    timer_mgr:set_period(self.timer_id, SECOND_MS)
+    event_mgr:fire_next_second(function()
         self:check_alive()
     end)
 end
@@ -421,25 +442,26 @@ function RedisDB:on_socket_recv(sock, token)
             break
         end
         if not succ then
-            log_err("[RedisDB][on_socket_recv] parse failed: %s", rdsucc)
+            log_warn("[RedisDB][on_socket_recv] parse failed: %s", rdsucc)
             break
         end
         sock:pop(_parse_offset(packet))
         local session_id = sock.task_queue:pop()
-        if session_id then
+        if session_id and session_id > 0 then
+            self.res_counter:count_increase()
             thread_mgr:response(session_id, rdsucc, res)
         end
     end
 end
 
-function RedisDB:wait_response(session_id, packet, param)
-    local socket = self.executer
+function RedisDB:wait_response(socket, session_id, packet, param)
     if not socket then
         return false, "db not connected"
     end
     if not socket:send(packet) then
         return false, "send request failed"
     end
+    self.req_counter:count_increase()
     socket.task_queue:push(session_id)
     local ok, res = thread_mgr:yield(session_id, sformat("redis_comit:%s", param.cmd), DB_TIMEOUT)
     if not ok then
@@ -453,10 +475,18 @@ function RedisDB:wait_response(session_id, packet, param)
     return ok, res
 end
 
-function RedisDB:commit(param, ...)
+function RedisDB:commit(sock, param, ...)
     local session_id = thread_mgr:build_session_id()
     local packet     = _compose_args(param.cmd, ...)
-    return self:wait_response(session_id, packet, param)
+    return self:wait_response(sock, session_id, packet, param)
+end
+
+function RedisDB:send(param, ...)
+    local sock = self.executer
+    if sock and sock:send(_compose_args(param.cmd, ...)) then
+        self.req_counter:count_increase()
+        sock.task_queue:push(0)
+    end
 end
 
 function RedisDB:execute(cmd, ...)
@@ -464,7 +494,7 @@ function RedisDB:execute(cmd, ...)
     if RedisDB[lcmd] then
         return self[lcmd](self, ...)
     end
-    return self:commit({ cmd = cmd }, ...)
+    return self:commit(self.executer, { cmd = cmd }, ...)
 end
 
 return RedisDB

@@ -30,14 +30,14 @@ function SystemMgr:rpc_execute_shell(cmd)
     local btime                   = lclock_ms()
     local flag, str_err, err_code = oexec(cmd)
     local cost_time               = lclock_ms() - btime
-    if cost_time > PeriodTime.HALF_MS then
+    if cost_time > PeriodTime.SECOND_3_MS then
         log_err("[SystemMgr][rpc_execute_shell] cost time more than max:%s", cost_time)
     end
     if not flag then
-        log_err("[SystemMgr][rpc_execute_shell] execute fail,cmd:%s, flag:%s, str_err:%s err_code:%s", cmd, flag, str_err, err_code)
+        log_err("[SystemMgr][rpc_execute_shell] execute fail,cmd:%s, flag:%s, str_err:%s err_code:%s,cost_time:%s", cmd, flag, str_err, err_code, cost_time)
         return false, str_err
     end
-    log_info("[SystemMgr][rpc_execute_shell] execute success,cmd:%s,flag:%s,msg:%s,code:%s", cmd, flag, str_err, err_code)
+    log_info("[SystemMgr][rpc_execute_shell] execute success,cmd:%s,flag:%s,msg:%s,code:%s,cost_time:%s", cmd, flag, str_err, err_code, cost_time)
     return true
 end
 

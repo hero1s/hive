@@ -133,7 +133,7 @@ function RouterMgr:collect(service_id, rpc, ...)
     if check_success(code, ok) then
         while target_cnt > 0 do
             target_cnt              = target_cnt - 1
-            local ok_c, code_c, res = thread_mgr:yield(session_id, "collect", RPC_CALL_TIMEOUT)
+            local ok_c, code_c, res = thread_mgr:yield(session_id, rpc, RPC_CALL_TIMEOUT)
             if check_success(code_c, ok_c) then
                 collect_res[#collect_res + 1] = res
             end

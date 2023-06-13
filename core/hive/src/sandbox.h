@@ -22,7 +22,7 @@ local is_dir      = lstdfs.is_directory
 local load_files  = {}
 local search_path = {}
 
-local logtag      = hive.logtag
+local logtag      = hive.title
 local log_output  = function(lvl, ctx)
     logger[lvl](logtag .. ctx)
 end

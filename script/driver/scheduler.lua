@@ -1,25 +1,25 @@
 --scheduler.lua
-local lcodec           = require("lcodec")
-local pcall            = pcall
-local log_info         = logger.info
-local log_err          = logger.err
-local tpack            = table.pack
-local tunpack          = table.unpack
+local lcodec             = require("lcodec")
+local pcall              = pcall
+local log_info           = logger.info
+local log_err            = logger.err
+local tpack              = table.pack
+local tunpack            = table.unpack
 
-local lencode          = lcodec.encode_slice
-local ldecode          = lcodec.decode_slice
-local worker_call      = hive.worker_call
-local worker_broadcast = hive.worker_broadcast
-local worker_update    = hive.worker_update
+local lencode            = lcodec.encode_slice
+local ldecode            = lcodec.decode_slice
+local worker_call        = hive.worker_call
+local worker_broadcast   = hive.worker_broadcast
+local worker_update      = hive.worker_update
 
-local FLAG_REQ         = hive.enum("FlagMask", "REQ")
-local FLAG_RES         = hive.enum("FlagMask", "RES")
-local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
+local FLAG_REQ           = hive.enum("FlagMask", "REQ")
+local FLAG_RES           = hive.enum("FlagMask", "RES")
+local THREAD_RPC_TIMEOUT = hive.enum("NetwkTime", "THREAD_RPC_TIMEOUT")
 
-local event_mgr        = hive.get("event_mgr")
-local thread_mgr       = hive.get("thread_mgr")
+local event_mgr          = hive.get("event_mgr")
+local thread_mgr         = hive.get("thread_mgr")
 
-local Scheduler        = singleton()
+local Scheduler          = singleton()
 
 function Scheduler:__init()
     hive.worker_setup("hive")
@@ -52,7 +52,7 @@ end
 function Scheduler:call(name, rpc, ...)
     local session_id = thread_mgr:build_session_id()
     if worker_call(name, lencode(session_id, FLAG_REQ, "master", rpc, ...)) then
-        return thread_mgr:yield(session_id, "worker_call", RPC_CALL_TIMEOUT)
+        return thread_mgr:yield(session_id, rpc, THREAD_RPC_TIMEOUT)
     end
     return false, "call failed!"
 end

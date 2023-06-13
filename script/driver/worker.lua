@@ -2,31 +2,31 @@
 import("basic/basic.lua")
 import("kernel/mem_monitor.lua")
 import("kernel/config_mgr.lua")
-local lcodec           = require("lcodec")
-local ltimer           = require("ltimer")
+local lcodec             = require("lcodec")
+local ltimer             = require("ltimer")
 
-local pcall            = pcall
-local hxpcall          = hive.xpcall
-local log_info         = logger.info
-local log_err          = logger.err
-local tpack            = table.pack
-local tunpack          = table.unpack
-local raw_yield        = coroutine.yield
-local raw_resume       = coroutine.resume
-local lencode          = lcodec.encode_slice
-local ldecode          = lcodec.decode_slice
-local ltime            = ltimer.time
+local pcall              = pcall
+local hxpcall            = hive.xpcall
+local log_info           = logger.info
+local log_err            = logger.err
+local tpack              = table.pack
+local tunpack            = table.unpack
+local raw_yield          = coroutine.yield
+local raw_resume         = coroutine.resume
+local lencode            = lcodec.encode_slice
+local ldecode            = lcodec.decode_slice
+local ltime              = ltimer.time
 
-local event_mgr        = hive.load("event_mgr")
-local co_hookor        = hive.load("co_hookor")
-local socket_mgr       = hive.load("socket_mgr")
-local update_mgr       = hive.load("update_mgr")
-local thread_mgr       = hive.load("thread_mgr")
+local event_mgr          = hive.load("event_mgr")
+local co_hookor          = hive.load("co_hookor")
+local socket_mgr         = hive.load("socket_mgr")
+local update_mgr         = hive.load("update_mgr")
+local thread_mgr         = hive.load("thread_mgr")
 
-local TITLE            = hive.title
-local FLAG_REQ         = hive.enum("FlagMask", "REQ")
-local FLAG_RES         = hive.enum("FlagMask", "RES")
-local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
+local TITLE              = hive.title
+local FLAG_REQ           = hive.enum("FlagMask", "REQ")
+local FLAG_RES           = hive.enum("FlagMask", "RES")
+local THREAD_RPC_TIMEOUT = hive.enum("NetwkTime", "THREAD_RPC_TIMEOUT")
 
 --初始化核心
 local function init_core()
@@ -168,7 +168,7 @@ end
 hive.call_master = function(rpc, ...)
     local session_id = thread_mgr:build_session_id()
     if hive.call("master", lencode(session_id, FLAG_REQ, TITLE, rpc, ...)) then
-        return thread_mgr:yield(session_id, "call_master", RPC_CALL_TIMEOUT)
+        return thread_mgr:yield(session_id, rpc, THREAD_RPC_TIMEOUT)
     end
     return false, "call failed!"
 end
@@ -182,7 +182,7 @@ end
 hive.call_worker = function(name, rpc, ...)
     local session_id = thread_mgr:build_session_id()
     if hive.call(name, lencode(session_id, FLAG_REQ, TITLE, rpc, ...)) then
-        return thread_mgr:yield(session_id, "call_master", RPC_CALL_TIMEOUT)
+        return thread_mgr:yield(session_id, rpc, THREAD_RPC_TIMEOUT)
     end
     return false, "call failed!"
 end

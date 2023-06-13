@@ -116,8 +116,22 @@ function hive.hash(key, mod)
     return hash_code(key, mod)
 end
 
---创建聚合器
-function hive.make_converger(title)
-    local Converger = import("kernel/object/converger.lua")
-    return Converger(title)
+--创建普通计数器
+function hive.make_counter(title)
+    local Counter = import("kernel/object/counter.lua")
+    return Counter(title)
+end
+
+--创建采样计数器
+function hive.make_sampling(title, period)
+    local Counter = import("kernel/object/counter.lua")
+    local counter = Counter(title)
+    counter:sampling(period)
+    return counter
+end
+
+--创建管道
+function hive.make_channel(title)
+    local Channel = import("kernel/object/channel.lua")
+    return Channel(title)
 end

@@ -15,6 +15,7 @@ local NETWORK_TIMEOUT = hive.enum("NetwkTime", "NETWORK_TIMEOUT")
 local Socket          = class()
 local prop            = property(Socket)
 prop:reader("ip", nil)
+prop:reader("port", 0)
 prop:reader("host", nil)
 prop:reader("token", nil)
 prop:reader("alive", false)
@@ -23,8 +24,8 @@ prop:reader("proto_type", 2)
 prop:reader("session", nil)          --连接成功对象
 prop:reader("listener", nil)
 prop:reader("recvbuf", "")
-prop:reader("port", 0)
 prop:accessor("timeout", NETWORK_TIMEOUT)
+prop:accessor("id", 0)
 
 function Socket:__init(host, ip, port)
     self.host = host
