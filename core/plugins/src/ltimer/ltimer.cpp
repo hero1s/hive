@@ -138,7 +138,6 @@ namespace ltimer {
 		luatimer.set_function("insert", timer_insert);
 		luatimer.set_function("update", timer_update);
 		luatimer.set_function("now", []() { return now(); });
-		luatimer.set_function("now", []() { return now(); });
 		luatimer.set_function("now_ms", []() { return now_ms(); });
 		luatimer.set_function("clock", []() { return steady(); });
 		luatimer.set_function("clock_ms", []() { return steady_ms(); });

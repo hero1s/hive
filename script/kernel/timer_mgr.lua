@@ -8,6 +8,7 @@ local tpack           = table.pack
 local tunpack         = table.unpack
 local new_guid        = lcodec.guid_new
 local lclock_ms       = ltimer.clock_ms
+local lnow_ms         = ltimer.now_ms
 local lcron_next      = ltimer.cron_next
 local ltinsert        = ltimer.insert
 local ltupdate        = ltimer.update
@@ -117,6 +118,10 @@ end
 
 function TimerMgr:clock_ms()
     return lclock_ms()
+end
+
+function TimerMgr:now_ms()
+    return lnow_ms()
 end
 
 hive.timer_mgr = TimerMgr()

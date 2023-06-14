@@ -92,6 +92,10 @@ function Queue:pop_front()
     self.datas[first] = nil
     self.first        = first + 1
     self:remove_index(value)
+    if self:empty() then
+        self.first = 1
+        self.tail  = 0
+    end
     return value
 end
 
@@ -113,6 +117,10 @@ function Queue:pop_back()
     self.datas[tail] = nil
     self.tail        = tail - 1
     self:remove_index(value)
+    if self:empty() then
+        self.first = 1
+        self.tail  = 0
+    end
     return value
 end
 
