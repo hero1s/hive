@@ -63,8 +63,7 @@ function GcMgr:update(threshold)
     if not gc_initflag then
         gc_initflag = true
         collectgarbage("stop")
-        gc_stop_mem = collectgarbage("count")
-        gc_stop_mem = mfloor(gc_stop_mem)
+        gc_stop_mem = mfloor(collectgarbage("count"))
         gc_running  = false
         log_info("gc stop autocollect, mem  curr count is %s", gc_stop_mem)
     end
@@ -72,8 +71,7 @@ function GcMgr:update(threshold)
     --collectgarbage("collect")
     local now_us = lclock_ms()
     if not gc_running then
-        gc_start_mem   = collectgarbage("count")
-        gc_start_mem   = mfloor(gc_start_mem)
+        gc_start_mem   = mfloor(collectgarbage("count"))
         local mem_cost = gc_start_mem - gc_stop_mem
         if (mem_cost > gc_threshold) or gc_last_collect_time + MAX_IDLE_TIME < now_us then
             gc_running     = true
@@ -96,10 +94,8 @@ function GcMgr:update(threshold)
             self:log_gc_start()
         end
     else
-        local t1       = now_us
         gc_running     = not collectgarbage("step", step_value)
-        local t2       = lclock_ms()
-        local costTime = t2 - t1
+        local costTime = lclock_ms() - now_us
         gc_use_time    = gc_use_time + costTime
         gc_step_count  = gc_step_count + 1
         if costTime > gc_step_use_time_max then
@@ -112,8 +108,7 @@ function GcMgr:update(threshold)
         --log_info("gc step, step_count:%s cost_time: %s", gc_step_count, costTime)
 
         if not gc_running then
-            gc_stop_mem          = collectgarbage("count")
-            gc_stop_mem          = mfloor(gc_stop_mem)
+            gc_stop_mem          = mfloor(collectgarbage("count"))
             local old_step_value = step_value
             local gc_cycle       = lclock_ms() - gc_start_time
             local avg_time       = mfloor(gc_use_time / gc_step_count)
@@ -127,13 +122,13 @@ function GcMgr:update(threshold)
 end
 
 function GcMgr:log_gc_start()
-    if step_value >= GC_FAST_STEP then
+    if step_value > GC_SLOW_STEP then
         log_info("[log_gc_start] count is:%s,last mem is:%s,step value is:%s", gc_start_mem, gc_stop_mem, step_value)
     end
 end
 
 function GcMgr:log_gc_end(gc_cycle, avg_time, old_step_value)
-    if step_value >= GC_FAST_STEP then
+    if step_value > GC_SLOW_STEP then
         log_info("[log_gc_end] step_count:%s,curr_mem:%s,last_mem:%s,cost_time:%s,cycle:%s,step_time_max:%s,step_time_avg:%s,free_time:%s,step_value:%s,step_time50_cnt:%s,mem_cost_speed:%s",
                  gc_step_count, gc_stop_mem, gc_start_mem, gc_use_time, gc_cycle, gc_step_use_time_max, avg_time, gc_free_time, old_step_value, gc_step_time50_cnt, mem_cost_speed)
     end
