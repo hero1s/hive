@@ -36,7 +36,7 @@ LIBS = {
 
 --需要连接的库文件
 LINUX_LIBS = {
-    "curl"
+    "curl_ssl","z"
 }
 
 --需要连接的库文件
@@ -52,6 +52,11 @@ WINDOWS_DEFINES = {
 --WINDOWS需要附加link库目录
 WINDOWS_LIBRARY_DIR = {
     "win64"
+}
+
+--LINUX需要附加link库目录
+LINUX_LIBRARY_DIR = {
+    "linux"
 }
 
 --WINDOWS预编译命令

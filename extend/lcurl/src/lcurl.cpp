@@ -28,7 +28,7 @@ namespace lcurl {
 		CURL* curle = curl_easy_init();
 		CURLM* curlm = curl_multi_init();
 		curl_multi_setopt(curlm, CURLMOPT_MAXCONNECTS, 50);// version 7.1
-		//curl_multi_setopt(curlm, CURLMOPT_MAX_TOTAL_CONNECTIONS, 200); version 7.30
+		curl_multi_setopt(curlm, CURLMOPT_MAX_TOTAL_CONNECTIONS, 200);// version 7.30
 		curlm_mgr* curl_mgr = new curlm_mgr(curlm, curle);
 		luacurl.set("curlm_mgr", curl_mgr);
 		//函数导出

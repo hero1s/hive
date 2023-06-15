@@ -46,6 +46,9 @@ endif
 #LDFLAGS
 LDFLAGS =
 
+ifeq ($(UNAME_S), Linux)
+LDFLAGS += -Llinux
+endif
 
 #源文件路径
 SRC_DIR = src
@@ -58,7 +61,8 @@ LIBS =
 #自定义库
 LIBS += -llua
 ifeq ($(UNAME_S), Linux)
-LIBS += -lcurl
+LIBS += -lcurl_ssl
+LIBS += -lz
 endif
 #系统库
 LIBS += -lm -ldl -lstdc++ -lpthread
