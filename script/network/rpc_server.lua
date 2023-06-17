@@ -1,4 +1,5 @@
 --rpc_server.lua
+local lbus        = require("luabus")
 local next        = next
 local pairs       = pairs
 local tunpack     = table.unpack
@@ -15,7 +16,6 @@ local SUCCESS     = KernCode.SUCCESS
 
 local event_mgr   = hive.get("event_mgr")
 local thread_mgr  = hive.get("thread_mgr")
-local socket_mgr  = hive.get("socket_mgr")
 local proxy_agent = hive.get("proxy_agent")
 local heval       = hive.eval
 
@@ -36,7 +36,7 @@ function RpcServer:__init(holder, ip, port, induce)
         return
     end
     local real_port = induce and (port + hive.index - 1) or port
-    self.listener   = socket_mgr.listen(ip, real_port)
+    self.listener   = lbus.listen(ip, real_port)
     if not self.listener then
         log_err("[RpcServer][setup] now listen %s:%s failed", ip, real_port)
         signal_quit()
@@ -182,7 +182,7 @@ function RpcServer:rpc_heartbeat(client, is_init, node)
         -- 检查重复注册
         local eclient = self:get_client_by_id(node.id)
         if eclient then
-            local rpc_key = hive.socket_mgr.get_rpc_key()
+            local rpc_key = lbus.get_rpc_key()
             log_err("[RpcServer][rpc_heartbeat] client(%s) be kickout, same service is run!,rpckey:%s", eclient.name, rpc_key)
             self:send(client, "rpc_client_kickout", hive.id, "service replace")
             return

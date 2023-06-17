@@ -1,6 +1,6 @@
 --net_server.lua
 local lcrypt           = require("lcrypt")
-
+local lbus             = require("luabus")
 local log_err          = logger.err
 local log_info         = logger.info
 local log_warn         = logger.warn
@@ -62,9 +62,8 @@ function NetServer:setup(ip, port, induce)
         signal_quit()
         return
     end
-    local socket_mgr = hive.get("socket_mgr")
-    local real_port  = induce and (port + hive.index - 1) or port
-    self.listener    = socket_mgr.listen(ip, real_port, self.proto_type)
+    local real_port = induce and (port + hive.index - 1) or port
+    self.listener   = lbus.listen(ip, real_port, self.proto_type)
     if not self.listener then
         log_err("[NetServer][setup] failed to listen: %s:%d type=%d", ip, real_port, self.proto_type)
         signal_quit()

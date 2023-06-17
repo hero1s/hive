@@ -1,5 +1,6 @@
 -- rpc_client.lua
 local lcodec         = require("lcodec")
+local lbus           = require("luabus")
 local jumphash       = lcodec.jumphash
 local tunpack        = table.unpack
 local tpack          = table.pack
@@ -8,7 +9,6 @@ local log_info       = logger.info
 local hxpcall        = hive.xpcall
 
 local event_mgr      = hive.get("event_mgr")
-local socket_mgr     = hive.get("socket_mgr")
 local thread_mgr     = hive.get("thread_mgr")
 local proxy_agent    = hive.get("proxy_agent")
 local timer_mgr      = hive.get("timer_mgr")
@@ -87,7 +87,7 @@ function RpcClient:connect()
         return true
     end
     --开始连接
-    local socket, cerr = socket_mgr.connect(self.ip, self.port, NetwkTime.CONNECT_TIMEOUT)
+    local socket, cerr = lbus.connect(self.ip, self.port, NetwkTime.CONNECT_TIMEOUT)
     if not socket then
         log_err("[RpcClient][connect] failed to connect: %s:%d err=%s", self.ip, self.port, cerr)
         return false, cerr

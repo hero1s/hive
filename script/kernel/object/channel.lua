@@ -31,39 +31,41 @@ function Channel:push(executer)
 end
 
 --执行
-function Channel:execute(waiting)
+function Channel:execute(all_back)
     local all_datas = {}
     local count     = #self.executers
     if count == 0 then
         return true, all_datas
     end
-    local ret        = true
+    local success    = true
     local session_id = thread_mgr:build_session_id()
     for i, executer in ipairs(self.executers) do
-        local success, corerr, data = true, 0
+        local ok, corerr, data = true, 0
         thread_mgr:fork(function()
-            success, corerr, data = executer()
-            all_datas[i]          = data
-            count                 = count - 1
-            thread_mgr:try_response(session_id, success, corerr)
+            ok, corerr, data = executer()
+            all_datas[i]     = data
+            count            = count - 1
+            thread_mgr:try_response(session_id, ok, corerr)
         end)
-        local exec_failed, code = check_failed(corerr, success)
-        if exec_failed then
-            return false, code
-        end
-    end
-    while count > 0 do
-        local soc, corerr       = thread_mgr:yield(session_id, self.title, RPC_TIMEOUT)
-        local exec_failed, code = check_failed(corerr, soc)
-        if exec_failed then
-            if not waiting then
+        local efailed, code = check_failed(corerr, ok)
+        if efailed then
+            success = efailed
+            if not all_back then
                 return false, code
-            else
-                ret = false
             end
         end
     end
-    return ret, all_datas
+    while count > 0 do
+        local sok, corerr   = thread_mgr:yield(session_id, self.title, RPC_TIMEOUT)
+        local efailed, code = check_failed(corerr, sok)
+        if efailed then
+            success = efailed
+            if not all_back then
+                return false, code
+            end
+        end
+    end
+    return success, all_datas
 end
 
 return Channel

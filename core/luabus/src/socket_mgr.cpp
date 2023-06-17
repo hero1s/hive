@@ -431,6 +431,24 @@ bool socket_mgr::watch_send(socket_t fd, socket_object* object, bool enable) {
 #endif
 }
 
+// 通常情况下,close一个socket后即自动从epoll/kqueue中移除
+// 之所以加一个unwatch显式的移除,是为了避免进程fork带来的问题
+void socket_mgr::unwatch(socket_t fd) {
+#ifdef __linux
+	epoll_event ev;
+	ev.data.ptr = nullptr;
+	ev.events = 0;
+	epoll_ctl(m_handle, EPOLL_CTL_DEL, fd, &ev);
+#endif
+
+#ifdef __APPLE__
+	struct kevent evt[2];
+	EV_SET(&evt[0], fd, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
+	EV_SET(&evt[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
+	kevent(m_handle, evt, _countof(evt), nullptr, 0, nullptr);
+#endif
+}
+
 int socket_mgr::accept_stream(socket_t fd, const char ip[], const std::function<void(int, eproto_type)>& cb, eproto_type proto_type) {
 	auto* stm = new socket_stream(this, proto_type, elink_type::elink_tcp_accept);
 	if (proto_type == eproto_type::proto_rpc) {

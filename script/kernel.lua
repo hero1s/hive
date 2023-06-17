@@ -1,7 +1,7 @@
 --kernel.lua
 import("basic/basic.lua")
 import("kernel/mem_monitor.lua")
-
+local lbus          = require("luabus")
 local ltimer        = require("ltimer")
 
 local tpack         = table.pack
@@ -15,7 +15,6 @@ local ServiceStatus = enum("ServiceStatus")
 
 local co_hookor     = hive.load("co_hookor")
 local scheduler     = hive.load("scheduler")
-local socket_mgr    = hive.load("socket_mgr")
 local update_mgr    = hive.load("update_mgr")
 local event_mgr     = hive.load("event_mgr")
 
@@ -29,12 +28,10 @@ end
 
 --初始化网络
 local function init_network()
-    local lbus     = require("luabus")
     local max_conn = environ.number("HIVE_MAX_CONN", 4096)
     local rpc_key  = environ.get("HIVE_RPC_KEY", "hive2022")
-    socket_mgr     = lbus.create_socket_mgr(max_conn)
-    socket_mgr.set_rpc_key(rpc_key)
-    hive.socket_mgr = socket_mgr
+    lbus.init_socket_mgr(max_conn)
+    lbus.set_rpc_key(rpc_key)
 end
 
 --初始化路由
@@ -181,7 +178,7 @@ end
 --底层驱动
 hive.run  = function()
     scheduler:update()
-    socket_mgr.wait(10)
+    lbus.wait(10)
     --系统更新
     update_mgr:update(scheduler, ltime())
 end

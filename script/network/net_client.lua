@@ -1,4 +1,5 @@
 local lcrypt       = require("lcrypt")
+local lbus         = require("luabus")
 local log_err      = logger.err
 local hxpcall      = hive.xpcall
 local b64_encode   = lcrypt.b64_encode
@@ -7,7 +8,6 @@ local lz4_encode   = lcrypt.lz4_encode
 local lz4_decode   = lcrypt.lz4_decode
 
 local proxy_agent  = hive.get("proxy_agent")
-local socket_mgr   = hive.get("socket_mgr")
 local thread_mgr   = hive.get("thread_mgr")
 local protobuf_mgr = hive.get("protobuf_mgr")
 local heval        = hive.eval
@@ -42,7 +42,7 @@ function NetClient:connect(block)
     if self.socket then
         return true
     end
-    local socket, cerr = socket_mgr.connect(self.ip, self.port, NetwkTime.CONNECT_TIMEOUT, self.proto_type)
+    local socket, cerr = lbus.connect(self.ip, self.port, NetwkTime.CONNECT_TIMEOUT, self.proto_type)
     if not socket then
         log_err("[NetClient][connect] failed to connect: %s:%d type=%d, err=%s", self.ip, self.port, self.proto_type, cerr)
         return false, cerr

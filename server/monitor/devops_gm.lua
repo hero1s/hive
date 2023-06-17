@@ -36,7 +36,7 @@ function DevopsGmMgr:register_gm()
           args    = "service_name|string index|integer file_name|string code_content|string" },
         { gm_type = GMType.DEV_OPS, name = "gm_set_env", desc = "设置环境变量", comment = "临时修改环境变量",
           args    = "key|string value|string service_name|string index|integer" },
-        { gm_type = GMType.DEV_OPS, name = "gm_set_server_status", desc = "设置服务器状态", comment = "[1运行3禁开局4强退后停服],延迟(秒),服务/index",
+        { gm_type = GMType.DEV_OPS, name = "gm_set_server_status", desc = "设置服务器状态", comment = "[1运行2禁登录3禁开局4强退后停服],延迟(秒),服务/index",
           args    = "status|integer delay|integer service_name|string index|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_hive_quit", desc = "关闭服务器", comment = "强踢玩家并停服", args = "reason|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_cfg_reload", desc = "配置表热更新", comment = "(0 本地 1 远程)", args = "is_remote|integer" },

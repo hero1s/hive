@@ -56,10 +56,10 @@ function MongoMgr:get_db(db_name, hash_key)
     else
         mongodb = self.mongo_dbs[db_name]
     end
-    if mongodb then
-        mongodb:set_executer(hash_key or mrandom())
+    if mongodb and mongodb:set_executer(hash_key or mrandom()) then
+        return mongodb
     end
-    return mongodb
+    return nil
 end
 
 function MongoMgr:find(db_name, coll_name, selector, fields, sortor, limit, skip)

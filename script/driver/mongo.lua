@@ -94,7 +94,9 @@ function MongoDB:set_executer(id)
     if count > 0 then
         local index   = qhash(id or mrandom(), count)
         self.executer = self.alives[index]
+        return true
     end
+    return false
 end
 
 function MongoDB:setup_pool(hosts)
@@ -125,6 +127,10 @@ function MongoDB:set_options(opts)
             self.auth_source = value
         end
     end
+end
+
+function MongoDB:available()
+    return #self.alives > 0
 end
 
 function MongoDB:check_alive()
@@ -162,6 +168,7 @@ function MongoDB:login(socket)
         local aok, aerr = self:auth(socket, self.user, self.passwd)
         if not aok then
             log_err("[MongoDB][login] auth db(%s:%s:%s:%s) failed! because: %s", ip, port, self.name, id, aerr)
+            self:delive(socket)
             socket:close()
             return false
         end
@@ -261,6 +268,11 @@ function MongoDB:auth(sock, username, password)
     return true
 end
 
+function MongoDB:delive(sock)
+    tdelete(self.alives, sock)
+    self.connections[sock.id] = sock
+end
+
 function MongoDB:on_socket_error(sock, token, err)
     for session_id in pairs(sock.sessions) do
         thread_mgr:response(session_id, false, err)
@@ -271,8 +283,7 @@ function MongoDB:on_socket_error(sock, token, err)
         self.executer = nil
         self:set_executer()
     end
-    tdelete(self.alives, sock)
-    self.connections[sock.id] = sock
+    self:delive(sock)
     --设置重连
     timer_mgr:set_period(self.timer_id, SECOND_MS)
     event_mgr:fire_next_second(function()

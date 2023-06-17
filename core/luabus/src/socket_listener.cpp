@@ -36,6 +36,7 @@ socket_listener::~socket_listener() {
 #endif
 
 	if (m_socket != INVALID_SOCKET) {
+		m_mgr->unwatch(m_socket);
 		closesocket(m_socket);
 		m_socket = INVALID_SOCKET;
 	}
@@ -50,6 +51,7 @@ bool socket_listener::setup(socket_t fd) {
 
 bool socket_listener::update(int64_t) {
 	if (m_link_status == elink_status::link_closed && m_socket != INVALID_SOCKET) {
+		m_mgr->unwatch(m_socket);
 		closesocket(m_socket);
 		m_socket = INVALID_SOCKET;
 	}

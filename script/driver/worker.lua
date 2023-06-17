@@ -4,6 +4,7 @@ import("kernel/mem_monitor.lua")
 import("kernel/config_mgr.lua")
 local lcodec             = require("lcodec")
 local ltimer             = require("ltimer")
+local lbus               = require("luabus")
 
 local pcall              = pcall
 local hxpcall            = hive.xpcall
@@ -19,7 +20,6 @@ local ltime              = ltimer.time
 
 local event_mgr          = hive.load("event_mgr")
 local co_hookor          = hive.load("co_hookor")
-local socket_mgr         = hive.load("socket_mgr")
 local update_mgr         = hive.load("update_mgr")
 local thread_mgr         = hive.load("thread_mgr")
 
@@ -38,10 +38,8 @@ end
 
 --初始化网络
 local function init_network()
-    local lbus      = require("luabus")
-    local max_conn  = environ.number("HIVE_MAX_CONN", 4096)
-    socket_mgr      = lbus.create_socket_mgr(max_conn)
-    hive.socket_mgr = socket_mgr
+    local max_conn = environ.number("HIVE_MAX_CONN", 4096)
+    lbus.init_socket_mgr(max_conn)
 end
 
 --初始化统计
@@ -124,7 +122,7 @@ end
 hive.run = function()
     hxpcall(function()
         hive.update()
-        socket_mgr.wait(10)
+        lbus.wait(10)
         update_mgr:update(nil, ltime())
     end)
 end

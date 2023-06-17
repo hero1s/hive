@@ -6,13 +6,10 @@
 #include "lua_socket_node.h"
 
 namespace luabus {
-	static lua_socket_mgr* create_socket_mgr(lua_State* L, int max_fd) {
-		lua_socket_mgr* mgr = new lua_socket_mgr();
-		if (!mgr->setup(L, max_fd)) {
-			delete mgr;
-			return nullptr;
-		}
-		return mgr;
+    thread_local lua_socket_mgr socket_mgr;
+
+	static bool init_socket_mgr(lua_State* L, int max_fd) {
+        return socket_mgr.setup(L, max_fd);
 	}
 
 	static socket_udp* create_udp() {
@@ -33,6 +30,14 @@ namespace luabus {
 		return tcp;
 	}
 
+    //管理器接口
+    static int listen(lua_State* L, const char* ip, int port) {
+        return socket_mgr.listen(L, ip, port);
+    }
+    static int connect(lua_State* L, const char* ip, const char* port, int timeout) {
+        return socket_mgr.connect(L, ip, port, timeout);
+    }
+
     luakit::lua_table open_luabus(lua_State* L) {
         luakit::kit_state kit_state(L);
         auto lluabus = kit_state.new_table();
@@ -40,9 +45,21 @@ namespace luabus {
         lluabus.set_function("udp", create_udp);
         lluabus.set_function("tcp", create_tcp);
         lluabus.set_function("dns", gethostbydomain);
-        lluabus.set_function("create_socket_mgr", create_socket_mgr);
+        lluabus.set_function("init_socket_mgr", init_socket_mgr);
         lluabus.set_function("port_is_used", port_is_used);
         lluabus.set_function("lan_ip", get_lan_ip);
+
+        //管理器接口
+        lluabus.set_function("wait", [](int ms) { return socket_mgr.wait(ms); });
+        lluabus.set_function("listen", listen);
+        lluabus.set_function("connect", connect);
+        lluabus.set_function("map_token", [](uint32_t node_id, uint32_t token, uint16_t hash) { return socket_mgr.map_token(node_id, token, hash); });
+        lluabus.set_function("set_node_status", [](uint32_t node_id, uint8_t status) { return socket_mgr.set_node_status(node_id, status); });
+        lluabus.set_function("map_router_node", [](uint32_t router_id, uint32_t target_id, uint8_t status) { return socket_mgr.map_router_node(router_id, target_id, status); });
+        lluabus.set_function("set_router_id", [](int id) { return socket_mgr.set_router_id(id); });
+        lluabus.set_function("set_rpc_key", [](std::string key) { return socket_mgr.set_rpc_key(key); });
+        lluabus.set_function("get_rpc_key", []() { return socket_mgr.get_rpc_key(); });
+
 
         lluabus.new_enum("eproto_type",
             "rpc", eproto_type::proto_rpc,
@@ -64,17 +81,6 @@ namespace luabus {
             "listen", &socket_tcp::listen,
             "invalid", &socket_tcp::invalid,
             "connect", &socket_tcp::connect
-            );
-        kit_state.new_class<lua_socket_mgr>(
-            "wait", &lua_socket_mgr::wait,
-            "listen", &lua_socket_mgr::listen,
-            "connect", &lua_socket_mgr::connect,
-            "map_token", &lua_socket_mgr::map_token,
-            "set_node_status",&lua_socket_mgr::set_node_status,
-            "map_router_node",&lua_socket_mgr::map_router_node,
-            "set_router_id",&lua_socket_mgr::set_router_id,
-            "set_rpc_key",&lua_socket_mgr::set_rpc_key,
-            "get_rpc_key",&lua_socket_mgr::get_rpc_key
             );
         kit_state.new_class<lua_socket_node>(
             "ip", &lua_socket_node::m_ip,
