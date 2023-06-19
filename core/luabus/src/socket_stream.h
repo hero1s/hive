@@ -15,7 +15,7 @@ struct socket_stream : public socket_object
 	bool get_remote_ip(std::string& ip) override;
 	bool accept_socket(socket_t fd, const char ip[]);
 	void connect(const char node_name[], const char service_name[], int timeout);
-	bool update(int64_t now) override;
+	bool update(int64_t now, bool check_timeout) override;
 	bool do_connect();
 	void try_connect();
 	void close() override;

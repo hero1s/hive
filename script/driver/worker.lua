@@ -9,6 +9,7 @@ local lbus               = require("luabus")
 local pcall              = pcall
 local hxpcall            = hive.xpcall
 local log_info           = logger.info
+local log_warn           = logger.warn
 local log_err            = logger.err
 local tpack              = table.pack
 local tunpack            = table.unpack
@@ -16,6 +17,7 @@ local raw_yield          = coroutine.yield
 local raw_resume         = coroutine.resume
 local lencode            = lcodec.encode_slice
 local ldecode            = lcodec.decode_slice
+local lclock_ms          = ltimer.clock_ms
 local ltime              = ltimer.time
 
 local event_mgr          = hive.load("event_mgr")
@@ -27,6 +29,8 @@ local TITLE              = hive.title
 local FLAG_REQ           = hive.enum("FlagMask", "REQ")
 local FLAG_RES           = hive.enum("FlagMask", "RES")
 local THREAD_RPC_TIMEOUT = hive.enum("NetwkTime", "THREAD_RPC_TIMEOUT")
+local FAST_MS            = hive.enum("PeriodTime", "FAST_MS")
+local HALF_MS            = hive.enum("PeriodTime", "HALF_MS")
 
 --初始化核心
 local function init_core()
@@ -121,9 +125,17 @@ end
 --底层驱动
 hive.run = function()
     hxpcall(function()
+        local sclock_ms = lclock_ms()
         hive.update()
         lbus.wait(10)
-        update_mgr:update(nil, ltime())
+        local now_ms, clock_ms = ltime()
+        update_mgr:update(nil, now_ms, clock_ms)
+        --时间告警
+        local io_ms   = clock_ms - sclock_ms
+        local work_ms = lclock_ms() - sclock_ms
+        if work_ms > HALF_MS or io_ms > FAST_MS then
+            log_warn("[worker][run] last frame(%s) too long => all:%d, net:%d)!", hive.frame, work_ms, io_ms)
+        end
     end)
 end
 

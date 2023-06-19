@@ -85,7 +85,7 @@ void socket_stream::close() {
 	m_link_status = elink_status::link_colsing;
 }
 
-bool socket_stream::update(int64_t now) {
+bool socket_stream::update(int64_t now,bool check_timeout) {
 	switch (m_link_status) {
 	case elink_status::link_closed: {
 #ifdef _MSC_VER
@@ -113,15 +113,17 @@ bool socket_stream::update(int64_t now) {
 		return true;
 	}
 	default: {
-		if (m_timeout > 0 && now - m_last_recv_time > m_timeout) {
-			on_error(fmt::format("timeout:{}", m_timeout).c_str());
-			return true;
-		}
-		// 限流检测
-		if (eproto_type::proto_pack == m_proto_type) {
-			if (check_flow_ctrl(now)) {
-				on_error(fmt::format("trigger package:{} or bytes:{},escape_time:{} flowctrl line,will be closed", m_fc_package, m_fc_bytes, now - m_last_fc_time).c_str());
+		if (check_timeout) {
+			if (m_timeout > 0 && now - m_last_recv_time > m_timeout) {
+				on_error(fmt::format("timeout:{}", m_timeout).c_str());
 				return true;
+			}
+			// 限流检测
+			if (eproto_type::proto_pack == m_proto_type) {
+				if (check_flow_ctrl(now)) {
+					on_error(fmt::format("trigger package:{} or bytes:{},escape_time:{} flowctrl line,will be closed", m_fc_package, m_fc_bytes, now - m_last_fc_time).c_str());
+					return true;
+				}
 			}
 		}
 		dispatch_package(true);
@@ -479,7 +481,7 @@ void socket_stream::do_recv(size_t max_len, bool is_eof)
 	size_t total_recv = 0;
 	while (total_recv < max_len && m_link_status == elink_status::link_connected) {
 		size_t space_len = 0;
-		auto* space = m_recv_buffer.peek_space(&space_len, IO_BUFFER_SEND);
+		auto* space = m_recv_buffer.peek_space(&space_len, IO_BUFFER_RECV);
 		if (space_len == 0) {
 			on_error(fmt::format("do-recv-buffer-full:{}", m_recv_buffer.data_len()).c_str());
 			return;

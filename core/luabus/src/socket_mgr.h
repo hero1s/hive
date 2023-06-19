@@ -45,7 +45,7 @@ struct sendv_item
 struct socket_object
 {
 	virtual ~socket_object() {};
-	virtual bool update(int64_t now) = 0;
+	virtual bool update(int64_t now, bool check_timeout) = 0;
 	virtual void close() { m_link_status = elink_status::link_closed; };
 	virtual bool get_remote_ip(std::string& ip) = 0;
 	virtual void connect(const char node_name[], const char service_name[]) { }
@@ -90,8 +90,8 @@ public:
 
 	int wait(int timeout);
 
-	int listen(std::string& err, const char ip[], int port, eproto_type proto_type);
-	int connect(std::string& err, const char node_name[], const char service_name[], int timeout, eproto_type proto_type);
+	uint32_t listen(std::string& err, const char ip[], int port, eproto_type proto_type);
+	uint32_t connect(std::string& err, const char node_name[], const char service_name[], int timeout, eproto_type proto_type);
 
 	void set_send_buffer_size(uint32_t token, size_t size);
 	void set_recv_buffer_size(uint32_t token, size_t size);
@@ -120,6 +120,8 @@ public:
 	void increase_count() { m_count++; }
 	void decrease_count() { m_count--; }
 	bool is_full() { return m_count >= m_max_count; }
+	socket_object* get_object(int token);
+	uint32_t new_token();
 
 	const std::string& get_handshake_verify() { return m_handshake_verify; }
 	void set_handshake_verify(const std::string& verify) { m_handshake_verify = verify; }
@@ -143,24 +145,10 @@ private:
 	std::vector<struct kevent> m_events;
 #endif
 
-	socket_object* get_object(int token) {
-		auto it = m_objects.find(token);
-		if (it != m_objects.end()) {
-			return it->second;
-		}
-		return nullptr;
-	}
-
-	uint32_t new_token() {
-		while (++m_token == 0 || m_objects.find(m_token) != m_objects.end()) {
-			// nothing ...
-		}
-		return m_token;
-	}
-
 	int m_max_count = 0;
 	int m_count = 0;
-	uint32_t m_token = 0;
+	uint32_t m_next_token = 0;
+	int64_t  m_last_check_time = 0;
 	std::unordered_map<uint32_t, socket_object*> m_objects;
 	std::string m_handshake_verify = "CLBY20220816CLBY&*^%$#@!";
 };

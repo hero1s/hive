@@ -20,7 +20,7 @@ int lua_socket_mgr::listen(lua_State* L, const char* ip, int port) {
 	}
 	std::string err;
 	eproto_type proto_type = (eproto_type)luaL_optinteger(L, 3, 0);
-	int token = m_mgr->listen(err, ip, port, proto_type);
+	auto token = m_mgr->listen(err, ip, port, proto_type);
 	if (token == 0) {
 		return luakit::variadic_return(L, nullptr, err);
 	}
@@ -36,7 +36,7 @@ int lua_socket_mgr::connect(lua_State* L, const char* ip, const char* port, int 
 
 	std::string err;
 	eproto_type proto_type = (eproto_type)luaL_optinteger(L, 4, 0);
-	int token = m_mgr->connect(err, ip, port, timeout, proto_type);
+	auto token = m_mgr->connect(err, ip, port, timeout, proto_type);
 	if (token == 0) {
 		return luakit::variadic_return(L, nullptr, err);
 	}

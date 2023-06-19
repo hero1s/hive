@@ -1,35 +1,33 @@
 --update_mgr.lua
-local lcodec         = require("lcodec")
-local ltimer         = require("ltimer")
-local ltime          = ltimer.time
-local pairs          = pairs
-local odate          = os.date
-local log_info       = logger.info
-local log_warn       = logger.warn
-local log_err        = logger.err
-local sig_get        = signal.get
-local sig_check      = signal.check
-local signal_quit    = signal.quit
-local sig_reload     = signal.reload
-local tweak          = table_ext.weak
-local collectgarbage = collectgarbage
-local guid_new       = lcodec.guid_new
-local is_same_day    = datetime_ext.is_same_day
+local lcodec        = require("lcodec")
+local ltimer        = require("ltimer")
+local ltime         = ltimer.time
+local pairs         = pairs
+local odate         = os.date
+local log_info      = logger.info
+local log_warn      = logger.warn
+local log_err       = logger.err
+local sig_get       = signal.get
+local sig_check     = signal.check
+local signal_quit   = signal.quit
+local sig_reload    = signal.reload
+local tweak         = table_ext.weak
+local guid_new      = lcodec.guid_new
+local is_same_day   = datetime_ext.is_same_day
 
-local timer_mgr      = hive.get("timer_mgr")
-local thread_mgr     = hive.get("thread_mgr")
-local event_mgr      = hive.get("event_mgr")
-local gc_mgr         = hive.get("gc_mgr")
+local timer_mgr     = hive.get("timer_mgr")
+local thread_mgr    = hive.get("thread_mgr")
+local event_mgr     = hive.get("event_mgr")
+local gc_mgr        = hive.get("gc_mgr")
 
-local FAST_MS        = hive.enum("PeriodTime", "FAST_MS")
-local HALF_MS        = hive.enum("PeriodTime", "HALF_MS")
-local ServiceStatus  = enum("ServiceStatus")
+local FAST_MS       = hive.enum("PeriodTime", "FAST_MS")
+local ServiceStatus = enum("ServiceStatus")
 
-local UpdateMgr      = singleton()
-local prop           = property(UpdateMgr)
+local UpdateMgr     = singleton()
+local prop          = property(UpdateMgr)
 prop:reader("last_day", 0)
 prop:reader("last_hour", 0)
-prop:reader("last_frame", 0)
+prop:reader("next_frame", 0)
 prop:reader("last_minute", 0)
 prop:reader("last_check_time", 0)
 prop:reader("quit_objs", {})
@@ -86,7 +84,7 @@ function UpdateMgr:update_fast(clock_ms)
             obj:on_fast(clock_ms)
         end)
     end
-    self.last_frame = clock_ms + FAST_MS
+    self.next_frame = clock_ms + FAST_MS
 end
 
 function UpdateMgr:update_minute(clock_ms)
@@ -113,24 +111,19 @@ end
 function UpdateMgr:update(scheduler, now_ms, clock_ms)
     --业务更新
     thread_mgr:fork(function()
-        local diff_ms = clock_ms - hive.clock_ms
-        if diff_ms > HALF_MS and hive.frame > 1 then
-            local cur_size, idle_size = thread_mgr:size()
-            log_err("[UpdateMgr][update] last frame exec too long(%d ms)!,service:%s,threads:%s/%s,lock size:%s",
-                    diff_ms, hive.name, cur_size, idle_size, thread_mgr:lock_size())
-        end
         --帧更新
-        local frame   = hive.frame + 1
-        hive.frame    = frame
+        hive.frame_ms = clock_ms - hive.clock_ms
         hive.now_ms   = now_ms
         hive.clock_ms = clock_ms
+        local frame   = hive.frame + 1
         for obj, key in pairs(self.frame_objs) do
             thread_mgr:entry(key, function()
                 obj:on_frame(clock_ms, frame)
             end)
         end
+        hive.frame = frame
         --快帧更新
-        if clock_ms < self.last_frame then
+        if clock_ms < self.next_frame then
             return
         end
         self:update_fast(clock_ms)
@@ -187,11 +180,6 @@ function UpdateMgr:update_by_time(scheduler, now, clock_ms)
     end
     self.last_hour = cur_hour
     self:update_hour(clock_ms, cur_hour, time)
-    --每日4点执行一次全量更新
-    if cur_hour == 4 then
-        collectgarbage("collect")
-    end
-    log_info("[UpdateMgr][update]now lua mem: %s m", collectgarbage("count") / 1024)
 end
 
 function UpdateMgr:check_service_stop(scheduler)

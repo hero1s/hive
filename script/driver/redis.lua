@@ -23,6 +23,7 @@ local event_mgr    = hive.get("event_mgr")
 local update_mgr   = hive.get("update_mgr")
 
 local LineTitle    = "\r\n"
+local SUCCESS      = hive.enum("KernCode", "SUCCESS")
 local SECOND_MS    = hive.enum("PeriodTime", "SECOND_MS")
 local SECOND_10_MS = hive.enum("PeriodTime", "SECOND_10_MS")
 local DB_TIMEOUT   = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
@@ -409,7 +410,7 @@ function RedisDB:login(socket)
     self.connections[id] = nil
     tinsert(self.alives, socket)
     log_info("[RedisDB][login] login db(%s:%s:%s) success!", ip, port, id)
-    return true
+    return true, SUCCESS
 end
 
 function RedisDB:auth(sock)

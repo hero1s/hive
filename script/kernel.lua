@@ -6,8 +6,10 @@ local ltimer        = require("ltimer")
 
 local tpack         = table.pack
 local tunpack       = table.unpack
+local log_warn      = logger.warn
 local raw_yield     = coroutine.yield
 local raw_resume    = coroutine.resume
+local lclock_ms     = ltimer.clock_ms
 local ltime         = ltimer.time
 
 local HiveMode      = enum("HiveMode")
@@ -17,6 +19,9 @@ local co_hookor     = hive.load("co_hookor")
 local scheduler     = hive.load("scheduler")
 local update_mgr    = hive.load("update_mgr")
 local event_mgr     = hive.load("event_mgr")
+
+local FAST_MS       = hive.enum("PeriodTime", "FAST_MS")
+local HALF_MS       = hive.enum("PeriodTime", "HALF_MS")
 
 --初始化核心
 local function init_core()
@@ -177,10 +182,18 @@ end
 
 --底层驱动
 hive.run  = function()
+    local sclock_ms = lclock_ms()
     scheduler:update()
     lbus.wait(10)
     --系统更新
-    update_mgr:update(scheduler, ltime())
+    local now_ms, clock_ms = ltime()
+    update_mgr:update(scheduler, now_ms, clock_ms)
+    --时间告警
+    local io_ms   = clock_ms - sclock_ms
+    local work_ms = lclock_ms() - sclock_ms
+    if work_ms > HALF_MS or io_ms > FAST_MS then
+        log_warn("[hive][run] last frame(%s) too long => all:%d, net:%d)!", hive.frame, work_ms, io_ms)
+    end
 end
 
 hive.exit = function()

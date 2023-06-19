@@ -173,7 +173,6 @@ void get_error_string(std::string& err, int no) {
 void init_socket_option(socket_t fd) {
 	set_no_block(fd);
 	set_no_delay(fd, 1);
-	set_keepalive(fd, 1);
 	set_close_on_exec(fd);
 }
 

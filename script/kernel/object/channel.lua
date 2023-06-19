@@ -1,7 +1,10 @@
 --channel.lua
+local ltimer       = require("ltimer")
+local lclock_ms    = ltimer.clock_ms
 local tinsert      = table.insert
 local check_failed = hive.failed
-
+local log_warn     = logger.warn
+local log_err      = logger.err
 local thread_mgr   = hive.get("thread_mgr")
 
 local RPC_TIMEOUT  = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
@@ -9,10 +12,12 @@ local RPC_TIMEOUT  = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 local Channel      = class()
 local prop         = property(Channel)
 prop:reader("title", "")
+prop:reader("timeout", nil)
 prop:reader("executers", {})    --执行器列表
 
-function Channel:__init(title)
-    self.title = title or "channel"
+function Channel:__init(title, timeout)
+    self.title   = title or "channel"
+    self.timeout = timeout
 end
 
 function Channel:clear()
@@ -32,6 +37,7 @@ end
 
 --执行
 function Channel:execute(all_back)
+    local btime     = lclock_ms()
     local all_datas = {}
     local count     = #self.executers
     if count == 0 then
@@ -50,6 +56,7 @@ function Channel:execute(all_back)
         local efailed, code = check_failed(corerr, ok)
         if efailed then
             success = efailed
+            log_err("[Channel][execute] sync failed:%s,code:%s", self.title, code)
             if not all_back then
                 return false, code
             end
@@ -60,10 +67,15 @@ function Channel:execute(all_back)
         local efailed, code = check_failed(corerr, sok)
         if efailed then
             success = efailed
+            log_err("[Channel][execute] async failed:%s,code:%s,%s", self.title, sok, corerr)
             if not all_back then
                 return false, code
             end
         end
+    end
+    local cost_time = lclock_ms() - btime
+    if self.timeout and cost_time > self.timeout then
+        log_warn("[Channel][execute] timeout:%s --> %s", self.timeout, cost_time)
     end
     return success, all_datas
 end

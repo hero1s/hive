@@ -11,6 +11,7 @@ local mrandom      = math_ext.random
 local KernCode     = enum("KernCode")
 local CacheCode    = enum("CacheCode")
 local CacheType    = enum("CacheType")
+local PeriodTime   = enum("PeriodTime")
 
 local SUCCESS      = KernCode.SUCCESS
 local CAREAD       = CacheType.READ
@@ -148,9 +149,9 @@ function CacheMgr:set_dirty(cache_obj, is_dirty)
     dirty_map:set(cache_obj:get_primary_value(), is_dirty and cache_obj or nil)
 end
 
-function CacheMgr:delete(cache_obj)
+function CacheMgr:delete(cache_obj, delay_time)
     cache_obj:set_lock_node_id(0)
-    cache_obj:set_expire_time(mrandom(1000, 60000))
+    cache_obj:set_expire_time(delay_time or mrandom(1000, 60000))
 end
 
 function CacheMgr:save_cache(cache_obj, remove)
@@ -187,8 +188,13 @@ function CacheMgr:get_cache_obj(hive_id, cache_name, primary_key, cache_type)
     local cache_obj = cache_list:get(primary_key)
     if cache_obj then
         if cache_obj:is_holding() then
-            log_err("[CacheMgr][get_cache_obj] cache is holding! cache_name=%s,primary=%s,cache_type:%s", cache_name, primary_key, cache_type)
-            return CacheCode.CACHE_IS_HOLDING
+            --加载中重试一次
+            thread_mgr:sleep(PeriodTime.SECOND_3_MS)
+            cache_obj = cache_list:get(primary_key)
+            if not cache_obj or cache_obj:is_holding() then
+                log_err("[CacheMgr][get_cache_obj] cache is holding! cache_name=%s,primary=%s,cache_type:%s", cache_name, primary_key, cache_type)
+                return CacheCode.CACHE_IS_HOLDING
+            end
         end
         if cache_type & CAWRITE == CAWRITE then
             if self.rwlock then
@@ -301,7 +307,7 @@ function CacheMgr:rpc_cache_flush(hive_id, req_data)
         log_err("[CacheMgr][rpc_cache_flush] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return code
     end
-    self:delete(cache_obj)
+    self:delete(cache_obj, PeriodTime.MINUTE_10_MS)
     return SUCCESS
 end
 

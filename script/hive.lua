@@ -131,7 +131,7 @@ function hive.make_sampling(title, period)
 end
 
 --创建管道
-function hive.make_channel(title)
+function hive.make_channel(title, timeout)
     local Channel = import("kernel/object/channel.lua")
-    return Channel(title)
+    return Channel(title, timeout)
 end

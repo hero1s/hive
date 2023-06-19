@@ -43,7 +43,7 @@ function GcMgr:__init()
 end
 
 function GcMgr:on_fast(clock_ms)
-    self:update()
+    --self:update()
 end
 
 function GcMgr:collect_gc()

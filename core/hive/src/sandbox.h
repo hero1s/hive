@@ -18,13 +18,18 @@ local ldir        = lstdfs.dir
 local lfilename   = lstdfs.filename
 local lextension  = lstdfs.extension
 local is_dir      = lstdfs.is_directory
+local log_info    = logger.warn
+local log_err     = logger.error
 
 local load_files  = {}
 local search_path = {}
 
-local logtag      = hive.title
-local log_output  = function(lvl, ctx)
-    logger[lvl](logtag .. ctx)
+local TITLE       = hive.title
+local log_error = function(content)
+    log_err(content, TITLE, FEATURE)
+end
+local log_output = function(content)
+    log_info(content, TITLE)
 end
 
 local function ssplit(str, token)
@@ -78,19 +83,19 @@ end
 local function try_load(node, reload)
     local trunk_func, err = search_load(node)
     if not trunk_func then
-        log_output("error", sformat("[sandbox][try_load] load file: %s ... [failed]\nerror : %s", node.filename, err))
+        log_error(sformat("[sandbox][try_load] load file: %s ... [failed]\nerror : %s", node.filename, err))
         return
     end
     local ok, res = xpcall(trunk_func, dtraceback)
     if not ok then
-        log_output("error", sformat("[sandbox][try_load] exec file: %s ... [failed]\nerror : %s", node.filename, res))
+        log_error(sformat("[sandbox][try_load] exec file: %s ... [failed]\nerror : %s", node.filename, res))
         return
     end
     if res then
         node.res = res
     end
     if reload then
-        log_output("info", sformat("[sandbox][try_load] load file: %s ... [ok]", node.filename))
+        log_output(sformat("[sandbox][try_load] reload file: %s ... [ok]", node.filename))
     end
     return res
 end
@@ -156,7 +161,7 @@ function hive.reload()
         if node.can_reload then
             local filetime, err = file_time(node.fullpath)
             if filetime == 0 then
-                log_output("error", sformat("[hive][reload] %s get_time failed(%s)", node.fullpath, err))
+                log_error(sformat("[hive][reload] %s get_time failed(%s)", node.fullpath, err))
                 goto continue
             end
             if node.time then
@@ -165,7 +170,7 @@ function hive.reload()
                     count = count + 1
                 end
             else
-                log_output("error", sformat("[hive][reload] error file:%s", node.filename))
+                log_error(sformat("[hive][reload] error file:%s", node.filename))
             end
         end
         :: continue ::

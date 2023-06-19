@@ -31,7 +31,7 @@ function logger.init()
     local service_name, index = hive.service_name, hive.index
     local path                = environ.get("HIVE_LOG_PATH", "./logs/")
     local rolltype            = environ.number("HIVE_LOG_ROLL", 0)
-    local maxline             = environ.number("HIVE_LOG_LINE", 100000)
+    local maxline             = environ.number("HIVE_LOG_LINE", 200000)
     local maxdays             = environ.number("HIVE_LOG_DAYS", 7)
     logshow                   = environ.number("HIVE_LOG_SHOW", 0)
     log_lvl                   = environ.number("HIVE_LOG_LVL", 1)

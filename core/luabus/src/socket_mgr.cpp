@@ -112,10 +112,12 @@ Exit0:
 
 int socket_mgr::wait(int timeout) {
 	int64_t now = steady_ms();
+	bool check_timeout = (now - m_last_check_time) > 2000;
+	m_last_check_time = now;
 	auto it = m_objects.begin(), end = m_objects.end();
 	while (it != end) {
 		socket_object* object = it->second;
-		if (!object->update(now)) {
+		if (!object->update(now,check_timeout)) {
 			it = m_objects.erase(it);
 			delete object;
 			continue;
@@ -162,7 +164,7 @@ int socket_mgr::wait(int timeout) {
 	return (int)event_count;
 }
 
-int socket_mgr::listen(std::string& err, const char ip[], int port, eproto_type proto_type) {
+uint32_t socket_mgr::listen(std::string& err, const char ip[], int port, eproto_type proto_type) {
 	int ret = false;
 	socket_t fd = INVALID_SOCKET;
 	sockaddr_storage addr;
@@ -194,7 +196,7 @@ int socket_mgr::listen(std::string& err, const char ip[], int port, eproto_type 
 	if (ret == SOCKET_ERROR) goto Exit0;
 
 	if (watch_listen(fd, listener) && listener->setup(fd)) {
-		int token = new_token();
+		auto token = new_token();
 		m_objects[token] = listener;
 		return token;
 	}
@@ -209,7 +211,7 @@ Exit0:
 	return 0;
 }
 
-int socket_mgr::connect(std::string& err, const char node_name[], const char service_name[], int timeout, eproto_type proto_type) {
+uint32_t socket_mgr::connect(std::string& err, const char node_name[], const char service_name[], int timeout, eproto_type proto_type) {
 	if (is_full()) {
 		err = "too-many-connection";
 		return 0;
@@ -225,7 +227,7 @@ int socket_mgr::connect(std::string& err, const char node_name[], const char ser
 
 	stm->connect(node_name, service_name, timeout);
 
-	int token = new_token();
+	auto token = new_token();
 	m_objects[token] = stm;
 	return token;
 }
@@ -462,4 +464,18 @@ int socket_mgr::accept_stream(socket_t fd, const char ip[], const std::function<
 	}
 	delete stm;
 	return 0;
+}
+socket_object* socket_mgr::get_object(int token) {
+	auto it = m_objects.find(token);
+	if (it != m_objects.end()) {
+		return it->second;
+	}
+	return nullptr;
+}
+
+uint32_t socket_mgr::new_token() {
+	while (++m_next_token == 0 || m_objects.find(m_next_token) != m_objects.end()) {
+		// nothing ...
+	}
+	return m_next_token;
 }

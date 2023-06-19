@@ -8,6 +8,7 @@
 constexpr int IO_BUFFER_DEF		= 64 * 1024;             //64K
 constexpr int IO_BUFFER_MAX		= 128 * 1024 * 1024;	 //128M
 constexpr int IO_BUFFER_SEND	= 8 * 1024;
+constexpr int IO_BUFFER_RECV	= 32 * 1024;
 constexpr size_t IO_ALIGN_SIZE	= 16;					 //水位
 
 class io_buffer

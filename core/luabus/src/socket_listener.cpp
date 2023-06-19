@@ -49,7 +49,7 @@ bool socket_listener::setup(socket_t fd) {
 	return true;
 }
 
-bool socket_listener::update(int64_t) {
+bool socket_listener::update(int64_t, bool check_timeout) {
 	if (m_link_status == elink_status::link_closed && m_socket != INVALID_SOCKET) {
 		m_mgr->unwatch(m_socket);
 		closesocket(m_socket);
