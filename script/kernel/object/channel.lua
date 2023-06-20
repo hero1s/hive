@@ -75,7 +75,7 @@ function Channel:execute(all_back)
     end
     local cost_time = lclock_ms() - btime
     if self.timeout and cost_time > self.timeout then
-        log_warn("[Channel][execute] timeout:%s --> %s", self.timeout, cost_time)
+        log_warn("[Channel][execute] timeout [%s] count:%s,timeout:%s --> %s", self.title, #self.executers, self.timeout, cost_time)
     end
     return success, all_datas
 end

@@ -133,5 +133,5 @@ end
 --创建管道
 function hive.make_channel(title, timeout)
     local Channel = import("kernel/object/channel.lua")
-    return Channel(title, timeout)
+    return Channel(title, timeout or 1000)
 end

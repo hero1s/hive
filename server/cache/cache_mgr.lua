@@ -189,7 +189,7 @@ function CacheMgr:get_cache_obj(hive_id, cache_name, primary_key, cache_type)
     if cache_obj then
         if cache_obj:is_holding() then
             --加载中重试一次
-            thread_mgr:sleep(PeriodTime.SECOND_3_MS)
+            thread_mgr:sleep(PeriodTime.SECOND_MS)
             cache_obj = cache_list:get(primary_key)
             if not cache_obj or cache_obj:is_holding() then
                 log_err("[CacheMgr][get_cache_obj] cache is holding! cache_name=%s,primary=%s,cache_type:%s", cache_name, primary_key, cache_type)
