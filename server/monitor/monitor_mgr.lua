@@ -1,29 +1,30 @@
 --monitor_mgr.lua
 import("network/http_client.lua")
 import("agent/mongo_agent.lua")
-local RpcServer   = import("network/rpc_server.lua")
-local HttpServer  = import("network/http_server.lua")
+local RpcServer     = import("network/rpc_server.lua")
+local HttpServer    = import("network/http_server.lua")
 
-local json_decode = hive.json_decode
-local env_get     = environ.get
-local env_addr    = environ.addr
-local log_warn    = logger.warn
-local log_info    = logger.info
-local log_debug   = logger.debug
-local log_err     = logger.err
-local readfile    = io_ext.readfile
-local sformat     = string.format
-local id2nick     = service.id2nick
+local json_decode   = hive.json_decode
+local env_get       = environ.get
+local env_addr      = environ.addr
+local log_warn      = logger.warn
+local log_info      = logger.info
+local log_debug     = logger.debug
+local log_err       = logger.err
+local readfile      = io_ext.readfile
+local sformat       = string.format
+local id2nick       = service.id2nick
 
-local PeriodTime  = enum("PeriodTime")
+local PeriodTime    = enum("PeriodTime")
+local ServiceStatus = enum("ServiceStatus")
 
-local router_mgr  = hive.get("router_mgr")
-local monitor     = hive.get("monitor")
-local thread_mgr  = hive.get("thread_mgr")
-local update_mgr  = hive.get("update_mgr")
+local router_mgr    = hive.get("router_mgr")
+local monitor       = hive.get("monitor")
+local thread_mgr    = hive.get("thread_mgr")
+local update_mgr    = hive.get("update_mgr")
 
-local MonitorMgr  = singleton()
-local prop        = property(MonitorMgr)
+local MonitorMgr    = singleton()
+local prop          = property(MonitorMgr)
 prop:reader("rpc_server", nil)
 prop:reader("http_server", nil)
 prop:reader("monitor_nodes", {})
@@ -71,18 +72,21 @@ end
 -- 心跳
 function MonitorMgr:on_client_beat(client, node_info)
     local node = self.monitor_nodes[client.token]
-    if node and node.is_ready ~= node_info.is_ready then
-        --广播其它服务
-        if node_info.is_ready then
-            local readys      = {}
-            readys[client.id] = { id = node.id, ip = node.host, port = node.port }
-            self:add_service(node.service_name, node)
-            self:broadcast_service_status(node.service_name, readys, {})
-        else
-            self:remove_service(node.service_name, node.id)
-            self:broadcast_service_status(client.service_name, {}, { [client.id] = { id = client.id } })
+    if node then
+        if node.is_ready ~= node_info.is_ready then
+            --广播其它服务
+            if node_info.is_ready then
+                local readys      = {}
+                readys[client.id] = { id = node.id, ip = node.host, port = node.port }
+                self:add_service(node.service_name, node)
+                self:broadcast_service_status(node.service_name, readys, {})
+            else
+                self:remove_service(node.service_name, node.id)
+                self:broadcast_service_status(client.service_name, {}, { [client.id] = { id = client.id } })
+            end
+            node.is_ready = node_info.is_ready
         end
-        node.is_ready = node_info.is_ready
+        node.status = node_info.status
     end
 end
 
@@ -107,8 +111,12 @@ end
 function MonitorMgr:on_client_error(client, token, err)
     log_warn("[MonitorMgr][on_client_error] node name:%s, id:%s, token:%s,err:%s", id2nick(client.id), client.id, token, err)
     if client.id then
-        self.monitor_lost_nodes[client.id] = self.monitor_nodes[token]
-        self.monitor_nodes[token]          = nil
+        local node_info = self.monitor_nodes[token]
+        if node_info.status < ServiceStatus.HALT then
+            log_err("[MonitorMgr][on_client_error] the run service lost:%s", node_info.name)
+            self.monitor_lost_nodes[client.id] = node_info
+        end
+        self.monitor_nodes[token] = nil
         if self:remove_service(client.service_name, client.id) then
             self:broadcast_service_status(client.service_name, {}, { [client.id] = { id = client.id } })
         end

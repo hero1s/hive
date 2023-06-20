@@ -52,7 +52,7 @@ function UpdateMgr:__init()
     --注册订阅
     self:attach_frame(timer_mgr)
     self:attach_frame(event_mgr)
-    self:attach_frame(thread_mgr)
+    self:attach_fast(thread_mgr)
     self:attach_fast(gc_mgr)
     self:attach_second(event_mgr)
     self:attach_second(thread_mgr)

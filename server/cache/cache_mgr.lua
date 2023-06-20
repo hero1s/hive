@@ -92,11 +92,12 @@ end
 
 function CacheMgr:on_service_close(id, service_name)
     log_info("[CacheMgr][on_service_close] disconnect:%s", sid2nick(id))
-    for cache_name, obj_list in pairs(self.cache_lists) do
-        for primary_key, obj in obj_list:iterator() do
-            if obj:get_lock_node_id() == id then
-                log_info("[CacheMgr][on_service_close] %s unlock by service close!", primary_key)
-                obj:set_lock_node_id(0)
+    if self.rwlock then
+        for cache_name, obj_list in pairs(self.cache_lists) do
+            for primary_key, obj in obj_list:iterator() do
+                if obj:get_lock_node_id() == id then
+                    obj:set_lock_node_id(0)
+                end
             end
         end
     end
@@ -104,11 +105,12 @@ end
 
 function CacheMgr:on_service_ready(id, service_name)
     log_info("[CacheMgr][on_service_ready] connect:%s", sid2nick(id))
-    for cache_name, obj_list in pairs(self.cache_lists) do
-        for primary_key, obj in obj_list:iterator() do
-            if obj:get_lock_node_id() == id then
-                log_info("[CacheMgr][on_service_ready] %s unlock by service close!", primary_key)
-                obj:set_lock_node_id(0)
+    if self.rwlock then
+        for cache_name, obj_list in pairs(self.cache_lists) do
+            for primary_key, obj in obj_list:iterator() do
+                if obj:get_lock_node_id() == id then
+                    obj:set_lock_node_id(0)
+                end
             end
         end
     end
@@ -188,13 +190,8 @@ function CacheMgr:get_cache_obj(hive_id, cache_name, primary_key, cache_type)
     local cache_obj = cache_list:get(primary_key)
     if cache_obj then
         if cache_obj:is_holding() then
-            --加载中重试一次
-            thread_mgr:sleep(PeriodTime.SECOND_MS)
-            cache_obj = cache_list:get(primary_key)
-            if not cache_obj or cache_obj:is_holding() then
-                log_err("[CacheMgr][get_cache_obj] cache is holding! cache_name=%s,primary=%s,cache_type:%s", cache_name, primary_key, cache_type)
-                return CacheCode.CACHE_IS_HOLDING
-            end
+            log_err("[CacheMgr][get_cache_obj] cache is holding! cache_name=%s,primary=%s,cache_type:%s", cache_name, primary_key, cache_type)
+            return CacheCode.CACHE_IS_HOLDING
         end
         if cache_type & CAWRITE == CAWRITE then
             if self.rwlock then
@@ -236,12 +233,12 @@ end
 function CacheMgr:rpc_cache_load(hive_id, req_data)
     self.req_counter:count_increase()
     local cache_name, primary_key, cache_type = tunpack(req_data)
+    local _<close>                            = thread_mgr:lock(cache_name .. primary_key)
     local code, cache_obj                     = self:get_cache_obj(hive_id, cache_name, primary_key, cache_type or CacheType.READ)
     if SUCCESS ~= code then
         log_err("[CacheMgr][rpc_cache_load] cache obj not find! cache_name=%s,primary=%s,cache_type=%s", cache_name, primary_key, cache_type)
         return code
     end
-    log_info("[CacheMgr][rpc_cache_load] from=%s,cache=%s,primary=%s,cache_type=%s", sid2nick(hive_id), cache_name, primary_key, cache_type)
     return SUCCESS, cache_obj:pack()
 end
 
@@ -249,6 +246,7 @@ end
 function CacheMgr:rpc_cache_update(hive_id, req_data)
     self.req_counter:count_increase()
     local cache_name, primary_key, table_data, flush = tunpack(req_data)
+    local _<close>                                   = thread_mgr:lock(cache_name .. primary_key)
     local code, cache_obj                            = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.BOTH)
     if SUCCESS ~= code then
         log_err("[CacheMgr][rpc_cache_update] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
@@ -266,6 +264,7 @@ end
 function CacheMgr:rpc_cache_update_key(hive_id, req_data)
     self.req_counter:count_increase()
     local cache_name, primary_key, table_kvs, flush = tunpack(req_data)
+    local _<close>                                  = thread_mgr:lock(cache_name .. primary_key)
     local code, cache_obj                           = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.BOTH)
     if SUCCESS ~= code then
         log_err("[CacheMgr][rpc_cache_update_key] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
@@ -283,6 +282,7 @@ end
 function CacheMgr:rpc_cache_delete(hive_id, req_data)
     self.req_counter:count_increase()
     local cache_name, primary_key = tunpack(req_data)
+    local _<close>                = thread_mgr:lock(cache_name .. primary_key)
     local code, cache_obj         = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.WRITE)
     if SUCCESS ~= code then
         if code == CacheCode.CACHE_IS_NOT_EXIST then
@@ -299,6 +299,7 @@ end
 function CacheMgr:rpc_cache_flush(hive_id, req_data)
     self.req_counter:count_increase()
     local cache_name, primary_key = tunpack(req_data)
+    local _<close>                = thread_mgr:lock(cache_name .. primary_key)
     local code, cache_obj         = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.WRITE)
     if SUCCESS ~= code then
         if code == CacheCode.CACHE_IS_NOT_EXIST then
@@ -307,7 +308,7 @@ function CacheMgr:rpc_cache_flush(hive_id, req_data)
         log_err("[CacheMgr][rpc_cache_flush] cache obj not find! cache_name=%s,primary=%s", cache_name, primary_key)
         return code
     end
-    self:delete(cache_obj, PeriodTime.MINUTE_10_MS)
+    self:delete(cache_obj, PeriodTime.MINUTE_30_MS)
     return SUCCESS
 end
 

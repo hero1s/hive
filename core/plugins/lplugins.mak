@@ -131,6 +131,11 @@ OBJS += $(patsubst $(SRC_DIR)/lrandom/%.m, $(INT_DIR)/lrandom/%.o, $(filter-out 
 OBJS += $(patsubst $(SRC_DIR)/lrandom/%.cc, $(INT_DIR)/lrandom/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lrandom/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/lrandom/%.cpp, $(INT_DIR)/lrandom/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lrandom/*.cpp)))
 #子目录
+OBJS += $(patsubst $(SRC_DIR)/lsimdb/%.c, $(INT_DIR)/lsimdb/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lsimdb/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/lsimdb/%.m, $(INT_DIR)/lsimdb/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lsimdb/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/lsimdb/%.cc, $(INT_DIR)/lsimdb/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lsimdb/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/lsimdb/%.cpp, $(INT_DIR)/lsimdb/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lsimdb/*.cpp)))
+#子目录
 OBJS += $(patsubst $(SRC_DIR)/lstdfs/%.c, $(INT_DIR)/lstdfs/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lstdfs/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lstdfs/%.m, $(INT_DIR)/lstdfs/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lstdfs/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/lstdfs/%.cc, $(INT_DIR)/lstdfs/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lstdfs/*.cc)))
@@ -203,6 +208,7 @@ pre_build:
 	mkdir -p $(INT_DIR)/lcrypt
 	mkdir -p $(INT_DIR)/lhttp
 	mkdir -p $(INT_DIR)/lrandom
+	mkdir -p $(INT_DIR)/lsimdb
 	mkdir -p $(INT_DIR)/lstdfs
 	mkdir -p $(INT_DIR)/ltimer
 	mkdir -p $(INT_DIR)/lyyjson

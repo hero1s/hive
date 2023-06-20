@@ -1,26 +1,27 @@
 --thread_mgr.lua
-local select     = select
-local tunpack    = table.unpack
-local tpack      = table.pack
-local tremove    = table.remove
-local sformat    = string.format
-local co_yield   = coroutine.yield
-local co_create  = coroutine.create
-local co_resume  = coroutine.resume
-local co_running = coroutine.running
+local select        = select
+local tunpack       = table.unpack
+local tpack         = table.pack
+local tremove       = table.remove
+local sformat       = string.format
+local co_yield      = coroutine.yield
+local co_create     = coroutine.create
+local co_resume     = coroutine.resume
+local co_running    = coroutine.running
 
-local mrandom    = math_ext.random
-local tsize      = table_ext.size
-local hxpcall    = hive.xpcall
-local log_err    = logger.err
+local mrandom       = math_ext.random
+local tsize         = table_ext.size
+local hxpcall       = hive.xpcall
+local log_err       = logger.err
 
-local QueueFIFO  = import("container/queue_fifo.lua")
-local SyncLock   = import("kernel/object/sync_lock.lua")
+local QueueFIFO     = import("container/queue_fifo.lua")
+local SyncLock      = import("kernel/object/sync_lock.lua")
 
-local MINUTE_MS  = hive.enum("PeriodTime", "MINUTE_MS")
+local MINUTE_MS     = hive.enum("PeriodTime", "MINUTE_MS")
+local SYNC_PERFRAME = 5
 
-local ThreadMgr  = singleton()
-local prop       = property(ThreadMgr)
+local ThreadMgr     = singleton()
+local prop          = property(ThreadMgr)
 prop:reader("session_id", 1)
 prop:reader("entry_pools", {})
 prop:reader("syncqueue_map", {})
@@ -64,6 +65,7 @@ function ThreadMgr:lock(key, waiting)
     local queue = self.syncqueue_map[key]
     if not queue then
         queue                   = QueueFIFO()
+        queue.sync_num          = 0
         self.syncqueue_map[key] = queue
     end
     queue.ttl  = hive.clock_ms + MINUTE_MS
@@ -100,8 +102,15 @@ function ThreadMgr:unlock(key, force)
         queue:pop()
         local next = queue:head()
         if next then
+            local sync_num = queue.sync_num
+            if sync_num < SYNC_PERFRAME then
+                queue.sync_num = sync_num + 1
+                co_resume(next.co)
+                return
+            end
             self.coroutine_waitings[next.co] = 0
         end
+        queue.sync_num = 0
     end
 end
 
@@ -199,7 +208,7 @@ function ThreadMgr:on_second(clock_ms)
     end
 end
 
-function ThreadMgr:on_frame(clock_ms)
+function ThreadMgr:on_fast(clock_ms)
     --检查协程超时
     local timeout_coroutines = {}
     for co, ms_to in pairs(self.coroutine_waitings) do
