@@ -251,7 +251,7 @@ namespace logger {
 
     class log_file_base : public log_dest {
     public:
-        log_file_base(size_t max_line, size_t pid) : pid_(pid), line_(0), max_line_(max_line) {}
+        log_file_base(size_t max_line) : line_(0), max_line_(max_line) {}
         virtual ~log_file_base() {
             if (file_) {
                 file_->flush();
@@ -267,7 +267,7 @@ namespace logger {
         const log_time& file_time() const { return file_time_; }
 
     protected:
-        virtual void create(path file_path, sstring& file_name, const log_time& file_time) {
+        virtual void create(path file_path, cstring& file_name, const log_time& file_time) {
             if (file_) {
                 file_->flush();
                 file_->close();
@@ -278,7 +278,7 @@ namespace logger {
         }
 
         log_time        file_time_;
-        size_t          pid_, line_, max_line_;
+        size_t          line_, max_line_;
         std::unique_ptr<std::ofstream> file_ = nullptr;
     }; // class log_file
 
@@ -305,7 +305,7 @@ namespace logger {
     template<class rolling_evaler>
     class log_rollingfile : public log_file_base {
     public:
-        log_rollingfile(size_t pid, size_t max_line = 10000) : log_file_base(max_line, pid) {}
+        log_rollingfile(size_t max_line = 10000) : log_file_base(max_line) {}
         void setup(path& log_path, cstring& service, cstring& feature, size_t clean_time = CLEAN_TIME) {
             feature_ = feature;
             log_path_ = log_path;
@@ -315,17 +315,19 @@ namespace logger {
         virtual void write(sptr<log_message> logmsg) {
             line_++;
             if (file_ == nullptr || rolling_evaler_.eval(this, logmsg) || line_ >= max_line_) {
-                try { create_directories(log_path_); } catch (...) {}
-                for (auto entry : recursive_directory_iterator(log_path_)) {
-                    if (!entry.is_directory() && entry.path().extension().string() == ".log") {
-                        auto ftime = last_write_time(entry.path());
-                        if ((size_t)duration_cast<seconds>(file_time_type::clock::now() - ftime).count() > clean_time_) {
-                            try { remove(entry.path()); } catch (...) {}
+                create_directories(log_path_);
+                try {
+                    for (auto entry : recursive_directory_iterator(log_path_)) {
+                        if (!entry.is_directory() && entry.path().extension().string() == ".log") {
+                            auto ftime = last_write_time(entry.path());
+                            if ((size_t)duration_cast<seconds>(file_time_type::clock::now() - ftime).count() > clean_time_) {
+                                remove(entry.path());
+                            }
                         }
                     }
                 }
-                sstring file_name = new_log_file_path(logmsg);
-                create(log_path_, file_name, logmsg->get_log_time());
+                catch (...) {}
+                create(log_path_, new_log_file_path(logmsg), logmsg->get_log_time());
                 assert(file_);
                 line_ = 0;
             }
@@ -333,9 +335,9 @@ namespace logger {
         }
 
     protected:
-        sstring new_log_file_path(const sptr<log_message> logmsg) {
+        cstring new_log_file_path(const sptr<log_message> logmsg) {
             const log_time& t = logmsg->get_log_time();
-            return fmt::format("{}-{:4d}{:02d}{:02d}-{:02d}{:02d}{:02d}.{:03d}.p{}.log", feature_, t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec, t.tm_usec, pid_);
+            return fmt::format("{}-{:4d}{:02d}{:02d}-{:02d}{:02d}{:02d}.{:03d}.p{}.log", feature_, t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec, t.tm_usec, ::getpid());
         }
 
         path                    log_path_;
@@ -379,11 +381,11 @@ namespace logger {
                 sptr<log_dest> logfile = nullptr;
                 path logger_path = build_path(feature, log_path);
                 if (rolling_type_ == rolling_type::DAYLY) {
-                    auto dlogfile = std::make_shared<log_dailyrollingfile>(log_pid_, max_line_);
+                    auto dlogfile = std::make_shared<log_dailyrollingfile>(max_line_);
                     dlogfile->setup(logger_path, service_, feature, clean_time_);
                     logfile = dlogfile;
                 } else {
-                    auto hlogfile = std::make_shared<log_hourlyrollingfile>(log_pid_, max_line_);
+                    auto hlogfile = std::make_shared<log_hourlyrollingfile>(max_line_);
                     hlogfile->setup(logger_path, service_, feature, clean_time_);
                     logfile = hlogfile;
                 }
@@ -404,12 +406,12 @@ namespace logger {
             path logger_path = build_path(feature, "");
             std::unique_lock<spin_mutex> lock(mutex_);
             if (rolling_type_ == rolling_type::DAYLY) {
-                auto logfile = std::make_shared<log_dailyrollingfile>(log_pid_, max_line_);
+                auto logfile = std::make_shared<log_dailyrollingfile>(max_line_);
                 logfile->setup(logger_path, service_, feature, clean_time_);
                 dest_lvls_.insert(std::make_pair(log_lvl, logfile));
             }
             else {
-                auto logfile = std::make_shared<log_hourlyrollingfile>(log_pid_, max_line_);
+                auto logfile = std::make_shared<log_hourlyrollingfile>(max_line_);
                 logfile->setup(logger_path, service_, feature, clean_time_);
                 dest_lvls_.insert(std::make_pair(log_lvl, logfile));
             }
@@ -464,7 +466,6 @@ namespace logger {
 
         void start() {
             if (!stop_msg_ && !std_dest_) {
-                log_pid_ = ::getpid();
                 logmsgque_ = std::make_shared<log_message_queue>();
                 message_pool_ = std::make_shared<log_message_pool>(QUEUE_MINI);
                 std_dest_ = std::make_shared<stdio_dest>();
@@ -581,7 +582,7 @@ namespace logger {
         sptr<log_message_pool> message_pool_ = nullptr;
         std::unordered_map<log_level, sptr<log_dest>> dest_lvls_;
         std::unordered_map<sstring, sptr<log_dest>> dest_features_;
-        size_t log_pid_ = 0, max_line_ = MAX_LINE, clean_time_ = CLEAN_TIME;
+        size_t max_line_ = MAX_LINE, clean_time_ = CLEAN_TIME;
         bool log_daemon_ = false;
     }; // class log_service
 
