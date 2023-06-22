@@ -113,7 +113,7 @@ Exit0:
 int socket_mgr::wait(int timeout) {
 	int64_t now = steady_ms();
 	bool check_timeout = (now - m_last_check_time) > 2000;
-	m_last_check_time = now;
+	m_last_check_time = check_timeout ? now : m_last_check_time;
 	auto it = m_objects.begin(), end = m_objects.end();
 	while (it != end) {
 		socket_object* object = it->second;

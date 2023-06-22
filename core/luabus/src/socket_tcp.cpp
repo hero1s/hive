@@ -31,7 +31,7 @@ bool socket_tcp::setup() {
         return false;
     }
     m_fd = fd;
-    set_no_block(fd);
+    init_socket_option(fd);
     return true;
 }
 
