@@ -1,6 +1,7 @@
 --monitor_mgr.lua
 import("network/http_client.lua")
 import("agent/mongo_agent.lua")
+import("agent/redis_agent.lua")
 local RpcServer     = import("network/rpc_server.lua")
 local HttpServer    = import("network/http_server.lua")
 

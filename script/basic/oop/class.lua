@@ -18,7 +18,7 @@ local tsort        = table.sort
 --类模板
 local class_tpls   = _ENV.class_tpls or {}
 --类计数
-local class_track  = setmetatable({}, { __mode = "kv" })
+local class_track  = _ENV.class_track or setmetatable({}, { __mode = "kv" })
 
 local function deep_copy(src, dst)
     local ndst = dst or {}

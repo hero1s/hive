@@ -11,12 +11,14 @@ local sname2sid     = service.name2sid
 
 local env_get       = environ.get
 local json_decode   = hive.json_decode
+local check_success = hive.success
 
 local gm_agent      = hive.get("gm_agent")
 local monitor_mgr   = hive.get("monitor_mgr")
 local timer_mgr     = hive.get("timer_mgr")
 local thread_mgr    = hive.get("thread_mgr")
 local mongo_agent   = hive.get("mongo_agent")
+local redis_agent   = hive.get("redis_agent")
 local http_client   = hive.get("http_client")
 
 local GMType        = enum("GMType")
@@ -50,6 +52,7 @@ function DevopsGmMgr:register_gm()
           args    = "db_name|string table_name|string key_name|string key_value|string" },
         { gm_type = GMType.TOOLS, name = "gm_db_set", desc = "数据库更新",
           args    = "db_name|string table_name|string key_name|string key_value|string json_value|string" },
+        { gm_type = GMType.TOOLS, name = "gm_redis_command", desc = "执行redis命令", comment = "示例[\"sadd\", \"global:random_nicks\", \"小李飞刀\"]", args = "command|string" },
     }
     gm_agent:insert_command(cmd_list, self)
 end
@@ -195,9 +198,23 @@ function DevopsGmMgr:gm_db_set(db_name, table_name, key_name, key_value, json_st
               db_name, table_name, key_name, key_value, json_str)
     local ok1, value = json_decode(json_str, true)
     if not ok1 then
-        return false
+        return { code = -1 }
     end
     return mongo_agent:update_sheet(table_name, tonumber(key_value), key_name, value, db_name)
+end
+
+function DevopsGmMgr:gm_redis_command(command_str)
+    local ok, command = json_decode(command_str, true)
+    if not ok then
+        return { code = -1 }
+    end
+    local ok1, code, res = redis_agent:execute(command)
+    if not check_success(code, ok) then
+        log_err("[DevopsGmMgr][gm_redis_command] execute redis command [%s] faild:%s,code:%s,res:%s", command, ok1, code, res)
+    else
+        log_warn("[DevopsGmMgr][gm_redis_command] execute redis command [%s],res:%s", command, res)
+    end
+    return { code = code, res = res }
 end
 
 function DevopsGmMgr:get_target_id(service_name, index)

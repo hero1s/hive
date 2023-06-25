@@ -18,6 +18,10 @@ namespace utility
         {
         }
         virtual ~Thread(){}
+        
+        //该函数为实际线程函数，子类需要实现。
+        virtual void run() = 0;
+
         void start(){
             std::unique_lock<std::mutex> lock(mutex);
             started = true;
@@ -32,18 +36,12 @@ namespace utility
             started = false;
             wakeup();
         }
+        bool is_started() { return started; }
+
         static std::thread::id thread_id(){
             return std::this_thread::get_id();
-        }
-        bool is_started(){ return started; }
-        //该函数为实际线程函数，子类需要实现。
-        virtual void run()=0;
-    protected:
-        //延迟函数只有在线程或者继承类中使用比较安全
-        void sleep(int ms){
-            std::this_thread::sleep_for(std::chrono::milliseconds(ms));
-        }
-        int64_t cur_time(){
+        }  
+        static int64_t cur_time(){
             return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         }
         void wait_time(int ms) {
@@ -54,6 +52,12 @@ namespace utility
             std::unique_lock<std::mutex> lock(mutex);
             condtion.notify_one();
         }
+    protected:
+        //延迟函数只有在线程或者继承类中使用比较安全
+        void sleep(int ms) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+        }
+
     private:
         //在该函数内阻塞，直到用start()函数。
         void begin_run(){
@@ -63,7 +67,9 @@ namespace utility
                 //如果在这里还未执行wait时，notify被执行，则这里会永远阻塞。所以需要加锁
                 condtion.wait(lock);
             }
-            run();
+            while(started){
+                run();
+            }         
         }
     protected:
         bool started = false;

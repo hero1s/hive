@@ -9,6 +9,7 @@ local pairs       = pairs
 local loadfile    = loadfile
 local iopen       = io.open
 local mabs        = math.abs
+local tinsert     = table.insert
 local tsort       = table.sort
 local sformat     = string.format
 local sfind       = string.find
@@ -22,6 +23,7 @@ local log_info    = logger.warn
 local log_err     = logger.error
 
 local load_files  = {}
+local load_codes  = {}
 local search_path = {}
 
 local TITLE       = hive.title
@@ -53,7 +55,7 @@ for _, path in ipairs(ssplit(package.path, ";")) do
 end
 
 local function can_reload(fullpath)
-    if sfind(fullpath, "/hive/script/") then
+    if sfind(fullpath, "/hive/script/basic") then
         return false
     end
     return true
@@ -101,10 +103,11 @@ local function try_load(node, reload)
 end
 
 function import(filename)
-    local node = load_files[filename]
+    local node = load_codes[filename]
     if not node then
         node                 = { filename = filename }
-        load_files[filename] = node
+        load_codes[filename] = node
+        tinsert(load_files,node)
     end
     if not node.time then
         try_load(node)
@@ -140,7 +143,7 @@ end
 
 --加载的文件时间
 function hive.import_file_time(filename)
-    local node = load_files[filename]
+    local node = load_codes[filename]
     if not node or not node.time then
         return 0
     end
@@ -148,7 +151,7 @@ function hive.import_file_time(filename)
 end
 --加载的文件路径
 function hive.import_file_dir(filename)
-    local node = load_files[filename]
+    local node = load_codes[filename]
     if not node or not node.fullpath then
         return nil
     end
@@ -157,7 +160,7 @@ end
 
 function hive.reload()
     local count = 0
-    for path, node in pairs(load_files) do
+    for _, node in ipairs(load_files) do
         if node.can_reload then
             local filetime, err = file_time(node.fullpath)
             if filetime == 0 then
