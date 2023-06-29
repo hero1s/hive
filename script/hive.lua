@@ -52,9 +52,9 @@ end
 
 function hive.failed(code, ok, def_code)
     if ok == nil then
-        return code ~= SUCCESS
+        return code ~= SUCCESS, code or (def_code or FAILED)
     end
-    return not ok or code ~= SUCCESS, ok and code or (def_code or FAILED)
+    return not ok or code ~= SUCCESS, code or (def_code or FAILED)
 end
 
 ---获取utc时间戳

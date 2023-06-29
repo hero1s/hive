@@ -6,7 +6,7 @@ logger.debug("cpu_use_percent:%s",lhelper.cpu_use_percent())
 logger.debug("cpu_core_num:%s",lhelper.cpu_core_num())
 logger.debug("mem_usage:%s",lhelper.mem_usage())
 
-logger.debug("[%s] dns: [%s]", "www.baidu.com", luabus.dns("git.ids111.com"))
+logger.debug("[%s] dns: [%s]", "www.baidu.com", luabus.dns("www.baidu.com"))
 
 -- return name type: 'ipv4', 'ipv6', or 'hostname'
 local function guess_name_type(name)
