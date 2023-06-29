@@ -107,9 +107,15 @@ function HttpClient:send_request(url, timeout, querys, headers, method, datas, d
     if self.ca_path and url[5] == "s" then
         request.enable_ssl(self.ca_path)
     end
-
+    local session_id = thread_mgr:build_session_id()
     if not headers then
         headers = { ["Content-Type"] = "text/plain" }
+    end
+    if not headers["ts"] then
+        headers["ts"] = hive.now
+    end
+    if not headers["session_id"] then
+        headers["session_id"] = session_id
     end
     if type(datas) == "table" then
         datas                   = json_encode(datas)
@@ -123,7 +129,6 @@ function HttpClient:send_request(url, timeout, querys, headers, method, datas, d
         log_err("[HttpClient][send_request] curl %s failed: %s!", method, err)
         return false
     end
-    local session_id           = thread_mgr:build_session_id()
     self.contexts[curl_handle] = {
         request    = request,
         session_id = session_id,

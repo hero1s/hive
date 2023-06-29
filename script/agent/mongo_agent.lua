@@ -102,7 +102,7 @@ end
 function MongoAgent:load_sheet(sheet_name, primary_id, primary_key, filters, db_name)
     local ok, code, adata = self:find_one({ sheet_name, { [primary_key] = primary_id }, filters or { _id = 0 } }, primary_id, db_name)
     if check_failed(code, ok) then
-        log_err("[PlayerDao][load_mongo_%s] primary_id: %s find failed! code: %s, res: %s", sheet_name, primary_id, code, adata)
+        log_err("[MongoAgent][load_mongo_%s] primary_id: %s find failed! code: %s, res: %s", sheet_name, primary_id, code, adata)
         return false
     end
     return true, adata or {}
@@ -111,7 +111,7 @@ end
 function MongoAgent:delete_sheet(sheet_name, primary_id, primary_key, db_name)
     local ok, code, res = self:delete({ sheet_name, { [primary_key] = primary_id }, true }, primary_id, db_name)
     if check_failed(code, ok) then
-        log_err("[PlayerDao][delete_mongo_%s] delete failed primary_id(%s), code: %s, res: %s!", sheet_name, primary_id, code, res)
+        log_err("[MongoAgent][delete_mongo_%s] delete failed primary_id(%s), code: %s, res: %s!", sheet_name, primary_id, code, res)
         return false
     end
     return true
@@ -121,7 +121,7 @@ function MongoAgent:update_sheet_field(sheet_name, primary_id, primary_key, fiel
     local udata         = { ["$set"] = { [field] = field_data } }
     local ok, code, res = self:update({ sheet_name, udata, { [primary_key] = primary_id }, true }, primary_id, db_name)
     if check_failed(code, ok) then
-        log_err("[GameDAO][update_mongo_field_%s] update (%s) failed! primary_id(%s), code(%s), res(%s)", sheet_name, field, primary_id, code, res)
+        log_err("[MongoAgent][update_mongo_field_%s] update (%s) failed! primary_id(%s), code(%s), res(%s)", sheet_name, field, primary_id, code, res)
         return false
     end
     return true
@@ -130,7 +130,7 @@ end
 function MongoAgent:update_sheet(sheet_name, primary_id, primary_key, udata, db_name)
     local ok, code, res = self:update({ sheet_name, udata, { [primary_key] = primary_id }, true }, primary_id, db_name)
     if check_failed(code, ok) then
-        log_err("[GameDAO][update_mongo_%s] update (%s) failed! primary_id(%s), code(%s), res(%s)", sheet_name, udata, primary_id, code, res)
+        log_err("[MongoAgent][update_mongo_%s] update (%s) failed! primary_id(%s), code(%s), res(%s)", sheet_name, udata, primary_id, code, res)
         return false
     end
     return true

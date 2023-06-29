@@ -23,7 +23,6 @@ namespace utility
         virtual void run() = 0;
 
         void start(){
-            std::unique_lock<std::mutex> lock(mutex);
             started = true;
             condtion.notify_one();
         }
@@ -49,7 +48,6 @@ namespace utility
             condtion.wait_for(lock,std::chrono::milliseconds(ms));
         }
         void wakeup() {
-            std::unique_lock<std::mutex> lock(mutex);
             condtion.notify_one();
         }
     protected:
@@ -60,16 +58,12 @@ namespace utility
 
     private:
         //在该函数内阻塞，直到用start()函数。
-        void begin_run(){
-            std::unique_lock<std::mutex> lock(mutex);
-            //如果在wait函数执行前执行notify则不会有效，所以需要先判断started状态。
+        void begin_run(){            
             if(!started){
-                //如果在这里还未执行wait时，notify被执行，则这里会永远阻塞。所以需要加锁
+                std::unique_lock<std::mutex> lock(mutex);                
                 condtion.wait(lock);
             }
-            while(started){
-                run();
-            }         
+            run();                     
         }
     protected:
         bool started = false;
