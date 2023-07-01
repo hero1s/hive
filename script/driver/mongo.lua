@@ -85,6 +85,7 @@ function MongoDB:close()
     for sock in pairs(self.connections) do
         sock:close()
     end
+    timer_mgr:unregister(self.timer_id)
     self.connections = {}
     self.alives      = {}
 end
