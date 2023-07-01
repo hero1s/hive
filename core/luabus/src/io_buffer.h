@@ -8,7 +8,6 @@
 constexpr int IO_BUFFER_DEF		= 64 * 1024;             //64K
 constexpr int IO_BUFFER_MAX		= 128 * 1024 * 1024;	 //128M
 constexpr int IO_BUFFER_SEND	= 8 * 1024;
-constexpr int IO_BUFFER_RECV	= 32 * 1024;
 constexpr size_t IO_ALIGN_SIZE	= 16;					 //水位
 
 class io_buffer
@@ -65,9 +64,10 @@ public:
 		m_data_begin = m_data_end = m_buffer;
 	}
 
-	BYTE* peek_space(size_t* len,size_t want_len)
+	BYTE* peek_space(size_t* len,size_t want_len = 0)
 	{
 		size_t space_len = m_buffer_end - m_data_end;
+		want_len = want_len == 0 ? (m_align_size / 4) : want_len;
 		if (space_len < want_len) {
 			space_len = regularize();
 			if (space_len < want_len) {

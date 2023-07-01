@@ -182,6 +182,7 @@ function UpdateMgr:check_service_stop(scheduler)
     if scheduler and hive.service_status == ServiceStatus.STOP then
         if hive.safe_stop and event_mgr:fire_vote("vote_stop_service") then
             log_err("[UpdateMgr][check_service_stop] all vote agree,will stop service:%s", hive.name)
+            event_mgr:notify_trigger("evt_service_shutdown")
             signal_quit()
         end
     end

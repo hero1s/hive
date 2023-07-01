@@ -43,8 +43,11 @@ function NacosMgr:rpc_register_nacos(node)
         log_warn("[NacosMgr][rpc_register_nacos] nacos is nil")
         return false
     end
-    self:register()
-    return true
+    if self:can_register() then
+        self:register()
+        return true
+    end
+    return false
 end
 
 function NacosMgr:rpc_unregister_nacos()
@@ -75,6 +78,7 @@ end
 
 function NacosMgr:register()
     if not self.nacos:get_access_token() or not self.node then
+        log_debug("[NacosMgr][register] not token or not node")
         return
     end
     self:unregister()
@@ -89,6 +93,7 @@ function NacosMgr:unregister()
     if self.status and self.nacos:get_access_token() then
         local ret = self.nacos:del_instance(self.node.service_name, self.node.host, self.node.port)
         if ret then
+            log_debug("[NacosMgr][unregister] remove:%s", self.node)
             self.status = false
         end
     end
@@ -101,19 +106,31 @@ function NacosMgr:need_watch(service_name)
     return false
 end
 
+function NacosMgr:can_register()
+    if self.node.is_ready then
+        return true
+    end
+    return false
+end
+
 function NacosMgr:can_add_service(service_name)
     if self.node.is_ready then
         return true
     end
-    return service_name == "router"
+    if not self.status then
+        return service_name == "router"
+    end
+    return false
 end
 
 function NacosMgr:on_nacos_tick()
     thread_mgr:entry("on_nacos_tick", function()
-        if not self.nacos:get_access_token() or not self.status then
+        if not self.nacos:get_access_token() then
             return
         end
-        self.nacos:sent_beat(self.node.service_name, self.node.host, self.node.port)
+        if self.status then
+            self.nacos:sent_beat(self.node.service_name, self.node.host, self.node.port)
+        end
         for _, service_name in pairs(self.nacos:query_services() or {}) do
             if self:need_watch(service_name) then
                 local curr = self.nacos:query_instances(service_name)

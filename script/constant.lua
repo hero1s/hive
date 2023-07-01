@@ -45,10 +45,10 @@ NetwkTime.RPC_CALL_TIMEOUT        = 6000      --RPC调用超时时间
 NetwkTime.THREAD_RPC_TIMEOUT      = 10000     --线程RPC调用超时时间
 NetwkTime.HTTP_CALL_TIMEOUT       = 5000      --HTTP调用超时时间
 NetwkTime.DB_CALL_TIMEOUT         = 5000      --DB调用超时时间
-NetwkTime.ROUTER_TIMEOUT          = 10000     --router连接超时时间
-NetwkTime.NETWORK_TIMEOUT         = 35000     --其他网络连接超时时间
-NetwkTime.RECONNECT_TIME          = 5000      --RPC连接重连时间
-NetwkTime.HEARTBEAT_TIME          = 2000      --RPC连接心跳时间
+NetwkTime.RPCLINK_TIMEOUT         = 20000     --RPC连接超时时间
+NetwkTime.HEARTBEAT_TIME          = 5000      --RPC连接心跳时间
+NetwkTime.NETWORK_TIMEOUT         = 30000     --其他网络连接超时时间
+
 
 --常用时间周期
 local PeriodTime                  = enum("PeriodTime", 0)
@@ -117,5 +117,10 @@ RobotType.RANDOM                  = 0       -- 随机账号
 RobotType.COMPOSE                 = 1       -- 组合账号
 RobotType.PLAYER                  = 2       -- 指定账号
 
-
+-- ds集群网络节点
+local DSCluster                 = enum("DSCluster", 0)
+DSCluster.NANJING                = 1 -- 南京集群
+DSCluster.GUANGZHOU              = 2 -- 广州集群
+DSCluster.TIANJIN                = 3 -- 天津集群
+DSCluster.CHONGQING              = 4 -- 重庆集群
 

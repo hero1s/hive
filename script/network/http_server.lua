@@ -7,6 +7,7 @@ local tostring          = tostring
 local log_warn          = logger.warn
 local log_info          = logger.info
 local log_debug         = logger.debug
+local log_err           = logger.err
 local json_encode       = hive.json_encode
 local tunpack           = table.unpack
 local signal_quit       = signal.quit
@@ -38,7 +39,7 @@ function HttpServer:setup(http_addr, induce)
     local socket       = Socket(self)
     socket:set_timeout(HTTP_CALL_TIMEOUT)
     if not socket:listen(self.ip, self.port) then
-        log_info("[HttpServer][setup] now listen %s failed", http_addr)
+        log_err("[HttpServer][setup] now listen %s failed", http_addr)
         signal_quit(1)
         return
     end
@@ -151,6 +152,7 @@ function HttpServer:on_http_request(handlers, socket, url, ...)
             if type(handler) == "function" then
                 local ok, response, headers = pcall(handler, target, url, ...)
                 if not ok then
+                    log_err("[HttpServer][on_http_request] ok:%s, response:%s", ok, response)
                     response = { code = 1, msg = response }
                 end
                 self:response(socket, 200, response, headers)
@@ -186,6 +188,14 @@ function HttpServer:response(socket, status, response, headers)
     new_resp.status = status
     socket:send(new_resp.serialize())
     self:close(token, socket)
+end
+
+--取消url
+function HttpServer:unregister(url)
+    self.get_handlers[url]  = nil
+    self.put_handlers[url]  = nil
+    self.del_handlers[url]  = nil
+    self.post_handlers[url] = nil
 end
 
 return HttpServer

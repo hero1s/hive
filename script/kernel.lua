@@ -6,7 +6,7 @@ local ltimer        = require("ltimer")
 
 local tpack         = table.pack
 local tunpack       = table.unpack
-local log_warn      = logger.warn
+local log_err       = logger.err
 local raw_yield     = coroutine.yield
 local raw_resume    = coroutine.resume
 local lclock_ms     = ltimer.clock_ms
@@ -192,7 +192,7 @@ hive.run  = function()
     local io_ms   = clock_ms - sclock_ms
     local work_ms = lclock_ms() - sclock_ms
     if work_ms > HALF_MS or io_ms > FAST_MS then
-        log_warn("[hive][run] last frame(%s) too long => all:%d, net:%d)!", hive.frame, work_ms, io_ms)
+        log_err("[hive][run] last frame(%s) too long => all:%d, net:%d)!", hive.name, work_ms, io_ms)
     end
 end
 

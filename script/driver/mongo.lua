@@ -7,7 +7,6 @@ local Socket        = import("driver/socket.lua")
 local log_err       = logger.err
 local log_info      = logger.info
 local qhash         = hive.hash
-local makechan      = hive.make_channel
 local tunpack       = table.unpack
 local tinsert       = table.insert
 local tis_array     = table_ext.is_array
@@ -137,17 +136,14 @@ end
 function MongoDB:check_alive()
     if next(self.connections) then
         thread_mgr:entry(self:address(), function()
-            local channel = makechan("check mongo")
             for _, sock in pairs(self.connections) do
-                channel:push(function()
-                    return self:login(sock)
-                end)
+                local _<close> = thread_mgr:lock(self:address())
+                self:login(sock)
             end
-            if channel:execute(true) then
-                timer_mgr:set_period(self.timer_id, SECOND_10_MS)
-            end
-            self:set_executer()
+            timer_mgr:set_period(self.timer_id, SECOND_MS)
         end)
+    else
+        timer_mgr:set_period(self.timer_id, SECOND_10_MS)
     end
 end
 

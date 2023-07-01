@@ -34,6 +34,7 @@ function OnlineMgr:__init()
     event_mgr:add_listener(self, "rpc_rm_dispatch_lobby")
     event_mgr:add_listener(self, "rpc_login_player")
     event_mgr:add_listener(self, "rpc_logout_player")
+    event_mgr:add_listener(self, "rpc_query_openid")
     event_mgr:add_listener(self, "rpc_query_player")
     event_mgr:add_listener(self, "rpc_sync_openid_info")
     event_mgr:add_listener(self, "rpc_sync_player_info")
@@ -153,6 +154,15 @@ function OnlineMgr:rpc_logout_player(player_id, lobby_id)
     end
     self:sync_player_info(player_id, lobby_id, false)
     return SUCCESS
+end
+
+--获取玩家所在的lobby
+function OnlineMgr:rpc_query_openid(open_id)
+    local lobby = self.oid2lobby[open_id]
+    if lobby then
+        return SUCCESS, lobby.lobby_id
+    end
+    return SUCCESS, 0
 end
 
 --获取玩家所在的lobby

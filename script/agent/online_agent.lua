@@ -60,6 +60,10 @@ function OnlineAgent:logout_player(player_id)
     return ok, code
 end
 
+function OnlineAgent:query_openid(open_id)
+    return router_mgr:call_online_hash(open_id, "rpc_query_openid", open_id)
+end
+
 function OnlineAgent:query_player(player_id)
     return router_mgr:call_online_hash(player_id, "rpc_query_player", player_id)
 end

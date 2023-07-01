@@ -5,7 +5,7 @@ local log_warn    = logger.warn
 local send_worker = hive.send_worker
 local call_worker = hive.call_worker
 
-local TITLE      = hive.title
+local TITLE       = hive.title
 local event_mgr   = hive.get("event_mgr")
 local scheduler   = hive.load("scheduler")
 
@@ -31,6 +31,7 @@ function ProxyAgent:__init()
             log_warn("[ProxyAgent:__init] open statis !!!,it will degrade performance")
         end
         event_mgr:add_trigger(self, "evt_change_service_status")
+        event_mgr:add_trigger(self, "evt_service_shutdown")
     end
     --添加忽略的rpc统计事件
     self:ignore_statis("rpc_heartbeat")
@@ -77,16 +78,12 @@ function ProxyAgent:evt_change_service_status(service_status)
     local monitor = hive.load("monitor")
     if monitor then
         self:call("rpc_watch_service", monitor:watch_services(), hive.pre_services)
-        self:register_nacos(hive.node_info)
+        self:call("rpc_register_nacos", hive.node_info)
     end
 end
 
-function ProxyAgent:register_nacos(node)
-    return self:call("rpc_register_nacos", node)
-end
-
-function ProxyAgent:unregister_nacos()
-    return self:call("rpc_unregister_nacos")
+function ProxyAgent:evt_service_shutdown()
+    self:call("rpc_unregister_nacos")
 end
 
 function ProxyAgent:send(rpc, ...)

@@ -134,7 +134,7 @@ hive.run = function()
         local io_ms   = clock_ms - sclock_ms
         local work_ms = lclock_ms() - sclock_ms
         if work_ms > HALF_MS or io_ms > FAST_MS then
-            log_warn("[worker][run] last frame(%s) too long => all:%d, net:%d)!", hive.frame, work_ms, io_ms)
+            log_err("[worker][run] last frame(%s) too long => all:%d, net:%d)!", hive.name, work_ms, io_ms)
         end
     end)
 end

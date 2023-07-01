@@ -85,7 +85,7 @@ end
 
 --accept事件
 function RpcServer:on_socket_accept(client)
-    client.set_timeout(NetwkTime.ROUTER_TIMEOUT)
+    client.set_timeout(NetwkTime.RPCLINK_TIMEOUT)
     self.clients[client.token] = client
 
     client.call_rpc            = function(session_id, rpc_flag, rpc, ...)
