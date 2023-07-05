@@ -1,5 +1,6 @@
 --thread_mgr.lua
 local select        = select
+local tsort         = table.sort
 local tunpack       = table.unpack
 local tpack         = table.pack
 local tremove       = table.remove
@@ -23,7 +24,7 @@ local SYNC_PERFRAME = 5
 local ThreadMgr     = singleton()
 local prop          = property(ThreadMgr)
 prop:reader("session_id", 1)
-prop:reader("entry_pools", {})
+prop:reader("entry_map", {})
 prop:reader("syncqueue_map", {})
 prop:reader("coroutine_waitings", {})
 prop:reader("coroutine_yields", {})
@@ -50,13 +51,13 @@ function ThreadMgr:lock_size()
 end
 
 function ThreadMgr:entry(key, func, ...)
-    if self.entry_pools[key] then
+    if self.entry_map[key] then
         return false
     end
     self:fork(function(...)
-        self.entry_pools[key] = true
+        self.entry_map[key] = true
         hxpcall(func, "entry:%s", ...)
-        self.entry_pools[key] = nil
+        self.entry_map[key] = nil
     end)
     return true
 end
@@ -140,7 +141,9 @@ function ThreadMgr:try_response(session_id, ...)
     if context then
         self.coroutine_yields[session_id] = nil
         self:resume(context.co, ...)
+        return true
     end
+    return false
 end
 
 function ThreadMgr:response(session_id, ...)
@@ -171,7 +174,7 @@ function ThreadMgr:get_title(session_id)
     return nil
 end
 
-function ThreadMgr:on_minute(clock_ms)
+function ThreadMgr:on_second30(clock_ms)
     for key, queue in pairs(self.syncqueue_map) do
         if queue:empty() and clock_ms > queue.ttl then
             self.syncqueue_map[key] = nil
@@ -193,12 +196,17 @@ function ThreadMgr:on_second(clock_ms)
     local timeout_coroutines = {}
     for session_id, context in pairs(self.coroutine_yields) do
         if context.to <= clock_ms then
-            timeout_coroutines[session_id] = context
+            context.session_id                          = session_id
+            timeout_coroutines[#timeout_coroutines + 1] = context
         end
     end
     --处理协程超时
     if next(timeout_coroutines) then
-        for session_id, context in pairs(timeout_coroutines) do
+        tsort(timeout_coroutines, function(a, b)
+            return a.to < b.to
+        end)
+        for _, context in ipairs(timeout_coroutines) do
+            local session_id                  = context.session_id
             self.coroutine_yields[session_id] = nil
             if context.title then
                 log_err("[ThreadMgr][on_second] session_id(%s:%s) timeout:%s !", session_id, context.title, clock_ms - context.stime)

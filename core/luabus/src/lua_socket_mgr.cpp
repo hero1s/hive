@@ -6,7 +6,7 @@
 // 64M
 constexpr int LUA_AR_BUFFER_SIZE = 64 * 1024 * 1024;
 
-bool lua_socket_mgr::setup(lua_State* L, int max_fd) {
+bool lua_socket_mgr::setup(lua_State* L, uint32_t max_fd) {
 	m_lvm = L;
 	m_mgr = std::make_shared<socket_mgr>();
 	m_archiver = std::make_shared<lua_archiver>(LUA_AR_BUFFER_SIZE);

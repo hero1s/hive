@@ -7,8 +7,8 @@ local tsort       = table.sort
 local pairs       = pairs
 local co_running  = coroutine.running
 local log_warn    = logger.warn
+local hdefer      = hive.defer
 
-local EvalSlot    = import("kernel/object/eval_slot.lua")
 local proxy_agent = hive.get("proxy_agent")
 local update_mgr  = hive.get("update_mgr")
 
@@ -60,7 +60,10 @@ end
 
 function PerfevalMgr:eval(eval_name)
     if self.perfeval then
-        return EvalSlot(self, eval_name)
+        local edata = self:start(eval_name)
+        return hdefer(function()
+            self:stop(edata)
+        end)
     end
 end
 

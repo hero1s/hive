@@ -82,7 +82,7 @@ public:
 	socket_mgr();
 	~socket_mgr();
 
-	bool setup(int max_connection);
+	bool setup(uint32_t max_connection);
 
 #ifdef _MSC_VER
 	bool get_socket_funcs();

@@ -146,7 +146,7 @@ end
 --启动后
 function hive.after_start()
     local timer_mgr = hive.get("timer_mgr")
-    timer_mgr:once(10 * 1000, function()
+    timer_mgr:once(1000, function()
         hive.change_service_status(ServiceStatus.RUN)
     end)
     update_mgr:update(scheduler, ltime())

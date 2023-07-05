@@ -102,7 +102,7 @@ function GrayLog:write(message, level, optional)
     end
     if self.udp then
         local udpmsg = json_encode(gelf)
-        self.udp.send(udpmsg, self.ip, self.port)
+        self.udp.send(udpmsg, #udpmsg, self.ip, self.port)
     end
 end
 

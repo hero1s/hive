@@ -677,10 +677,6 @@ void socket_stream::on_connect(bool ok, const char reason[]) {
 
 void socket_stream::reset_dispatch_pkg(bool init) {
 	m_tick_dispatch_time = steady_ms();
-	if (init && eproto_type::proto_rpc == m_proto_type) {
-		set_send_buffer_size(IO_BUFFER_DEF*8);
-		set_recv_buffer_size(IO_BUFFER_DEF*8);
-	}
 }
 
 bool socket_stream::check_flow_ctrl(int64_t now) {

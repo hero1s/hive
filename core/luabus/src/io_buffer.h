@@ -5,10 +5,10 @@
 #include <limits.h>
 #include <string.h>
 
-constexpr int IO_BUFFER_DEF		= 64 * 1024;             //64K
-constexpr int IO_BUFFER_MAX		= 128 * 1024 * 1024;	 //128M
+constexpr int IO_BUFFER_DEF		= 16 * 1024;             //16K
+constexpr int IO_BUFFER_MAX		= 64 * 1024 * 1024;		 //64M
 constexpr int IO_BUFFER_SEND	= 8 * 1024;
-constexpr size_t IO_ALIGN_SIZE	= 16;					 //水位
+constexpr size_t IO_ALIGN_SIZE	= 64;					 //水位
 
 class io_buffer
 {

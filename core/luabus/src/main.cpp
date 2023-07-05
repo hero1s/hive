@@ -8,7 +8,7 @@
 namespace luabus {
     thread_local lua_socket_mgr socket_mgr;
 
-	static bool init_socket_mgr(lua_State* L, int max_fd) {
+	static bool init_socket_mgr(lua_State* L, uint32_t max_fd) {
         return socket_mgr.setup(L, max_fd);
 	}
 

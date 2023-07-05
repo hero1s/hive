@@ -56,7 +56,7 @@ function UpdateMgr:__init()
     self:attach_fast(gc_mgr)
     self:attach_second(event_mgr)
     self:attach_second(thread_mgr)
-    self:attach_minute(thread_mgr)
+    self:attach_second30(thread_mgr)
 
     self.hotfix_able = environ.status("HIVE_HOTFIX")
     self:setup()

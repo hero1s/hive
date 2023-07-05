@@ -1,6 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClInclude Include="src\laes\aes.h">
+      <Filter>laes</Filter>
+    </ClInclude>
     <ClInclude Include="src\laoi\aoi.hpp">
       <Filter>laoi</Filter>
     </ClInclude>
@@ -99,6 +102,12 @@
     <ClCompile Include="src\bson\lua-bson.c">
       <Filter>bson</Filter>
     </ClCompile>
+    <ClCompile Include="src\laes\aes.c">
+      <Filter>laes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\laes\laes.c">
+      <Filter>laes</Filter>
+    </ClCompile>
     <ClCompile Include="src\laoi\laoi.cpp">
       <Filter>laoi</Filter>
     </ClCompile>
@@ -172,6 +181,9 @@
   <ItemGroup>
     <Filter Include="bson">
       <UniqueIdentifier>{0B6879B1-86BF-B2B1-EC65-D2460E4ECCD4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="laes">
+      <UniqueIdentifier>{A1C35682-48EE-E71D-4B19-BFD90AF29164}</UniqueIdentifier>
     </Filter>
     <Filter Include="laoi">
       <UniqueIdentifier>{DC8FEA7C-8450-92D3-4C20-3A6D15D99A08}</UniqueIdentifier>

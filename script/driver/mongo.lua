@@ -1,12 +1,14 @@
 --mongo.lua
 local bson          = require("bson")
 local lmongo        = require("mongo")
+local ltimer        = require("ltimer")
 local lcrypt        = require("lcrypt")
 local Socket        = import("driver/socket.lua")
-
+local log_warn      = logger.warn
 local log_err       = logger.err
 local log_info      = logger.info
 local qhash         = hive.hash
+local hdefer        = hive.defer
 local tunpack       = table.unpack
 local tinsert       = table.insert
 local tis_array     = table_ext.is_array
@@ -26,6 +28,7 @@ local lb64encode    = lcrypt.b64_encode
 local lb64decode    = lcrypt.b64_decode
 local lhmac_sha1    = lcrypt.hmac_sha1
 local lxor_byte     = lcrypt.xor_byte
+local lclock_ms     = ltimer.clock_ms
 
 local mreply        = lmongo.reply
 local mopmsg        = lmongo.op_msg
@@ -39,6 +42,7 @@ local update_mgr    = hive.get("update_mgr")
 local thread_mgr    = hive.get("thread_mgr")
 
 local SUCCESS       = hive.enum("KernCode", "SUCCESS")
+local FAST_MS       = hive.enum("PeriodTime", "FAST_MS")
 local SECOND_MS     = hive.enum("PeriodTime", "SECOND_MS")
 local SECOND_10_MS  = hive.enum("PeriodTime", "SECOND_10_MS")
 local DB_TIMEOUT    = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
@@ -272,10 +276,6 @@ function MongoDB:delive(sock)
 end
 
 function MongoDB:on_socket_error(sock, token, err)
-    for session_id in pairs(sock.sessions) do
-        thread_mgr:response(session_id, false, err)
-    end
-    sock.sessions = {}
     --清空状态
     if sock == self.executer then
         self.executer = nil
@@ -287,6 +287,11 @@ function MongoDB:on_socket_error(sock, token, err)
     event_mgr:fire_next_second(function()
         self:check_alive()
     end)
+    for session_id, cmd in pairs(sock.sessions) do
+        log_warn("[MongoDB][on_socket_error] drop cmd %s-%s)!", cmd, session_id)
+        thread_mgr:response(session_id, false, err)
+    end
+    sock.sessions = {}
 end
 
 function MongoDB:decode_reply(succ, documents)
@@ -304,7 +309,6 @@ function MongoDB:decode_reply(succ, documents)
 end
 
 function MongoDB:on_socket_recv(sock, token)
-    local sessions = sock.sessions
     while true do
         local hdata = sock:peek(4)
         if not hdata then
@@ -318,11 +322,6 @@ function MongoDB:on_socket_recv(sock, token)
         sock:pop(4 + length)
         local reply, session_id, documents = mreply(bdata)
         if session_id > 0 then
-            local cost_time = hive.clock_ms - (sessions[session_id] or 0)
-            if cost_time > DB_TIMEOUT then
-                log_err("[MongoDB][on_socket_recv] the op_session:%s, timeout:%s", session_id, cost_time)
-            end
-            sessions[session_id] = nil
             self.res_counter:count_increase()
             local succ, doc = self:decode_reply(reply, documents)
             thread_mgr:response(session_id, succ, doc)
@@ -330,28 +329,36 @@ function MongoDB:on_socket_recv(sock, token)
     end
 end
 
-function MongoDB:op_msg(sock, bson_cmd)
+function MongoDB:op_msg(sock, bson_cmd, cmd)
     if not sock then
         return false, "db not connected"
     end
+    local tick       = lclock_ms()
     local session_id = thread_mgr:build_session_id()
     local msg        = mopmsg(session_id, 0, bson_cmd)
     if not sock:send(msg) then
         return false, "send failed"
     end
     self.req_counter:count_increase()
-    sock.sessions[session_id] = hive.clock_ms
+    sock.sessions[session_id] = cmd
+    local _<close>            = hdefer(function()
+        sock.sessions[session_id] = nil
+        local utime               = lclock_ms() - tick
+        if utime > FAST_MS then
+            log_warn("[MongoDB][on_slice_recv] cmd (%s:%s) execute so big %s!", cmd, session_id, utime)
+        end
+    end)
     return thread_mgr:yield(session_id, "mongo_op_msg", DB_TIMEOUT)
 end
 
 function MongoDB:adminCommand(sock, cmd, cmd_v, ...)
     local bson_cmd = bson_encode_o(cmd, cmd_v, "$db", self.auth_source, ...)
-    return self:op_msg(sock, bson_cmd)
+    return self:op_msg(sock, bson_cmd, cmd)
 end
 
 function MongoDB:runCommand(cmd, cmd_v, ...)
     local bson_cmd = bson_encode_o(cmd, cmd_v or 1, "$db", self.name, ...)
-    return self:op_msg(self.executer, bson_cmd)
+    return self:op_msg(self.executer, bson_cmd, cmd)
 end
 
 function MongoDB:sendCommand(cmd, cmd_v, ...)

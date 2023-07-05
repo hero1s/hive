@@ -424,12 +424,6 @@ function RedisDB:delive(sock)
 end
 
 function RedisDB:on_socket_error(sock, token, err)
-    local task_queue = sock.task_queue
-    local session_id = task_queue:pop()
-    while session_id do
-        thread_mgr:response(session_id, false, err)
-        session_id = task_queue:pop()
-    end
     --清空状态
     if sock == self.executer then
         self.executer = nil
@@ -441,6 +435,14 @@ function RedisDB:on_socket_error(sock, token, err)
     event_mgr:fire_next_second(function()
         self:check_alive()
     end)
+    local task_queue = sock.task_queue
+    local session_id = task_queue:pop()
+    while session_id do
+        if session_id > 0 then
+            thread_mgr:response(session_id, false, err)
+        end
+        session_id = task_queue:pop()
+    end
 end
 
 function RedisDB:on_socket_recv(sock, token)

@@ -7,6 +7,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\laes\aes.h"/>
     <ClInclude Include="src\laoi\aoi.hpp"/>
     <ClInclude Include="src\laoi\math.hpp"/>
     <ClInclude Include="src\lcjson\fpconv.h"/>
@@ -41,6 +42,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\bson\lua-bson.c"/>
+    <ClCompile Include="src\laes\aes.c"/>
+    <ClCompile Include="src\laes\laes.c"/>
     <ClCompile Include="src\laoi\laoi.cpp"/>
     <ClCompile Include="src\lcjson\fpconv.c"/>
     <ClCompile Include="src\lcjson\lua_cjson.c"/>

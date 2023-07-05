@@ -1,6 +1,7 @@
 --redis_agent.lua
 local tunpack    = table.unpack
 local mrandom    = math_ext.random
+local check_success     = hive.success
 
 local KernCode   = enum("KernCode")
 local router_mgr = hive.load("router_mgr")
@@ -12,6 +13,16 @@ prop:reader("service", "redis")
 prop:reader("local_run", false) --本地线程服务
 
 function RedisAgent:__init()
+end
+
+function RedisAgent:redis_lock(lock_key, lock_time)
+    local expire_time = hive.now + lock_time
+    local lock_ok, lock_code, lock_res = self:execute({ "set", lock_key, expire_time, "ex", lock_time, "nx" })
+    if check_success(lock_code, lock_ok) and lock_res == "OK" then
+        return true
+    end
+
+    return false
 end
 
 function RedisAgent:start_local_run()

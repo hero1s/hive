@@ -26,7 +26,8 @@ extern "C"
 		REGISTER_CUSTOM_LIBRARY("lcjson", luaopen_lcjson);
 		REGISTER_CUSTOM_LIBRARY("lyyjson", luaopen_lyyjson);
 		REGISTER_CUSTOM_LIBRARY("luabus", luaopen_luabus);
-		
+		REGISTER_CUSTOM_LIBRARY("laes256", luaopen_aes256);
+
 		//custom
 		REGISTER_CUSTOM_LIBRARY("lhelper", luaopen_lhelper);
 		REGISTER_CUSTOM_LIBRARY("lzset", luaopen_lzset);

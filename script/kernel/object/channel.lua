@@ -46,29 +46,30 @@ function Channel:execute(all_back)
     local success    = true
     local session_id = thread_mgr:build_session_id()
     for i, executer in ipairs(self.executers) do
-        local ok, corerr, data = true, 0
         thread_mgr:fork(function()
-            ok, corerr, data = executer()
-            all_datas[i]     = data
-            count            = count - 1
-            thread_mgr:try_response(session_id, ok, corerr)
-        end)
-        local efailed, code = check_failed(corerr, ok)
-        if efailed then
-            success = efailed
-            log_err("[Channel][execute] sync failed:%s,code:%s", self.title, code)
-            if not all_back then
-                return false, code
+            local ok, corerr, data = executer()
+            all_datas[i]           = data
+            if not thread_mgr:try_response(session_id, ok, corerr) then
+                local efailed, code = check_failed(corerr, ok)
+                count               = count - 1
+                if efailed then
+                    success = efailed
+                    if not all_back then
+                        log_err("[Channel][execute] failed:%s,code:%s", self.title, code)
+                        return false, code
+                    end
+                end
             end
-        end
+        end)
     end
     while count > 0 do
         local sok, corerr   = thread_mgr:yield(session_id, self.title, RPC_TIMEOUT)
         local efailed, code = check_failed(corerr, sok)
+        count               = count - 1
         if efailed then
             success = efailed
-            log_err("[Channel][execute] async failed:%s,code:%s,%s", self.title, sok, corerr)
             if not all_back then
+                log_err("[Channel][execute] async failed:%s,code:%s,%s", self.title, sok, corerr)
                 return false, code
             end
         end

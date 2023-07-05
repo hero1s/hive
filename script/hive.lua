@@ -116,6 +116,11 @@ function hive.hash(key, mod)
     return hash_code(key, mod)
 end
 
+function hive.defer(handler)
+    local Defer = import("kernel/object/defer.lua")
+    return Defer(handler)
+end
+
 --创建普通计数器
 function hive.make_counter(title)
     local Counter = import("kernel/object/counter.lua")

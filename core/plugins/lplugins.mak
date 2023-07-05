@@ -101,6 +101,11 @@ OBJS += $(patsubst $(SRC_DIR)/bson/%.m, $(INT_DIR)/bson/%.o, $(filter-out $(EXCL
 OBJS += $(patsubst $(SRC_DIR)/bson/%.cc, $(INT_DIR)/bson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/bson/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/bson/%.cpp, $(INT_DIR)/bson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/bson/*.cpp)))
 #子目录
+OBJS += $(patsubst $(SRC_DIR)/laes/%.c, $(INT_DIR)/laes/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/laes/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/laes/%.m, $(INT_DIR)/laes/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/laes/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/laes/%.cc, $(INT_DIR)/laes/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/laes/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/laes/%.cpp, $(INT_DIR)/laes/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/laes/*.cpp)))
+#子目录
 OBJS += $(patsubst $(SRC_DIR)/laoi/%.c, $(INT_DIR)/laoi/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/laoi/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/laoi/%.m, $(INT_DIR)/laoi/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/laoi/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/laoi/%.cc, $(INT_DIR)/laoi/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/laoi/*.cc)))
@@ -130,11 +135,6 @@ OBJS += $(patsubst $(SRC_DIR)/lrandom/%.c, $(INT_DIR)/lrandom/%.o, $(filter-out 
 OBJS += $(patsubst $(SRC_DIR)/lrandom/%.m, $(INT_DIR)/lrandom/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lrandom/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/lrandom/%.cc, $(INT_DIR)/lrandom/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lrandom/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/lrandom/%.cpp, $(INT_DIR)/lrandom/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lrandom/*.cpp)))
-#子目录
-OBJS += $(patsubst $(SRC_DIR)/lsimdb/%.c, $(INT_DIR)/lsimdb/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lsimdb/*.c)))
-OBJS += $(patsubst $(SRC_DIR)/lsimdb/%.m, $(INT_DIR)/lsimdb/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lsimdb/*.m)))
-OBJS += $(patsubst $(SRC_DIR)/lsimdb/%.cc, $(INT_DIR)/lsimdb/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lsimdb/*.cc)))
-OBJS += $(patsubst $(SRC_DIR)/lsimdb/%.cpp, $(INT_DIR)/lsimdb/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lsimdb/*.cpp)))
 #子目录
 OBJS += $(patsubst $(SRC_DIR)/lstdfs/%.c, $(INT_DIR)/lstdfs/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lstdfs/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lstdfs/%.m, $(INT_DIR)/lstdfs/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lstdfs/*.m)))
@@ -202,13 +202,13 @@ pre_build:
 	mkdir -p $(INT_DIR)
 	mkdir -p $(TARGET_DIR)
 	mkdir -p $(INT_DIR)/bson
+	mkdir -p $(INT_DIR)/laes
 	mkdir -p $(INT_DIR)/laoi
 	mkdir -p $(INT_DIR)/lcjson
 	mkdir -p $(INT_DIR)/lcodec
 	mkdir -p $(INT_DIR)/lcrypt
 	mkdir -p $(INT_DIR)/lhttp
 	mkdir -p $(INT_DIR)/lrandom
-	mkdir -p $(INT_DIR)/lsimdb
 	mkdir -p $(INT_DIR)/lstdfs
 	mkdir -p $(INT_DIR)/ltimer
 	mkdir -p $(INT_DIR)/lyyjson

@@ -4,6 +4,7 @@
 #include "socket_mgr.h"
 #include "socket_stream.h"
 #include "socket_listener.h"
+#include "fmt/core.h"
 
 #ifdef _MSC_VER
 #pragma comment(lib, "Ws2_32.lib")
@@ -45,7 +46,7 @@ socket_mgr::~socket_mgr() {
 #endif
 }
 
-bool socket_mgr::setup(int max_connection) {
+bool socket_mgr::setup(uint32_t max_connection) {
 #ifdef _MSC_VER
 	m_handle = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 	if (m_handle == INVALID_HANDLE_VALUE)
@@ -66,11 +67,8 @@ bool socket_mgr::setup(int max_connection) {
 	if (m_handle == -1)
 		return false;
 #endif
-
-	m_max_count = max_connection > 10240 ? 10240 : max_connection;
-	m_max_count = m_max_count < 1024 ? 1024 : m_max_count;
+	m_max_count = max_connection;
 	m_events.resize(max_connection);
-
 	return true;
 }
 
@@ -213,7 +211,7 @@ Exit0:
 
 uint32_t socket_mgr::connect(std::string& err, const char node_name[], const char service_name[], int timeout, eproto_type proto_type) {
 	if (is_full()) {
-		err = "too-many-connection";
+		err = fmt::format("too-many-connection:{}-{}",m_count,m_max_count);
 		return 0;
 	}
 
