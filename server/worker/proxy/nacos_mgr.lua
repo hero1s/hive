@@ -43,11 +43,7 @@ function NacosMgr:rpc_register_nacos(node)
         log_warn("[NacosMgr][rpc_register_nacos] nacos is nil")
         return false
     end
-    if self:can_register() then
-        self:register()
-        return true
-    end
-    return false
+    return self:register()
 end
 
 function NacosMgr:rpc_unregister_nacos()
@@ -77,9 +73,12 @@ function NacosMgr:on_nacos_ready()
 end
 
 function NacosMgr:register()
-    if not self.nacos:get_access_token() or not self.node then
-        log_debug("[NacosMgr][register] not token or not node")
-        return
+    if not self.nacos:get_access_token() then
+        log_debug("[NacosMgr][register] nacos not ready")
+        return false
+    end
+    if not self:can_register() then
+        return false
     end
     self:unregister()
     if not self.status then
@@ -87,6 +86,7 @@ function NacosMgr:register()
         self.status    = self.nacos:regi_instance(self.node.service_name, self.node.host, self.node.port, nil, metadata)
         log_debug("[NacosMgr][register] register:%s", self.status)
     end
+    return self.status
 end
 
 function NacosMgr:unregister()
@@ -107,6 +107,9 @@ function NacosMgr:need_watch(service_name)
 end
 
 function NacosMgr:can_register()
+    if not self.node or not self.node.id or not self.node.host or not self.node.port then
+        return false
+    end
     if self.node.is_ready then
         return true
     end
@@ -129,7 +132,12 @@ function NacosMgr:on_nacos_tick()
             return
         end
         if self.status then
-            self.nacos:sent_beat(self.node.service_name, self.node.host, self.node.port)
+            local ok = self.nacos:sent_beat(self.node.service_name, self.node.host, self.node.port)
+            if not ok then
+                self:register()
+            end
+        else
+            self:register()
         end
         for _, service_name in pairs(self.nacos:query_services() or {}) do
             if self:need_watch(service_name) then
@@ -159,7 +167,7 @@ function NacosMgr:on_nacos_tick()
                         old[id] = nil
                     end
                     if next(sadd) or next(sdel) then
-                        log_debug("[MonitorMgr][on_nacos_tick] sadd:%s, sdel: %s", sadd, sdel)
+                        log_debug("[NacosMgr][on_nacos_tick] sadd:%s, sdel: %s", sadd, sdel)
                         hive.send_master("rpc_service_changed", service_name, sadd, sdel)
                     end
                 end

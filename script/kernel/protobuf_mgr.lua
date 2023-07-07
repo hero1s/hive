@@ -1,4 +1,6 @@
 --protobuf_mgr.lua
+--升级pb库时,修改lpb_tointegerx函数支持浮点数自动转整数
+
 local protobuf      = require('pb')
 local lstdfs        = require('lstdfs')
 
@@ -36,6 +38,7 @@ function ProtobufMgr:load_pbfiles(proto_dir, proto_file)
     protobuf.loadfile(full_name)
     --设置枚举解析成number
     protobuf.option("enum_as_value")
+    protobuf.option("encode_default_values")
     --注册枚举
     for name, basename, typ in protobuf.types() do
         if typ == "enum" then
@@ -69,6 +72,13 @@ function ProtobufMgr:verify_cmd(cmd_id)
     return self.pb_indexs[cmd_id] ~= nil
 end
 
+function ProtobufMgr:encode_byname(pb_name, data)
+    local ok, pb_str = pcall(pb_encode, pb_name, data or {})
+    if ok then
+        return pb_str
+    end
+end
+
 function ProtobufMgr:encode(cmd_id, data)
     local proto_name = self.pb_indexs[cmd_id]
     if not proto_name then
@@ -81,6 +91,13 @@ function ProtobufMgr:encode(cmd_id, data)
     local ok, pb_str = pcall(pb_encode, proto_name, data or {})
     if ok then
         return pb_str
+    end
+end
+
+function ProtobufMgr:decode_byname(pb_name, pb_str)
+    local ok, pb_data = pcall(pb_decode, pb_name, pb_str)
+    if ok then
+        return pb_data
     end
 end
 

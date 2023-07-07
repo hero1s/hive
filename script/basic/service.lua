@@ -34,6 +34,10 @@ function service.make_node(port, domain)
         is_ready     = false,
         status       = hive.service_status
     }
+    --防止ip为空无法注册nacos
+    if not hive.node_info.host or hive.node_info.host == "" then
+        hive.node_info.host = "127.0.0.1"
+    end
 end
 
 function service.init()

@@ -77,6 +77,8 @@ namespace luakit {
                 if (m_size > m_max && data_len < BUFFER_DEF) {
                     _regularize();
                     _resize(m_size / 2);
+                } else if (data_len == 0) {
+                    _regularize();
                 }
                 return erase_len;
             }

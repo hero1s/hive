@@ -11,9 +11,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="mimalloc\src\alloc-aligned.c"/>
-    <ClCompile Include="mimalloc\src\alloc-override-osx.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="mimalloc\src\alloc-override.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -29,11 +26,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="mimalloc\src\page.c"/>
+    <ClCompile Include="mimalloc\src\prim\prim.c"/>
     <ClCompile Include="mimalloc\src\random.c"/>
-    <ClCompile Include="mimalloc\src\region.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="mimalloc\src\segment-cache.c"/>
+    <ClCompile Include="mimalloc\src\segment-map.c"/>
     <ClCompile Include="mimalloc\src\segment.c"/>
     <ClCompile Include="mimalloc\src\static.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">true</ExcludedFromBuild>

@@ -54,6 +54,8 @@ function HttpClient:on_frame(clock_ms)
         --清除超时请求
         for handle, context in pairs(self.contexts) do
             if clock_ms >= context.time then
+                log_debug("[HttpClient][on_frame] clear timeout context:%s,session_id:%s,debug:%s",
+                          handle, context.session_id, context.request.debug)
                 self.contexts[handle] = nil
             end
         end
@@ -73,8 +75,10 @@ function HttpClient:on_respond(curl_handle, result)
             tinsert(self.results, { session_id, false, code, err })
         end
         if context.debug then
-            log_debug("[http: \n %s \n]", request.debug)
+            log_debug("[%s][http: \n %s \n]", session_id, request.debug)
         end
+    else
+        log_err("[HttpClient][on_respond] the context remove:%s,%s", curl_handle, result)
     end
 end
 
@@ -128,6 +132,9 @@ function HttpClient:send_request(url, timeout, querys, headers, method, datas, d
     if not ok then
         log_err("[HttpClient][send_request] curl %s failed: %s!", method, err)
         return false
+    end
+    if debug then
+        log_debug("[HttpClient][send_request] call libcurl:%s", session_id)
     end
     self.contexts[curl_handle] = {
         request    = request,

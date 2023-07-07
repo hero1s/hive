@@ -50,11 +50,9 @@ SRC_DIR = mimalloc/src
 
 #需要排除的源文件,目录基于$(SRC_DIR)
 EXCLUDE =
-EXCLUDE += $(SRC_DIR)/page-queue.c
 EXCLUDE += $(SRC_DIR)/static.c
+EXCLUDE += $(SRC_DIR)/page-queue.c
 EXCLUDE += $(SRC_DIR)/alloc-override.c
-EXCLUDE += $(SRC_DIR)/alloc-override-osx.c
-EXCLUDE += $(SRC_DIR)/region.c
 
 #需要连接的库文件
 LIBS =
@@ -102,6 +100,11 @@ LDFLAGS += -L$(SOLUTION_DIR)library
 
 #自动生成目标
 OBJS =
+#子目录
+OBJS += $(patsubst $(SRC_DIR)/prim/%.c, $(INT_DIR)/prim/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/prim/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/prim/%.m, $(INT_DIR)/prim/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/prim/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/prim/%.cc, $(INT_DIR)/prim/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/prim/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/prim/%.cpp, $(INT_DIR)/prim/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/prim/*.cpp)))
 #根目录
 OBJS += $(patsubst $(SRC_DIR)/%.c, $(INT_DIR)/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/%.m, $(INT_DIR)/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/*.m)))
@@ -132,6 +135,7 @@ clean :
 pre_build:
 	mkdir -p $(INT_DIR)
 	mkdir -p $(TARGET_DIR)
+	mkdir -p $(INT_DIR)/prim
 
 #后编译
 post_build:

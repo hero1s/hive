@@ -345,7 +345,7 @@ function MongoDB:op_msg(sock, bson_cmd, cmd)
         sock.sessions[session_id] = nil
         local utime               = lclock_ms() - tick
         if utime > FAST_MS then
-            log_warn("[MongoDB][on_slice_recv] cmd (%s:%s) execute so big %s!", cmd, session_id, utime)
+            log_warn("[MongoDB][on_socket_recv] cmd (%s:%s) execute so big %s!", cmd, session_id, utime)
         end
     end)
     return thread_mgr:yield(session_id, "mongo_op_msg", DB_TIMEOUT)

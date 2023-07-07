@@ -1,19 +1,20 @@
 --router_server.lua
-local lbus         = require("luabus")
-local log_info     = logger.info
-local log_debug    = logger.debug
-local sidhash      = service.hash
-local tinsert      = table.insert
+local lbus          = require("luabus")
+local log_info      = logger.info
+local log_debug     = logger.debug
+local sidhash       = service.hash
+local tinsert       = table.insert
 
-local FlagMask     = enum("FlagMask")
-local KernCode     = enum("KernCode")
-local RpcServer    = import("network/rpc_server.lua")
+local FlagMask      = enum("FlagMask")
+local KernCode      = enum("KernCode")
+local ServiceStatus = enum("ServiceStatus")
+local RpcServer     = import("network/rpc_server.lua")
 
-local thread_mgr   = hive.get("thread_mgr")
-local event_mgr    = hive.get("event_mgr")
+local thread_mgr    = hive.get("thread_mgr")
+local event_mgr     = hive.get("event_mgr")
 
-local RouterServer = singleton()
-local prop         = property(RouterServer)
+local RouterServer  = singleton()
+local prop          = property(RouterServer)
 prop:accessor("rpc_server", nil)
 function RouterServer:__init()
     self:setup()
@@ -95,12 +96,17 @@ end
 
 -- 心跳
 function RouterServer:on_client_beat(client, node_info)
-    --[[    local status = node_info.status
-        --设置hash限流 todo 影响安全退出,后续优化 toney
-        if status > ServiceStatus.RUN and hive.is_runing() then
-            log_info("[RouterServer][on_client_beat] the server is not dispatch:%s,%s", client.name, status)
-            lbus.set_node_status(client.id, status)
-        end]]
+    local status = node_info.status
+    --设置hash限流,挂起状态不再分配hash消息派发
+    if status == ServiceStatus.HALT and hive.is_runing() then
+        log_info("[RouterServer][on_client_beat] add ban hash server %s", client.name)
+        lbus.set_node_status(client.id, 1)
+        client.ban_hash = true
+    elseif client.ban_hash then
+        lbus.set_node_status(client.id, 0)
+        client.ban_hash = false
+        log_info("[RouterServer][on_client_beat] remove ban hash server %s", client.name)
+    end
 end
 
 hive.router_server = RouterServer()

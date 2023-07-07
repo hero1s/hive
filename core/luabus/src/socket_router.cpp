@@ -36,10 +36,10 @@ uint32_t socket_router::set_node_status(uint32_t node_id, uint8_t status) {
 	uint32_t group_idx = get_group_idx(node_id);
 	auto& group = m_groups[group_idx];
 	auto pTarget = group.get_target(node_id);
-	if (pTarget != nullptr) {
+	if (pTarget != nullptr && pTarget->status != status) {		
 		pTarget->status = status;
 		flush_hash_node(group_idx);
-		return choose_master(group_idx);
+		return choose_master(group_idx);		
 	}
 	return 0;
 }
@@ -213,23 +213,16 @@ bool socket_router::do_forward_hash(router_header* header, char* data, size_t da
 	data_len -= hlen;
 
 	auto& group = m_groups[group_idx];
-	int count = (int)group.hash_ids.size();
-	if (count == 0) {
-		error = fmt::format("router forward-hash not nodes:{}",group_idx);
-		return router ? false : do_forward_router(header, data - hlen - glen, data_len + hlen + glen, error, rpc_type::forward_hash, 0, group_idx);
-	}
-
-	size_t header_len = format_header(m_header_data, sizeof(m_header_data), header, rpc_type::remote_call);
-	sendv_item items[] = { {m_header_data, header_len}, {data, data_len} };
-
-	auto& target_id = group.hash_ids[hash % count];
-	auto pTarget = group.get_target(target_id);
+	auto pTarget = group.hash_target(hash);
 	if (pTarget != nullptr) {
+		size_t header_len = format_header(m_header_data, sizeof(m_header_data), header, rpc_type::remote_call);
+		sendv_item items[] = { {m_header_data, header_len}, {data, data_len} };
 		m_mgr->sendv(pTarget->token, items, _countof(items));
 		return true;
+	} else {
+		error = fmt::format("router forward-hash not nodes:{}", group_idx);
+		return router ? false : do_forward_router(header, data - hlen - glen, data_len + hlen + glen, error, rpc_type::forward_hash, 0, group_idx);
 	}
-	error = fmt::format("router forward-hash not token");
-	return false;
 }
 
 bool socket_router::do_forward_router(router_header* header, char* data, size_t data_len, std::string& error, rpc_type msgid, uint64_t target_id, uint16_t group_idx)

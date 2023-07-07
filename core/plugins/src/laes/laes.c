@@ -5,6 +5,7 @@
 #include "lua.h"
 #include "lauxlib.h"
 #include "aes.h"
+#include "PKCS7.h"
 
 typedef enum {
 	Mode_ECB = 1,
@@ -17,20 +18,25 @@ typedef struct {
 	struct AES_ctx ctx;
 } AES;
 
-static int
-lencrypt(lua_State *L) {
+static int lencrypt(lua_State *L) {
 	AES *aes = lua_touserdata(L,1);
 	luaL_argcheck(L,aes != NULL,1,"Need a aes object");
 	size_t length = 0;
 	const char *in = luaL_checklstring(L,2,&length);
+	//Ìî³äPKCS
+	PKCS7_Padding* pPaddingResult = addPadding(in, length, BLOCK_SIZE_128_BIT);
+	if (pPaddingResult == NULL) {
+		return luaL_argerror(L, 1, "input string's param");
+	}
+	length = pPaddingResult->dataLengthWithPadding;
+	uint8_t* buf = pPaddingResult->dataWithPadding;
 	if (length == 0 || length % 16 != 0) {
+		freePaddingResult(pPaddingResult);
 		return luaL_argerror(L,1,"input string's length must be divided by 16");
 	}
-	uint8_t *buf = (uint8_t*)malloc(length);
-	memcpy(buf,in,length);
 	if (aes->mode == Mode_ECB) {
 		if (length != 16) {
-			free(buf);
+			freePaddingResult(pPaddingResult);
 			return luaL_argerror(L,1,"ECB input string's length must be 16");
 		}
 		AES_ECB_encrypt(&aes->ctx,buf);
@@ -40,12 +46,11 @@ lencrypt(lua_State *L) {
 		AES_CTR_xcrypt_buffer(&aes->ctx,buf,length);
 	}
 	lua_pushlstring(L,(const char*)buf,length);
-	free(buf);
+	freePaddingResult(pPaddingResult);
 	return 1;
 }
 
-static int
-ldecrypt(lua_State *L) {
+static int ldecrypt(lua_State *L) {
 	AES *aes = lua_touserdata(L,1);
 	luaL_argcheck(L,aes != NULL,1,"Need a aes object");
 	size_t length = 0;
@@ -66,22 +71,24 @@ ldecrypt(lua_State *L) {
 	} else if (aes->mode == Mode_CTR) {
 		AES_CTR_xcrypt_buffer(&aes->ctx,buf,length);
 	}
-	lua_pushlstring(L,(const char*)buf,length);
+	PKCS7_unPadding* pUnpaddingResult = removePadding(buf,length);
+	if (pUnpaddingResult == NULL) {
+		return luaL_argerror(L, 1, "remove padding error");
+	}
+	lua_pushlstring(L, (const char*)pUnpaddingResult->dataWithoutPadding, pUnpaddingResult->dataLengthWithoutPadding);
 	free(buf);
+	freeUnPaddingResult(pUnpaddingResult);
 	return 1;
 }
 
-static int
-lnew(lua_State *L) {
+static int lnew(lua_State *L) {
 	int n = lua_gettop(L);
 	if (n < 2) {
 		luaL_error(L,"aes.new(mode,key,[iv])");
 		return 0;
 	}
 	int mode = luaL_checkinteger(L,1);
-	if (mode != Mode_ECB &&
-			mode != Mode_CBC &&
-			mode != Mode_CTR) {
+	if (mode != Mode_ECB &&	mode != Mode_CBC &&	mode != Mode_CTR) {
 		return luaL_argerror(L,1,"mode must be CBC|ECB|CTR");
 	}
 	size_t length = 0;

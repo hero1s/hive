@@ -404,12 +404,10 @@ template <typename Context> struct range_mapper {
 };
 
 template <typename Char, typename Element>
-using range_formatter_type = conditional_t<
-    is_formattable<Element, Char>::value,
+using range_formatter_type =
     formatter<remove_cvref_t<decltype(range_mapper<buffer_context<Char>>{}.map(
                   std::declval<Element>()))>,
-              Char>,
-    fallback_formatter<Element, Char>>;
+              Char>;
 
 template <typename R>
 using maybe_const_range =
@@ -419,9 +417,7 @@ using maybe_const_range =
 #if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1910
 template <typename R, typename Char>
 struct is_formattable_delayed
-    : disjunction<
-          is_formattable<uncvref_type<maybe_const_range<R>>, Char>,
-          has_fallback_formatter<uncvref_type<maybe_const_range<R>>, Char>> {};
+    : is_formattable<uncvref_type<maybe_const_range<R>>, Char> {};
 #endif
 }  // namespace detail
 
@@ -431,13 +427,10 @@ struct range_formatter;
 template <typename T, typename Char>
 struct range_formatter<
     T, Char,
-    enable_if_t<conjunction<
-        std::is_same<T, remove_cvref_t<T>>,
-        disjunction<is_formattable<T, Char>,
-                    detail::has_fallback_formatter<T, Char>>>::value>> {
+    enable_if_t<conjunction<std::is_same<T, remove_cvref_t<T>>,
+                            is_formattable<T, Char>>::value>> {
  private:
   detail::range_formatter_type<Char, T> underlying_;
-  bool custom_specs_ = false;
   basic_string_view<Char> separator_ = detail::string_literal<Char, ',', ' '>{};
   basic_string_view<Char> opening_bracket_ =
       detail::string_literal<Char, '['>{};
@@ -473,7 +466,6 @@ struct range_formatter<
 
     if (it != end && *it != '}') {
       if (*it != ':') FMT_THROW(format_error("invalid format specifier"));
-      custom_specs_ = true;
       ++it;
     } else {
       detail::maybe_set_debug_format(underlying_, true);
@@ -505,13 +497,14 @@ struct range_formatter<
 enum class range_format { disabled, map, set, sequence, string, debug_string };
 
 namespace detail {
-template <typename T> struct range_format_kind_ {
-  static constexpr auto value = std::is_same<range_reference_type<T>, T>::value
-                                    ? range_format::disabled
-                                : is_map<T>::value ? range_format::map
-                                : is_set<T>::value ? range_format::set
-                                                   : range_format::sequence;
-};
+template <typename T>
+struct range_format_kind_
+    : std::integral_constant<range_format,
+                             std::is_same<uncvref_type<T>, T>::value
+                                 ? range_format::disabled
+                             : is_map<T>::value ? range_format::map
+                             : is_set<T>::value ? range_format::set
+                                                : range_format::sequence> {};
 
 template <range_format K, typename R, typename Char, typename Enable = void>
 struct range_default_formatter;
@@ -670,7 +663,7 @@ template <typename T> class is_container_adaptor_like {
 template <typename Container> struct all {
   const Container& c;
   auto begin() const -> typename Container::const_iterator { return c.begin(); }
-  auto end() const -> typename Container::const_iterator { return c.end(); };
+  auto end() const -> typename Container::const_iterator { return c.end(); }
 };
 }  // namespace detail
 
@@ -690,7 +683,7 @@ struct formatter<T, Char,
   }
 };
 
-FMT_MODULE_EXPORT_BEGIN
+FMT_BEGIN_EXPORT
 
 /**
   \rst
@@ -733,7 +726,7 @@ auto join(std::initializer_list<T> list, string_view sep)
   return join(std::begin(list), std::end(list), sep);
 }
 
-FMT_MODULE_EXPORT_END
+FMT_END_EXPORT
 FMT_END_NAMESPACE
 
 #endif  // FMT_RANGES_H_

@@ -2,7 +2,10 @@
 local log_err  = logger.err
 local pairs    = pairs
 local tconcat  = table.concat
+local tinsert  = table.insert
 local sformat  = string.format
+local sfind    = string.find
+local ssub     = string.sub
 local luencode = lcurl.url_encode
 local tmapsort = table_ext.mapsort
 
@@ -27,6 +30,30 @@ function http_helper.urlencoded(query, sort)
         return tconcat(fquery, "&")
     end
     return ""
+end
+
+function http_helper.urldecoded(body)
+    local body_table = {}
+    local pos        = 1
+    while true do
+        local last_pos = pos
+        pos            = sfind(body, '&', pos)
+        if not pos then
+            tinsert(body_table, ssub(body, last_pos))
+            break
+        end
+        tinsert(body_table, ssub(body, last_pos, pos - 1))
+        pos = pos + 1
+    end
+    local body_data = {}
+    for _, body_row in ipairs(body_table) do
+        local equal_pos = sfind(body_row, '=')
+        if not equal_pos then
+            break
+        end
+        body_data[ssub(body_row, 1, equal_pos - 1)] = ssub(body_row, equal_pos + 1)
+    end
+    return body_data
 end
 
 function http_helper.http_success(ok, code, res)

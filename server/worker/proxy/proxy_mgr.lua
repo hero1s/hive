@@ -5,6 +5,7 @@ import("network/http_client.lua")
 local webhook     = hive.get("webhook")
 local event_mgr   = hive.get("event_mgr")
 local http_client = hive.get("http_client")
+local log_debug   = logger.debug
 
 local ProxyMgr    = singleton()
 
@@ -32,21 +33,33 @@ end
 --通用http请求
 function ProxyMgr:rpc_http_get(url, querys, headers, datas, timeout, debug)
     local ok, status, res = http_client:call_get(url, querys, headers, datas, timeout, debug)
+    if not ok or status ~= 200 then
+        log_debug("[ProxyMgr][rpc_http_get] failed:%s,%s,%s,%s", url, ok, status, res)
+    end
     return ok and status or 404, res
 end
 
 function ProxyMgr:rpc_http_post(url, post_data, headers, querys, timeout, debug)
     local ok, status, res = http_client:call_post(url, post_data, headers, querys, timeout, debug)
+    if not ok or status ~= 200 then
+        log_debug("[ProxyMgr][rpc_http_post] failed:%s,%s,%s,%s", url, ok, status, res)
+    end
     return ok and status or 404, res
 end
 
 function ProxyMgr:rpc_http_put(url, put_data, headers, querys, timeout, debug)
     local ok, status, res = http_client:call_put(url, put_data, headers, querys, timeout, debug)
+    if not ok or status ~= 200 then
+        log_debug("[ProxyMgr][rpc_http_put] failed:%s,%s,%s,%s", url, ok, status, res)
+    end
     return ok and status or 404, res
 end
 
 function ProxyMgr:rpc_http_del(url, querys, headers, timeout, debug)
     local ok, status, res = http_client:call_del(url, querys, headers, timeout, debug)
+    if not ok or status ~= 200 then
+        log_debug("[ProxyMgr][rpc_http_del] failed:%s,%s,%s,%s", url, ok, status, res)
+    end
     return ok and status or 404, res
 end
 

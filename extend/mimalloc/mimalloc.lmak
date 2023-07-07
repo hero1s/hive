@@ -9,7 +9,12 @@ PROJECT_TYPE = "dynamic"
 
 --需要的include目录
 INCLUDES = {
-	"mimalloc/include"
+    "mimalloc/include"
+}
+
+--子目录路径
+SUB_DIR = {
+    "prim"
 }
 
 --目标文件前缀
@@ -20,7 +25,7 @@ MIMALLOC_DIR = nil
 
 --需要定义的选项
 DEFINES = {
-	"MI_SHARED_LIB", "MI_SHARED_LIB_EXPORT", "MI_MALLOC_OVERRIDE", "NDEBUG"
+    "MI_SHARED_LIB", "MI_SHARED_LIB_EXPORT", "MI_MALLOC_OVERRIDE", "NDEBUG"
 }
 
 --源文件路径
@@ -28,17 +33,17 @@ SRC_DIR = "mimalloc/src"
 
 --需要排除的源文件,目录基于$(SRC_DIR)
 EXCLUDE_FILE={
-	"page-queue.c", "static.c", "alloc-override.c", "alloc-override-osx.c", "region.c"
+    "static.c", "page-queue.c", "alloc-override.c"
 }
 
 --WINDOWS需要连接的库文件
 WINDOWS_LIBS = {
-	"mimalloc-redirect.lib"
+    "mimalloc-redirect.lib"
 }
 
 --WINDOWS需要附加link库目录
 WINDOWS_LIBRARY_DIR = {
-	"mimalloc/bin"
+    "mimalloc/bin"
 }
 
 --WINDOWS预编译命令

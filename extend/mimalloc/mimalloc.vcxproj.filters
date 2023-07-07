@@ -9,9 +9,6 @@
     <ClCompile Include="mimalloc\src\alloc-aligned.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="mimalloc\src\alloc-override-osx.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="mimalloc\src\alloc-override.c">
       <Filter>src</Filter>
     </ClCompile>
@@ -45,13 +42,13 @@
     <ClCompile Include="mimalloc\src\page.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="mimalloc\src\prim\prim.c">
+      <Filter>prim</Filter>
+    </ClCompile>
     <ClCompile Include="mimalloc\src\random.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="mimalloc\src\region.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="mimalloc\src\segment-cache.c">
+    <ClCompile Include="mimalloc\src\segment-map.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="mimalloc\src\segment.c">
@@ -67,6 +64,9 @@
   <ItemGroup>
     <Filter Include="inc">
       <UniqueIdentifier>{CF9F3FDE-7326-F1D8-E642-05F0E07A3695}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="prim">
+      <UniqueIdentifier>{60BEC1A8-0A84-D025-8EDC-5AAF54952563}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{25D902C2-4283-AB8C-FBAC-54DFA101AD31}</UniqueIdentifier>

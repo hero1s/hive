@@ -44,10 +44,21 @@ struct service_group {
 	service_node master;
 	std::vector<uint32_t> hash_ids;
 	std::unordered_map<uint32_t, service_node> mp_nodes;
-	service_node* get_target(uint32_t id) {
+	inline service_node* get_target(uint32_t id) {
 		auto it = mp_nodes.find(id);
 		if (it != mp_nodes.end()) {
 			return &it->second;
+		}
+		return nullptr;
+	}
+	inline service_node* hash_target(uint64_t hash) {
+		auto count = hash_ids.size();
+		if (count > 0) {
+			auto id = hash_ids[hash % count];
+			auto it = mp_nodes.find(id);
+			if (it != mp_nodes.end()) {
+				return &it->second;
+			}
 		}
 		return nullptr;
 	}

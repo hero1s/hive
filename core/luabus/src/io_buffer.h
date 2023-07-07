@@ -54,6 +54,8 @@ public:
 		size_t data_len = (size_t)(m_data_end - m_data_begin);
 		if (m_buffer_size > m_align_max && data_len < m_align_size)	{
 			resize(m_buffer_size / 2);
+		} else if (data_len == 0) {
+			regularize();
 		}
 	}
 
