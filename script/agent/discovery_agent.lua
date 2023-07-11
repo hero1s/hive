@@ -1,6 +1,6 @@
 local event_mgr      = hive.get("event_mgr")
 
-local thread         = import("agent/thread_agent.lua")
+local thread         = import("feature/worker_agent.lua")
 local DiscoveryAgent = singleton(thread)
 
 function DiscoveryAgent:__init()

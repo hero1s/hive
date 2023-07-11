@@ -16,7 +16,7 @@ local hxpcall       = hive.xpcall
 local log_err       = logger.err
 
 local QueueFIFO     = import("container/queue_fifo.lua")
-local SyncLock      = import("kernel/object/sync_lock.lua")
+local SyncLock      = import("feature/sync_lock.lua")
 
 local MINUTE_MS     = hive.enum("PeriodTime", "MINUTE_MS")
 local SYNC_PERFRAME = 5

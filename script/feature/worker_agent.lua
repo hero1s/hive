@@ -6,15 +6,15 @@ local TITLE       = hive.title
 local event_mgr   = hive.get("event_mgr")
 local scheduler   = hive.load("scheduler")
 
-local ThreadAgent = class()
-local prop        = property(ThreadAgent)
+local WorkerAgent = class()
+local prop        = property(WorkerAgent)
 prop:reader("service", "")
 
-function ThreadAgent:__init()
+function WorkerAgent:__init()
 
 end
 
-function ThreadAgent:startup(service, path)
+function WorkerAgent:startup(service, path)
     self.service = service
     if scheduler then
         --启动系统线程
@@ -22,7 +22,7 @@ function ThreadAgent:startup(service, path)
     end
 end
 
-function ThreadAgent:send(rpc, ...)
+function WorkerAgent:send(rpc, ...)
     if scheduler then
         return scheduler:send(self.service, rpc, ...)
     end
@@ -32,7 +32,7 @@ function ThreadAgent:send(rpc, ...)
     event_mgr:notify_listener(rpc, ...)
 end
 
-function ThreadAgent:call(rpc, ...)
+function WorkerAgent:call(rpc, ...)
     if scheduler then
         return scheduler:call(self.service, rpc, ...)
     end
@@ -43,4 +43,4 @@ function ThreadAgent:call(rpc, ...)
     return tunpack(rpc_datas)
 end
 
-return ThreadAgent
+return WorkerAgent

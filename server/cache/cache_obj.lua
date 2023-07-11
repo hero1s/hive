@@ -1,6 +1,6 @@
 -- cache_obj.lua
 -- cache的实体类
-local VarLock       = import("kernel/object/var_lock.lua")
+local VarLock       = import("feature/var_lock.lua")
 
 local log_err       = logger.err
 local log_info      = logger.info

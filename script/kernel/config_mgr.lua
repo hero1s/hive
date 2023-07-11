@@ -6,7 +6,7 @@ local tsort       = table.sort
 local sformat     = string.format
 local tkvarray    = table_ext.kvarray
 local log_err     = logger.err
-local ConfigTable = import("kernel/object/config_table.lua")
+local ConfigTable = import("feature/config_table.lua")
 
 local ConfigMgr   = singleton()
 function ConfigMgr:__init()

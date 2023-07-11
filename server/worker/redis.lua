@@ -1,4 +1,4 @@
-import("driver/worker.lua")
+import("feature/worker.lua")
 
 --启动worker
 hive.startup(function()

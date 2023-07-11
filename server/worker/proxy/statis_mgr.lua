@@ -1,5 +1,5 @@
 --statis_mgr.lua
-local LinuxStatis = import("kernel/object/linux.lua")
+local LinuxStatis = import("feature/linux.lua")
 local InfluxDB    = import("driver/influx.lua")
 
 local tsort       = table.sort

@@ -1,4 +1,4 @@
-local thread      = import("agent/thread_agent.lua")
+local thread      = import("feature/worker_agent.lua")
 local SystemAgent = singleton(thread)
 function SystemAgent:__init()
     self:startup("system", "worker.system")

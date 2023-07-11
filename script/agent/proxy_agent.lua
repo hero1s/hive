@@ -2,7 +2,7 @@ local sformat    = string.format
 local log_warn   = logger.warn
 local scheduler  = hive.load("scheduler")
 
-local thread     = import("agent/thread_agent.lua")
+local thread     = import("feature/worker_agent.lua")
 local ProxyAgent = singleton(thread)
 local prop       = property(ProxyAgent)
 prop:reader("ignore_statistics", {})
