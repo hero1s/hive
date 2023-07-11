@@ -36,19 +36,20 @@ end
 
 function DBIndexMgr:register_gm()
     local cmd_list = {
-        { gm_type = GMType.DEV_OPS, name = "gm_build_db_index", desc = "构建db索引", comment = "", args = "" },
+        { gm_type = GMType.DEV_OPS, name = "gm_build_db_index", desc = "构建db索引", comment = "rebuild失败删除重建", args = "rebuild|integer" },
     }
     gm_agent:insert_command(cmd_list, self)
 end
 
 -- 构建db索引
-function DBIndexMgr:gm_build_db_index()
-    self:build_index()
+function DBIndexMgr:gm_build_db_index(rebuild)
+    rebuild = rebuild == 1 and true or false
+    self:build_index(rebuild)
     rmsg_agent:build_index()
     return { code = 0 }
 end
 
-function DBIndexMgr:build_index()
+function DBIndexMgr:build_index(rebuild)
     local dbindex_db = config_mgr:init_table("dbindex", "db_name", "table_name", "name")
     for _, conf in dbindex_db:iterator() do
         if self.sharding and conf.sharding then
@@ -73,7 +74,7 @@ function DBIndexMgr:build_index()
             log_info("[DBIndexMgr][build_index] db[%s],table[%s],key[%s] build index success", db_name, table_name, index.name)
         else
             log_err("[DBIndexMgr][build_index] db[%s],table[%s] build index[%s] fail:%s", db_name, table_name, index, code)
-            if self.rebuild then
+            if rebuild then
                 ok, code = mongo_agent:drop_indexes({ table_name, index.name }, 1, db_name)
                 if check_success(code, ok) then
                     log_warn("[DBIndexMgr][build_index] db[%s],table[%s],key[%s] drop index success", db_name, table_name, index.name)
@@ -100,7 +101,7 @@ function DBIndexMgr:on_service_ready(id, service_name)
     self.status = 1
     if self.auto_build then
         thread_mgr:sleep(5000)
-        self:build_index()
+        self:build_index(self.rebuild)
         rmsg_agent:build_index()
     end
 end

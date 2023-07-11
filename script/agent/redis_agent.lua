@@ -1,14 +1,15 @@
 --redis_agent.lua
-local tunpack    = table.unpack
-local mrandom    = math_ext.random
-local check_success     = hive.success
+local tunpack       = table.unpack
+local mrandom       = math_ext.random
+local check_success = hive.success
+local log_err       = logger.err
 
-local KernCode   = enum("KernCode")
-local router_mgr = hive.load("router_mgr")
-local scheduler  = hive.load("scheduler")
+local KernCode      = enum("KernCode")
+local router_mgr    = hive.load("router_mgr")
+local scheduler     = hive.load("scheduler")
 
-local RedisAgent = singleton()
-local prop       = property(RedisAgent)
+local RedisAgent    = singleton()
+local prop          = property(RedisAgent)
 prop:reader("service", "redis")
 prop:reader("local_run", false) --本地线程服务
 
@@ -16,12 +17,38 @@ function RedisAgent:__init()
 end
 
 function RedisAgent:redis_lock(lock_key, lock_time)
-    local expire_time = hive.now + lock_time
+    local expire_time                  = hive.now + lock_time
     local lock_ok, lock_code, lock_res = self:execute({ "set", lock_key, expire_time, "ex", lock_time, "nx" })
     if check_success(lock_code, lock_ok) and lock_res == "OK" then
         return true
     end
+    return false
+end
 
+function RedisAgent:set(key, value, etime)
+    local ok, code, res = self:execute({ "set", key, value, "ex", etime or -1 }, key)
+    if check_success(code, ok) then
+        return true
+    end
+    log_err("[RedisAgent][set] ok:%s,code:%s,res:%s", ok, code, res)
+    return false
+end
+
+function RedisAgent:get(key)
+    local ok, code, res = self:execute({ "get", key }, key)
+    if check_success(code, ok) then
+        return true, res
+    end
+    log_err("[RedisAgent][get] ok:%s,code:%s,res:%s", ok, code, res)
+    return false
+end
+
+function RedisAgent:delete(key)
+    local ok, code, res = self:execute({ "del", key }, key)
+    if check_success(code, ok) then
+        return true
+    end
+    log_err("[RedisAgent][delete] ok:%s,code:%s,res:%s", ok, code, res)
     return false
 end
 

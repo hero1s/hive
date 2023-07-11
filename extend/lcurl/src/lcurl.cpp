@@ -60,7 +60,7 @@ extern "C" {
 	LUALIB_API int luaopen_lcurl(lua_State* L) {
 		curl_version_info_data* data = curl_version_info(CURLVERSION_NOW);
 		if (data->version_num < 0x070F04) {
-			return luaL_error(L, "requires 7.15.4 or higher curl, current version is %s", data->version);
+			return luaL_error(L, "requires 7.30 or higher curl, current version is %s", data->version);
 		}
 		curl_global_init(CURL_GLOBAL_ALL);
 		auto luacurl = lcurl::open_lcurl(L);

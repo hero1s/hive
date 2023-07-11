@@ -41,8 +41,8 @@ function RmsgAgent:delete_message(rmsg_type, to, timestamp)
     return self.rmsgs[rmsg_type]:delete_message(to, timestamp)
 end
 
-function RmsgAgent:delete_message_by_uuid(rmsg_type, uuid)
-    return self.rmsgs[rmsg_type]:delete_message_by_uuid(uuid)
+function RmsgAgent:delete_message_by_uuid(rmsg_type, uuid, to)
+    return self.rmsgs[rmsg_type]:delete_message_by_uuid(uuid, to)
 end
 
 -- export

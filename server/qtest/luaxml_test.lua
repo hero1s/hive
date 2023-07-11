@@ -21,32 +21,15 @@ log_debug("toXml:%s", xml2lua.toXml(people))
 
 local xml     = [[<?xml version="1.0" encoding="gbk"?>
 <req>
-    <sAppClass>TENCENT</sAppClass>
-    <sAppID>NORMAL</sAppID>
-    <sAppSubID>-TEST</sAppSubID>
-    <sAppSubIDExt>10</sAppSubIDExt>
-    <sMessage>HelloWorld</sMessage>
-    <sSession>123456</sSession>
-    <sSrcNo>13560405750</sSrcNo>
-    <sVersion>2.0</sVersion>
-    <tel>13560405750</tel>
-    <accountType>1</accountType>
-    <timestamp>1449039957</timestamp>
-    <signmsg>99cbf6345faa750f0082f2031645cf1b</signmsg>
-    <sSignType>MD5</sSignType>
-    <secCheck>
-        <strNationCode>chn</strNationCode>
-        <iAccountType>1</iAccountType>
-        <strAccountAppid>appid</strAccountAppid>
-        <strAccount>1234567</strAccount>
-        <strClientIP>111.111.111.111</strClientIP>
-        <iDeviceType>1</iDeviceType>
-        <strDevice>imei123456</strDevice>
-        <strDeviceName>HUAWEI</strDeviceName>
-        <strReferer>https://www.qq.com</strReferer>
-        <strUA>111</strUA>
-        <strTraceID>2012031902923094382391</strTraceID>
-    </secCheck>
+<sAppClass>TENCENT</sAppClass>
+<sAppID>NORMAL</sAppID>
+<sAppSubID>-XXXX</sAppSubID>
+<sMessage>1000</sMessage>
+<sSrcNo>1379449xxxx</sSrcNo>
+<sVersion>2.0</sVersion>
+<tel>1379449xxxx</tel>
+<timestamp>1589276806</timestamp>
+<signmsg>20cc336b9cccdcaa55cdc768b96459ec</signmsg>
 </req>]]
 local handler = require("xmlhandler.tree")
 local parser  = xml2lua.parser(handler)
@@ -54,3 +37,24 @@ parser:parse(xml)
 
 xml2lua.printable(handler.root)
 log_warn("----%s", handler.root)
+
+local param = {
+    req = {
+        sAppClass = "TENCENT",
+        sAppID    = "NORMAL",
+        sAppSubID = "XXXX",
+        sMessage  = "1000",
+        sSrcNo    = "tel",
+        sVersion  = "2.0",
+        tel       = "tel",
+        timestamp = hive.now,
+        signmsg   = "",
+        secCheck  = {
+            strNationCode = "chn",
+            strClientIP   = "127.0.0.1",
+            strTraceID    = hive.new_guid(),
+        }
+    }
+}
+
+log_warn("table to xml:%s", xml2lua.toXml(param))

@@ -1,5 +1,6 @@
 -- router_mgr.lua
 local lcodec           = require("lcodec")
+local jumphash         = lcodec.jumphash
 local pairs            = pairs
 local log_err          = logger.err
 local log_info         = logger.info
@@ -9,7 +10,7 @@ local tunpack          = table.unpack
 local sformat          = string.format
 local id2nick          = service.id2nick
 local check_success    = hive.success
-local jumphash         = lcodec.jumphash
+local mrandom          = math_ext.random
 
 local monitor          = hive.get("monitor")
 local thread_mgr       = hive.get("thread_mgr")
@@ -214,6 +215,12 @@ function RouterMgr:build_service_method(service, service_id)
         end,
         ["send_%s_hash"]     = function(obj, hash_key, rpc, ...)
             return obj:send_hash(service_id, hash_key, rpc, ...)
+        end,
+        ["call_%s_random"]   = function(obj, rpc, ...)
+            return obj:call_hash(service_id, mrandom(), rpc, ...)
+        end,
+        ["send_%s_random"]   = function(obj, rpc, ...)
+            return obj:send_hash(service_id, mrandom(), rpc, ...)
         end,
         ["call_%s_master"]   = function(obj, rpc, ...)
             return obj:call_master(service_id, rpc, ...)

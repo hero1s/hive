@@ -57,9 +57,9 @@ function ReliableMsg:deal_message(to, timestamp)
     return mongo_agent:update(query, to, self.db_name)
 end
 
-function ReliableMsg:deal_message_by_uuid(uuid)
+function ReliableMsg:deal_message_by_uuid(uuid, to)
     log_info("[RmsgMgr][deal_message_by_uuid] message:%s,%s", self.table_name, uuid)
-    local query = { self.table_name, { ["$set"] = { deal_time = hive.now } }, { uuid = uuid } }
+    local query = { self.table_name, { ["$set"] = { deal_time = hive.now } }, { uuid = uuid, to = to } }
     return mongo_agent:update(query, hive.id, self.db_name)
 end
 
@@ -70,9 +70,9 @@ function ReliableMsg:delete_message(to, timestamp)
     return mongo_agent:delete({ self.table_name, selecter }, hive.id, self.db_name)
 end
 
-function ReliableMsg:delete_message_by_uuid(uuid)
+function ReliableMsg:delete_message_by_uuid(uuid, to)
     log_info("[RmsgMgr][delete_message_by_uuid] delete message: %s", uuid)
-    return mongo_agent:delete({ self.table_name, { uuid = uuid } }, hive.id, self.db_name)
+    return mongo_agent:delete({ self.table_name, { uuid = uuid, to = to }, true }, hive.id, self.db_name)
 end
 
 -- 发送消息

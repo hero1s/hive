@@ -58,7 +58,7 @@ prop:reader("timer_id", nil)    --timer_id
 prop:reader("cursor_id", nil)   --cursor_id
 prop:reader("connections", {})  --connections
 prop:reader("sessions", {})     --sessions
-prop:reader("readpref", nil)    --readPreference
+prop:reader("readpref", { mode = "primary" })    --readPreference
 prop:reader("auth_source", "admin") --authSource
 prop:reader("alives", {})           --alives
 prop:reader("req_counter", nil)
