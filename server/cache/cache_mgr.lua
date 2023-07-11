@@ -50,8 +50,8 @@ function CacheMgr:__init()
     update_mgr:attach_second(self)
     update_mgr:attach_second5(self)
 
-    monitor:watch_service_close(self, "*")
-    monitor:watch_service_ready(self, "*")
+    monitor:watch_service_close(self, "lobby")
+    monitor:watch_service_ready(self, "lobby")
     --counter
     self.req_counter = hive.make_sampling("cache_req")
 end

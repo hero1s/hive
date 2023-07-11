@@ -40,7 +40,7 @@ namespace lcurl {
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)this);
 			curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error);
 			curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout_ms);
-			curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, timeout_ms);
+			curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, 3000);
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
 			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
 			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, false);

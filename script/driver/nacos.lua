@@ -516,10 +516,10 @@ function Nacos:query_services(page, size, group_name)
     local ok, status, res = http_client:call_get(self.services_url, query)
     if not ok or status ~= 200 then
         log_err("[Nacos][query_services] failed! group_name: %s, code: %s, err: %s", group_name, status, res)
-        return nil, res
+        return false
     end
     local jdata = json_decode(res)
-    return jdata.doms
+    return true, jdata.doms
 end
 
 -- 查询系统开关

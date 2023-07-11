@@ -29,7 +29,6 @@ local TITLE              = hive.title
 local FLAG_REQ           = hive.enum("FlagMask", "REQ")
 local FLAG_RES           = hive.enum("FlagMask", "RES")
 local THREAD_RPC_TIMEOUT = hive.enum("NetwkTime", "THREAD_RPC_TIMEOUT")
-local FAST_MS            = hive.enum("PeriodTime", "FAST_MS")
 local HALF_MS            = hive.enum("PeriodTime", "HALF_MS")
 
 --初始化核心
@@ -131,9 +130,9 @@ hive.run = function()
         local now_ms, clock_ms = ltime()
         update_mgr:update(nil, now_ms, clock_ms)
         --时间告警
-        local io_ms   = clock_ms - sclock_ms
         local work_ms = lclock_ms() - sclock_ms
-        if work_ms > HALF_MS or io_ms > FAST_MS then
+        if work_ms > HALF_MS then
+            local io_ms = clock_ms - sclock_ms
             log_err("[worker][run] last frame(%s) too long => all:%d, net:%d)!", hive.name, work_ms, io_ms)
         end
     end)

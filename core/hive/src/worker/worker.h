@@ -8,6 +8,7 @@
 #include "fmt/core.h"
 #include "thread_name.hpp"
 #include "lua_kit.h"
+#include "../lualog/logger.h"
 
 using namespace luakit;
 
@@ -76,6 +77,7 @@ namespace lworker {
                 m_write_buf->push_data(buf->head(), buf->size());
                 return true;
             }
+            LOG_ERROR(fmt::format("thread [{}] call buffer is full:{}", m_name,m_write_buf->size()));
             return false;
         }
 
@@ -94,7 +96,10 @@ namespace lworker {
             while (slice) {
                 m_lua->table_call(service, "on_worker", nullptr, std::tie(), slice);
                 m_read_buf->pop_size(plen);
-                if (ltimer::steady_ms() - clock_ms > 100) break;
+                if (ltimer::steady_ms() - clock_ms > 100) {
+                    LOG_WARN(fmt::format("on_worker [{}]  is busy,remain:{}",m_name,m_read_buf->size()));
+                    break;
+                }                
                 slice = read_slice(m_read_buf, &plen);                
             }
         }

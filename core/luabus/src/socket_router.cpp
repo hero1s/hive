@@ -8,7 +8,7 @@
 #include "socket_router.h"
 
 uint32_t get_group_idx(uint32_t node_id) { return  (node_id >> 16) & 0xff; }
-uint32_t get_node_index(uint32_t node_id) { return node_id & 0x3ff; }
+uint32_t get_node_index(uint32_t node_id) { return node_id & 0xfff; }
 uint32_t build_service_id(uint16_t group_idx, uint16_t index) { return (group_idx & 0xff) << 16 | index; }
 
 uint32_t socket_router::map_token(uint32_t node_id, uint32_t token, uint16_t hash) {

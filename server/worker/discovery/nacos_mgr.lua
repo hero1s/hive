@@ -1,7 +1,7 @@
 local log_debug  = logger.debug
 local log_warn   = logger.warn
 local PeriodTime = enum("PeriodTime")
-
+local makechan   = hive.make_channel
 local event_mgr  = hive.get("event_mgr")
 local timer_mgr  = hive.get("timer_mgr")
 local thread_mgr = hive.get("thread_mgr")
@@ -77,10 +77,10 @@ function NacosMgr:register()
         log_debug("[NacosMgr][register] nacos not ready")
         return false
     end
+    self:unregister()
     if not self:can_register() then
         return false
     end
-    self:unregister()
     if not self.status then
         local metadata = { id = self.node.id, name = self.node.name, is_ready = self.node.is_ready and 1 or 0 }
         self.status    = self.nacos:regi_instance(self.node.service_name, self.node.host, self.node.port, nil, metadata)
@@ -117,6 +117,9 @@ function NacosMgr:can_register()
 end
 
 function NacosMgr:can_add_service(service_name)
+    if not self.node then
+        return false
+    end
     if self.node.is_ready then
         return true
     end
@@ -124,6 +127,39 @@ function NacosMgr:can_add_service(service_name)
         return service_name == "router"
     end
     return false
+end
+
+function NacosMgr:check_service(service_name)
+    local curr = self.nacos:query_instances(service_name)
+    if curr then
+        if not self.services[service_name] then
+            self.services[service_name] = {}
+        end
+        local old        = self.services[service_name]
+        local sadd, sdel = {}, {}
+        for id, node in pairs(old) do
+            if not curr[id] or curr[id].is_ready ~= 1 then
+                sdel[id] = node
+            end
+        end
+        for id, node in pairs(curr) do
+            if self:can_add_service(service_name) then
+                if node.is_ready == 1 and not old[id] then
+                    sadd[id] = node
+                end
+            end
+        end
+        for id, node in pairs(sadd) do
+            old[id] = node
+        end
+        for id, node in pairs(sdel) do
+            old[id] = nil
+        end
+        if next(sadd) or next(sdel) then
+            log_debug("[NacosMgr][on_nacos_tick] sadd:%s, sdel: %s", sadd, sdel)
+            hive.send_master("rpc_service_changed", service_name, sadd, sdel)
+        end
+    end
 end
 
 function NacosMgr:on_nacos_tick()
@@ -139,40 +175,20 @@ function NacosMgr:on_nacos_tick()
         else
             self:register()
         end
-        for _, service_name in pairs(self.nacos:query_services() or {}) do
+        local ok, lists = self.nacos:query_services()
+        if not ok then
+            return
+        end
+        local channel = makechan("nacos-check-service", 1000)
+        for _, service_name in pairs(lists or {}) do
             if self:need_watch(service_name) then
-                local curr = self.nacos:query_instances(service_name)
-                if curr then
-                    if not self.services[service_name] then
-                        self.services[service_name] = {}
-                    end
-                    local old        = self.services[service_name]
-                    local sadd, sdel = {}, {}
-                    for id, node in pairs(old) do
-                        if not curr[id] or curr[id].is_ready ~= 1 then
-                            sdel[id] = node
-                        end
-                    end
-                    for id, node in pairs(curr) do
-                        if self:can_add_service(service_name) then
-                            if node.is_ready == 1 and not old[id] then
-                                sadd[id] = node
-                            end
-                        end
-                    end
-                    for id, node in pairs(sadd) do
-                        old[id] = node
-                    end
-                    for id, node in pairs(sdel) do
-                        old[id] = nil
-                    end
-                    if next(sadd) or next(sdel) then
-                        log_debug("[NacosMgr][on_nacos_tick] sadd:%s, sdel: %s", sadd, sdel)
-                        hive.send_master("rpc_service_changed", service_name, sadd, sdel)
-                    end
-                end
+                channel:push(function()
+                    self:check_service(service_name)
+                    return true, 0
+                end)
             end
         end
+        channel:execute(true)
     end)
 end
 

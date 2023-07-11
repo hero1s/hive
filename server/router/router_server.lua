@@ -3,6 +3,7 @@ local lbus          = require("luabus")
 local log_info      = logger.info
 local log_debug     = logger.debug
 local sidhash       = service.hash
+local id2nick       = service.id2nick
 local tinsert       = table.insert
 
 local FlagMask      = enum("FlagMask")
@@ -33,12 +34,12 @@ end
 function RouterServer:on_client_error(client, client_token, err)
     local master_id = lbus.map_token(client.id, 0)
     self:update_router_node_info(hive.id, client.id, 0)
-    log_info("[RouterServer][on_client_error] %s lost: %s,master:%s", client.name, err, master_id)
+    log_info("[RouterServer][on_client_error] %s lost: %s,master:%s", client.name, err, id2nick(master_id))
 end
 
 --accept事件
 function RouterServer:on_client_accept(client)
-    log_info("[RouterServer][on_client_accept] new connection, token=%s", client.token)
+    log_info("[RouterServer][on_client_accept] new connection, token=%s,ip:%s", client.token, client.ip)
     client.on_forward_error     = function(session_id, error_msg)
         thread_mgr:fork(function()
             client.call(session_id, FlagMask.RES, hive.id, "on_forward_error", false, KernCode.RPC_UNREACHABLE, error_msg)
@@ -74,7 +75,7 @@ end
 --rpc事件处理
 ------------------------------------------------------------------
 function RouterServer:rpc_sync_router_info(router_id, target_ids, status)
-    log_debug("[RouterServer][rpc_sync_router_info] router_id:%s,target_ids:%s,status:%s", router_id, target_ids, status)
+    log_debug("[RouterServer][rpc_sync_router_info] router_id:%s,target_ids:%s,status:%s", id2nick(router_id), target_ids, status)
     if #target_ids > 1 then
         lbus.map_router_node(router_id, 0, 0)
     end

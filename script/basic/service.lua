@@ -1,11 +1,11 @@
 --service.lua
 --每个服务进程都有一个唯一的服务，由2部分组成
---1、服务类型 0-1023
---2、实例编号 0-1023
+--1、服务类型 0-255
+--2、实例编号 0-4095
 --变量说明
 --id：           进程id     32位整数
---index：        编号       0-1023
---service_id:    服务       0-255
+--index：        编号        0-4096
+--service_id:    服务        0-255
 --service_name:  服务名      lobby
 --service_nick:  服务别名    lobby.1
 
@@ -95,7 +95,7 @@ end
 
 --节点id获取服务index
 function service.id2index(hive_id)
-    return hive_id & 0x3ff
+    return hive_id & 0xfff
 end
 
 --节点id转服务名
@@ -118,7 +118,7 @@ function service.id2nick(hive_id)
     if hive_id == nil or hive_id == 0 then
         return "nil"
     end
-    local index      = hive_id & 0x3ff
+    local index      = hive_id & 0xfff
     local service_id = hive_id >> 16
     local sname      = service.sid2name(service_id)
     return sformat("%s_%s", sname, index)

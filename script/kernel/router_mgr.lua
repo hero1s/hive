@@ -73,7 +73,11 @@ end
 --错误处理
 function RouterMgr:on_socket_error(client, token, err)
     self:check_router()
-    log_err("[RouterMgr][on_socket_error] router lost %s:%s,token:%s, err=%s", client.ip, client.port, token, err)
+    if hive.status_run() then
+        log_err("[RouterMgr][on_socket_error] router lost %s:%s,token:%s, err=%s", client.ip, client.port, token, err)
+    else
+        log_info("[RouterMgr][on_socket_error] router lost %s:%s,token:%s, err=%s", client.ip, client.port, token, err)
+    end
 end
 
 --连接成功

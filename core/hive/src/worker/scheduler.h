@@ -34,6 +34,7 @@ namespace lworker {
                 workor->startup();
                 return true;
             }
+            LOG_ERROR(fmt::format("thread [{}] work is repeat startup", name));
             return false;
         }
 
@@ -52,6 +53,7 @@ namespace lworker {
             if (workor) {
                 return workor->call(buf);
             }
+            LOG_ERROR(fmt::format("thread call [{}] work is not exist", name));
             return false;
         }
 
@@ -63,6 +65,7 @@ namespace lworker {
                 m_write_buf->push_data(buf->head(), buf->size());
                 return true;
             }
+            LOG_ERROR(fmt::format("thread call buffer is full!,size:{}",m_write_buf->size()));
             return false;
         }
 
@@ -81,7 +84,10 @@ namespace lworker {
             while (slice) {
                 m_lua->table_call(service, "on_scheduler", nullptr, std::tie(), slice);
                 m_read_buf->pop_size(plen);
-                if (ltimer::steady_ms() - clock_ms > 100) break;
+                if (ltimer::steady_ms() - clock_ms > 100) {
+                    LOG_WARN(fmt::format("on_scheduler is busy,remain:{}", m_read_buf->size()));
+                    break;
+                }                
                 slice = read_slice(m_read_buf, &plen);                
             }
         }

@@ -67,7 +67,7 @@ function MonitorMgr:register_admin()
 end
 
 function MonitorMgr:on_client_accept(client)
-    log_info("[MonitorMgr][on_client_accept] token:%s", client.token)
+    log_info("[MonitorMgr][on_client_accept] token:%s,ip:%s", client.token, client.ip)
 end
 
 -- 心跳

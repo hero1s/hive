@@ -4,8 +4,8 @@
 #include <time.h>
 #include <math.h>
 
-//i  - group，10位，(0~1023)
-//g  - index，10位  (0~1023)
+//i  - group，8位，(0~255)
+//g  - index，12位  (0~4095)
 //t  - gtype, 4位   (0~15) 
 //s  - 序号，  9位  (0~511)
 //ts - 时间戳，30位
@@ -13,8 +13,8 @@
 
 namespace lcodec {
 
-    const uint32_t GROUP_BITS   = 10;
-    const uint32_t INDEX_BITS   = 10;
+    const uint32_t GROUP_BITS   = 8;
+    const uint32_t INDEX_BITS   = 12;
     const uint32_t TYPE_BITS    = 4;
     const uint32_t SNUM_BITS    = 9; 
 
@@ -24,8 +24,8 @@ namespace lcodec {
     //基准时钟：2022-10-01 08:00:00
     const uint32_t BASE_TIME    = 1664582400;
 
-    const int32_t MAX_GROUP    = ((1 << GROUP_BITS) - 1);      //1024 - 1
-    const int32_t MAX_INDEX    = ((1 << INDEX_BITS) - 1);      //1024 - 1
+    const int32_t MAX_GROUP    = ((1 << GROUP_BITS) - 1);      //256 - 1
+    const int32_t MAX_INDEX    = ((1 << INDEX_BITS) - 1);      //4096 - 1
     const int32_t MAX_TYPE     = ((1 << TYPE_BITS) - 1);       //16   - 1
     const int32_t MAX_SNUM     = ((1 << SNUM_BITS) - 1);       //512  - 1
     const int32_t MAX_TIME     = ((1 << 30) - 1);              //30   - 1

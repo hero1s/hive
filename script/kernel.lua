@@ -20,7 +20,6 @@ local scheduler     = hive.load("scheduler")
 local update_mgr    = hive.load("update_mgr")
 local event_mgr     = hive.load("event_mgr")
 
-local FAST_MS       = hive.enum("PeriodTime", "FAST_MS")
 local HALF_MS       = hive.enum("PeriodTime", "HALF_MS")
 
 --初始化核心
@@ -48,6 +47,7 @@ end
 --加载monitor
 local function init_monitor()
     import("agent/monitor_agent.lua")
+    import("agent/discovery_agent.lua")
     if not environ.get("HIVE_MONITOR_HOST") then
         import("kernel/netlog_mgr.lua")
     end
@@ -172,6 +172,13 @@ function hive.is_runing()
     return hive.is_ready()
 end
 
+function hive.status_run()
+    if hive.service_status == ServiceStatus.RUN or hive.service_status == ServiceStatus.BUSY then
+        return true
+    end
+    return false
+end
+
 function hive.is_ready()
     if hive.rely_router then
         local router_mgr = hive.get("router_mgr")
@@ -189,9 +196,9 @@ hive.run  = function()
     local now_ms, clock_ms = ltime()
     update_mgr:update(scheduler, now_ms, clock_ms)
     --时间告警
-    local io_ms   = clock_ms - sclock_ms
     local work_ms = lclock_ms() - sclock_ms
-    if work_ms > HALF_MS or io_ms > FAST_MS then
+    if work_ms > HALF_MS then
+        local io_ms = clock_ms - sclock_ms
         log_err("[hive][run] last frame(%s) too long => all:%d, net:%d)!", hive.name, work_ms, io_ms)
     end
 end

@@ -14,6 +14,7 @@ local prop         = property(Channel)
 prop:reader("title", "")
 prop:reader("timeout", nil)
 prop:reader("executers", {})    --执行器列表
+prop:reader("status", false)
 
 function Channel:__init(title, timeout)
     self.title   = title or "channel"
@@ -37,6 +38,11 @@ end
 
 --执行
 function Channel:execute(all_back)
+    if self.status then
+        log_err("[Channel][execute] repeat execute!!!", self.title)
+        return
+    end
+    self.status     = true
     local btime     = lclock_ms()
     local all_datas = {}
     local count     = #self.executers
