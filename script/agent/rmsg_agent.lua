@@ -19,9 +19,9 @@ function RmsgAgent:setup()
     end
 end
 
-function RmsgAgent:build_index()
+function RmsgAgent:build_index(sharding)
     for _, rmsg in pairs(self.rmsgs or {}) do
-        rmsg:build_index()
+        rmsg:build_index(sharding)
     end
 end
 

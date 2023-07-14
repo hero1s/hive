@@ -20,8 +20,8 @@ return {
         rely_router = false, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
         sole_ip = false, --[[ 校验ip ]]
-        safe_stop = false, --[[ 安全退出 ]]
-        pre_services = {}, --[[ 安全退出前置服务 ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {"lobby"}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 3, --[[ 服务id ]]
@@ -30,8 +30,8 @@ return {
         rely_router = false, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
         sole_ip = false, --[[ 校验ip ]]
-        safe_stop = false, --[[ 安全退出 ]]
-        pre_services = {}, --[[ 安全退出前置服务 ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {"router"}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 4, --[[ 服务id ]]
@@ -60,8 +60,8 @@ return {
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
         sole_ip = false, --[[ 校验ip ]]
-        safe_stop = false, --[[ 安全退出 ]]
-        pre_services = {}, --[[ 安全退出前置服务 ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {"lobby"}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 8, --[[ 服务id ]]
@@ -70,8 +70,8 @@ return {
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
         sole_ip = false, --[[ 校验ip ]]
-        safe_stop = false, --[[ 安全退出 ]]
-        pre_services = {}, --[[ 安全退出前置服务 ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {"router"}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 9, --[[ 服务id ]]
@@ -90,8 +90,8 @@ return {
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
         sole_ip = false, --[[ 校验ip ]]
-        safe_stop = false, --[[ 安全退出 ]]
-        pre_services = {}, --[[ 安全退出前置服务 ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {"router"}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 11, --[[ 服务id ]]
@@ -150,8 +150,8 @@ return {
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
         sole_ip = false, --[[ 校验ip ]]
-        safe_stop = false, --[[ 安全退出 ]]
-        pre_services = {}, --[[ 安全退出前置服务 ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {"router"}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 107, --[[ 服务id ]]
@@ -161,7 +161,7 @@ return {
         hash = 0, --[[ 服务固定hash ]]
         sole_ip = true, --[[ 校验ip ]]
         safe_stop = true, --[[ 安全退出 ]]
-        pre_services = {}, --[[ 安全退出前置服务 ]]
+        pre_services = {"lobby"}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 108, --[[ 服务id ]]
@@ -170,8 +170,8 @@ return {
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
         sole_ip = false, --[[ 校验ip ]]
-        safe_stop = false, --[[ 安全退出 ]]
-        pre_services = {}, --[[ 安全退出前置服务 ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {"dsagent"}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 109, --[[ 服务id ]]
@@ -190,7 +190,7 @@ return {
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
         sole_ip = true, --[[ 校验ip ]]
-        safe_stop = false, --[[ 安全退出 ]]
+        safe_stop = true, --[[ 安全退出 ]]
         pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
@@ -200,7 +200,7 @@ return {
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
         sole_ip = false, --[[ 校验ip ]]
-        safe_stop = false, --[[ 安全退出 ]]
+        safe_stop = true, --[[ 安全退出 ]]
         pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
@@ -210,8 +210,8 @@ return {
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
         sole_ip = false, --[[ 校验ip ]]
-        safe_stop = false, --[[ 安全退出 ]]
-        pre_services = {}, --[[ 安全退出前置服务 ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {"lobby"}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 204, --[[ 服务id ]]
@@ -220,8 +220,8 @@ return {
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
         sole_ip = false, --[[ 校验ip ]]
-        safe_stop = false, --[[ 安全退出 ]]
-        pre_services = {}, --[[ 安全退出前置服务 ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {"lobby"}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 205, --[[ 服务id ]]
@@ -230,7 +230,7 @@ return {
         rely_router = false, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
         sole_ip = false, --[[ 校验ip ]]
-        safe_stop = false, --[[ 安全退出 ]]
+        safe_stop = true, --[[ 安全退出 ]]
         pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
@@ -240,7 +240,7 @@ return {
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
         sole_ip = false, --[[ 校验ip ]]
-        safe_stop = false, --[[ 安全退出 ]]
+        safe_stop = true, --[[ 安全退出 ]]
         pre_services = {}, --[[ 安全退出前置服务 ]]
     },
     {
@@ -250,8 +250,8 @@ return {
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
         sole_ip = false, --[[ 校验ip ]]
-        safe_stop = false, --[[ 安全退出 ]]
-        pre_services = {}, --[[ 安全退出前置服务 ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {"lobby"}, --[[ 安全退出前置服务 ]]
     },
     {
         id = 208, --[[ 服务id ]]
@@ -260,7 +260,27 @@ return {
         rely_router = true, --[[ 依赖路由 ]]
         hash = 0, --[[ 服务固定hash ]]
         sole_ip = false, --[[ 校验ip ]]
-        safe_stop = false, --[[ 安全退出 ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
+    },
+    {
+        id = 209, --[[ 服务id ]]
+        name = 'pay', --[[ 服务名字 ]]
+        mode = 1, --[[ 模式 ]]
+        rely_router = true, --[[ 依赖路由 ]]
+        hash = 0, --[[ 服务固定hash ]]
+        sole_ip = false, --[[ 校验ip ]]
+        safe_stop = true, --[[ 安全退出 ]]
+        pre_services = {}, --[[ 安全退出前置服务 ]]
+    },
+    {
+        id = 210, --[[ 服务id ]]
+        name = 'login_key', --[[ 服务名字 ]]
+        mode = 1, --[[ 模式 ]]
+        rely_router = true, --[[ 依赖路由 ]]
+        hash = 0, --[[ 服务固定hash ]]
+        sole_ip = true, --[[ 校验ip ]]
+        safe_stop = true, --[[ 安全退出 ]]
         pre_services = {}, --[[ 安全退出前置服务 ]]
     },
 }

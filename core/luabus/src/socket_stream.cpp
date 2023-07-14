@@ -610,8 +610,15 @@ void socket_stream::dispatch_package(bool reset) {
 		// 防止单个连接处理太久
 		if ((m_last_recv_time - m_tick_dispatch_time) > max_process_time()) {
 			m_need_dispatch_pkg = true;
+			m_stock_count++;
+			if (m_stock_count > 5) {// 连续积压5次处理不完,断开链接
+				on_error(fmt::format("busy cann't process:{},data_len:{}", m_stock_count,m_recv_buffer.data_len()).c_str());
+			}
 			break;
 		}
+	}
+	if (!m_need_dispatch_pkg) {
+		m_stock_count = 0;
 	}
 }
 
@@ -703,9 +710,9 @@ bool socket_stream::need_delay_send() {
 
 int64_t socket_stream::max_process_time() {
 	if (eproto_type::proto_pack == m_proto_type) {
-		return 5;
+		return 20;
 	} else if (eproto_type::proto_text == m_proto_type) {
 		return 100;
 	}
-	return 50;
+	return 100;
 }

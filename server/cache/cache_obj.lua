@@ -123,7 +123,7 @@ function CacheObj:save_impl()
         if check_failed(code) then
             self.fail_cnt   = self.fail_cnt + 1
             self.retry_time = hive.now + self.fail_cnt * 60
-            log_err("[CacheObj][save_impl] failed: cnt:%s, %s=> db: %s, table: %s", self.fail_cnt, res, self.db_name, self.cache_table)
+            log_err("[CacheObj][save_impl] failed: cnt:%s, %s=> db: %s, table: %s,data:%s", self.fail_cnt, res, self.db_name, self.cache_table, self.data)
             self.dirty = true
             return code
         end

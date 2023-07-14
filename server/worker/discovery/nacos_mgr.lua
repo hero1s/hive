@@ -1,10 +1,14 @@
 local log_debug  = logger.debug
 local log_warn   = logger.warn
-local PeriodTime = enum("PeriodTime")
+local log_err    = logger.err
 local makechan   = hive.make_channel
+local id2nick    = service.id2nick
+
 local event_mgr  = hive.get("event_mgr")
 local timer_mgr  = hive.get("timer_mgr")
 local thread_mgr = hive.get("thread_mgr")
+
+local PeriodTime = enum("PeriodTime")
 
 local NacosMgr   = singleton()
 local prop       = property(NacosMgr)
@@ -82,7 +86,7 @@ function NacosMgr:register()
         return false
     end
     if not self.status then
-        local metadata = { id = self.node.id, name = self.node.name, is_ready = self.node.is_ready and 1 or 0 }
+        local metadata = { id = self.node.id, name = self.node.name, is_ready = self.node.is_ready and 1 or 0, pid = self.node.pid }
         self.status    = self.nacos:regi_instance(self.node.service_name, self.node.host, self.node.port, nil, metadata)
         log_debug("[NacosMgr][register] register:%s", self.status)
     end
@@ -138,13 +142,19 @@ function NacosMgr:check_service(service_name)
         local old        = self.services[service_name]
         local sadd, sdel = {}, {}
         for id, node in pairs(old) do
-            if not curr[id] or curr[id].is_ready ~= 1 then
+            local cur_node = curr[id]
+            if not cur_node or cur_node.is_ready ~= 1 then
+                log_debug("[NacosMgr][check_service] lose node:%s,%s", id2nick(id), curr[id])
                 sdel[id] = node
+            end
+            if cur_node and cur_node.pid ~= node.pid then
+                log_err("[NacosMgr][check_service] the same service but not same pid!!!,%s --> %s", cur_node, node)
             end
         end
         for id, node in pairs(curr) do
             if self:can_add_service(service_name) then
                 if node.is_ready == 1 and not old[id] then
+                    log_debug("[NacosMgr][check_service] add node:%s,%s", id2nick(id), node)
                     sadd[id] = node
                 end
             end

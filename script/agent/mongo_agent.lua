@@ -119,7 +119,7 @@ end
 
 function MongoAgent:update_sheet_field(sheet_name, primary_id, primary_key, field, field_data, db_name)
     local udata         = { ["$set"] = { [field] = field_data } }
-    local ok, code, res = self:update({ sheet_name, udata, { [primary_key] = primary_id }, true }, primary_id, db_name)
+    local ok, code, res = self:update({ sheet_name, udata, { [primary_key] = primary_id } }, primary_id, db_name)
     if check_failed(code, ok) then
         log_err("[MongoAgent][update_mongo_field_%s] update (%s) failed! primary_id(%s), code(%s), res(%s)", sheet_name, field, primary_id, code, res)
         return false

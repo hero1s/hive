@@ -49,6 +49,9 @@
     <ClInclude Include="src\lcodec\shmpool.h">
       <Filter>lcodec</Filter>
     </ClInclude>
+    <ClInclude Include="src\lcodec\utf8.h">
+      <Filter>lcodec</Filter>
+    </ClInclude>
     <ClInclude Include="src\lcrypt\base64.h">
       <Filter>lcrypt</Filter>
     </ClInclude>
@@ -127,6 +130,9 @@
       <Filter>lcjson</Filter>
     </ClCompile>
     <ClCompile Include="src\lcodec\lcodec.cpp">
+      <Filter>lcodec</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lcodec\utf8.c">
       <Filter>lcodec</Filter>
     </ClCompile>
     <ClCompile Include="src\lcrypt\base64.c">

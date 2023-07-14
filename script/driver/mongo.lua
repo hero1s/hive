@@ -9,7 +9,9 @@ local log_err       = logger.err
 local log_info      = logger.info
 local qhash         = hive.hash
 local hdefer        = hive.defer
+local xpcall_ret    = hive.xpcall_ret
 local tunpack       = table.unpack
+local tpack         = table.pack
 local tinsert       = table.insert
 local tis_array     = table_ext.is_array
 local tdelete       = table_ext.delete
@@ -357,7 +359,11 @@ function MongoDB:adminCommand(sock, cmd, cmd_v, ...)
 end
 
 function MongoDB:runCommand(cmd, cmd_v, ...)
-    local bson_cmd = bson_encode_o(cmd, cmd_v or 1, "$db", self.name, ...)
+    local ok, bson_cmd = xpcall_ret(bson_encode_o, "[mongo.bson] error:%s", cmd, cmd_v or 1, "$db", self.name, ...)
+    if not ok then
+        log_err("[MongoDB][runCommand] bson:%s", tpack(...))
+        return false, "bson failed"
+    end
     return self:op_msg(self.executer, bson_cmd, cmd)
 end
 
@@ -366,8 +372,12 @@ function MongoDB:sendCommand(cmd, cmd_v, ...)
     if not sock then
         return false, "db not connected"
     end
-    local bson_cmd = bson_encode_o(cmd, cmd_v or 1, "$db", self.name, "writeConcern", { w = 0 }, ...)
-    local msg      = mopmsg(0, 2, bson_cmd)
+    local ok, bson_cmd = xpcall_ret(bson_encode_o, "[mongo.bson] error:%s", cmd, cmd_v or 1, "$db", self.name, "writeConcern", { w = 0 }, ...)
+    if not ok then
+        log_err("[MongoDB][sendCommand] bson:%s", tpack(...))
+        return false, "bson failed"
+    end
+    local msg = mopmsg(0, 2, bson_cmd)
     if not sock:send(msg) then
         return false, "send failed"
     end

@@ -3,7 +3,7 @@ local ltimer        = require("ltimer")
 local bson          = require("bson")
 local bdate         = bson.date
 local lnow_ms       = ltimer.now_ms
-
+local tinsert       = table.insert
 local log_err       = logger.err
 local log_info      = logger.info
 local check_success = hive.success
@@ -24,13 +24,15 @@ function ReliableMsg:__init(db_name, table_name, due_day)
     self.table_name = table_name
 end
 
-function ReliableMsg:build_index()
+function ReliableMsg:build_index(sharding)
     local indexs = {
-        { key = { to = 1 }, name = "to", unique = false },
         { key = { uuid = 1 }, name = "uuid", unique = true },
     }
+    if not sharding then
+        tinsert(indexs, { key = { to = 1 }, name = "to", unique = false })
+    end
     if self.ttl then
-        indexs[#indexs + 1] = { key = { ttl = 1 }, expireAfterSeconds = 0, name = "ttl", unique = false }
+        tinsert(indexs, { key = { ttl = 1 }, expireAfterSeconds = 0, name = "ttl", unique = false })
     end
     local query    = { self.table_name, indexs }
     local ok, code = mongo_agent:create_indexes(query, nil, self.db_name)

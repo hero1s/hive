@@ -8,7 +8,7 @@ thread_mgr:fork(function()
     ----------------------------------------------------------------
     for i = 1, 10 do
         local guid = lcodec.guid_new(104, 1, 5)
-        log_info("test guid:%s:%s,serial:%s", i, guid,lcodec.guid_serial(guid))
+        log_info("test guid:%s:%s,serial:%s", i, guid, lcodec.guid_serial(guid))
         --log_info("test guid code:%s:%s", i, lcodec.guid_encode())
     end
 
@@ -31,9 +31,9 @@ thread_mgr:fork(function()
     local guids = {}
     for i = 1, 10 do
         for i = 1, 10000 do
-            local t = lcodec.guid_new(1,2)
+            local t = lcodec.guid_new(1, 2)
             if guids[t] then
-                logger.error("the guid is repeat:%s",t)
+                logger.error("the guid is repeat:%s", t)
             end
             guids[t] = true
         end
@@ -60,5 +60,12 @@ thread_mgr:fork(function()
         count_jump[pos] = count_jump[pos] + 1
     end
     logger.debug("jump hash:%s", count_jump)
+
+    log_info("----------test gbk-------------")
+    local src_str = "葡萄美酒夜光杯"
+    local dst_str = lcodec.gbk_utf8(src_str)
+    log_info("gbk to utf8:%s", dst_str)
+    local src_utf8 = lcodec.utf8_gbk(dst_str)
+    log_info("utf8 to gbk:%s", src_utf8)
 
 end)

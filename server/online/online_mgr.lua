@@ -195,11 +195,11 @@ end
 
 function OnlineMgr:rpc_sync_player_info(player_id, lobby_id, online)
     log_info("[OnlineMgr][rpc_sync_player_info] player_id:%s,lobby:%s,%s", player_id, id2nick(lobby_id), online)
+    if not self.lobby_players[lobby_id] then
+        self.lobby_players[lobby_id] = {}
+    end
     if online then
-        self.lobbys[player_id] = lobby_id
-        if not self.lobby_players[lobby_id] then
-            self.lobby_players[lobby_id] = {}
-        end
+        self.lobbys[player_id]                  = lobby_id
         self.lobby_players[lobby_id][player_id] = true
     else
         self.lobbys[player_id]                  = nil

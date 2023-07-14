@@ -35,6 +35,20 @@ namespace lcodec {
     static std::map<uint32_t, uint32_t> ketama_map() {
         return thread_ketama.virtual_map;
     }
+
+    static std::string utf8_gbk(std::string str) {
+        char pOut[1024];
+        memset(pOut, 0, sizeof(pOut));
+        utf8_to_gb(str.c_str(), pOut, sizeof(pOut));        
+        return pOut;
+    }
+    static std::string gbk_utf8(std::string str) {
+        char pOut[1024];
+        memset(pOut, 0, sizeof(pOut));
+        gb_to_utf8(str.c_str(), pOut, sizeof(pOut));
+        return pOut;
+    }
+
     static bitarray* barray(lua_State* L, size_t nbits) {
         bitarray* barray = new bitarray();
         if (!barray->general(nbits)) {
@@ -72,6 +86,9 @@ namespace lcodec {
         llcodec.set_function("ketama_next", ketama_next);
         llcodec.set_function("ketama_map", ketama_map);
         llcodec.set_function("bitarray", barray);
+
+        llcodec.set_function("utf8_gbk", utf8_gbk);
+        llcodec.set_function("gbk_utf8", gbk_utf8);
 
         kit_state.new_class<bitarray>(
             "flip", &bitarray::flip,

@@ -1,26 +1,46 @@
---数据库连接字符串列表, 分割符为";"
---单个连接串格式: driver://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
---options格式: key1=value1&key2=value2
+--database_cfg.lua
+--luacheck: ignore 631
+
+--导出配置内容
 return {
     {
-        name    = 'klbq', --[[ 别名 ]]
+        driver = 'mongo', --[[ 类型 ]]
+        name = 'klbq', --[[ 别名 ]]
+        db = 'klbq', --[[ 数据库名 ]]
         default = true, --[[ 默认数据库 ]]
-        max_ops = 50000, --[[ 队列大小 ]]
-        url     = [[mongodb://_:_@10.100.0.48:27019/klbq?readPreference=secondaryPreferred]]
+        host = '10.100.0.48', --[[ ip地址 ]]
+        port = 27019, --[[ 端口 ]]
+        user = '', --[[ 账号 ]]
+        passwd = '', --[[ 密码 ]]
     },
     {
-        name    = 'rmsg', --[[ 别名 ]]
-        max_ops = 50000, --[[ 队列大小 ]]
-        url     = [[mongodb://_:_@10.100.0.48:27019/klbq_rmsg?readPreference=secondaryPreferred]]
+        driver = 'mongo', --[[ 类型 ]]
+        name = 'rmsg', --[[ 别名 ]]
+        db = 'klbq_rmsg', --[[ 数据库名 ]]
+        default = false, --[[ 默认数据库 ]]
+        host = '10.100.0.48', --[[ ip地址 ]]
+        port = 27019, --[[ 端口 ]]
+        user = '', --[[ 账号 ]]
+        passwd = '', --[[ 密码 ]]
     },
     {
-        name    = 'common', --[[ 别名 ]]
-        max_ops = 50000, --[[ 队列大小 ]]
-        url     = [[mongodb://_:_@10.100.0.48:27019/klbq_common?readPreference=secondaryPreferred]]
-    },
-    {
-        name    = 'redis', --[[ 别名 ]]
+        driver = 'redis', --[[ 类型 ]]
+        name = 'redis', --[[ 别名 ]]
+        db = 'redis', --[[ 数据库名 ]]
         default = true, --[[ 默认数据库 ]]
-        url     = [[redis://_:_@10.100.0.48:6378]]
-    }
+        host = '10.100.0.48', --[[ ip地址 ]]
+        port = 6378, --[[ 端口 ]]
+        user = '', --[[ 账号 ]]
+        passwd = '', --[[ 密码 ]]
+    },
+    {
+        driver = 'mysql', --[[ 类型 ]]
+        name = 'klbq', --[[ 别名 ]]
+        db = 'klbq', --[[ 数据库名 ]]
+        default = true, --[[ 默认数据库 ]]
+        host = '10.100.0.48', --[[ ip地址 ]]
+        port = 3306, --[[ 端口 ]]
+        user = 'root', --[[ 账号 ]]
+        passwd = '123456', --[[ 密码 ]]
+    },
 }

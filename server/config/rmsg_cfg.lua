@@ -10,12 +10,6 @@ return {
         due_days = 2, --[[ 过期天数 ]]
     },
     {
-        rmsg_type = 3, --[[ 消息类型 ]]
-        db_name = 'rmsg', --[[ 数据库 ]]
-        table_name = 'rmsg_standings', --[[ 消息表 ]]
-        due_days = 3, --[[ 过期天数 ]]
-    },
-    {
         rmsg_type = 4, --[[ 消息类型 ]]
         db_name = 'rmsg', --[[ 数据库 ]]
         table_name = 'rmsg_settlement', --[[ 消息表 ]]

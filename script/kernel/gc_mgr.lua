@@ -13,8 +13,8 @@ local log_info            = logger.info
 local cut_tail            = math_ext.cut_tail
 
 local MAX_IDLE_TIME       = 10 * 1000                  -- 空闲时间
-local GC_MAX_STEP         = 1000                       -- gc最大回收速度
-local GC_FAST_STEP        = 500                        -- gc快速垃圾回收，单步最大500ms
+local GC_MAX_STEP         = 500                        -- gc最大回收速度
+local GC_FAST_STEP        = 200                        -- gc快速垃圾回收，单步最大200ms
 local GC_SLOW_STEP        = 100                        -- gc慢回收，单步最大100ms
 local MEM_SIZE_FOR_FAST   = 100 * 1000                 -- gc快速回收内存大小,100MB
 local MEM_SIZE_FOR_MAX    = 1000 * 1000                -- 超过1G内存，极限速度回收内存

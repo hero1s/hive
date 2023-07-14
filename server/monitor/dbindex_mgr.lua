@@ -45,11 +45,15 @@ end
 function DBIndexMgr:gm_build_db_index(rebuild)
     rebuild = rebuild == 1 and true or false
     self:build_index(rebuild)
-    rmsg_agent:build_index()
     return { code = 0 }
 end
 
 function DBIndexMgr:build_index(rebuild)
+    self:build_dbindex(rebuild)
+    rmsg_agent:build_index(self.sharding)
+end
+
+function DBIndexMgr:build_dbindex(rebuild)
     local dbindex_db = config_mgr:init_table("dbindex", "db_name", "table_name", "name")
     for _, conf in dbindex_db:iterator() do
         if self.sharding and conf.sharding then
@@ -102,7 +106,6 @@ function DBIndexMgr:on_service_ready(id, service_name)
     if self.auto_build then
         thread_mgr:sleep(5000)
         self:build_index(self.rebuild)
-        rmsg_agent:build_index()
     end
 end
 

@@ -73,9 +73,6 @@ local function test_small(json_type, test_code)
             level         = 423,
             room_status   = 2,
             game_mode     = 2,
-            medal_cnt     = 3234,
-            epic_cnt      = 2334,
-            honour_cnt    = 32,
             logout_time   = hive.now,
             settings      = { 1, 2, 3, 4, 5, 5 }
         }, intimacy   = 4325,
