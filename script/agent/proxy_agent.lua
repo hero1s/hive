@@ -9,8 +9,9 @@ prop:reader("ignore_statistics", {})
 prop:reader("statis_status", false)
 
 function ProxyAgent:__init()
+    self.service = "proxy"
     if scheduler then
-        self:startup("proxy", "worker.proxy")
+        self:startup("worker.proxy")
         --开启统计
         if environ.status("HIVE_STATIS") then
             self.statis_status = true

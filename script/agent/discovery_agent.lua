@@ -4,7 +4,8 @@ local thread         = import("feature/worker_agent.lua")
 local DiscoveryAgent = singleton(thread)
 
 function DiscoveryAgent:__init()
-    self:startup("discovery", "worker.discovery")
+    self.service = "discovery"
+    self:startup("worker.discovery")
 
     event_mgr:add_trigger(self, "evt_change_service_status")
     event_mgr:add_trigger(self, "evt_service_shutdown")

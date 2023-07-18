@@ -59,14 +59,12 @@ function HttpServer:on_socket_error(socket, token, err)
         self.listener = nil
         return
     end
-    --log_debug("[HttpServer][on_socket_error] client(token:%s) close!", token)
     self.clients[token]  = nil
     self.requests[token] = nil
 end
 
 function HttpServer:on_socket_accept(socket, token)
     local ip = socket.ip
-    --log_debug("[HttpServer][on_socket_accept] client(token:%s,ip:%s) connected!", token, ip)
     if self.limit_ips and self.limit_ips[ip] == nil then
         log_warn("[HttpServer][on_socket_accept] limit white ip visit:%s", ip)
         socket:close()

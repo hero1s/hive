@@ -14,8 +14,7 @@ function WorkerAgent:__init()
 
 end
 
-function WorkerAgent:startup(service, path)
-    self.service = service
+function WorkerAgent:startup(path)
     if scheduler then
         --启动系统线程
         scheduler:startup(self.service, path)
@@ -26,6 +25,7 @@ function WorkerAgent:send(rpc, ...)
     if scheduler then
         return scheduler:send(self.service, rpc, ...)
     end
+    logger.debug("----%s,%s", TITLE, self.service)
     if TITLE ~= self.service then
         return send_worker(self.service, rpc, ...)
     end

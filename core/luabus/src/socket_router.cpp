@@ -270,3 +270,22 @@ uint32_t socket_router::find_transfer_router(uint32_t target_id, uint16_t group_
 	return 0;
 }
 
+void socket_router::map_player(uint32_t player_id, uint32_t lobby_id) {
+	if (lobby_id == 0) {
+		m_id2lobby.erase(player_id);
+	} else {
+		if (player_id == 0) {//移除全部
+			auto it = m_id2lobby.begin();
+			while (it != m_id2lobby.end())
+			{
+				if (it->second == lobby_id) {
+					it = m_id2lobby.erase(it);
+				} else {
+					it++;
+				}
+			}
+		} else {
+			m_id2lobby[player_id] = lobby_id;
+		}		
+	}
+}

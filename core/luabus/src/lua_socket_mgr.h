@@ -18,9 +18,11 @@ public:
 	int map_token(uint32_t node_id, uint32_t token, uint16_t hash);
 	int set_node_status(uint32_t node_id, uint8_t status);
 	void map_router_node(uint32_t router_id, uint32_t target_id, uint8_t status);
+	void map_player(uint32_t player_id, uint32_t lobby_id);
 	void set_router_id(int id);
 	void set_rpc_key(std::string key);
 	const std::string get_rpc_key();
+
 
 private:
 	lua_State* m_lvm = nullptr;

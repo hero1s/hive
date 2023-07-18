@@ -611,7 +611,7 @@ void socket_stream::dispatch_package(bool reset) {
 		if ((m_last_recv_time - m_tick_dispatch_time) > max_process_time()) {
 			m_need_dispatch_pkg = true;
 			m_stock_count++;
-			if (m_stock_count > 5) {// 连续积压5次处理不完,断开链接
+			if (m_stock_count > 10) {// 连续积压5次处理不完,断开链接
 				on_error(fmt::format("busy cann't process:{},data_len:{}", m_stock_count,m_recv_buffer.data_len()).c_str());
 			}
 			break;
@@ -710,9 +710,9 @@ bool socket_stream::need_delay_send() {
 
 int64_t socket_stream::max_process_time() {
 	if (eproto_type::proto_pack == m_proto_type) {
-		return 20;
+		return 10;
 	} else if (eproto_type::proto_text == m_proto_type) {
 		return 100;
 	}
-	return 100;
+	return 50;
 }

@@ -61,6 +61,10 @@ void lua_socket_mgr::map_router_node(uint32_t router_id, uint32_t target_id, uin
 	return m_router->map_router_node(router_id,target_id,status);
 }
 
+void lua_socket_mgr::map_player(uint32_t player_id, uint32_t lobby_id) {
+	return m_router->map_player(player_id, lobby_id);
+}
+
 void lua_socket_mgr::set_router_id(int id) {
 	m_router->set_router_id(id);
 }

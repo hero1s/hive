@@ -170,7 +170,7 @@ void hive_app::run() {
 	open_custom_libs(lua.L());//添加扩展库
 	auto hive = lua.new_table("hive");
 	hive.set("pid", ::getpid());
-	hive.set("title", "[hive]");
+	hive.set("title", "hive");
 	hive.set("platform", get_platform());
 	
 	hive.set_function("get_signal", [&]() { return m_signal; });

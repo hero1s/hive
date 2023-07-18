@@ -13,6 +13,9 @@
     <ClInclude Include="src\lua_socket_node.h">
       <Filter>inc</Filter>
     </ClInclude>
+    <ClInclude Include="src\lz4.h">
+      <Filter>inc</Filter>
+    </ClInclude>
     <ClInclude Include="src\socket_dns.h">
       <Filter>inc</Filter>
     </ClInclude>
@@ -52,6 +55,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\lua_socket_node.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lz4.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\main.cpp">

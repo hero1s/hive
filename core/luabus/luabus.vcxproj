@@ -7,37 +7,41 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\io_buffer.h"/>
-    <ClInclude Include="src\lua_archiver.h"/>
-    <ClInclude Include="src\lua_socket_mgr.h"/>
-    <ClInclude Include="src\lua_socket_node.h"/>
-    <ClInclude Include="src\socket_dns.h"/>
-    <ClInclude Include="src\socket_helper.h"/>
-    <ClInclude Include="src\socket_listener.h"/>
-    <ClInclude Include="src\socket_mgr.h"/>
-    <ClInclude Include="src\socket_router.h"/>
-    <ClInclude Include="src\socket_stream.h"/>
-    <ClInclude Include="src\socket_tcp.h"/>
-    <ClInclude Include="src\socket_udp.h"/>
-    <ClInclude Include="src\stdafx.h"/>
-    <ClInclude Include="src\var_int.h"/>
+    <ClInclude Include="src\io_buffer.h" />
+    <ClInclude Include="src\lua_archiver.h" />
+    <ClInclude Include="src\lua_socket_mgr.h" />
+    <ClInclude Include="src\lua_socket_node.h" />
+    <ClInclude Include="src\lz4.h" />
+    <ClInclude Include="src\socket_dns.h" />
+    <ClInclude Include="src\socket_helper.h" />
+    <ClInclude Include="src\socket_listener.h" />
+    <ClInclude Include="src\socket_mgr.h" />
+    <ClInclude Include="src\socket_router.h" />
+    <ClInclude Include="src\socket_stream.h" />
+    <ClInclude Include="src\socket_tcp.h" />
+    <ClInclude Include="src\socket_udp.h" />
+    <ClInclude Include="src\stdafx.h" />
+    <ClInclude Include="src\var_int.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\lua_archiver.cpp"/>
-    <ClCompile Include="src\lua_socket_mgr.cpp"/>
-    <ClCompile Include="src\lua_socket_node.cpp"/>
-    <ClCompile Include="src\main.cpp"/>
-    <ClCompile Include="src\socket_helper.cpp"/>
-    <ClCompile Include="src\socket_listener.cpp"/>
-    <ClCompile Include="src\socket_mgr.cpp"/>
-    <ClCompile Include="src\socket_router.cpp"/>
-    <ClCompile Include="src\socket_stream.cpp"/>
-    <ClCompile Include="src\socket_tcp.cpp"/>
-    <ClCompile Include="src\socket_udp.cpp"/>
+    <ClCompile Include="src\lua_archiver.cpp" />
+    <ClCompile Include="src\lua_socket_mgr.cpp" />
+    <ClCompile Include="src\lua_socket_node.cpp" />
+    <ClCompile Include="src\lz4.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\socket_helper.cpp" />
+    <ClCompile Include="src\socket_listener.cpp" />
+    <ClCompile Include="src\socket_mgr.cpp" />
+    <ClCompile Include="src\socket_router.cpp" />
+    <ClCompile Include="src\socket_stream.cpp" />
+    <ClCompile Include="src\socket_tcp.cpp" />
+    <ClCompile Include="src\socket_udp.cpp" />
     <ClCompile Include="src\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\var_int.cpp"/>
+    <ClCompile Include="src\var_int.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{EC8C4743-6D5F-E10D-3D10-98330150B2C9}</ProjectGuid>

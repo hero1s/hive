@@ -8,6 +8,7 @@ local KernCode     = enum("KernCode")
 local router_mgr   = hive.load("router_mgr")
 local scheduler    = hive.load("scheduler")
 
+local AUTOINCCC    = environ.get("HIVE_DB_AUTOINCTB", "autoinctb")
 local MongoAgent   = singleton()
 local prop         = property(MongoAgent)
 prop:reader("service", "mongo")
@@ -83,17 +84,20 @@ function MongoAgent:execute(rpc, db_query, hash_key, db_name)
     return false, KernCode.FAILED, "init not right"
 end
 
-------------------------------------------------------------------
-
---获取自增id
-function MongoAgent:get_inc_id(id_name, tb_name, db_name, inc_value)
-    local ok, code, res = self:find_and_modify({ tb_name, { ["$inc"] = { [id_name] = inc_value or 1 } }, {}, true, { _id = 0 }, true }, nil, db_name)
+function MongoAgent:get_autoinc_id(id_key, inc_value, min_id, db_name)
+    local query         = { key = id_key }
+    local fields        = { autoinc_id = 1 }
+    local update        = { ["$inc"] = { ["autoinc_id"] = inc_value or 1 } }
+    local ok, code, res = self:find_and_modify({ AUTOINCCC, update, query, true, fields, true }, id_key, db_name)
     if check_failed(code, ok) then
-        log_err("[MongoAgent][get_inc_id] create %s failed! code: %s, res: %s", id_name, code, res)
+        log_err("[MongoAgent][get_autoinc_id] create %s failed! code: %s, res: %s", id_key, code, res)
         return 0
     end
-    local id = res.value[id_name]
-    log_info("[MongoAgent][get_inc_id] db_inc_id new %s:%s", id_name, id)
+    local id = res.value.autoinc_id
+    if min_id and id < min_id then
+        return self:get_autoinc_id(id_key, min_id - id, nil, db_name)
+    end
+    log_info("[MongoAgent][get_autoinc_id] autoinc_id new %s:%s", id_key, id)
     return id
 end
 
@@ -117,11 +121,11 @@ function MongoAgent:delete_sheet(sheet_name, primary_id, primary_key, db_name)
     return true
 end
 
-function MongoAgent:update_sheet_field(sheet_name, primary_id, primary_key, field, field_data, db_name)
-    local udata         = { ["$set"] = { [field] = field_data } }
+function MongoAgent:update_sheet_fields(sheet_name, primary_id, primary_key, field_datas, db_name)
+    local udata         = { ["$set"] = field_datas }
     local ok, code, res = self:update({ sheet_name, udata, { [primary_key] = primary_id } }, primary_id, db_name)
     if check_failed(code, ok) then
-        log_err("[MongoAgent][update_mongo_field_%s] update (%s) failed! primary_id(%s), code(%s), res(%s)", sheet_name, field, primary_id, code, res)
+        log_err("[MongoAgent][update_mongo_field_%s] update (%s) failed! primary_id(%s), code(%s), res(%s)", sheet_name, field_datas, primary_id, code, res)
         return false
     end
     return true
