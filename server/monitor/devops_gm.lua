@@ -120,6 +120,10 @@ function DevopsGmMgr:gm_cfg_reload(is_remote)
     log_debug("[DevopsGmMgr][gm_cfg_reload] is_remote:%s", is_remote)
     local flag = (is_remote == 1)
     if flag then
+        if hive.is_publish then
+            return { code = 0, msg = "仅限开发环境可用" }
+        end
+
         local url = env_get("HIVE_CONFIG_RELOAD_URL", "")
         if url == "" then
             log_err("[DevopsGmMgr][gm_cfg_reload] HIVE_CONFIG_RELOAD_URL not set")

@@ -104,7 +104,7 @@ function DBIndexMgr:on_service_ready(id, service_name)
     end
     self.status = 1
     if self.auto_build then
-        thread_mgr:sleep(5000)
+        thread_mgr:sleep(15000)
         self:build_index(self.rebuild)
     end
 end

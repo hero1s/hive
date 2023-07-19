@@ -33,7 +33,7 @@ end
 --其他服务器节点关闭
 function RouterServer:on_client_error(client, client_token, err)
     local master_id = lbus.map_token(client.id, 0)
-    self:update_router_node_info(hive.id, client.id, 0)
+    self:update_router_node_info(client, 0)
     log_info("[RouterServer][on_client_error] %s lost: %s,master:%s", client.name, err, id2nick(master_id))
 end
 
@@ -52,22 +52,27 @@ function RouterServer:on_client_accept(client)
     end
 end
 
---todo 后续优化同步机制 toney
-function RouterServer:update_router_node_info(router_id, target_id, status)
+function RouterServer:update_router_node_info(client, status)
+    local router_id = hive.id
+    local target_id = client.id
     lbus.map_router_node(router_id, target_id, status)
-    local nodes = {}
-    if status == 0 then
-        tinsert(nodes, router_id)
-    else
+    self:broadcast_router("rpc_sync_router_info", router_id, { target_id }, status)
+    local is_router = client.service_name == "router" and true or false
+    if status == 1 and is_router then
+        local nodes = {}
         for _, client in self.rpc_server:iterator() do
             if client.id then
                 tinsert(nodes, client.id)
             end
         end
+        self.rpc_server:send(client, "rpc_sync_router_info", router_id, nodes, status)
     end
+end
+
+function RouterServer:broadcast_router(rpc, ...)
     for _, client in self.rpc_server:iterator() do
         if client.service_name == "router" then
-            self.rpc_server:send(client, "rpc_sync_router_info", router_id, nodes, status)
+            self.rpc_server:send(client, rpc, ...)
         end
     end
 end
@@ -91,7 +96,7 @@ function RouterServer:on_client_register(client, node_info)
     --固定hash自动设置为最大index服务[约定固定hash服务的index为连续的1-n,且运行过程中不能扩容]
     local hash_value   = service_hash > 0 and client.index or 0
     local master_id    = lbus.map_token(client.id, client.token, hash_value)
-    self:update_router_node_info(hive.id, client.id, 1)
+    self:update_router_node_info(client, 1)
     log_info("[RouterServer][service_register] service: %s,hash:%s,master:%s", client.name, service_hash, master_id)
 end
 

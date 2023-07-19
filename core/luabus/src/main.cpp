@@ -56,7 +56,6 @@ namespace luabus {
         lluabus.set_function("map_token", [](uint32_t node_id, uint32_t token, uint16_t hash) { return socket_mgr.map_token(node_id, token, hash); });
         lluabus.set_function("set_node_status", [](uint32_t node_id, uint8_t status) { return socket_mgr.set_node_status(node_id, status); });
         lluabus.set_function("map_router_node", [](uint32_t router_id, uint32_t target_id, uint8_t status) { return socket_mgr.map_router_node(router_id, target_id, status); });
-        lluabus.set_function("map_player", [](uint32_t player_id, uint32_t lobby_id) { return socket_mgr.map_player(player_id, lobby_id); });
         lluabus.set_function("set_router_id", [](int id) { return socket_mgr.set_router_id(id); });
         lluabus.set_function("set_rpc_key", [](std::string key) { return socket_mgr.set_rpc_key(key); });
         lluabus.set_function("get_rpc_key", []() { return socket_mgr.get_rpc_key(); });

@@ -73,8 +73,6 @@ public:
 	uint32_t set_node_status(uint32_t node_id, uint8_t status);
 	void map_router_node(uint32_t router_id, uint32_t target_id, uint8_t status);	
 	void set_router_id(uint32_t node_id);
-	void map_player(uint32_t player_id, uint32_t lobby_id);
-
 	uint32_t choose_master(uint32_t group_idx);
 	void flush_hash_node(uint32_t group_idx);
 
@@ -96,7 +94,5 @@ private:
 	int16_t m_router_idx = -1;
 	uint32_t m_node_id = 0;
 	BYTE m_header_data[ROUTER_HEAD_LEN];
-	//存储player_id <==> lobby 映射
-	std::unordered_map<uint32_t, uint32_t> m_id2lobby;
 };
 
