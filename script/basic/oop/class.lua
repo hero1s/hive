@@ -19,6 +19,7 @@ local tsort        = table.sort
 local class_tpls   = _ENV.class_tpls or {}
 --类计数
 local class_track  = _ENV.class_track or setmetatable({}, { __mode = "kv" })
+local open_track   = false
 
 local function deep_copy(src, dst)
     local ndst = dst or {}
@@ -131,8 +132,10 @@ local function mt_class_new(class, ...)
         end
         return object
     else
-        local object        = object_constructor(class)
-        class_track[object] = object.__source
+        local object = object_constructor(class)
+        if open_track then
+            class_track[object] = object.__source
+        end
         return object_init(class, object, ...)
     end
 end
@@ -245,6 +248,10 @@ function conv_class(name)
     if ok then
         return obj
     end
+end
+
+function set_open_track(open)
+    open_track = open
 end
 
 function show_class_track(less_num)

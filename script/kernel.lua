@@ -24,6 +24,7 @@ local HALF_MS       = hive.enum("PeriodTime", "HALF_MS")
 
 --初始化核心
 local function init_core()
+    set_open_track(environ.status("HIVE_OPEN_TRACK"))
     import("kernel/gc_mgr.lua")
     import("kernel/thread_mgr.lua")
     import("kernel/event_mgr.lua")

@@ -87,10 +87,10 @@ function UpdateMgr:update_fast(clock_ms)
     self.next_frame = clock_ms + FAST_MS
 end
 
-function UpdateMgr:update_minute(clock_ms)
+function UpdateMgr:update_minute(clock_ms, cur_minute)
     for obj in pairs(self.minute_objs) do
         thread_mgr:fork(function()
-            obj:on_minute(clock_ms)
+            obj:on_minute(clock_ms, cur_minute)
         end)
     end
     self:check_new_day()
@@ -168,7 +168,7 @@ function UpdateMgr:update_by_time(scheduler, now, clock_ms)
         return
     end
     self.last_minute = time.min
-    self:update_minute(clock_ms)
+    self:update_minute(clock_ms, self.last_minute)
     --时更新
     local cur_hour = time.hour
     if cur_hour == self.last_hour then

@@ -9,8 +9,9 @@ prop:reader("wheel_cnt", 1)     -- 轮子数量（最小为1）
 prop:reader("wheel_cur", 1)     -- 当前轮子号
 prop:reader("count", 0)         -- 数量
 
-function WheelMap:__init(wheel_cnt)
+function WheelMap:__init(wheel_cnt, wheel_cur)
     self.wheel_cnt = wheel_cnt or 1
+    self.wheel_cur = wheel_cur or 1
     for n = 1, self.wheel_cnt do
         self.host_maps[n] = {}
     end

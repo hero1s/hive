@@ -56,6 +56,13 @@ function RouterMgr:add_router(router_id, host, port)
     if router_id == hive.id then
         return
     end
+    --test by toney
+--[[    if service.id2name(hive.id) ~= "router" and table_ext.size(self.routers) > 0 then
+        if hive.index ~= service.id2index(router_id) then
+            return
+        end
+    end]]
+
     local router = self.routers[router_id]
     if router then
         if router.ip ~= host or router.port ~= port then
@@ -149,8 +156,7 @@ end
 
 --通过router传递广播
 function RouterMgr:broadcast(service_id, rpc, ...)
-    local router = self:hash_router(service_id)
-    return self:forward_client(router, "call_broadcast", rpc, 0, service_id, rpc, ...)
+    return self:forward_client(self:hash_router(service_id + hive.id), "call_broadcast", rpc, 0, service_id, rpc, ...)
 end
 
 --发送给指定目标
@@ -160,7 +166,7 @@ function RouterMgr:call_target(target, rpc, ...)
         return tunpack(res)
     end
     local session_id = thread_mgr:build_session_id()
-    return self:forward_client(self:hash_router(target), "call_target", rpc, session_id, target, rpc, ...)
+    return self:forward_client(self:hash_router(target + hive.id), "call_target", rpc, session_id, target, rpc, ...)
 end
 
 --发送给指定目标
@@ -169,7 +175,7 @@ function RouterMgr:send_target(target, rpc, ...)
         event_mgr:notify_listener(rpc, ...)
         return true
     end
-    return self:forward_client(self:hash_router(target), "call_target", rpc, 0, target, rpc, ...)
+    return self:forward_client(self:hash_router(target + hive.id), "call_target", rpc, 0, target, rpc, ...)
 end
 
 --指定路由发送给指定目标
@@ -199,12 +205,12 @@ end
 --发送给指定service的master
 function RouterMgr:call_master(service_id, rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    return self:forward_client(self:hash_router(service_id), "call_master", rpc, session_id, service_id, rpc, ...)
+    return self:forward_client(self:hash_router(service_id + hive.id), "call_master", rpc, session_id, service_id, rpc, ...)
 end
 
 --发送给指定service的master
 function RouterMgr:send_master(service_id, rpc, ...)
-    return self:forward_client(self:hash_router(service_id), "call_master", rpc, 0, service_id, rpc, ...)
+    return self:forward_client(self:hash_router(service_id + hive.id), "call_master", rpc, 0, service_id, rpc, ...)
 end
 
 --生成针对服务的访问接口

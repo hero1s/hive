@@ -3,7 +3,6 @@
 local VarLock       = import("feature/var_lock.lua")
 
 local log_err       = logger.err
-local log_info      = logger.info
 local check_failed  = hive.failed
 local check_success = hive.success
 
@@ -127,7 +126,6 @@ function CacheObj:save_impl()
             self.dirty = true
             return code
         end
-        log_info("[CacheObj][save_impl] save:%s,%s,save_cnt:%s,update:%s", self.cache_name, self.primary_value, self.save_cnt, self.update_count)
         self.fail_cnt     = 0
         self.save_cnt     = self.save_cnt + 1
         self.update_count = 0

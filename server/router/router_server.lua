@@ -60,9 +60,9 @@ function RouterServer:update_router_node_info(client, status)
     local is_router = client.service_name == "router" and true or false
     if status == 1 and is_router then
         local nodes = {}
-        for _, client in self.rpc_server:iterator() do
-            if client.id then
-                tinsert(nodes, client.id)
+        for _, node in self.rpc_server:iterator() do
+            if node.id then
+                tinsert(nodes, node.id)
             end
         end
         self.rpc_server:send(client, "rpc_sync_router_info", router_id, nodes, status)

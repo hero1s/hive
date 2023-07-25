@@ -255,12 +255,13 @@ end
 --serviceName   string/服务名
 --groupName     string/分组名
 --healthyOnly   boolean/是否只返回健康实例
-function Nacos:query_instances(service_name, group_name)
+function Nacos:query_instances(service_name, group_name, healthyOnly)
     local query           = {
         clusters    = self.cluster,
         namespaceId = self.nacos_ns,
         serviceName = service_name,
         groupName   = group_name or "",
+        healthyOnly = healthyOnly,
         accessToken = self.access_token
     }
     local ok, status, res = http_client:call_get(self.instances_url, query)
@@ -270,12 +271,14 @@ function Nacos:query_instances(service_name, group_name)
     end
     local insts    = {}
     local jsondata = json_decode(res)
-    for _, inst in pairs(jsondata.hosts or {}) do
-        if inst.metadata then
-            local id = tonumber(inst.metadata.id)
-            if id and id > 0 then
-                local is_ready = mtointeger(inst.metadata.is_ready or 0)
-                insts[id]      = { id = id, is_ready = is_ready, ip = inst.ip, port = inst.port }
+    if jsondata then
+        for _, inst in pairs(jsondata.hosts or {}) do
+            if inst.metadata then
+                local id = tonumber(inst.metadata.id)
+                if id and id > 0 then
+                    local is_ready = mtointeger(inst.metadata.is_ready or 0)
+                    insts[id]      = { id = id, is_ready = is_ready, ip = inst.ip, port = inst.port }
+                end
             end
         end
     end
@@ -369,7 +372,7 @@ function Nacos:sent_beat(service_name, host, port, group_name)
         log_err("[Nacos][sent_beat] failed! service_name: %s, code: %s, err: %s", service_name, status, res)
         return false, res
     end
-    return res
+    return true
 end
 
 --修改实例
@@ -399,7 +402,7 @@ function Nacos:modify_instance(service_name, host, port, group_name)
         log_err("[Nacos][modify_instance] failed! service_name:%s, code: %s, err: %s", service_name, status, res)
         return false, res
     end
-    return res
+    return true
 end
 
 --删除实例
@@ -417,7 +420,7 @@ function Nacos:del_instance(service_name, host, port, group_name)
         log_err("[Nacos][del_instance] failed! service_name:%s, code: %s, err: %s", service_name, status, res)
         return false, res
     end
-    return res
+    return true
 end
 
 --service
@@ -519,7 +522,10 @@ function Nacos:query_services(page, size, group_name)
         return false
     end
     local jdata = json_decode(res)
-    return true, jdata.doms
+    if jdata then
+        return true, jdata.doms
+    end
+    return false
 end
 
 -- 查询系统开关

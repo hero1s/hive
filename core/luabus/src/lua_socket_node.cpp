@@ -165,7 +165,7 @@ int lua_socket_node::forward_hash(lua_State* L) {
 	}
 	size_t header_len = format_header(L, header, sizeof(header), rpc_type::forward_hash);
 
-	uint8_t group_id = (uint8_t)lua_tointeger(L, 4);
+	uint32_t group_id = (uint32_t)lua_tointeger(L, 4);
 	BYTE group_id_data[MAX_VARINT_SIZE];
 	size_t group_id_len = encode_u64(group_id_data, sizeof(group_id_data), group_id);
 

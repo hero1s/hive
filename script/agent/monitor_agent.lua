@@ -128,10 +128,7 @@ end
 function MonitorAgent:rpc_service_changed(service_name, readys, closes)
     log_debug("[MonitorAgent][rpc_service_changed] %s,%s,%s", service_name, readys, closes)
     self:notify_service_event(self.ready_watchers[service_name], service_name, readys, true)
-    self:notify_service_event(self.ready_watchers["*"], service_name, readys, true)
-
     self:notify_service_event(self.close_watchers[service_name], service_name, closes, false)
-    self:notify_service_event(self.close_watchers["*"], service_name, closes, false)
     for id, _ in pairs(readys) do
         if not self.services[service_name] then
             self.services[service_name] = {}

@@ -46,7 +46,7 @@ NetwkTime.THREAD_RPC_TIMEOUT      = 10000     --线程RPC调用超时时间
 NetwkTime.HTTP_CALL_TIMEOUT       = 6000      --HTTP调用超时时间
 NetwkTime.DB_CALL_TIMEOUT         = 5000      --DB调用超时时间
 NetwkTime.RPCLINK_TIMEOUT         = 20000     --RPC连接超时时间
-NetwkTime.HEARTBEAT_TIME          = 5000      --RPC连接心跳时间
+NetwkTime.HEARTBEAT_TIME          = 10000     --RPC连接心跳时间
 NetwkTime.NETWORK_TIMEOUT         = 30000     --其他网络连接超时时间
 
 

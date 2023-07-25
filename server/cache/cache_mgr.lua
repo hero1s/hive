@@ -47,8 +47,9 @@ function CacheMgr:__init()
     event_mgr:add_trigger(self, "evt_change_service_status")
     event_mgr:add_vote(self, "vote_stop_service")
     --定时器
+    update_mgr:attach_fast(self)
     update_mgr:attach_second(self)
-    update_mgr:attach_second5(self)
+    update_mgr:attach_minute(self)
 
     monitor:watch_service_close(self, "lobby")
     monitor:watch_service_ready(self, "lobby")
@@ -62,8 +63,8 @@ function CacheMgr:setup()
     for _, obj_conf in obj_table:iterator() do
         local cache_name             = obj_conf.cache_name
         self.cache_confs[cache_name] = obj_conf
-        self.cache_lists[cache_name] = WheelMap(10)
-        self.dirty_maps[cache_name]  = WheelMap(10)
+        self.cache_lists[cache_name] = WheelMap(100, mrandom(1, 100))
+        self.dirty_maps[cache_name]  = WheelMap(100, mrandom(1, 100))
     end
 end
 
@@ -116,7 +117,7 @@ function CacheMgr:on_service_ready(id, service_name)
     end
 end
 
-function CacheMgr:on_second(clock_ms)
+function CacheMgr:on_fast(clock_ms)
     local count = 0
     for _, dirty_map in pairs(self.dirty_maps) do
         for _, obj in dirty_map:wheel_iterator() do
@@ -134,13 +135,21 @@ function CacheMgr:on_second(clock_ms)
 end
 
 --清理超时的记录
-function CacheMgr:on_second5(clock_ms)
+function CacheMgr:on_second(clock_ms)
     for cache_name, obj_list in pairs(self.cache_lists) do
         for primary_key, obj in obj_list:wheel_iterator() do
             if obj:expired(clock_ms, self.flush) then
-                log_info("[CacheMgr][on_second5] cache(%s)'s data(%s) expired!", cache_name, primary_key)
                 obj_list:set(primary_key, nil)
             end
+        end
+    end
+end
+
+function CacheMgr:on_minute()
+    for cache_name, dirty_map in pairs(self.dirty_maps) do
+        if dirty_map:get_count() > 0 then
+            local cache_list = self.cache_lists[cache_name]
+            log_info("[CacheMgr][on_minute] dirty_size:%s,%d/%d", cache_name, dirty_map:get_count(), cache_list:get_count())
         end
     end
 end

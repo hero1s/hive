@@ -47,8 +47,8 @@ private:
     size_t m_ar_buffer_size = 0;
     size_t m_lz_buffer_size = 0;
     size_t m_lz_threshold = 0;
-    int m_max_arr_reserve = (1 << 14);//16384
-    int m_max_hash_reserve = (1 << 14);//16384
+    int m_max_arr_reserve = -1;
+    int m_max_hash_reserve = -1;
     int m_arr_reserve = 0;
     int m_hash_reserve = 0;
 };

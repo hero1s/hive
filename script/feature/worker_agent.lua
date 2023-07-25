@@ -1,9 +1,7 @@
-local tunpack     = table.unpack
 local send_worker = hive.send_worker
 local call_worker = hive.call_worker
-
+local log_err     = logger.err
 local TITLE       = hive.title
-local event_mgr   = hive.get("event_mgr")
 local scheduler   = hive.load("scheduler")
 
 local WorkerAgent = class()
@@ -25,11 +23,11 @@ function WorkerAgent:send(rpc, ...)
     if scheduler then
         return scheduler:send(self.service, rpc, ...)
     end
-    logger.debug("----%s,%s", TITLE, self.service)
     if TITLE ~= self.service then
         return send_worker(self.service, rpc, ...)
     end
-    event_mgr:notify_listener(rpc, ...)
+    log_err("[WorkerAgent][send] why send self:%s", rpc)
+    return false, "can't send self!"
 end
 
 function WorkerAgent:call(rpc, ...)
@@ -39,8 +37,8 @@ function WorkerAgent:call(rpc, ...)
     if TITLE ~= self.service then
         return call_worker(self.service, rpc, ...)
     end
-    local rpc_datas = event_mgr:notify_listener(rpc, ...)
-    return tunpack(rpc_datas)
+    log_err("[WorkerAgent][call] why call self:%s", rpc)
+    return false, "can't call self!"
 end
 
 return WorkerAgent

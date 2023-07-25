@@ -1,17 +1,18 @@
-local log_debug  = logger.debug
-local log_warn   = logger.warn
-local log_err    = logger.err
-local makechan   = hive.make_channel
-local id2nick    = service.id2nick
+local log_debug     = logger.debug
+local log_warn      = logger.warn
+local log_err       = logger.err
+local makechan      = hive.make_channel
+local id2nick       = service.id2nick
 
-local event_mgr  = hive.get("event_mgr")
-local timer_mgr  = hive.get("timer_mgr")
-local thread_mgr = hive.get("thread_mgr")
+local event_mgr     = hive.get("event_mgr")
+local timer_mgr     = hive.get("timer_mgr")
+local thread_mgr    = hive.get("thread_mgr")
 
-local PeriodTime = enum("PeriodTime")
+local PeriodTime    = enum("PeriodTime")
+local ServiceStatus = enum("ServiceStatus")
 
-local NacosMgr   = singleton()
-local prop       = property(NacosMgr)
+local NacosMgr      = singleton()
+local prop          = property(NacosMgr)
 prop:reader("nacos", nil)
 prop:reader("node", nil)
 prop:reader("status", false)
@@ -103,21 +104,19 @@ function NacosMgr:unregister()
     end
 end
 
-function NacosMgr:need_watch(service_name)
-    if self.watch_services[service_name] or self.watch_services["*"] then
-        return true
-    end
-    return false
-end
-
 function NacosMgr:can_register()
     if not self.node or not self.node.id or not self.node.host or not self.node.port then
         return false
     end
-    if self.node.is_ready then
-        return true
+    local status = self.node.status
+    --准备或者停服阶段不注册
+    if status < ServiceStatus.RUN or status > ServiceStatus.HALT then
+        return false
     end
-    return false
+    if not self.node.is_ready then
+        return false
+    end
+    return true
 end
 
 function NacosMgr:can_add_service(service_name)
@@ -134,7 +133,7 @@ function NacosMgr:can_add_service(service_name)
 end
 
 function NacosMgr:check_service(service_name)
-    local curr = self.nacos:query_instances(service_name)
+    local curr = self.nacos:query_instances(service_name, nil, true)
     if curr then
         if not self.services[service_name] then
             self.services[service_name] = {}
@@ -166,7 +165,7 @@ function NacosMgr:check_service(service_name)
             old[id] = nil
         end
         if next(sadd) or next(sdel) then
-            log_debug("[NacosMgr][on_nacos_tick] sadd:%s, sdel: %s", sadd, sdel)
+            log_debug("[NacosMgr][check_service] sadd:%s, sdel: %s", sadd, sdel)
             hive.send_master("rpc_service_changed", service_name, sadd, sdel)
         end
     end
@@ -177,29 +176,28 @@ function NacosMgr:on_nacos_tick()
         if not self.nacos:get_access_token() then
             return
         end
-        if self.status then
-            local ok = self.nacos:sent_beat(self.node.service_name, self.node.host, self.node.port)
-            if not ok then
-                self:register()
-            end
-        else
-            self:register()
-        end
-        local ok, lists = self.nacos:query_services()
-        if not ok then
-            return
-        end
-        local channel = makechan("nacos-check-service", 1000)
-        for _, service_name in pairs(lists or {}) do
-            if self:need_watch(service_name) then
-                channel:push(function()
-                    self:check_service(service_name)
-                    return true, 0
-                end)
-            end
-        end
-        channel:execute(true)
+        self:heartbeat()
+        self:refresh_services()
     end)
+end
+
+function NacosMgr:refresh_services()
+    local channel = makechan("nacos-check-service", 1000)
+    for service_name, _ in pairs(self.watch_services) do
+        channel:push(function()
+            self:check_service(service_name)
+            return true, 0
+        end)
+    end
+    channel:execute(true)
+end
+
+function NacosMgr:heartbeat()
+    if not self.status then
+        self:register()
+    else
+        self.nacos:sent_beat(self.node.service_name, self.node.host, self.node.port)
+    end
 end
 
 hive.nacos_mgr = NacosMgr()

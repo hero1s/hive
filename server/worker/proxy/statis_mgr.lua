@@ -3,6 +3,7 @@ local LinuxStatis = import("feature/linux.lua")
 local InfluxDB    = import("driver/influx.lua")
 
 local tsort       = table.sort
+local tinsert     = table.insert
 local tremove_out = table_ext.tremove_out
 local tkvarray    = table_ext.kvarray
 local log_warn    = logger.warn
@@ -12,12 +13,18 @@ local env_addr    = environ.addr
 local event_mgr   = hive.get("event_mgr")
 local update_mgr  = hive.get("update_mgr")
 
+local PeriodTime  = enum("PeriodTime")
+
 local StatisMgr   = singleton()
 local prop        = property(StatisMgr)
 prop:reader("influx", nil)              --influx
 prop:reader("statis", {})               --statis
 prop:reader("statis_status", false)     --统计开关
 prop:reader("linux_statis", nil)
+prop:reader("rpc_send_count", nil)
+prop:reader("rpc_recv_count", nil)
+prop:reader("msg_send_count", nil)
+prop:reader("msg_recv_count", nil)
 prop:reader("local_counts", {})         --本地计数
 
 function StatisMgr:__init()
@@ -34,7 +41,6 @@ function StatisMgr:__init()
         --定时处理
         update_mgr:attach_second(self)
         update_mgr:attach_minute(self)
-        update_mgr:attach_hour(self)
 
         --系统监控
         if hive.is_linux() then
@@ -42,8 +48,20 @@ function StatisMgr:__init()
         end
         --influx
         self:init_influx()
+        --counter
+        self.rpc_send_count = hive.make_sampling("rpc_send")
+        self.rpc_recv_count = hive.make_sampling("rpc_recv")
+        self.msg_send_count = hive.make_sampling("msg_send")
+        self.msg_recv_count = hive.make_sampling("msg_recv")
+
+        local timer_mgr     = hive.get("timer_mgr")
+        timer_mgr:loop(PeriodTime.MINUTE_5_MS, function()
+            self:report_msg_count()
+        end)
     end
     self.local_counts = { recv_msg = {}, send_msg = {}, recv_rpc = {}, send_rpc = {} }
+
+
 end
 
 function StatisMgr:init_influx()
@@ -90,8 +108,11 @@ end
 -- 统计proto协议发送(KB)
 function StatisMgr:on_proto_recv(cmd_id, recv_len)
     if self.statis_status then
-        local fields = { count = recv_len }
-        self:write("network", cmd_id, "proto_recv", fields)
+        if self.influx then
+            local fields = { count = recv_len }
+            self:write("network", cmd_id, "proto_recv", fields)
+        end
+        self.msg_recv_count:count_increase()
     end
     self:add_local_count("recv_msg", cmd_id, recv_len)
 end
@@ -99,8 +120,11 @@ end
 -- 统计proto协议接收(KB)
 function StatisMgr:on_proto_send(cmd_id, send_len)
     if self.statis_status then
-        local fields = { count = send_len }
-        self:write("network", cmd_id, "proto_send", fields)
+        if self.influx then
+            local fields = { count = send_len }
+            self:write("network", cmd_id, "proto_send", fields)
+        end
+        self.msg_send_count:count_increase()
     end
     self:add_local_count("send_msg", cmd_id, send_len)
 end
@@ -108,8 +132,11 @@ end
 -- 统计rpc协议发送(KB)
 function StatisMgr:on_rpc_send(rpc, send_len)
     if self.statis_status then
-        local fields = { count = send_len }
-        self:write("network", rpc, "rpc_send", fields)
+        if self.influx then
+            local fields = { count = send_len }
+            self:write("network", rpc, "rpc_send", fields)
+        end
+        self.rpc_send_count:count_increase()
     end
     self:add_local_count("send_rpc", rpc, send_len)
 end
@@ -117,8 +144,11 @@ end
 -- 统计rpc协议接收(KB)
 function StatisMgr:on_rpc_recv(rpc, recv_len)
     if self.statis_status then
-        local fields = { count = recv_len }
-        self:write("network", rpc, "rpc_recv", fields)
+        if self.influx then
+            local fields = { count = recv_len }
+            self:write("network", rpc, "rpc_recv", fields)
+        end
+        self.rpc_recv_count:count_increase()
     end
     self:add_local_count("recv_rpc", rpc, recv_len)
 end
@@ -126,16 +156,20 @@ end
 -- 统计cmd协议连接
 function StatisMgr:on_conn_update(conn_type, conn_count)
     if self.statis_status then
-        local fields = { count = conn_count }
-        self:write("network", conn_type, "conn", fields)
+        if self.influx then
+            local fields = { count = conn_count }
+            self:write("network", conn_type, "conn", fields)
+        end
     end
 end
 
 -- 统计性能
 function StatisMgr:on_perfeval(eval_name, fields)
     if self.statis_status then
-        if fields.total_time > 1 then
-            self:write("perfeval", eval_name, nil, fields)
+        if self.influx then
+            if fields.total_time > 1 then
+                self:write("perfeval", eval_name, nil, fields)
+            end
         end
     end
 end
@@ -146,7 +180,7 @@ end
 
 -- 统计系统信息
 function StatisMgr:on_minute()
-    if self.statis_status then
+    if self.statis_status and self.influx then
         local fields = {
             all_mem  = self:_calc_mem_use(),
             lua_mem  = self:_calc_lua_mem(),
@@ -155,10 +189,6 @@ function StatisMgr:on_minute()
         self:write("system", nil, nil, fields)
         self:flush()
     end
-end
-
-function StatisMgr:on_hour()
-    self:report_msg_count()
 end
 
 -- 计算lua内存信息(KB)
@@ -195,18 +225,27 @@ end
 
 -- 打印分析日志
 function StatisMgr:report_msg_count()
-    for k, v in pairs(self.local_counts) do
-        local msgs = tkvarray(v)
-        tsort(msgs, function(a, b)
-            if a[2].len == b[2].len then
+    local msgs, shows
+    for name, v in pairs(self.local_counts) do
+        msgs = tkvarray(v)
+        if next(msgs) then
+            tsort(msgs, function(a, b)
+                if a[2].count == b[2].count then
+                    if a[2].len == b[2].len then
+                        return a[1] > b[1]
+                    end
+                    return a[2].len > b[2].len
+                end
                 return a[2].count > b[2].count
+            end)
+            tremove_out(msgs, 20, true)
+            shows = {}
+            for i, msg in ipairs(msgs) do
+                tinsert(shows, { msg[1], msg[2].count, msg[2].len })
             end
-            return a[2].len > b[2].len
-        end)
-        tremove_out(msgs, 10, true)
-        if #msgs > 0 then
-            log_warn("top msg:%s,%s", k, msgs)
+            log_warn("[TopMsg5min] %s %s,", name, shows)
         end
+        self.local_counts[name] = {}
     end
 end
 

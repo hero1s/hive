@@ -37,12 +37,29 @@ prop:reader("gc_start_mem", 0)
 prop:reader("gc_step_use_time_max", 0)
 prop:reader("gc_step_time50_cnt", 0)-- 一个周期内，单步执行超过50ms的次数
 prop:reader("mem_cost_speed", 0)
+prop:reader("gc_mode", 0)
 
 function GcMgr:__init()
+    self.gc_mode = environ.number("HIVE_GC_MODE", 0)
+    if self.gc_mode == 1 then
+        self:generational_gc()
+    end
 end
 
 function GcMgr:on_fast(clock_ms)
-    self:update()
+    if self.gc_mode == 0 then
+        self:update()
+    end
+end
+
+function GcMgr:generational_gc()
+    log_info("convert to generational gc")
+    collectgarbage("generational")
+end
+
+function GcMgr:incremental_gc()
+    log_info("convert to incremental gc")
+    collectgarbage("incremental")
 end
 
 function GcMgr:collect_gc()

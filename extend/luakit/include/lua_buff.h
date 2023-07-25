@@ -5,7 +5,7 @@ namespace luakit {
 
     const size_t BUFFER_DEF = 64 * 1024;        //64K
     const size_t BUFFER_MAX = 64 * 1024 * 1024; //64M
-    const size_t ALIGN_SIZE = 16;               //水位
+    const size_t ALIGN_SIZE = 32;               //水位
 
     class var_buffer {
     public:

@@ -107,6 +107,20 @@ local function tmerge(src, dst)
     return ndst
 end
 
+local function tmerge_array(src, dst)
+    local ndst = dst or {}
+    for _, v in ipairs(src) do
+        for _, vv in ipairs(ndst) do
+            if vv == v then
+                goto continue
+            end
+        end
+        ndst[#ndst + 1] = v
+        :: continue ::
+    end
+    return ndst
+end
+
 local function tpush(dst, ...)
     local args = { ... }
     local n    = select("#", ...)
@@ -307,6 +321,7 @@ table_ext.deep_copy         = tdeep_copy
 table_ext.delete            = tdelete
 table_ext.join              = tjoin
 table_ext.merge             = tmerge
+table_ext.merge_array       = tmerge_array
 table_ext.map               = tmap
 table_ext.push              = tpush
 table_ext.diff              = tdiff

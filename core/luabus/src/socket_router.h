@@ -17,6 +17,9 @@ enum class rpc_type : uint8_t {
 };
 
 const int MAX_SERVICE_GROUP = (UCHAR_MAX + 1);
+inline uint32_t get_group_idx(uint32_t node_id) { return  (node_id >> 16) & 0xff; }
+inline uint32_t get_node_index(uint32_t node_id) { return node_id & 0xfff; }
+inline uint32_t build_service_id(uint16_t group_idx, uint16_t index) { return (group_idx & 0xff) << 16 | index; }
 
 struct service_node {
 	uint32_t id		= 0;
@@ -29,6 +32,12 @@ struct router_node {
 	uint32_t id			= 0;//路由服id
 	std::set<uint32_t> targets;//目标节点
 	std::set<uint16_t> groups; //目标组
+	inline void flush_group() {
+		groups.clear();
+		for (auto it : targets) {
+			groups.insert(get_group_idx(it));
+		}
+	}
 };
 
 constexpr int ROUTER_HEAD_LEN = MAX_VARINT_SIZE * 4;
@@ -91,6 +100,7 @@ private:
 	std::shared_ptr<socket_mgr> m_mgr;
 	std::array<service_group, MAX_SERVICE_GROUP> m_groups;
 	std::unordered_map<uint32_t, router_node> m_routers;
+	std::unordered_map<uint32_t, router_node>::iterator m_router_iter = m_routers.begin();
 	int16_t m_router_idx = -1;
 	uint32_t m_node_id = 0;
 	BYTE m_header_data[ROUTER_HEAD_LEN];

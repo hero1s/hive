@@ -7,10 +7,6 @@
 #include "var_int.h"
 #include "socket_router.h"
 
-uint32_t get_group_idx(uint32_t node_id) { return  (node_id >> 16) & 0xff; }
-uint32_t get_node_index(uint32_t node_id) { return node_id & 0xfff; }
-uint32_t build_service_id(uint16_t group_idx, uint16_t index) { return (group_idx & 0xff) << 16 | index; }
-
 uint32_t socket_router::map_token(uint32_t node_id, uint32_t token, uint16_t hash) {
 	uint32_t group_idx = get_group_idx(node_id);
 	auto& group = m_groups[group_idx];
@@ -29,6 +25,10 @@ uint32_t socket_router::map_token(uint32_t node_id, uint32_t token, uint16_t has
 		group.mp_nodes[node_id] = node;
 	}
 	flush_hash_node(group_idx);
+	//掉线路由节点
+	if (group_idx == m_router_idx && token == 0) {
+		map_router_node(node_id, 0, 0);
+	}
 	return choose_master(group_idx);
 }
 
@@ -46,26 +46,30 @@ uint32_t socket_router::set_node_status(uint32_t node_id, uint8_t status) {
 
 void socket_router::map_router_node(uint32_t router_id, uint32_t target_id, uint8_t status) {
 	if (router_id == m_node_id)return;
+	if (get_group_idx(router_id) != m_router_idx) {
+		std::cout << "error router_id:" << router_id << std::endl;
+		return;
+	}
 	auto it = m_routers.find(router_id);
 	if (it != m_routers.end()) {
 		if (target_id == 0) {//清空
-			m_routers.erase(it);
+			m_router_iter = m_routers.erase(it);
 			return;
 		}
 		if (status == 0) {
 			it->second.targets.erase(target_id);
-			it->second.groups.erase(get_group_idx(target_id));
 		} else {
 			it->second.targets.insert(target_id);
-			it->second.groups.insert(get_group_idx(target_id));
 		}
+		it->second.flush_group();
 	} else {
 		if (status != 0) {
 			router_node node;
 			node.id = router_id;
 			node.targets.insert(target_id);
-			node.groups.insert(get_group_idx(target_id));
+			node.flush_group();
 			m_routers.insert(std::pair(node.id, node));
+			m_router_iter = m_routers.begin();
 		}
 	}
 }
@@ -232,39 +236,56 @@ bool socket_router::do_forward_router(router_header* header, char* data, size_t 
 		error += fmt::format(" | not router can find:{},{}", target_id,group_idx);
 		return false;
 	}
-	auto& router_group = m_groups[m_router_idx];
-	if (router_group.mp_nodes.empty()) {
-		error += fmt::format(" | router group is empty");
-		return false;
-	}
-	service_node* ptarget = nullptr;
-	for (auto& [id, node] : router_group.mp_nodes) {
-		if (node.id == router_id) {
-			ptarget = &node;
-			break;
-		}
-	}
+	service_node* ptarget = m_groups[m_router_idx].get_target(router_id);
 	if (ptarget == nullptr) {
-		error += fmt::format(" | not this router:{}", router_id);
+		error += fmt::format(" | not this router:{},{},{}",get_node_index(router_id),target_id,group_idx);
 		return false;
 	}
 	size_t header_len = format_header(m_header_data, sizeof(m_header_data), header, (rpc_type)((uint8_t)msgid + (uint8_t)rpc_type::forward_router));
 	sendv_item items[] = { {m_header_data, header_len}, {data, data_len} };
 	if (ptarget->token != 0) {
 		m_mgr->sendv(ptarget->token, items, _countof(items));
+		std::cout << fmt::format("forward router:{} msg:{},{},data_len:{}",ptarget->index,target_id,group_idx,data_len) << std::endl;
 		return true;
 	}
 	error += fmt::format(" | all router is disconnect");
 	return false;
 }
 
+//轮流负载转发
 uint32_t socket_router::find_transfer_router(uint32_t target_id, uint16_t group_idx) {
-	for (auto& it : m_routers) {
-		if (target_id > 0 && it.second.targets.find(target_id) != it.second.targets.end()) {
-			return it.first;
+	if (m_router_iter != m_routers.end()) {
+		m_router_iter++;
+	} else {
+		m_router_iter = m_routers.begin();
+	}
+	if (target_id > 0) {
+		for (auto it = m_router_iter; it != m_routers.end();it++) {
+			if (it->second.targets.find(target_id) != it->second.targets.end()) {
+				m_router_iter = it;
+				return it->first;
+			}
 		}
-		if (group_idx > 0 && it.second.groups.find(group_idx) != it.second.groups.end()) {
-			return it.first;
+		for (auto it = m_routers.begin(); it != m_router_iter; it++) {
+			if (it->second.targets.find(target_id) != it->second.targets.end()) {
+				m_router_iter = it;
+				return it->first;
+			}
+		}
+		return 0;
+	}
+	if (group_idx > 0) {
+		for (auto it = m_router_iter; it != m_routers.end(); it++) {
+			if (it->second.groups.find(group_idx) != it->second.groups.end()) {
+				m_router_iter = it;
+				return it->first;
+			}
+		}
+		for (auto it = m_routers.begin(); it != m_router_iter; it++) {
+			if (it->second.groups.find(group_idx) != it->second.groups.end()) {
+				m_router_iter = it;
+				return it->first;
+			}
 		}
 	}
 	return 0;

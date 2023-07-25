@@ -22,10 +22,12 @@ function ProxyAgent:__init()
     self:ignore_statis("rpc_heartbeat")
     self:ignore_statis("on_heartbeat")
     --日志上报
-    local wlvl = environ.number("HIVE_WEBHOOK_LVL")
-    if wlvl then
-        --添加webhook功能
-        logger.add_monitor(self, wlvl)
+    if hive.title ~= self.service then
+        local wlvl = environ.number("HIVE_WEBHOOK_LVL")
+        if wlvl then
+            --添加webhook功能
+            logger.add_monitor(self, wlvl)
+        end
     end
 end
 
