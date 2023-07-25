@@ -11,6 +11,7 @@ local sformat          = string.format
 local id2nick          = service.id2nick
 local check_success    = hive.success
 local mrandom          = math_ext.random
+local tshuffle         = table_ext.shuffle
 
 local monitor          = hive.get("monitor")
 local thread_mgr       = hive.get("thread_mgr")
@@ -57,11 +58,11 @@ function RouterMgr:add_router(router_id, host, port)
         return
     end
     --test by toney
---[[    if service.id2name(hive.id) ~= "router" and table_ext.size(self.routers) > 0 then
-        if hive.index ~= service.id2index(router_id) then
-            return
-        end
-    end]]
+    --[[    if service.id2name(hive.id) ~= "router" and table_ext.size(self.routers) > 0 then
+            if hive.index ~= service.id2index(router_id) then
+                return
+            end
+        end]]
 
     local router = self.routers[router_id]
     if router then
@@ -102,6 +103,7 @@ function RouterMgr:check_router()
             self.candidates[#self.candidates + 1] = client
         end
     end
+    self.candidates = tshuffle(self.candidates)
     if old_ready ~= self:is_ready() then
         hive.change_service_status(hive.service_status)
     end

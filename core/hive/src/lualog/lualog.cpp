@@ -16,7 +16,7 @@ namespace logger {
         );
         log_service::instance()->start();
         lualog.set_function("daemon", [](bool status) { log_service::instance()->daemon(status); });
-        lualog.set_function("set_max_line", [](size_t line) { log_service::instance()->set_max_line(line); });
+        lualog.set_function("set_max_logsize", [](size_t logsize) { log_service::instance()->set_max_logsize(logsize); });
         lualog.set_function("set_clean_time", [](size_t time) { log_service::instance()->set_clean_time(time); });
         lualog.set_function("filter", [](int lv, bool on) { log_service::instance()->filter((log_level)lv, on); });
         lualog.set_function("is_filter", [](int lv) { return log_service::instance()->is_filter((log_level)lv); });

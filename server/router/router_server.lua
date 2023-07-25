@@ -13,6 +13,7 @@ local RpcServer     = import("network/rpc_server.lua")
 
 local thread_mgr    = hive.get("thread_mgr")
 local event_mgr     = hive.get("event_mgr")
+local update_mgr    = hive.get("update_mgr")
 
 local RouterServer  = singleton()
 local prop          = property(RouterServer)
@@ -20,6 +21,8 @@ prop:accessor("rpc_server", nil)
 function RouterServer:__init()
     self:setup()
     event_mgr:add_listener(self, "rpc_sync_router_info")
+
+    update_mgr:attach_minute(self)
 end
 
 function RouterServer:setup()
@@ -28,6 +31,10 @@ function RouterServer:setup()
     self.rpc_server = RpcServer(self, "0.0.0.0", port, environ.status("HIVE_ADDR_INDUCE"))
     service.make_node(self.rpc_server:get_port())
     lbus.set_router_id(hive.id)
+end
+
+function RouterServer:on_minute()
+    log_info("[RouterServer][on_minute] router:%s,service:%s", self.rpc_server:service_count(hive.service_id), self.rpc_server:service_count(0))
 end
 
 --其他服务器节点关闭

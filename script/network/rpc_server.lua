@@ -146,6 +146,16 @@ function RpcServer:servicecast(service_id, rpc, ...)
     end
 end
 
+function RpcServer:service_count(service_id)
+    local count = 0
+    for _, client in pairs(self.clients) do
+        if service_id == 0 or client.service_id == service_id then
+            count = count + 1
+        end
+    end
+    return count
+end
+
 --获取client
 function RpcServer:get_client(token)
     return self.clients[token]

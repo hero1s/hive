@@ -12,10 +12,10 @@ local mfloor              = math.floor
 local log_info            = logger.info
 local cut_tail            = math_ext.cut_tail
 
-local MAX_IDLE_TIME       = 10 * 1000                  -- 空闲时间
-local GC_MAX_STEP         = 500                        -- gc最大回收速度
-local GC_FAST_STEP        = 200                        -- gc快速垃圾回收，单步最大200ms
-local GC_SLOW_STEP        = 100                        -- gc慢回收，单步最大100ms
+local MAX_IDLE_TIME       = 1 * 1000                   -- 空闲时间
+local GC_MAX_STEP         = 200                        -- gc最大回收速度
+local GC_FAST_STEP        = 100                        -- gc快速垃圾回收，单步最大200ms
+local GC_SLOW_STEP        = 50                         -- gc慢回收，单步最大100ms
 local MEM_SIZE_FOR_FAST   = 100 * 1000                 -- gc快速回收内存大小,100MB
 local MEM_SIZE_FOR_MAX    = 1000 * 1000                -- 超过1G内存，极限速度回收内存
 local MEM_ALLOC_SPEED_MAX = 20 * 1000                  -- 每秒消耗内存超过20M，开启急速gc
@@ -139,13 +139,13 @@ end
 
 function GcMgr:log_gc_start()
     if self.step_value > GC_SLOW_STEP then
-        log_info("[log_gc_start] count is:%s,last mem is:%s,step value is:%s", self.gc_start_mem, self.gc_stop_mem, self.step_value)
+        log_info("[GcMgr][log_gc_start] count is:%s,last mem is:%s,step value is:%s", self.gc_start_mem, self.gc_stop_mem, self.step_value)
     end
 end
 
 function GcMgr:log_gc_end(gc_cycle, avg_time, old_step_value)
     if self.step_value > GC_SLOW_STEP then
-        log_info("[log_gc_end] step_count:%s,curr_mem:%s,last_mem:%s,cost_time:%s,cycle:%s,step_time_max:%s,step_time_avg:%s,free_time:%s,step_value:%s,step_time50_cnt:%s,mem_cost_speed:%s",
+        log_info("[GcMgr][log_gc_end] step_count:%s,curr_mem:%s,last_mem:%s,cost_time:%s,cycle:%s,step_time_max:%s,step_time_avg:%s,free_time:%s,step_value:%s,step_time50_cnt:%s,mem_cost_speed:%s",
                  self.gc_step_count, self.gc_stop_mem, self.gc_start_mem, self.gc_use_time, gc_cycle, self.gc_step_use_time_max, avg_time, self.gc_free_time, old_step_value, self.gc_step_time50_cnt, self.mem_cost_speed)
     end
 end

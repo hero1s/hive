@@ -569,7 +569,7 @@ void socket_stream::dispatch_package(bool reset) {
 			}
 			// 当前包序号错误
 			if (header->seq_id != m_recv_seq_id) {
-				on_error(fmt::format("seq_id not eq,recv:{}--cur:{},cmd:{},len:{}", header->seq_id, m_recv_seq_id, header->cmd_id, header->len).c_str());
+				on_error(fmt::format("seq_id not eq,token:{},recv:{}--cur:{},cmd:{},len:{}",token, header->seq_id, m_recv_seq_id, header->cmd_id, header->len).c_str());
 				break;
 			}
 
@@ -612,7 +612,7 @@ void socket_stream::dispatch_package(bool reset) {
 			m_need_dispatch_pkg = true;
 			m_stock_count++;
 			if (m_stock_count > 10) {// 连续积压10次处理不完,断开链接
-				on_error(fmt::format("busy cann't process:{},data_len:{}", m_stock_count,m_recv_buffer.data_len()).c_str());
+				on_error(fmt::format("busy cann't process token:{},count:{},data_len:{}",token,m_stock_count,m_recv_buffer.data_len()).c_str());
 			}
 			break;
 		}

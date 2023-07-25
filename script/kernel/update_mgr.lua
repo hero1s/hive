@@ -106,36 +106,34 @@ end
 
 function UpdateMgr:update(scheduler, now_ms, clock_ms)
     --业务更新
-    thread_mgr:fork(function()
-        --帧更新
-        hive.frame_ms = clock_ms - hive.clock_ms
-        hive.now_ms   = now_ms
-        hive.clock_ms = clock_ms
-        local frame   = hive.frame + 1
-        for obj, key in pairs(self.frame_objs) do
-            thread_mgr:entry(key, function()
-                obj:on_frame(clock_ms, frame)
-            end)
-        end
-        hive.frame = frame
-        --快帧更新
-        if clock_ms < self.next_frame then
-            return
-        end
-        self:update_fast(clock_ms)
-        --检查信号
-        if self:check_signal(scheduler) then
-            return
-        end
-        --秒更新
-        local now = now_ms // 1000
-        if now == hive.now then
-            return
-        end
-        hive.now = now
-        self:update_second(clock_ms)
-        self:update_by_time(scheduler, now, clock_ms)
-    end)
+    hive.frame_ms = clock_ms - hive.clock_ms
+    hive.now_ms   = now_ms
+    hive.clock_ms = clock_ms
+    --帧更新
+    local frame   = hive.frame + 1
+    for obj, key in pairs(self.frame_objs) do
+        thread_mgr:entry(key, function()
+            obj:on_frame(clock_ms, frame)
+        end)
+    end
+    hive.frame = frame
+    --快帧更新
+    if clock_ms < self.next_frame then
+        return
+    end
+    self:update_fast(clock_ms)
+    --秒更新
+    local now = now_ms // 1000
+    if now == hive.now then
+        return
+    end
+    hive.now = now
+    --检查信号
+    if self:check_signal(scheduler) then
+        return
+    end
+    self:update_second(clock_ms)
+    self:update_by_time(scheduler, now, clock_ms)
 end
 
 function UpdateMgr:update_by_time(scheduler, now, clock_ms)
@@ -197,17 +195,14 @@ function UpdateMgr:check_signal(scheduler)
             scheduler:broadcast("on_reload")
         end
         if sig_check(signal) then
-            if hive.run then
-                hive.run = nil
-                log_info("[UpdateMgr][check_signal]service quit for signal !")
-                for obj in pairs(self.quit_objs) do
-                    thread_mgr:fork(function()
-                        obj:on_quit()
-                    end)
-                end
-                --通知woker退出
-                scheduler:quit()
+            log_info("[UpdateMgr][check_signal]service quit for signal !")
+            for obj in pairs(self.quit_objs) do
+                obj:on_quit()
             end
+            --通知woker退出
+            scheduler:quit()
+            --退出
+            hive.run = nil
             return true
         end
     end

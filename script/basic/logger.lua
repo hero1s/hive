@@ -31,12 +31,12 @@ function logger.init()
     local service_name, index = hive.service_name, hive.index
     local path                = environ.get("HIVE_LOG_PATH", "./logs/")
     local rolltype            = environ.number("HIVE_LOG_ROLL", 0)
-    local maxline             = environ.number("HIVE_LOG_LINE", 200000)
+    local log_size            = environ.number("HIVE_LOG_SIZE", 50 * 1024 * 1024)
     local maxdays             = environ.number("HIVE_LOG_DAYS", 7)
     logshow                   = environ.number("HIVE_LOG_SHOW", 0)
     log_lvl                   = environ.number("HIVE_LOG_LVL", 1)
 
-    llog.set_max_line(maxline)
+    llog.set_max_logsize(log_size)
     llog.set_clean_time(maxdays * 24 * 3600)
     llog.option(path, service_name, index, rolltype);
     --设置日志过滤
