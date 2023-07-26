@@ -63,6 +63,7 @@ namespace lworker {
             if (m_thread.joinable()) {
                 m_thread.join();
             }
+            //m_lua->close();todo ÓÅ»¯Îö¹¹Âß¼­
         }
 
         const char* get_env(const char* key) {

@@ -62,13 +62,22 @@ function GcMgr:incremental_gc()
     collectgarbage("incremental")
 end
 
+function GcMgr:lua_mem_size()
+    return cut_tail(collectgarbage("count") / 1024, 1)
+end
+
+function GcMgr:mem_size()
+    return cut_tail(mem_usage(), 1)
+end
+
 function GcMgr:collect_gc()
     local clock_ms  = lclock_ms()
-    local mem       = cut_tail(mem_usage(), 1)
-    local lua_mem_s = cut_tail(collectgarbage("count") / 1024, 1)
+    local mem       = self:mem_size()
+    local lua_mem_s = self:lua_mem_size()
     collectgarbage("collect")
-    local lua_mem_e = cut_tail(collectgarbage("count") / 1024, 1)
+    local lua_mem_e = self:lua_mem_size()
     log_info("[GcMgr][collect_gc] %s m,lua:%s m --> %s m,cost time:%s", mem, lua_mem_s, lua_mem_e, lclock_ms() - clock_ms)
+    return lua_mem_e
 end
 
 function GcMgr:update(threshold)

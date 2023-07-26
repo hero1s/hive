@@ -29,7 +29,6 @@ local prop           = property(RpcClient)
 prop:reader("ip", nil)
 prop:reader("port", nil)
 prop:reader("alive", false)
-prop:reader("alive_time", 0)
 prop:reader("socket", nil)
 prop:reader("holder", nil)    --持有者
 
@@ -52,14 +51,6 @@ function RpcClient:check_heartbeat()
     else
         self:connect()
         timer_mgr:set_period(self.timer_id, SECOND_MS)
-    end
-end
-
-function RpcClient:__release()
-    if self.socket then
-        self.socket.close()
-        self.socket = nil
-        self.alive  = false
     end
 end
 
@@ -156,11 +147,11 @@ end
 
 -- 主动关闭连接
 function RpcClient:close()
+    log_err("[RpcClient][close] socket %s:%s!", self.ip, self.port)
     if self.socket then
         self.socket.close()
-        thread_mgr:fork(function()
-            hxpcall(self.on_socket_error, "on_socket_error: %s", self, self.socket.token, "rpc-action-close")
-        end)
+        self.alive  = false
+        self.socket = nil
     end
     if self.timer_id then
         timer_mgr:unregister(self.timer_id)
@@ -180,7 +171,6 @@ end
 
 --rpc事件
 function RpcClient:on_socket_rpc(socket, session_id, rpc_flag, source, rpc, ...)
-    self.alive_time = hive.clock_ms
     if rpc == "on_heartbeat" then
         return self:on_heartbeat(...)
     end
@@ -214,6 +204,9 @@ function RpcClient:on_socket_error(token, err)
         self.alive  = false
         if self.holder then
             self.holder:on_socket_error(self, token, err)
+            event_mgr:fire_next_second(function()
+                self:check_heartbeat()
+            end)
         end
     end)
 end
@@ -221,9 +214,8 @@ end
 --连接成功
 function RpcClient:on_socket_connect(socket)
     log_info("[RpcClient][on_socket_connect] connect to %s:%s success!", self.ip, self.port)
-    self.alive      = true
-    self.alive_time = hive.clock_ms
     thread_mgr:fork(function()
+        self.alive = true
         self.holder:on_socket_connect(self)
         self:heartbeat(true)
     end)

@@ -543,7 +543,7 @@ void socket_stream::dispatch_package(bool reset) {
 			if (!m_handshake) {
 				auto ret = handshake_rpc(data, data_len);
 				if (ret < 0) {
-					on_error(fmt::format("handshake_rpc fail:{}", ret).c_str());
+					on_error(fmt::format("handshake_rpc fail:{},ip:{}", ret,m_ip).c_str());
 				}
 				break;
 			}
@@ -559,20 +559,21 @@ void socket_stream::dispatch_package(bool reset) {
 			socket_header* header = (socket_header*)data;
 			// 当前包长小于headlen，关闭连接
 			if (header->len < header_len) {
-				on_error(fmt::format("package-length-err:{}/{}", header->len, header_len).c_str());
+				on_error(fmt::format("package-length-err:{}/{},ip:{}", header->len, header_len,m_ip).c_str());
 				break;
 			}
 			// 当前包头标识的数据超过最大长度
 			if (header->len > NET_PACKET_MAX_LEN) {
-				on_error(fmt::format("package-parse-large:{}", header->len).c_str());
+				on_error(fmt::format("package-parse-large:{},ip:{}", header->len,m_ip).c_str());
 				break;
 			}
+#ifdef CHECK_SEQ
 			// 当前包序号错误
 			if (header->seq_id != m_recv_seq_id) {
-				on_error(fmt::format("seq_id not eq,token:{},recv:{}--cur:{},cmd:{},len:{}",token, header->seq_id, m_recv_seq_id, header->cmd_id, header->len).c_str());
+				on_error(fmt::format("seq_id not eq,token:{},ip:{},recv:{}--cur:{},cmd:{},len:{}",token, m_ip, header->seq_id, m_recv_seq_id, header->cmd_id, header->len).c_str());
 				break;
 			}
-
+#endif
 			m_fc_package++;
 			m_fc_bytes += header->len;
 
@@ -589,7 +590,7 @@ void socket_stream::dispatch_package(bool reset) {
 			package_size = data_len;
 		}
 		else {
-			on_error(fmt::format("proto-type-not-suppert!:{}", (int)m_proto_type).c_str());
+			on_error(fmt::format("proto-type-not-suppert!:{},ip:{}", (int)m_proto_type,m_ip).c_str());
 			break;
 		}
 

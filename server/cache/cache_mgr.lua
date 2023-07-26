@@ -125,8 +125,8 @@ function CacheMgr:on_fast(clock_ms)
                 self:save_cache(obj)
                 count = count + 1
             end
-            --限流每次2000
-            if count > 2000 then
+            --限流每次200
+            if count > 200 then
                 log_err("[CacheMgr][on_second] is very busy")
                 return
             end

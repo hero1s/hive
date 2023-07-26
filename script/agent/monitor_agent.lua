@@ -176,7 +176,7 @@ end
 function MonitorAgent:rpc_count_lua_obj(less_num)
     local obj_counts = show_class_track(less_num)
     log_warn("rpc_count_lua_obj:%s", obj_counts)
-    return obj_counts
+    return { objs = obj_counts, lua_mem = gc_mgr:lua_mem_size(), mem = gc_mgr:mem_size() }
 end
 
 function MonitorAgent:rpc_inject(code_string)
