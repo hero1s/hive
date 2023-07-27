@@ -3,6 +3,7 @@ import("store/mongo_mgr.lua")
 local CacheObj     = import("cache/cache_obj.lua")
 local log_err      = logger.err
 local log_info     = logger.info
+local log_warn     = logger.warn
 local tunpack      = table.unpack
 local check_failed = hive.failed
 local sid2nick     = service.id2nick
@@ -33,6 +34,7 @@ prop:reader("dirty_maps", {})         -- dirty objects
 prop:reader("flush", false)           -- 立即存盘
 prop:reader("rwlock", false)          -- 开启读写锁
 prop:reader("req_counter", nil)
+prop:reader("save_limit", 100)
 
 function CacheMgr:__init()
     --初始化cache
@@ -66,6 +68,7 @@ function CacheMgr:setup()
         self.cache_lists[cache_name] = WheelMap(100, mrandom(1, 100))
         self.dirty_maps[cache_name]  = WheelMap(100, mrandom(1, 100))
     end
+    self.save_limit = environ.number("HIVE_SAVE_LIMIT", 100)
 end
 
 function CacheMgr:vote_stop_service()
@@ -125,9 +128,9 @@ function CacheMgr:on_fast(clock_ms)
                 self:save_cache(obj)
                 count = count + 1
             end
-            --限流每次200
-            if count > 200 then
-                log_err("[CacheMgr][on_second] is very busy")
+            --限流
+            if count > self.save_limit then
+                log_warn("[CacheMgr][on_fast] is very busy:%s/%s", count, self.save_limit)
                 return
             end
         end

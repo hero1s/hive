@@ -55,7 +55,6 @@ struct socket_stream : public socket_object
 	bool need_delay_send();
 	int64_t max_process_time();
 
-	int token = 0;
 	socket_mgr* m_mgr = nullptr;
 	eproto_type     m_proto_type = eproto_type::proto_rpc;
 	elink_type      m_link_type = elink_type::elink_tcp_client;
