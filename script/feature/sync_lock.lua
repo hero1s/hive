@@ -4,17 +4,17 @@
     local lock<close> = thread_mgr:lock(key)
     ...
 --]]
-local co_running   = coroutine.running
+local co_running = coroutine.running
 
-local SyncLock     = class()
-local prop         = property(SyncLock)
+local SyncLock   = class()
+local prop       = property(SyncLock)
 prop:reader("thread_mgr", nil)
 prop:reader("timeout", 0)
 prop:reader("count", 1)
 prop:reader("key", nil)
 prop:reader("co", nil)
 
-local due_time <const> = 10000
+local due_time <const> = 60000
 
 function SyncLock:__init(thread_mgr, key)
     self.thread_mgr = thread_mgr

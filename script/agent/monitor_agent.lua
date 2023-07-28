@@ -108,18 +108,16 @@ function MonitorAgent:on_socket_connect(client)
     log_info("[MonitorAgent][on_socket_connect]: connect monitor success!:[%s:%s]", self.client.ip, self.client.port)
 end
 
-function MonitorAgent:notify_service_event(listener_set, service_name, services, is_ready)
+function MonitorAgent:notify_service_event(listener_set, service_name, id, info, is_ready)
     for listener in pairs(listener_set or {}) do
-        for id, info in pairs(services) do
-            if id ~= hive.id then
-                thread_mgr:fork(function()
-                    if is_ready then
-                        listener:on_service_ready(id, service_name, info)
-                    else
-                        listener:on_service_close(id, service_name, info)
-                    end
-                end)
-            end
+        if id ~= hive.id then
+            thread_mgr:fork(function()
+                if is_ready then
+                    listener:on_service_ready(id, service_name, info)
+                else
+                    listener:on_service_close(id, service_name, info)
+                end
+            end)
         end
     end
 end
@@ -127,18 +125,21 @@ end
 --服务改变
 function MonitorAgent:rpc_service_changed(service_name, readys, closes)
     log_debug("[MonitorAgent][rpc_service_changed] %s,%s,%s", service_name, readys, closes)
-    self:notify_service_event(self.ready_watchers[service_name], service_name, readys, true)
-    self:notify_service_event(self.close_watchers[service_name], service_name, closes, false)
-    for id, _ in pairs(readys) do
+    for id, info in pairs(readys) do
         if not self.services[service_name] then
             self.services[service_name] = {}
         end
-        self.services[service_name][id] = true
+        if not self.services[service_name][id] then
+            self.services[service_name][id] = true
+            self:notify_service_event(self.ready_watchers[service_name], service_name, id, info, true)
+        end
+        --todo 后续优化多次通知的问题 toney
     end
     for id, _ in pairs(closes) do
         if self.services[service_name] then
             self.services[service_name][id] = nil
         end
+        self:notify_service_event(self.close_watchers[service_name], service_name, id, {}, false)
     end
 end
 

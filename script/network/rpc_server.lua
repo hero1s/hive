@@ -140,8 +140,10 @@ end
 --servicecast接口
 function RpcServer:servicecast(service_id, rpc, ...)
     for _, client in pairs(self.clients) do
-        if service_id == 0 or client.service_id == service_id then
-            client.call_rpc(0, FLAG_REQ, rpc, ...)
+        if client.id ~= 0 then
+            if service_id == 0 or client.service_id == service_id then
+                client.call_rpc(0, FLAG_REQ, rpc, ...)
+            end
         end
     end
 end

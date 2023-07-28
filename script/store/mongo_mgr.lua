@@ -27,6 +27,7 @@ function MongoMgr:__init()
     event_mgr:add_listener(self, "mongo_find_one", "find_one")
     event_mgr:add_listener(self, "mongo_drop_indexes", "drop_indexes")
     event_mgr:add_listener(self, "mongo_create_indexes", "create_indexes")
+    event_mgr:add_listener(self, "mongo_get_indexes", "get_indexes")
 end
 
 --初始化
@@ -140,6 +141,18 @@ function MongoMgr:count(db_name, coll_name, selector, limit, skip)
         local ok, res_oe = mongodb:count(coll_name, selector, limit, skip)
         if not ok then
             log_err("[MongoMgr][count] execute %s failed, because: %s", tpack(coll_name, selector, limit, skip), res_oe)
+        end
+        return ok and SUCCESS or MONGO_FAILED, res_oe
+    end
+    return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
+end
+
+function MongoMgr:get_indexes(db_name, coll_name)
+    local mongodb = self:get_db(db_name)
+    if mongodb then
+        local ok, res_oe = mongodb:get_indexes(coll_name)
+        if not ok then
+            log_err("[MongoMgr][get_indexes] execute %s failed, because: %s", coll_name, res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end

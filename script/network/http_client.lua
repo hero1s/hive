@@ -57,8 +57,6 @@ function HttpClient:on_frame(clock_ms)
         --清除超时请求
         for handle, context in pairs(self.contexts) do
             if clock_ms >= context.time then
-                log_debug("[HttpClient][on_frame] clear timeout context:%s,session_id:%s,debug:%s",
-                          handle, context.session_id, context.request.debug)
                 self.contexts[handle] = nil
             end
         end

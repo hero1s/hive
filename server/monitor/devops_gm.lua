@@ -40,6 +40,7 @@ function DevopsGmMgr:register_gm()
           args    = "key|string value|string service_name|string index|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_set_server_status", desc = "设置服务器状态", comment = "[1运行2繁忙3挂起4强退],延迟(秒),服务/index",
           args    = "status|integer delay|integer service_name|string index|integer" },
+        { gm_type = GMType.DEV_OPS, name = "gm_query_server_online", desc = "查询在线服务", comment = "", args = "service_name|string" },
         { gm_type = GMType.DEV_OPS, name = "gm_hive_quit", desc = "关闭服务器", comment = "强踢玩家并停服", args = "reason|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_cfg_reload", desc = "配置表热更新", comment = "(0 本地 1 远程)", args = "is_remote|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_collect_gc", desc = "lua全量gc", comment = "", args = "" },
@@ -108,6 +109,11 @@ function DevopsGmMgr:gm_set_server_status(status, delay, service_name, index)
         self:call_service_index(service_name, index, "rpc_set_server_status", status)
     end)
     return { code = 0 }
+end
+
+function DevopsGmMgr:gm_query_server_online(service_name)
+    local sids = monitor_mgr:query_services(service_name)
+    return { sids = sids, count = #sids }
 end
 
 function DevopsGmMgr:gm_hive_quit(reason)

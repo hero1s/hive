@@ -53,6 +53,23 @@ function DBIndexMgr:build_index(rebuild)
     rmsg_agent:build_index(self.sharding)
 end
 
+function DBIndexMgr:check_dbindexes()
+    local success    = true
+    local dbindex_db = config_mgr:init_table("dbindex", "db_name", "table_name", "name")
+    for _, conf in dbindex_db:iterator() do
+        local db_name    = conf.db_name
+        local table_name = conf.table_name
+        local check_key  = {}
+        for _, v in ipairs(conf.keys) do
+            check_key[v] = 1
+        end
+        if not mongo_agent:check_indexes(check_key, table_name, db_name) then
+            success = false
+        end
+    end
+    return success
+end
+
 function DBIndexMgr:build_dbindex(rebuild)
     local dbindex_db = config_mgr:init_table("dbindex", "db_name", "table_name", "name")
     for _, conf in dbindex_db:iterator() do
@@ -69,8 +86,13 @@ function DBIndexMgr:build_dbindex(rebuild)
         if conf.expireAfterSeconds > 0 then
             index.expireAfterSeconds = conf.expireAfterSeconds
         end
+        local check_key = {}
         for _, v in ipairs(conf.keys) do
             tinsert(index.key, { [v] = 1 })
+            check_key[v] = 1
+        end
+        if mongo_agent:check_indexes(check_key, table_name, db_name) then
+            goto continue
         end
         local query    = { table_name, { index } }
         local ok, code = mongo_agent:create_indexes(query, 1, db_name)
@@ -103,9 +125,15 @@ function DBIndexMgr:on_service_ready(id, service_name)
         return
     end
     self.status = 1
+    thread_mgr:sleep(15000)
     if self.auto_build then
-        thread_mgr:sleep(15000)
         self:build_index(self.rebuild)
+    else
+        if not self:check_dbindexes() then
+            log_err("[DBIndexMgr][on_service_ready] not open build dbindex and not create dbindex,it's safe to quit!!!")
+            local devops_gm_mgr = hive.get("devops_gm_mgr")
+            devops_gm_mgr:gm_hive_quit(0)
+        end
     end
 end
 

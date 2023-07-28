@@ -26,13 +26,13 @@ end
 
 function ReliableMsg:build_index(sharding)
     local indexs = {
-        { key = { uuid = 1 }, name = "uuid", unique = true },
+        { key = { uuid = 1 }, name = "uuid", unique = true, background = true },
     }
     if not sharding then
-        tinsert(indexs, { key = { to = 1 }, name = "to", unique = false })
+        tinsert(indexs, { key = { to = 1 }, name = "to", unique = false, background = true })
     end
     if self.ttl then
-        tinsert(indexs, { key = { ttl = 1 }, expireAfterSeconds = 0, name = "ttl", unique = false })
+        tinsert(indexs, { key = { ttl = 1 }, expireAfterSeconds = 0, name = "ttl", unique = false, background = true })
     end
     local query    = { self.table_name, indexs }
     local ok, code = mongo_agent:create_indexes(query, nil, self.db_name)

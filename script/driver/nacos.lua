@@ -65,15 +65,15 @@ function Nacos:__init()
         log_info("[Nacos][setup] setup (%s:%s) success!", ip, port)
     end
     --定时获取token
-    thread_mgr:entry(self:address(), function()
+    self.timer_id = timer_mgr:register(0, SECOND_MS, -1, function()
         self:check_auth()
     end)
 end
 
 function Nacos:check_auth()
-    local ok = self:auth()
-    timer_mgr:once(ok and HOUR_MS or SECOND_MS, function()
-        self:check_auth()
+    thread_mgr:entry(self:address(), function()
+        local ok = self:auth()
+        timer_mgr:set_period(self.timer_id, ok and HOUR_MS or SECOND_MS)
     end)
 end
 
@@ -273,7 +273,7 @@ function Nacos:query_instances(service_name, group_name, healthyOnly)
     local jsondata = json_decode(res)
     if jsondata then
         for _, inst in pairs(jsondata.hosts or {}) do
-            if inst.metadata then
+            if inst.metadata and type(inst.metadata) == "table" then
                 local id = tonumber(inst.metadata.id)
                 if id and id > 0 then
                     local is_ready = mtointeger(inst.metadata.is_ready or 0)

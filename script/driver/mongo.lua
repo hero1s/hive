@@ -398,6 +398,18 @@ function MongoDB:drop_collection(co_name)
     return self:runCommand("drop", co_name)
 end
 
+function MongoDB:get_indexes(co_name)
+    local succ, reply = self:runCommand("listIndexes", co_name)
+    if not succ then
+        return succ, reply
+    end
+    if type(reply) == "table" and reply.cursor then
+        local documents = reply.cursor.firstBatch
+        return succ, documents
+    end
+    return succ
+end
+
 -- 参数说明
 -- indexes={{key={open_id=1,platform_id=1},name="open_id-platform_id",unique=true}, }
 function MongoDB:create_indexes(co_name, indexes)

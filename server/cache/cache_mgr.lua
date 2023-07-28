@@ -8,6 +8,7 @@ local tunpack      = table.unpack
 local check_failed = hive.failed
 local sid2nick     = service.id2nick
 local mrandom      = math_ext.random
+local env_number   = environ.number
 
 local KernCode     = enum("KernCode")
 local CacheCode    = enum("CacheCode")
@@ -35,6 +36,7 @@ prop:reader("flush", false)           -- 立即存盘
 prop:reader("rwlock", false)          -- 开启读写锁
 prop:reader("req_counter", nil)
 prop:reader("save_limit", 100)
+prop:reader("save_count", 0)
 
 function CacheMgr:__init()
     --初始化cache
@@ -68,7 +70,7 @@ function CacheMgr:setup()
         self.cache_lists[cache_name] = WheelMap(100, mrandom(1, 100))
         self.dirty_maps[cache_name]  = WheelMap(100, mrandom(1, 100))
     end
-    self.save_limit = environ.number("HIVE_SAVE_LIMIT", 100)
+    self.save_limit = env_number("HIVE_SAVE_LIMIT", 100)
 end
 
 function CacheMgr:vote_stop_service()
@@ -121,16 +123,15 @@ function CacheMgr:on_service_ready(id, service_name)
 end
 
 function CacheMgr:on_fast(clock_ms)
-    local count = 0
+    self.save_count = 0
     for _, dirty_map in pairs(self.dirty_maps) do
         for _, obj in dirty_map:wheel_iterator() do
             if self.flush or obj:need_save(clock_ms) then
                 self:save_cache(obj)
-                count = count + 1
             end
             --限流
-            if count > self.save_limit then
-                log_warn("[CacheMgr][on_fast] is very busy:%s/%s", count, self.save_limit)
+            if self.save_count > self.save_limit then
+                log_warn("[CacheMgr][on_fast] is very busy:%s/%s", self.save_count, self.save_limit)
                 return
             end
         end
@@ -178,6 +179,7 @@ function CacheMgr:save_cache(cache_obj, remove)
             self:delete(cache_obj)
         end
     end)
+    self.save_count = self.save_count + 1
     return true
 end
 

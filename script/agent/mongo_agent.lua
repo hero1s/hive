@@ -4,6 +4,7 @@ local check_failed = hive.failed
 local log_err      = logger.err
 local log_info     = logger.info
 local mrandom      = math_ext.random
+local tequals      = table_ext.equals
 local KernCode     = enum("KernCode")
 local router_mgr   = hive.load("router_mgr")
 local scheduler    = hive.load("scheduler")
@@ -57,6 +58,10 @@ end
 --db_query: {coll_name, selector}
 function MongoAgent:count(db_query, hash_key, db_name)
     return self:execute("mongo_count", db_query, hash_key, db_name)
+end
+
+function MongoAgent:get_indexes(coll_name, db_name)
+    return self:execute("mongo_get_indexes", { coll_name }, coll_name, db_name)
 end
 
 --db_query: {coll_name, indexes}
@@ -138,6 +143,22 @@ function MongoAgent:update_sheet(sheet_name, primary_id, primary_key, udata, db_
         return false
     end
     return true
+end
+
+--检测是否建立了索引
+function MongoAgent:check_indexes(key, co_name, db_name)
+    local ok, code, indexs = self:get_indexes(co_name, db_name)
+    if check_failed(code, ok) then
+        log_err("[MongoAgent][check_indexes] failed:%s,%s,ok:%s,code:%s,indexs:%s", co_name, db_name, ok, code, indexs)
+        return false
+    end
+    for i, v in ipairs(indexs) do
+        if tequals(v.key, key) then
+            return true
+        end
+    end
+    log_err("[MongoAgent][check_indexes] db:%s,table:%s,key:%s,is not exist indexes:%s", db_name, co_name, key, indexs)
+    return false
 end
 
 hive.mongo_agent = MongoAgent()

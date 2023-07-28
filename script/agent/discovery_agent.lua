@@ -4,11 +4,14 @@ local thread         = import("feature/worker_agent.lua")
 local DiscoveryAgent = singleton(thread)
 
 function DiscoveryAgent:__init()
-    self.service = "discovery"
-    self:startup("worker.discovery")
+    self.service    = "discovery"
+    self.open_nacos = environ.status("HIVE_NACOS_OPEN")
+    if self.open_nacos then
+        self:startup("worker.discovery")
 
-    event_mgr:add_trigger(self, "evt_change_service_status")
-    event_mgr:add_trigger(self, "evt_service_shutdown")
+        event_mgr:add_trigger(self, "evt_change_service_status")
+        event_mgr:add_trigger(self, "evt_service_shutdown")
+    end
 end
 
 function DiscoveryAgent:evt_change_service_status(service_status)
