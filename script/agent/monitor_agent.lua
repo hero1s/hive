@@ -10,6 +10,7 @@ local log_info      = logger.info
 local log_debug     = logger.debug
 local check_failed  = hive.failed
 local smake_id      = service.make_id
+local id2nick       = service.id2nick
 
 local event_mgr     = hive.get("event_mgr")
 local gc_mgr        = hive.get("gc_mgr")
@@ -151,17 +152,25 @@ function MonitorAgent:rpc_service_changed(service_name, readys, closes)
         if not self.services[service_name] then
             self.services[service_name] = {}
         end
-        if not self.services[service_name][id] then
-            self.services[service_name][id] = true
+        local pid = self.services[service_name][id]
+        if not pid or pid ~= info.pid then
+            if pid and pid ~= info.pid then
+                log_warn("[MonitorAgent][rpc_service_changed] ready service [%s] replace", id2nick(id))
+            end
+            self.services[service_name][id] = info.pid
             self:notify_service_event(self.ready_watchers[service_name], service_name, id, info, true)
         end
-        --todo 后续优化多次通知的问题 toney
     end
-    for id, _ in pairs(closes) do
+    for id, info in pairs(closes) do
         if self.services[service_name] then
-            self.services[service_name][id] = nil
+            local pid = self.services[service_name][id]
+            if pid == info.pid then
+                self:notify_service_event(self.close_watchers[service_name], service_name, id, {}, false)
+                self.services[service_name][id] = nil
+            else
+                log_warn("[MonitorAgent][rpc_service_changed] close service [%s] has replace", id2nick(id))
+            end
         end
-        self:notify_service_event(self.close_watchers[service_name], service_name, id, {}, false)
     end
 end
 

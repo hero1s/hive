@@ -37,7 +37,7 @@ prop:reader("monitor_lost_nodes", {})
 prop:reader("services", {})
 prop:reader("open_nacos", false)
 prop:reader("log_page", nil)
-prop:reader("change", false)
+prop:reader("changes", {})
 prop:reader("close_services", {})
 
 function MonitorMgr:__init()
@@ -86,10 +86,10 @@ function MonitorMgr:on_client_beat(client, node_info)
             if node_info.is_ready then
                 self:add_service(node.service_name, node, client.token)
             else
-                self:remove_service(node.service_name, node.id, hive.now + delay_time)
+                self:remove_service(node.service_name, node.id, hive.now + delay_time, node.pid)
             end
-            node.is_ready = node_info.is_ready
-            self.change   = true
+            node.is_ready                   = node_info.is_ready
+            self.changes[node.service_name] = true
         end
         node.status = node_info.status
     end
@@ -121,7 +121,7 @@ function MonitorMgr:on_client_error(client, token, err)
             lost_time                          = hive.now + delay_time
         end
         self.monitor_nodes[token] = nil
-        self:remove_service(client.service_name, client.id, lost_time)
+        self:remove_service(client.service_name, client.id, lost_time, node_info.pid)
     end
 end
 
@@ -139,12 +139,18 @@ function MonitorMgr:check_close_services()
         --是否重连
         local services     = self.services[service_name]
         if services and services[id] then
-            log_err("[MonitorMgr][check_close_services] the [%s] network maybe shake,please make sure!!!", id2nick(id))
+            local pid = services[id].pid
+            if pid == v.pid then
+                log_err("[MonitorMgr][check_close_services] the [%s] network maybe shake,please make sure!!!", id2nick(id))
+            else
+                log_err("[MonitorMgr][check_close_services] the [%s] has restart!!!", id2nick(id))
+                self:broadcast_service_status(service_name, {}, { [id] = { id = id, pid = v.pid } })
+            end
             self.close_services[id] = nil
         else
             if hive.now > v.lost_time then
                 self.close_services[id] = nil
-                self:broadcast_service_status(service_name, {}, { [id] = { id = id } })
+                self:broadcast_service_status(service_name, {}, { [id] = { id = id, pid = v.pid } })
             end
         end
     end
@@ -156,7 +162,7 @@ end
 
 function MonitorMgr:on_minute()
     self:check_lost_node()
-    self:show_services_info()
+    self:show_change_services_info()
     self.log_page = nil
 end
 
@@ -264,9 +270,9 @@ function MonitorMgr:add_service(service_name, node, token)
             end
         end
     end
-    services[node.id]           = { id = node.id, ip = node.host, port = node.port, is_ready = node.is_ready, token = token }
+    services[node.id]           = { id = node.id, ip = node.host, port = node.port, is_ready = node.is_ready, token = token, pid = node.pid }
     self.services[service_name] = services
-    self.change                 = true
+    self.changes[service_name]  = true
 
     local readys                = {}
     readys[node.id]             = services[node.id]
@@ -275,14 +281,14 @@ function MonitorMgr:add_service(service_name, node, token)
 end
 
 -- 删除服务
-function MonitorMgr:remove_service(service_name, id, lost_time)
+function MonitorMgr:remove_service(service_name, id, lost_time, pid)
     log_info("[MonitorMgr][remove_service] %s", id2nick(id))
     local services = self.services[service_name] or {}
     if services[id] then
-        services[id]            = nil
-        self.change             = true
+        services[id]               = nil
+        self.changes[service_name] = true
         --延迟通知
-        self.close_services[id] = { lost_time = lost_time, service_name = service_name }
+        self.close_services[id]    = { lost_time = lost_time, service_name = service_name, pid = pid }
         return true
     end
     return false
@@ -325,15 +331,13 @@ function MonitorMgr:query_services(service_name)
     return sids
 end
 
-function MonitorMgr:show_services_info()
-    if not self.change then
-        return
-    end
-    self.change = false
-    local sids
-    for service_name, curr_services in pairs(self.services) do
-        sids = self:query_services(service_name)
-        log_debug("[MonitorMgr][show_services_info] [%s],count:%s,list:%s", service_name, #sids, sids)
+function MonitorMgr:show_change_services_info()
+    if next(self.changes) then
+        for service_name, _ in pairs(self.changes) do
+            local sids = self:query_services(service_name)
+            log_debug("[MonitorMgr][show_services_info] [%s],count:%s,list:%s", service_name, #sids, sids)
+        end
+        self.changes = {}
     end
 end
 
