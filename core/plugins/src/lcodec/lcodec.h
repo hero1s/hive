@@ -1,10 +1,9 @@
 
 #pragma once
+#include "lua_kit.h"
 
 #include "serializer.h"
-#include "bufpool.h"
-#include "shmpool.h"
-#include "bufqueue.h"
+#include "crc.h"
 #include "bitarray.h"
 #include "guid.h"
 #include "hash.h"

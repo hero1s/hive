@@ -247,6 +247,20 @@ local function equals(a, b)
     return true
 end
 
+local function equal_keys(a, b)
+    for k, _ in pairs(a) do
+        if not b[k] then
+            return false
+        end
+    end
+    for k, _ in pairs(b) do
+        if not a[k] then
+            return false
+        end
+    end
+    return true
+end
+
 local function indexof(tbl, obj)
     for k, v in ipairs(tbl) do
         if v == obj then
@@ -333,6 +347,7 @@ table_ext.shuffle           = shuffle
 table_ext.contains          = contains
 table_ext.contains_if       = contains_if
 table_ext.equals            = equals
+table_ext.equal_keys        = equal_keys
 table_ext.indexof           = indexof
 table_ext.find_key_by_value = findKeyByValue
 table_ext.filter            = tfilter

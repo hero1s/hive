@@ -36,16 +36,21 @@ end
 
 function DBIndexMgr:register_gm()
     local cmd_list = {
-        { gm_type = GMType.DEV_OPS, name = "gm_build_db_index", desc = "构建db索引", comment = "rebuild失败删除重建", args = "rebuild|integer" },
+        { gm_type = GMType.DEV_OPS, name = "gm_check_db_index", desc = "检测db索引", comment = "检测db索引(1先构建)", args = "build|integer" },
     }
     gm_agent:insert_command(cmd_list, self)
 end
 
--- 构建db索引
-function DBIndexMgr:gm_build_db_index(rebuild)
-    rebuild = rebuild == 1 and true or false
-    self:build_index(rebuild)
-    return { code = 0 }
+-- 检测/构建db索引
+function DBIndexMgr:gm_check_db_index(build)
+    if build == 1 then
+        self:build_index(self.rebuild)
+    end
+    local ok, res = self:check_dbindexes()
+    if not ok then
+        log_err("[DBIndexMgr][gm_check_db_index] not create dbindex:%s,please fast repair !!!", res)
+    end
+    return { code = ok, res = res }
 end
 
 function DBIndexMgr:build_index(rebuild)
@@ -55,19 +60,26 @@ end
 
 function DBIndexMgr:check_dbindexes()
     local success    = true
+    local miss       = {}
     local dbindex_db = config_mgr:init_table("dbindex", "db_name", "table_name", "name")
     for _, conf in dbindex_db:iterator() do
         local db_name    = conf.db_name
         local table_name = conf.table_name
-        local check_key  = {}
+        local only_key   = false
+        --线上分片键只检测key
+        if self.sharding and conf.sharding then
+            only_key = true
+        end
+        local check_key = {}
         for _, v in ipairs(conf.keys) do
             check_key[v] = 1
         end
-        if not mongo_agent:check_indexes(check_key, table_name, db_name) then
+        if not mongo_agent:check_indexes(check_key, table_name, db_name, only_key) then
             success = false
+            tinsert(miss, { db = db_name, co = table_name, key = check_key })
         end
     end
-    return success
+    return success, miss
 end
 
 function DBIndexMgr:build_dbindex(rebuild)
@@ -86,13 +98,8 @@ function DBIndexMgr:build_dbindex(rebuild)
         if conf.expireAfterSeconds > 0 then
             index.expireAfterSeconds = conf.expireAfterSeconds
         end
-        local check_key = {}
         for _, v in ipairs(conf.keys) do
             tinsert(index.key, { [v] = 1 })
-            check_key[v] = 1
-        end
-        if mongo_agent:check_indexes(check_key, table_name, db_name) then
-            goto continue
         end
         local query    = { table_name, { index } }
         local ok, code = mongo_agent:create_indexes(query, 1, db_name)
@@ -128,12 +135,14 @@ function DBIndexMgr:on_service_ready(id, service_name)
     thread_mgr:sleep(15000)
     if self.auto_build then
         self:build_index(self.rebuild)
-    else
-        if not self:check_dbindexes() then
-            log_err("[DBIndexMgr][on_service_ready] not open build dbindex and not create dbindex,it's safe to quit!!!")
-            local devops_gm_mgr = hive.get("devops_gm_mgr")
-            devops_gm_mgr:gm_hive_quit(0)
-        end
+    end
+    --启动检测索引
+    local ok, res = self:check_dbindexes()
+    if not ok then
+        thread_mgr:success_call(2000, function()
+            log_err("[DBIndexMgr][on_service_ready] not create dbindex:%s,please fast repair !!!", res)
+            return false
+        end)
     end
 end
 

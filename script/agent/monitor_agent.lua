@@ -38,10 +38,13 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "rpc_inject")
     event_mgr:add_listener(self, "rpc_set_env")
     event_mgr:add_listener(self, "rpc_set_server_status")
+    event_mgr:add_listener(self, "rpc_hive_quit")
     event_mgr:add_listener(self, "rpc_set_log_level")
     event_mgr:add_listener(self, "rpc_collect_gc")
     event_mgr:add_listener(self, "rpc_snapshot")
     event_mgr:add_listener(self, "rpc_count_lua_obj")
+
+    event_mgr:add_trigger(self, "on_router_connected")
 end
 
 --检测是否可以自动退出
@@ -57,6 +60,10 @@ function MonitorAgent:vote_stop_service()
         log_debug("[MonitorAgent][vote_stop_service] pre service [%s] has stop", name)
     end
     return true
+end
+
+function MonitorAgent:on_router_connected(is_ready)
+    --self.client:register()
 end
 
 --监听服务断开
@@ -84,6 +91,18 @@ function MonitorAgent:watch_services()
         tinsert(services, service_name)
     end
     return services
+end
+
+function MonitorAgent:is_watch_service(service_name)
+    if self.ready_watchers[service_name] or self.close_watchers[service_name] then
+        return true
+    end
+    for _, name in ipairs(hive.pre_services or {}) do
+        if name == service_name then
+            return true
+        end
+    end
+    return false
 end
 
 function MonitorAgent:exist_service(service_name, index)
@@ -124,6 +143,9 @@ end
 
 --服务改变
 function MonitorAgent:rpc_service_changed(service_name, readys, closes)
+    if not self:is_watch_service(service_name) then
+        return
+    end
     log_debug("[MonitorAgent][rpc_service_changed] %s,%s,%s", service_name, readys, closes)
     for id, info in pairs(readys) do
         if not self.services[service_name] then
@@ -198,6 +220,12 @@ function MonitorAgent:rpc_set_server_status(status)
         return
     end
     hive.change_service_status(status)
+end
+
+function MonitorAgent:rpc_hive_quit(reason)
+    if hive.safe_stop and hive.service_status ~= ServiceStatus.STOP then
+        hive.change_service_status(ServiceStatus.STOP)
+    end
 end
 
 function MonitorAgent:rpc_set_log_level(level)

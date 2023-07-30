@@ -2,32 +2,34 @@
 import("network/http_client.lua")
 import("agent/mongo_agent.lua")
 import("agent/redis_agent.lua")
-local RpcServer     = import("network/rpc_server.lua")
-local HttpServer    = import("network/http_server.lua")
+local RpcServer          = import("network/rpc_server.lua")
+local HttpServer         = import("network/http_server.lua")
 
-local json_decode   = hive.json_decode
-local env_get       = environ.get
-local env_addr      = environ.addr
-local log_warn      = logger.warn
-local log_info      = logger.info
-local log_debug     = logger.debug
-local log_err       = logger.err
-local readfile      = io_ext.readfile
-local sformat       = string.format
-local tinsert       = table.insert
-local id2nick       = service.id2nick
-local sid2index     = service.id2index
+local json_decode        = hive.json_decode
+local env_get            = environ.get
+local env_addr           = environ.addr
+local log_warn           = logger.warn
+local log_info           = logger.info
+local log_debug          = logger.debug
+local log_err            = logger.err
+local readfile           = io_ext.readfile
+local sformat            = string.format
+local tinsert            = table.insert
+local id2nick            = service.id2nick
+local sid2index          = service.id2index
 
-local PeriodTime    = enum("PeriodTime")
-local ServiceStatus = enum("ServiceStatus")
+local PeriodTime         = enum("PeriodTime")
+local ServiceStatus      = enum("ServiceStatus")
 
-local router_mgr    = hive.get("router_mgr")
-local monitor       = hive.get("monitor")
-local thread_mgr    = hive.get("thread_mgr")
-local update_mgr    = hive.get("update_mgr")
+local router_mgr         = hive.get("router_mgr")
+local monitor            = hive.get("monitor")
+local thread_mgr         = hive.get("thread_mgr")
+local update_mgr         = hive.get("update_mgr")
 
-local MonitorMgr    = singleton()
-local prop          = property(MonitorMgr)
+local delay_time <const> = 20 --网络掉线延迟时间
+
+local MonitorMgr         = singleton()
+local prop               = property(MonitorMgr)
 prop:reader("rpc_server", nil)
 prop:reader("http_server", nil)
 prop:reader("monitor_nodes", {})
@@ -84,7 +86,7 @@ function MonitorMgr:on_client_beat(client, node_info)
             if node_info.is_ready then
                 self:add_service(node.service_name, node, client.token)
             else
-                self:remove_service(node.service_name, node.id, hive.now + 20)
+                self:remove_service(node.service_name, node.id, hive.now + delay_time)
             end
             node.is_ready = node_info.is_ready
             self.change   = true
@@ -116,7 +118,7 @@ function MonitorMgr:on_client_error(client, token, err)
         if node_info.status < ServiceStatus.HALT and hive.service_status < ServiceStatus.HALT then
             log_err("[MonitorMgr][on_client_error] the run service lost:%s,please fast to repair!!!!!", node_info.name)
             self.monitor_lost_nodes[client.id] = node_info
-            lost_time                          = hive.now + 20
+            lost_time                          = hive.now + delay_time
         end
         self.monitor_nodes[token] = nil
         self:remove_service(client.service_name, client.id, lost_time)

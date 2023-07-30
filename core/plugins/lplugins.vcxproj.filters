@@ -22,10 +22,7 @@
     <ClInclude Include="src\lcodec\bitarray.h">
       <Filter>lcodec</Filter>
     </ClInclude>
-    <ClInclude Include="src\lcodec\bufpool.h">
-      <Filter>lcodec</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lcodec\bufqueue.h">
+    <ClInclude Include="src\lcodec\crc.h">
       <Filter>lcodec</Filter>
     </ClInclude>
     <ClInclude Include="src\lcodec\guid.h">
@@ -41,12 +38,6 @@
       <Filter>lcodec</Filter>
     </ClInclude>
     <ClInclude Include="src\lcodec\serializer.h">
-      <Filter>lcodec</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lcodec\shm.h">
-      <Filter>lcodec</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lcodec\shmpool.h">
       <Filter>lcodec</Filter>
     </ClInclude>
     <ClInclude Include="src\lcodec\utf8.h">

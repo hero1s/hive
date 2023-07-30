@@ -14,15 +14,12 @@
     <ClInclude Include="src\lcjson\fpconv.h"/>
     <ClInclude Include="src\lcjson\strbuf.h"/>
     <ClInclude Include="src\lcodec\bitarray.h"/>
-    <ClInclude Include="src\lcodec\bufpool.h"/>
-    <ClInclude Include="src\lcodec\bufqueue.h"/>
+    <ClInclude Include="src\lcodec\crc.h"/>
     <ClInclude Include="src\lcodec\guid.h"/>
     <ClInclude Include="src\lcodec\hash.h"/>
     <ClInclude Include="src\lcodec\ketama.h"/>
     <ClInclude Include="src\lcodec\lcodec.h"/>
     <ClInclude Include="src\lcodec\serializer.h"/>
-    <ClInclude Include="src\lcodec\shm.h"/>
-    <ClInclude Include="src\lcodec\shmpool.h"/>
     <ClInclude Include="src\lcodec\utf8.h"/>
     <ClInclude Include="src\lcrypt\base64.h"/>
     <ClInclude Include="src\lcrypt\des56.h"/>

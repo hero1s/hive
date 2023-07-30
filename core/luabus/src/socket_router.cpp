@@ -130,7 +130,7 @@ bool socket_router::do_forward_target(router_header* header, char* data, size_t 
 	uint64_t target_id = 0;
 	size_t len = decode_u64(&target_id, (BYTE*)data, data_len);
 	if (len == 0) {
-		error = fmt::format("router forward-target not decode");
+		error = fmt::format("router[{}] forward-target not decode", cur_index());
 		return false;
 	}
 	data += len;
@@ -139,8 +139,8 @@ bool socket_router::do_forward_target(router_header* header, char* data, size_t 
 	auto& group = m_groups[group_idx];
 	auto pTarget = group.get_target(target_id);
 	if (pTarget == nullptr) {
-		error = fmt::format("router forward-target not find,target_id:{}, group:{},index:{}", target_id, group_idx, get_node_index(target_id));
-		return router ? false : do_forward_router(header, data - len, data_len + len, error, rpc_type::forward_target, target_id, group_idx);
+		error = fmt::format("router[{}] forward-target not find,target_id:{}, group:{},index:{}", cur_index(), target_id, group_idx, get_node_index(target_id));
+		return router ? false : do_forward_router(header, data - len, data_len + len, error, rpc_type::forward_target, target_id, 0);
 	}
 	size_t header_len = format_header(m_header_data, sizeof(m_header_data), header, rpc_type::remote_call);
 
@@ -153,7 +153,7 @@ bool socket_router::do_forward_master(router_header* header, char* data, size_t 
 	uint64_t group_idx = 0;
 	size_t len = decode_u64(&group_idx, (BYTE*)data, data_len);
 	if (len == 0 || group_idx >= m_groups.size()) {
-		error = fmt::format("router forward-master not decode");
+		error = fmt::format("router[{}] forward-master not decode", cur_index());
 		return false;
 	}
 
@@ -162,7 +162,7 @@ bool socket_router::do_forward_master(router_header* header, char* data, size_t 
 
 	auto token = m_groups[group_idx].master.token;
 	if (token == 0) {
-		error = fmt::format("router forward-master:{} token=0",group_idx);
+		error = fmt::format("router[{}] forward-master:{} token=0", cur_index(),group_idx);
 		return router ? false : do_forward_router(header, data - len, data_len + len, error, rpc_type::forward_master, 0, group_idx);
 	}
 
@@ -199,7 +199,7 @@ bool socket_router::do_forward_hash(router_header* header, char* data, size_t da
 	uint64_t group_idx = 0;
 	size_t glen = decode_u64(&group_idx, (BYTE*)data, data_len);
 	if (glen == 0 || group_idx >= m_groups.size()) {
-		error = fmt::format("router forward-hash not decode group");
+		error = fmt::format("router[{}] forward-hash not decode group", cur_index());
 		return false;
 	}
 
@@ -209,7 +209,7 @@ bool socket_router::do_forward_hash(router_header* header, char* data, size_t da
 	uint64_t hash = 0;
 	size_t hlen = decode_u64(&hash, (BYTE*)data, data_len);
 	if (hlen == 0) {
-		error = fmt::format("router forward-hash not decode hash");
+		error = fmt::format("router[{}] forward-hash not decode hash", cur_index());
 		return false;
 	}
 
@@ -224,7 +224,7 @@ bool socket_router::do_forward_hash(router_header* header, char* data, size_t da
 		m_mgr->sendv(pTarget->token, items, _countof(items));
 		return true;
 	} else {
-		error = fmt::format("router forward-hash not nodes:{}", group_idx);
+		error = fmt::format("router[{}] forward-hash not nodes:{},hash:{}", cur_index(), group_idx,hash);
 		return router ? false : do_forward_router(header, data - hlen - glen, data_len + hlen + glen, error, rpc_type::forward_hash, 0, group_idx);
 	}
 }

@@ -48,12 +48,10 @@ end
 function HttpClient:on_frame(clock_ms)
     if next(self.contexts) then
         curlm_mgr.update()
-        thread_mgr:fork(function()
-            for _, result in pairs(self.results) do
-                thread_mgr:response(tunpack(result))
-            end
-            self.results = {}
-        end)
+        for _, result in pairs(self.results) do
+            thread_mgr:response(tunpack(result))
+        end
+        self.results = {}
         --清除超时请求
         for handle, context in pairs(self.contexts) do
             if clock_ms >= context.time then

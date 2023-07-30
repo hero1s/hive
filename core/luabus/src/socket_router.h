@@ -95,6 +95,7 @@ public:
 
 protected:
 	uint32_t find_transfer_router(uint32_t target_id, uint16_t group_idx);
+	uint16_t cur_index() { return get_node_index(m_node_id); };
 
 private:
 	std::shared_ptr<socket_mgr> m_mgr;

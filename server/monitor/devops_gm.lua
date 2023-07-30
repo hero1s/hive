@@ -118,7 +118,7 @@ end
 
 function DevopsGmMgr:gm_hive_quit(reason)
     log_warn("[DevopsGmMgr][gm_hive_quit] exit hive exe time:%s ", time_str(hive.now))
-    monitor_mgr:broadcast("rpc_set_server_status", 0, ServiceStatus.STOP)
+    monitor_mgr:broadcast("rpc_hive_quit", 0, reason)
     return { code = 0 }
 end
 

@@ -18,6 +18,7 @@ local update_mgr    = hive.get("update_mgr")
 local RouterServer  = singleton()
 local prop          = property(RouterServer)
 prop:accessor("rpc_server", nil)
+prop:accessor("change", false)
 function RouterServer:__init()
     self:setup()
     event_mgr:add_listener(self, "rpc_sync_router_info")
@@ -34,6 +35,10 @@ function RouterServer:setup()
 end
 
 function RouterServer:on_minute()
+    if self.change then
+        self:sync_all_node_info()
+        self.change = false
+    end
     log_info("[RouterServer][on_minute] router:%s,service:%s", self.rpc_server:service_count(hive.service_id), self.rpc_server:service_count(0))
 end
 
@@ -63,17 +68,20 @@ function RouterServer:update_router_node_info(client, status)
     local router_id = hive.id
     local target_id = client.id
     lbus.map_router_node(router_id, target_id, status)
-    self:broadcast_router("rpc_sync_router_info", router_id, { target_id }, status)
-    local is_router = client.service_name == "router" and true or false
-    if status == 1 and is_router then
-        local nodes = {}
-        for _, node in self.rpc_server:iterator() do
-            if node.id then
-                tinsert(nodes, node.id)
-            end
-        end
-        self.rpc_server:send(client, "rpc_sync_router_info", router_id, nodes, status)
+    if status == 0 then
+        self:broadcast_router("rpc_sync_router_info", router_id, { target_id }, status)
     end
+    self.change = true
+end
+
+function RouterServer:sync_all_node_info()
+    local nodes = {}
+    for _, client in self.rpc_server:iterator() do
+        if client.id then
+            tinsert(nodes, client.id)
+        end
+    end
+    self:broadcast_router("rpc_sync_router_info", hive.id, nodes, 1)
 end
 
 function RouterServer:broadcast_router(rpc, ...)
@@ -87,7 +95,7 @@ end
 --rpc事件处理
 ------------------------------------------------------------------
 function RouterServer:rpc_sync_router_info(router_id, target_ids, status)
-    log_debug("[RouterServer][rpc_sync_router_info] router_id:%s,target_ids:%s,status:%s", id2nick(router_id), target_ids, status)
+    log_debug("[RouterServer][rpc_sync_router_info] router_id:%s,target_ids:%s,status:%s", id2nick(router_id), #target_ids, status)
     if #target_ids > 1 then
         lbus.map_router_node(router_id, 0, 0)
     end

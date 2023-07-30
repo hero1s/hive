@@ -106,6 +106,7 @@ function RouterMgr:check_router()
     self.candidates = tshuffle(self.candidates)
     if old_ready ~= self:is_ready() then
         hive.change_service_status(hive.service_status)
+        event_mgr:notify_trigger("on_router_connected", self:is_ready())
     end
 end
 

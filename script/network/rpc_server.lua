@@ -52,6 +52,7 @@ function RpcServer:__init(holder, ip, port, induce)
         end)
     end
     event_mgr:add_listener(self, "rpc_heartbeat")
+    event_mgr:add_listener(self, "rpc_register")
 end
 
 --rpc事件
@@ -188,14 +189,14 @@ end
 --rpc回执
 -----------------------------------------------------------------------------
 --服务器心跳协议
-function RpcServer:rpc_heartbeat(client, is_init, node)
+function RpcServer:rpc_heartbeat(client, node)
     self:send(client, "on_heartbeat", hive.id)
-    if not is_init then
-        --正常心跳
+    if client.id then
         self.holder:on_client_beat(client, node)
-        return
     end
+end
 
+function RpcServer:rpc_register(client, node)
     if not client.id then
         -- 检查重复注册
         local eclient = self:get_client_by_id(node.id)
