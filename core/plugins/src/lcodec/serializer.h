@@ -90,7 +90,9 @@ namespace lcodec {
                     return 1;
                 }
             }
-            return luaL_error(L, lua_tostring(L, -1));
+            lua_pushnil(L);
+            lua_insert(L, -2);
+            return 2;
         }
 
     protected:

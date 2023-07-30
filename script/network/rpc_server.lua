@@ -193,6 +193,9 @@ function RpcServer:rpc_heartbeat(client, node)
     self:send(client, "on_heartbeat", hive.id)
     if client.id then
         self.holder:on_client_beat(client, node)
+    else
+        log_err("[RpcServer][rpc_heartbeat] not register,exception logic:%s", node)
+        self:disconnect(client)
     end
 end
 
@@ -214,7 +217,15 @@ function RpcServer:rpc_register(client, node)
         client.name         = node.name
         client.pid          = node.pid
         self.holder:on_client_register(client, node)
+    else
+        log_err("[RpcServer][rpc_register] repeat register,exception logic:%s", node)
+        self:disconnect(client)
     end
+end
+
+function RpcServer:disconnect(client)
+    self:on_socket_error(client.token, "action-close")
+    client.close()
 end
 
 return RpcServer
