@@ -2,7 +2,7 @@
 
 local tunpack       = table.unpack
 local log_info      = logger.info
-local log_warn      = logger.warn
+local log_debug     = logger.debug
 local check_success = hive.success
 
 local router_mgr    = hive.get("router_mgr")
@@ -74,7 +74,7 @@ end
 
 -- 通知执行GM指令
 function GMAgent:rpc_command_execute(cmd_name, ...)
-    log_warn("[GMAgent][rpc_command_execute]->cmd_name:%s,%s", cmd_name, table.pack(...))
+    log_debug("[GMAgent][rpc_command_execute]->cmd_name:%s,%s", cmd_name, { ... })
     local ok, res = tunpack(event_mgr:notify_listener(cmd_name, ...))
     return ok and SUCCESS or LOGIC_FAILED, res
 end

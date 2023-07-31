@@ -147,10 +147,6 @@
                             nodes : [],
                         },
                     ],
-                },
-                {
-                    text : "在线日志",
-                    nodes : [],
                 }
             ];
 
@@ -206,27 +202,6 @@
                     document.write(JSON.stringify(status));
                 }
             });
-
-            // 加载服务列表
-            $.ajax({
-                url:"/monitors",
-                type: "GET",
-                dataType: "json",
-                contentType: "utf-8",
-                success: function (res) {
-                    var nodes = [];
-                    for (var i in res) {
-                        var addr = res[i]
-                        nodes.push({ text : addr, tag : "log" });
-                    }
-                    treeNodes[1].nodes = nodes;
-                    that._showConsole(treeNodes);
-                },
-                error: function(status) {
-                    document.write(JSON.stringify(status));
-                }
-            });
-
             //sendBtn事件
             document.getElementById('sendBtn').addEventListener('click', function(){
                 that._sendCommand();

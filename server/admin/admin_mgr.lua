@@ -28,20 +28,17 @@ local prop         = property(AdminMgr)
 prop:reader("http_server", nil)
 prop:reader("deploy", "local")
 prop:reader("services", {})
-prop:reader("monitors", {})
 
 function AdminMgr:__init()
     --监听事件
     event_mgr:add_listener(self, "rpc_register_command")
     event_mgr:add_listener(self, "rpc_execute_command")
     event_mgr:add_listener(self, "rpc_execute_message")
-    event_mgr:add_listener(self, "rpc_register_monitor")
 
     --创建HTTP服务器
     local server = HttpServer(env_get("HIVE_ADMIN_HTTP"))
     server:register_get("/", "on_gm_page", self)
     server:register_get("/gmlist", "on_gmlist", self)
-    server:register_get("/monitors", "on_monitors", self)
     server:register_post("/command", "on_command", self)
     server:register_post("/message", "on_message", self)
     service.make_node(server:get_port())
@@ -91,12 +88,6 @@ function AdminMgr:rpc_execute_message(message)
     return SUCCESS, res
 end
 
---注册monitor
-function AdminMgr:rpc_register_monitor(addr)
-    self.monitors[addr] = true
-    return SUCCESS
-end
-
 function AdminMgr:on_minute()
     gm_page = nil
 end
@@ -143,16 +134,6 @@ function AdminMgr:on_message(url, body, request)
     local cmd_req = json_decode(body)
     local data    = cmd_req.data
     return self:exec_message(data)
-end
-
---monitor拉取
-function AdminMgr:on_monitors(url, querys, request)
-    log_debug("[AdminMgr][on_monitors] body: %s", querys)
-    local nodes = {  }
-    for addr in pairs(self.monitors) do
-        nodes[#nodes + 1] = addr
-    end
-    return nodes
 end
 
 -------------------------------------------------------------------------

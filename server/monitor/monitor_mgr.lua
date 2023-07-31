@@ -3,27 +3,18 @@ import("network/http_client.lua")
 import("agent/mongo_agent.lua")
 import("agent/redis_agent.lua")
 local RpcServer          = import("network/rpc_server.lua")
-local HttpServer         = import("network/http_server.lua")
 
-local json_decode        = hive.json_decode
-local env_get            = environ.get
 local env_addr           = environ.addr
 local log_warn           = logger.warn
 local log_info           = logger.info
 local log_debug          = logger.debug
 local log_err            = logger.err
-local readfile           = io_ext.readfile
-local sformat            = string.format
 local tinsert            = table.insert
+local tsize              = table_ext.size
 local id2nick            = service.id2nick
 local sid2index          = service.id2index
 
-local PeriodTime         = enum("PeriodTime")
 local ServiceStatus      = enum("ServiceStatus")
-
-local router_mgr         = hive.get("router_mgr")
-local monitor            = hive.get("monitor")
-local thread_mgr         = hive.get("thread_mgr")
 local update_mgr         = hive.get("update_mgr")
 
 local delay_time <const> = 20 --网络掉线延迟时间
@@ -36,7 +27,6 @@ prop:reader("monitor_nodes", {})
 prop:reader("monitor_lost_nodes", {})
 prop:reader("services", {})
 prop:reader("open_nacos", false)
-prop:reader("log_page", nil)
 prop:reader("changes", {})
 prop:reader("close_services", {})
 
@@ -47,30 +37,10 @@ function MonitorMgr:__init()
     --创建rpc服务器
     local ip, port  = env_addr("HIVE_MONITOR_HOST")
     self.rpc_server = RpcServer(self, ip, port, environ.status("HIVE_ADDR_INDUCE"))
-    --创建HTTP服务器
-    local server    = HttpServer(env_get("HIVE_MONITOR_HTTP"))
-    server:register_get("/", "on_log_page", self)
-    server:register_get("/status", "on_monitor_status", self)
-    server:register_post("/command", "on_monitor_command", self)
-    self.http_server = server
 
-    monitor:watch_service_ready(self, "admin")
     --定时更新
     update_mgr:attach_second(self)
     update_mgr:attach_minute(self)
-end
-
-function MonitorMgr:register_admin()
-    local host      = env_get("HIVE_HOST_IP")
-    local http_addr = sformat("%s:%d", host, self.http_server:get_port())
-    thread_mgr:success_call(PeriodTime.SECOND_MS, function()
-        local ok, code = router_mgr:call_admin_master("rpc_register_monitor", http_addr)
-        if hive.success(code, ok) then
-            return ok
-        end
-        log_warn("[MonitorMgr][register_admin] rpc_register_monitor fail:%s,%s", ok, code)
-        return false
-    end, PeriodTime.SECOND_5_MS)
 end
 
 function MonitorMgr:on_client_accept(client)
@@ -78,25 +48,26 @@ function MonitorMgr:on_client_accept(client)
 end
 
 -- 心跳
-function MonitorMgr:on_client_beat(client, node_info)
+function MonitorMgr:on_client_beat(client, status_info)
     local node = self.monitor_nodes[client.token]
     if node then
-        if node.is_ready ~= node_info.is_ready then
+        node.status = status_info.status
+        if node.is_ready ~= status_info.is_ready then
+            node.is_ready = status_info.is_ready
             --广播其它服务
-            if node_info.is_ready then
+            if status_info.is_ready then
                 self:add_service(node.service_name, node, client.token)
             else
                 self:remove_service(node.service_name, node.id, hive.now + delay_time, node.pid)
             end
-            node.is_ready                   = node_info.is_ready
             self.changes[node.service_name] = true
         end
-        node.status = node_info.status
     end
 end
 
 -- 会话信息
-function MonitorMgr:on_client_register(client, node_info)
+function MonitorMgr:on_client_register(client, node_info, watch_services)
+    client.watch_services = watch_services
     log_debug("[MonitorMgr][on_client_register] node token:%s,%s,%s", client.token, id2nick(node_info.id), node_info)
     node_info.token                       = client.token
     self.monitor_nodes[client.token]      = node_info
@@ -163,24 +134,6 @@ end
 function MonitorMgr:on_minute()
     self:check_lost_node()
     self:show_change_services_info()
-    self.log_page = nil
-end
-
---gm_page
-function MonitorMgr:on_log_page(url, querys, request)
-    if not self.log_page then
-        local html_path = hive.import_file_dir("monitor/monitor_mgr.lua") .. "/log_page.html"
-        self.log_page   = readfile(html_path)
-        if not self.log_page then
-            log_err("[MonitorMgr][on_log_page] load html faild:%s", html_path)
-        end
-    end
-    return self.log_page, { ["Access-Control-Allow-Origin"] = "*" }
-end
-
--- status查询
-function MonitorMgr:on_monitor_status(url, querys, headers)
-    return self.monitor_nodes
 end
 
 --call
@@ -231,32 +184,6 @@ function MonitorMgr:broadcast(rpc, target, ...)
     return { code = 0, msg = "broadcast all nodes server!" }
 end
 
--- command处理
-function MonitorMgr:on_monitor_command(url, body, request)
-    log_debug("[MonitorMgr][on_monitor_command]: %s", body)
-    --执行函数
-    local function handler_cmd(jbody)
-        local data_req = json_decode(jbody)
-        if data_req.token then
-            return self:call_by_token(data_req.token, data_req.rpc, data_req.data)
-        end
-        return self:broadcast(data_req.rpc, data_req.service_id, data_req.data)
-    end
-    --开始执行
-    local ok, res = pcall(handler_cmd, body)
-    if not ok then
-        log_warn("[MonitorMgr:on_monitor_post] pcall: %s", res)
-        return { code = 1, msg = res }
-    end
-    return res
-end
-
--- GM服务已经ready
-function MonitorMgr:on_service_ready(id, service_name)
-    log_info("[MonitorMgr][on_service_ready]->id:%s, service_name:%s", id2nick(id), service_name)
-    self:register_admin()
-end
-
 -- 添加服务
 function MonitorMgr:add_service(service_name, node, token)
     log_debug("[MonitorMgr][add_service] %s,%s", id2nick(node.id), node)
@@ -302,14 +229,16 @@ function MonitorMgr:send_all_service_status(client)
     log_debug("[MonitorMgr][send_all_service_status] %s", client.name)
     local readys
     for service_name, curr_services in pairs(self.services) do
-        readys = {}
-        for id, info in pairs(curr_services) do
-            if id ~= client.id and info.is_ready then
-                readys[id] = info
+        if client.watch_services[service_name] then
+            readys = {}
+            for id, info in pairs(curr_services) do
+                if id ~= client.id and info.is_ready then
+                    readys[id] = info
+                end
             end
-        end
-        if next(readys) then
-            self.rpc_server:send(client, "rpc_service_changed", service_name, readys, {})
+            if next(readys) then
+                self.rpc_server:send(client, "rpc_service_changed", service_name, readys, {})
+            end
         end
     end
 end
@@ -319,16 +248,29 @@ function MonitorMgr:broadcast_service_status(service_name, readys, closes)
         return
     end
     log_debug("[MonitorMgr][broadcast_service_status] %s,%s,%s", service_name, readys, closes)
-    self.rpc_server:servicecast(0, "rpc_service_changed", service_name, readys, closes)
+    for _, client in self.rpc_server:iterator() do
+        if client.id and client.watch_services[service_name] then
+            self.rpc_server:send(client, "rpc_service_changed", service_name, readys, closes)
+        end
+    end
 end
 
 function MonitorMgr:query_services(service_name)
-    local services = self.services[service_name] or {}
-    local sids     = {}
-    for id, v in pairs(services) do
-        tinsert(sids, sid2index(id))
+    if #service_name > 1 then
+        local services = self.services[service_name] or {}
+        local sids     = {}
+        for id, v in pairs(services) do
+            tinsert(sids, sid2index(id))
+        end
+        return sids, #sids
+    else
+        local sids, count = {}, 0
+        for sname, curr_services in pairs(self.services) do
+            sids[sname] = tsize(curr_services)
+            count       = count + sids[sname]
+        end
+        return sids, count
     end
-    return sids
 end
 
 function MonitorMgr:show_change_services_info()

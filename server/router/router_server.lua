@@ -116,8 +116,8 @@ function RouterServer:on_client_register(client, node_info)
 end
 
 -- 心跳
-function RouterServer:on_client_beat(client, node_info)
-    local status = node_info.status
+function RouterServer:on_client_beat(client, status_info)
+    local status = status_info.status
     --设置hash限流,挂起状态不再分配hash消息派发
     if status == ServiceStatus.HALT and hive.is_runing() then
         log_info("[RouterServer][on_client_beat] add ban hash server %s", client.name)

@@ -66,11 +66,14 @@ end
 
 --发送心跳
 function RpcClient:heartbeat()
-    self:send("rpc_heartbeat", hive.node_info)
+    local status_info = { id       = hive.node_info.id,
+                          is_ready = hive.node_info.is_ready,
+                          status   = hive.node_info.status }
+    self:send("rpc_heartbeat", status_info)
 end
 
-function RpcClient:register()
-    self:send("rpc_register", hive.node_info)
+function RpcClient:register(...)
+    self:send("rpc_register", hive.node_info, ...)
 end
 
 --连接服务器
@@ -218,7 +221,6 @@ function RpcClient:on_socket_connect(socket)
     thread_mgr:fork(function()
         self.alive = true
         self.holder:on_socket_connect(self)
-        self:register()
     end)
 end
 

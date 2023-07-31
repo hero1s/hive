@@ -130,7 +130,7 @@ function CacheMgr:on_fast(clock_ms)
                 self:save_cache(obj)
             end
             --限流
-            if self.save_count > self.save_limit then
+            if not self.flush and self.save_count > self.save_limit then
                 log_warn("[CacheMgr][on_fast] is very busy:%s/%s", self.save_count, self.save_limit)
                 return
             end

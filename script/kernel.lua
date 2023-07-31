@@ -49,9 +49,6 @@ end
 local function init_monitor()
     import("agent/monitor_agent.lua")
     import("agent/discovery_agent.lua")
-    if not environ.get("HIVE_MONITOR_HOST") then
-        import("kernel/netlog_mgr.lua")
-    end
 end
 
 --协程改造

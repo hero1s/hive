@@ -6,7 +6,6 @@ local pairs         = pairs
 local odate         = os.date
 local log_info      = logger.info
 local log_warn      = logger.warn
-local log_err       = logger.err
 local sig_get       = signal.get
 local sig_check     = signal.check
 local signal_quit   = signal.quit
@@ -128,15 +127,17 @@ function UpdateMgr:update(scheduler, now_ms, clock_ms)
         return
     end
     hive.now = now
+    --检测停服
+    self:check_service_stop(scheduler)
     --检查信号
     if self:check_signal(scheduler) then
         return
     end
     self:update_second(clock_ms)
-    self:update_by_time(scheduler, now, clock_ms)
+    self:update_by_time(now, clock_ms)
 end
 
-function UpdateMgr:update_by_time(scheduler, now, clock_ms)
+function UpdateMgr:update_by_time(now, clock_ms)
     --5秒更新
     local time = odate("*t", now)
     if time.sec % 5 > 0 then
@@ -150,8 +151,6 @@ function UpdateMgr:update_by_time(scheduler, now, clock_ms)
     if self.hotfix_able then
         self:check_hotfix()
     end
-    --检测停服
-    self:check_service_stop(scheduler)
     --30秒更新
     if time.sec % 30 > 0 then
         return
@@ -179,7 +178,7 @@ end
 function UpdateMgr:check_service_stop(scheduler)
     if scheduler and hive.service_status == ServiceStatus.STOP then
         if hive.safe_stop and event_mgr:fire_vote("vote_stop_service") then
-            log_err("[UpdateMgr][check_service_stop] all vote agree,will stop service:%s", hive.name)
+            log_warn("[UpdateMgr][check_service_stop] all vote agree,will stop service:%s", hive.name)
             event_mgr:notify_trigger("evt_service_shutdown")
             signal_quit()
         end

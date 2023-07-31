@@ -37,11 +37,8 @@ function OnlineAgent:login_dispatch_lobby(open_id)
 end
 
 function OnlineAgent:rm_dispatch_lobby(open_id)
-    local ok, code = router_mgr:call_online_hash(open_id, "rpc_rm_dispatch_lobby", open_id, hive.id)
-    if check_success(code, ok) then
-        self.open_ids[open_id] = nil
-    end
-    return ok, code
+    router_mgr:send_online_hash(open_id, "rpc_rm_dispatch_lobby", open_id, hive.id)
+    self.open_ids[open_id] = nil
 end
 
 function OnlineAgent:login_player(player_id)
@@ -53,11 +50,8 @@ function OnlineAgent:login_player(player_id)
 end
 
 function OnlineAgent:logout_player(player_id)
-    local ok, code = router_mgr:call_online_hash(player_id, "rpc_logout_player", player_id, hive.id)
-    if check_success(code, ok) then
-        self.player_ids[player_id] = nil
-    end
-    return ok, code
+    router_mgr:send_online_hash(player_id, "rpc_logout_player", player_id, hive.id)
+    self.player_ids[player_id] = nil
 end
 
 function OnlineAgent:query_openid(open_id)

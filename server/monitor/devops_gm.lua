@@ -112,8 +112,8 @@ function DevopsGmMgr:gm_set_server_status(status, delay, service_name, index)
 end
 
 function DevopsGmMgr:gm_query_server_online(service_name)
-    local sids = monitor_mgr:query_services(service_name)
-    return { sids = sids, count = #sids }
+    local sids, count = monitor_mgr:query_services(service_name)
+    return { sids = sids, count = count }
 end
 
 function DevopsGmMgr:gm_hive_quit(reason)

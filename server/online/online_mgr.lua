@@ -27,6 +27,11 @@ function OnlineMgr:__init()
     self.lobbys        = {}     --在线玩家
     self.lobby_players = {}     --lobby玩家索引
     self.oid2lobby     = {}     --玩家 open_id 到 lobby分布 map<oid, lobby>
+    --固定hash模型不同步
+    local service_hash = service.hash(hive.service_id)
+    if service_hash > 0 then
+        self.sync_status = false
+    end
 
     --初始化，注册事件
     event_mgr:add_listener(self, "rpc_cas_dispatch_lobby")
@@ -112,7 +117,7 @@ end
 function OnlineMgr:rpc_rm_dispatch_lobby(open_id, lobby_id)
     local lobby = self.oid2lobby[open_id]
     if not lobby or lobby.lobby_id ~= lobby_id then
-        log_err("[OnlineMgr][rpc_rm_dispatch_lobby] the lobby is error:%s,%s--%s", open_id, lobby_id, lobby)
+        log_warn("[OnlineMgr][rpc_rm_dispatch_lobby] the lobby is error:%s,%s--%s", open_id, lobby_id, lobby)
         return SUCCESS
     end
     self.oid2lobby[open_id] = nil

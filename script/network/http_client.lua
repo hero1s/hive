@@ -49,7 +49,9 @@ function HttpClient:on_frame(clock_ms)
     if next(self.contexts) then
         curlm_mgr.update()
         for _, result in pairs(self.results) do
-            thread_mgr:response(tunpack(result))
+            thread_mgr:fork(function()
+                thread_mgr:response(tunpack(result))
+            end)
         end
         self.results = {}
         --清除超时请求

@@ -56,15 +56,8 @@ function NacosMgr:rpc_unregister_nacos()
     return true
 end
 
-function NacosMgr:rpc_watch_service(watch_services, pre_services)
-    log_debug("[NacosMgr][rpc_watch_service] %s,%s", watch_services, pre_services)
-    self.watch_services = {}
-    for _, service_name in ipairs(watch_services) do
-        self.watch_services[service_name] = 1
-    end
-    for _, service_name in ipairs(pre_services) do
-        self.watch_services[service_name] = 1
-    end
+function NacosMgr:rpc_watch_service(watch_services)
+    self.watch_services = watch_services
     log_debug("[NacosMgr][rpc_watch_service] watch:%s", self.watch_services)
 end
 

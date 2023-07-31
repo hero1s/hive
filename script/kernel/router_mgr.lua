@@ -93,6 +93,7 @@ end
 function RouterMgr:on_socket_connect(client, res)
     log_info("[RouterMgr][on_socket_connect] router %s:%s success!", client.ip, client.port)
     self:check_router()
+    client:register()
 end
 
 function RouterMgr:check_router()

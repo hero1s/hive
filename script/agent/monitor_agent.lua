@@ -2,7 +2,6 @@
 local RpcClient     = import("network/rpc_client.lua")
 
 local tunpack       = table.unpack
-local tinsert       = table.insert
 local env_addr      = environ.addr
 local log_err       = logger.err
 local log_warn      = logger.warn
@@ -86,24 +85,15 @@ end
 function MonitorAgent:watch_services()
     local services = {}
     for service_name, _ in pairs(self.ready_watchers) do
-        tinsert(services, service_name)
+        services[service_name] = true
     end
     for service_name, _ in pairs(self.close_watchers) do
-        tinsert(services, service_name)
+        services[service_name] = true
+    end
+    for _, service_name in ipairs(hive.pre_services or {}) do
+        services[service_name] = true
     end
     return services
-end
-
-function MonitorAgent:is_watch_service(service_name)
-    if self.ready_watchers[service_name] or self.close_watchers[service_name] then
-        return true
-    end
-    for _, name in ipairs(hive.pre_services or {}) do
-        if name == service_name then
-            return true
-        end
-    end
-    return false
 end
 
 function MonitorAgent:exist_service(service_name, index)
@@ -126,6 +116,7 @@ end
 -- 连接成回调
 function MonitorAgent:on_socket_connect(client)
     log_info("[MonitorAgent][on_socket_connect]: connect monitor success!:[%s:%s]", self.client.ip, self.client.port)
+    client:register(self:watch_services())
 end
 
 function MonitorAgent:notify_service_event(listener_set, service_name, id, info, is_ready)
@@ -144,9 +135,6 @@ end
 
 --服务改变
 function MonitorAgent:rpc_service_changed(service_name, readys, closes)
-    if not self:is_watch_service(service_name) then
-        return
-    end
     log_debug("[MonitorAgent][rpc_service_changed] %s,%s,%s", service_name, readys, closes)
     for id, info in pairs(readys) do
         if not self.services[service_name] then

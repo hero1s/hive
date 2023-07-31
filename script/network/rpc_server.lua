@@ -189,23 +189,23 @@ end
 --rpc回执
 -----------------------------------------------------------------------------
 --服务器心跳协议
-function RpcServer:rpc_heartbeat(client, node)
+function RpcServer:rpc_heartbeat(client, status_info)
     self:send(client, "on_heartbeat", hive.id)
     if client.id then
-        self.holder:on_client_beat(client, node)
+        self.holder:on_client_beat(client, status_info)
     else
-        log_err("[RpcServer][rpc_heartbeat] not register,exception logic:%s", node)
+        log_err("[RpcServer][rpc_heartbeat] not register,exception logic:%s", status_info)
         self:disconnect(client)
     end
 end
 
-function RpcServer:rpc_register(client, node)
+function RpcServer:rpc_register(client, node, ...)
     if not client.id then
         -- 检查重复注册
         local eclient = self:get_client_by_id(node.id)
         if eclient then
             local rpc_key = lbus.get_rpc_key()
-            log_err("[RpcServer][rpc_heartbeat] client(%s) be kickout, same service is run!,rpckey:%s", eclient.name, rpc_key)
+            log_err("[RpcServer][rpc_register] client(%s) be kickout, same service is run!,rpckey:%s", eclient.name, rpc_key)
             self:send(client, "rpc_client_kickout", hive.id, "service replace")
             return
         end
@@ -216,7 +216,7 @@ function RpcServer:rpc_register(client, node)
         client.service_name = node.service_name
         client.name         = node.name
         client.pid          = node.pid
-        self.holder:on_client_register(client, node)
+        self.holder:on_client_register(client, node, ...)
     else
         log_err("[RpcServer][rpc_register] repeat register,exception logic:%s", node)
         self:disconnect(client)

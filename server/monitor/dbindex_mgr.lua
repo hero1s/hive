@@ -65,11 +65,11 @@ function DBIndexMgr:check_dbindexes()
     for _, conf in dbindex_db:iterator() do
         local db_name    = conf.db_name
         local table_name = conf.table_name
-        local only_key   = false
+        local only_key   = true
         --线上分片键只检测key
-        if self.sharding and conf.sharding then
+--[[        if self.sharding and conf.sharding then
             only_key = true
-        end
+        end]]
         local check_key = {}
         for _, v in ipairs(conf.keys) do
             check_key[v] = 1
