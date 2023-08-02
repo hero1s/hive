@@ -295,7 +295,7 @@ function MongoDB:on_socket_error(sock, token, err)
     self:delive(sock)
     --设置重连
     timer_mgr:set_period(self.timer_id, SECOND_MS)
-    event_mgr:fire_next_second(function()
+    event_mgr:fire_second(function()
         self:check_alive()
     end)
     for session_id, cmd in pairs(sock.sessions) do

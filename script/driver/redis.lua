@@ -432,7 +432,7 @@ function RedisDB:on_socket_error(sock, token, err)
     --设置重连
     self:delive(sock)
     timer_mgr:set_period(self.timer_id, SECOND_MS)
-    event_mgr:fire_next_second(function()
+    event_mgr:fire_second(function()
         self:check_alive()
     end)
     local task_queue = sock.task_queue

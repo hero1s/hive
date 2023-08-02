@@ -206,7 +206,7 @@ function RpcServer:rpc_register(client, node, ...)
         if eclient then
             local rpc_key = lbus.get_rpc_key()
             log_err("[RpcServer][rpc_register] client(%s) be kickout, same service is run!,rpckey:%s", eclient.name, rpc_key)
-            self:send(client, "rpc_client_kickout", hive.id, "service replace")
+            self:send(client, "rpc_service_kickout", hive.id, "service replace")
             return
         end
         -- 通知注册

@@ -3,6 +3,7 @@ local ReliableMsg = import("store/reliable_msg.lua")
 local config_mgr  = hive.get("config_mgr")
 local thread_mgr  = hive.get("thread_mgr")
 local sformat     = string.format
+local tjoin       = table_ext.join
 
 local RmsgAgent   = singleton()
 local prop        = property(RmsgAgent)
@@ -23,6 +24,19 @@ function RmsgAgent:build_index(sharding)
     for _, rmsg in pairs(self.rmsgs or {}) do
         rmsg:build_index(sharding)
     end
+end
+
+function RmsgAgent:check_indexes(sharding)
+    local success = true
+    local miss    = {}
+    for _, rmsg in pairs(self.rmsgs or {}) do
+        local ok, res = rmsg:check_indexes(sharding)
+        if not ok then
+            miss    = tjoin(res, miss)
+            success = false
+        end
+    end
+    return success, miss
 end
 
 function RmsgAgent:lock_msg(rmsg_type, to)

@@ -42,7 +42,7 @@ end
 function RedisAgent:get(key, is_table)
     local ok, code, res = self:execute({ "get", key }, key)
     if check_success(code, ok) then
-        if is_table then
+        if is_table and res then
             return json_decode(res, true)
         end
         return true, res

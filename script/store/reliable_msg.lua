@@ -41,6 +41,24 @@ function ReliableMsg:build_index(sharding)
     end
 end
 
+function ReliableMsg:check_indexes(sharding)
+    local success = true
+    local miss    = {}
+    if not mongo_agent:check_indexes({ uuid = 1 }, self.table_name, self.db_name, false) then
+        success = false
+        tinsert(miss, { db = self.db_name, co = self.table_name, key = { uuid = 1 } })
+    end
+    if not mongo_agent:check_indexes({ to = 1 }, self.table_name, self.db_name, sharding) then
+        success = false
+        tinsert(miss, { db = self.db_name, co = self.table_name, key = { to = 1 } })
+    end
+    if not mongo_agent:check_indexes({ ttl = 1 }, self.table_name, self.db_name, false) then
+        success = false
+        tinsert(miss, { db = self.db_name, co = self.table_name, key = { ttl = 1 }, expireAfterSeconds = 0 })
+    end
+    return success, miss
+end
+
 -- 查询未处理消息列表
 function ReliableMsg:list_message(to)
     local query            = { self.table_name, { to = to, deal_time = 0 }, { _id = 0, ttl = 0 }, { time = 1 } }

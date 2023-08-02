@@ -208,7 +208,7 @@ function RpcClient:on_socket_error(token, err)
         self.alive  = false
         if self.holder then
             self.holder:on_socket_error(self, token, err)
-            event_mgr:fire_next_second(function()
+            event_mgr:fire_second(function()
                 self:check_heartbeat()
             end)
         end

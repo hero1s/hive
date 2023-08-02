@@ -56,7 +56,7 @@ function MonitorMgr:on_client_beat(client, status_info)
             node.is_ready = status_info.is_ready
             --广播其它服务
             if status_info.is_ready then
-                self:add_service(node.service_name, node, client.token)
+                self:add_service(node.service_name, node)
             else
                 self:remove_service(node.service_name, node.id, hive.now + delay_time, node.pid)
             end
@@ -76,7 +76,7 @@ function MonitorMgr:on_client_register(client, node_info, watch_services)
     self:send_all_service_status(client)
     --广播其它服务
     if node_info.is_ready then
-        self:add_service(node_info.service_name, node_info, client.token)
+        self:add_service(node_info.service_name, node_info)
     end
 end
 
@@ -185,7 +185,7 @@ function MonitorMgr:broadcast(rpc, target, ...)
 end
 
 -- 添加服务
-function MonitorMgr:add_service(service_name, node, token)
+function MonitorMgr:add_service(service_name, node)
     log_debug("[MonitorMgr][add_service] %s,%s", id2nick(node.id), node)
     local services   = self.services[service_name] or {}
     --检测ip唯一
@@ -197,7 +197,7 @@ function MonitorMgr:add_service(service_name, node, token)
             end
         end
     end
-    services[node.id]           = { id = node.id, ip = node.host, port = node.port, is_ready = node.is_ready, token = token, pid = node.pid }
+    services[node.id]           = { id = node.id, ip = node.host, port = node.port, is_ready = node.is_ready, pid = node.pid }
     self.services[service_name] = services
     self.changes[service_name]  = true
 

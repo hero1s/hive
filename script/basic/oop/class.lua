@@ -76,18 +76,24 @@ local function object_defer(class, object, ...)
     end
 end
 
+local function clone_prop(args)
+    local arg = args[1]
+    if type(arg) ~= "table" or arg.__class then
+        return arg
+    end
+    return deep_copy(arg)
+end
+
 local function object_props(class, object)
     if class.__super then
         object_props(class.__super, object)
     end
     for name, args in pairs(class.__props) do
-        local param  = deep_copy(args)
-        object[name] = param[1]
+        object[name] = clone_prop(args)
     end
     for _, mixin in ipairs(class.__mixins) do
         for name, args in pairs(mixin.__props) do
-            local param  = deep_copy(args)
-            object[name] = param[1]
+            object[name] = clone_prop(args)
         end
     end
 end

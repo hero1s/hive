@@ -36,7 +36,7 @@ function RouterMgr:setup()
     monitor:watch_service_ready(self, "router")
     monitor:watch_service_close(self, "router")
     --注册事件
-    event_mgr:add_listener(self, "rpc_client_kickout")
+    event_mgr:add_listener(self, "rpc_service_kickout")
     event_mgr:add_listener(self, "on_forward_error")
     event_mgr:add_listener(self, "reply_forward_error")
 end
@@ -272,8 +272,8 @@ end
 -------------------------------------------------------------------------------
 
 --服务被踢下线
-function RouterMgr:rpc_client_kickout(router_id, reason)
-    log_err("[RouterMgr][rpc_client_kickout] reason:%s router_id:%s", reason, id2nick(router_id))
+function RouterMgr:rpc_service_kickout(router_id, reason)
+    log_err("[RouterMgr][rpc_service_kickout] reason:%s router_id:%s", reason, id2nick(router_id))
     signal_quit()
 end
 

@@ -2,19 +2,11 @@
 #include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
-#include "lz4.h"
-#include "md5.h"
-#include "sha1.h"
-#include "sha2.h"
-#include "xxtea.h"
-#include "des56.h"
-#include "base64.h"
 #include "lcrypt.h"
 #include <memory.h>
 #include <string.h>
 
-static int lrandomkey(lua_State *L)
-{
+static int lrandomkey(lua_State *L) {
     char tmp[8];
     int i;
     for (i=0;i<8;i++)
@@ -25,8 +17,7 @@ static int lrandomkey(lua_State *L)
     return 1;
 }
 
-static void hash(const char * str, int sz, char key[8])
-{
+static void hash(const char * str, int sz, char key[8]) {
     long djb_hash = 5381L;
     long js_hash = 1315423911L;
     int i;
@@ -48,8 +39,7 @@ static void hash(const char * str, int sz, char key[8])
     key[7] = (js_hash >> 24) & 0xff;
 }
 
-static int lhashkey(lua_State *L)
-{
+static int lhashkey(lua_State *L) {
     size_t sz = 0;
     const char * key = luaL_checklstring(L, 1, &sz);
     char realkey[8];
@@ -58,8 +48,7 @@ static int lhashkey(lua_State *L)
     return 1;
 }
 
-static int tohex(lua_State *L, const unsigned char* text, size_t sz)
-{
+static int tohex(lua_State *L, const unsigned char* text, size_t sz) {
     static char hex[] = "0123456789abcdef";
     char tmp[SMALL_CHUNK];
     char *buffer = tmp;
@@ -76,8 +65,7 @@ static int tohex(lua_State *L, const unsigned char* text, size_t sz)
     return 1;
 }
 
-static int ltohex(lua_State *L)
-{
+static int ltohex(lua_State *L) {
     size_t sz = 0;
     const unsigned char * text = (const unsigned char *)luaL_checklstring(L, 1, &sz);
     return tohex(L, text, sz);
@@ -85,8 +73,7 @@ static int ltohex(lua_State *L)
 
 #define HEX(v,c) { char tmp = (char) c; if (tmp >= '0' && tmp <= '9') { v = tmp-'0'; } else { v = tmp - 'a' + 10; } }
 
-static int lfromhex(lua_State *L)
-{
+static int lfromhex(lua_State *L) {
     size_t sz = 0;
     const unsigned char * text = (const unsigned char*)luaL_checklstring(L, 1, &sz);
     if (sz & 2)
@@ -115,8 +102,7 @@ static int lfromhex(lua_State *L)
     return 1;
 }
 
-static int lxxtea_encode(lua_State* L)
-{
+static int lxxtea_encode(lua_State* L) {
     size_t data_len = 0;
     size_t encode_len = 0;
     const char* key = luaL_checkstring(L, 1);
@@ -127,8 +113,7 @@ static int lxxtea_encode(lua_State* L)
     return 1;
 }
 
-static int lxxtea_decode(lua_State* L)
-{
+static int lxxtea_decode(lua_State* L) {
     size_t data_len = 0;
     size_t decode_len = 0;
     const char* key = luaL_checkstring(L, 1);
@@ -139,8 +124,7 @@ static int lxxtea_decode(lua_State* L)
     return 1;
 }
 
-static int lbase64_encode(lua_State* L)
-{
+static int lbase64_encode(lua_State* L) {
     size_t data_len = 0;
     const char* message = luaL_checklstring(L, 1, &data_len);
     char* encode_out =  (char *)malloc(BASE64_ENCODE_OUT_SIZE(data_len));
@@ -150,8 +134,7 @@ static int lbase64_encode(lua_State* L)
     return 1;
 }
 
-static int lbase64_decode(lua_State* L)
-{
+static int lbase64_decode(lua_State* L) {
     size_t data_len = 0;
     const char* message = luaL_checklstring(L, 1, &data_len);
     unsigned char* decode_out = (unsigned char*)malloc(BASE64_DECODE_OUT_SIZE(data_len));
@@ -161,8 +144,7 @@ static int lbase64_decode(lua_State* L)
     return 1;
 }
 
-static int lmd5(lua_State* L)
-{
+static int lmd5(lua_State* L) {
     size_t data_len = 0;
     const char* message = luaL_checklstring(L, 1, &data_len);
     char output[HASHSIZE];
@@ -175,8 +157,7 @@ static int lmd5(lua_State* L)
     return 1;
 }
 
-static int des56_decrypt( lua_State *L )
-{
+static int des56_decrypt( lua_State *L ) {
     char* decypheredText;
     keysched KS;
     int rel_index, abs_index;
@@ -224,8 +205,7 @@ static int des56_decrypt( lua_State *L )
     return 1;
 }
 
-static int des56_crypt( lua_State *L )
-{
+static int des56_crypt( lua_State *L ) {
     char *cypheredText;
     keysched KS;
     int rel_index, pad, abs_index;
@@ -279,8 +259,7 @@ static int des56_crypt( lua_State *L )
     return 1;
 }
 
-static int lz4_encode(lua_State* L)
-{
+static int lz4_encode(lua_State* L) {
     size_t data_len = 0;
     char dest[LZ_MAX_SIZE_CHUNK];
     const char* message = luaL_checklstring(L, 1, &data_len);
@@ -295,8 +274,7 @@ static int lz4_encode(lua_State* L)
     return 1;
 }
 
-static int lz4_decode(lua_State* L)
-{
+static int lz4_decode(lua_State* L) {
     size_t data_len = 0;
     char dest[LZ_MAX_SIZE_CHUNK];
     const char* message = luaL_checklstring(L, 1, &data_len);
@@ -311,8 +289,7 @@ static int lz4_decode(lua_State* L)
     return 1;
 }
 
-static int lsha1(lua_State* L)
-{
+static int lsha1(lua_State* L) {
     size_t sz = 0;
     uint8_t digest[SHA1_DIGEST_SIZE];
     const uint8_t* buffer = (const uint8_t*)luaL_checklstring(L, 1, &sz);
@@ -321,8 +298,7 @@ static int lsha1(lua_State* L)
     return 1;
 }
 
-static int lsha224(lua_State* L)
-{
+static int lsha224(lua_State* L) {
     size_t sz = 0;
     uint8_t digest[SHA224_DIGEST_SIZE];
     const uint8_t* buffer = (const uint8_t*)luaL_checklstring(L, 1, &sz);
@@ -331,8 +307,7 @@ static int lsha224(lua_State* L)
     return 1;
 }
 
-static int lsha256(lua_State* L)
-{
+static int lsha256(lua_State* L) {
     size_t sz = 0;
     uint8_t digest[SHA256_DIGEST_SIZE];
     const uint8_t* buffer = (const uint8_t*)luaL_checklstring(L, 1, &sz);
@@ -341,8 +316,7 @@ static int lsha256(lua_State* L)
     return 1;
 }
 
-static int lsha384(lua_State* L)
-{
+static int lsha384(lua_State* L) {
     size_t sz = 0;
     uint8_t digest[SHA384_DIGEST_SIZE];
     const uint8_t* buffer = (const uint8_t*)luaL_checklstring(L, 1, &sz);
@@ -351,8 +325,7 @@ static int lsha384(lua_State* L)
     return 1;
 }
 
-static int lsha512(lua_State* L)
-{
+static int lsha512(lua_State* L) {
     size_t sz = 0;
     uint8_t digest[SHA512_DIGEST_SIZE];
     const uint8_t* buffer = (const uint8_t*)luaL_checklstring(L, 1, &sz);
@@ -361,8 +334,7 @@ static int lsha512(lua_State* L)
     return 1;
 }
 
-static int lhmac_sha1(lua_State *L)
-{
+static int lhmac_sha1(lua_State *L) {
     size_t key_sz = 0, text_sz = 0;
     uint8_t digest[SHA1_DIGEST_SIZE];
     const uint8_t* key = (const uint8_t*)luaL_checklstring(L, 1, &key_sz);
@@ -372,8 +344,7 @@ static int lhmac_sha1(lua_State *L)
     return 1;
 }
 
-static int lhmac_sha224(lua_State* L)
-{
+static int lhmac_sha224(lua_State* L) {
     size_t key_sz = 0, text_sz = 0;
     uint8_t digest[SHA224_DIGEST_SIZE];
     const uint8_t* key = (const uint8_t*)luaL_checklstring(L, 1, &key_sz);
@@ -383,8 +354,7 @@ static int lhmac_sha224(lua_State* L)
     return 1;
 }
 
-static int lhmac_sha256(lua_State* L)
-{
+static int lhmac_sha256(lua_State* L) {
     size_t key_sz = 0, text_sz = 0;
     uint8_t digest[SHA256_DIGEST_SIZE];
     const uint8_t* key = (const uint8_t*)luaL_checklstring(L, 1, &key_sz);
@@ -394,8 +364,7 @@ static int lhmac_sha256(lua_State* L)
     return 1;
 }
 
-static int lhmac_sha384(lua_State* L)
-{
+static int lhmac_sha384(lua_State* L) {
     size_t key_sz = 0, text_sz = 0;
     uint8_t digest[SHA384_DIGEST_SIZE];
     const uint8_t* key = (const uint8_t*)luaL_checklstring(L, 1, &key_sz);
@@ -405,8 +374,7 @@ static int lhmac_sha384(lua_State* L)
     return 1;
 }
 
-static int lhmac_sha512(lua_State* L)
-{
+static int lhmac_sha512(lua_State* L) {
     size_t key_sz = 0, text_sz = 0;
     uint8_t digest[SHA512_DIGEST_SIZE];
     const uint8_t* key = (const uint8_t*)luaL_checklstring(L, 1, &key_sz);
@@ -434,6 +402,78 @@ static int lxor_byte(lua_State *L) {
     return 1;
 }
 
+static int lrsa_init_public_key(lua_State* L) {
+    size_t pubkey_sz = 0;
+    uint8_t* pubkey_b64 = (uint8_t*)luaL_checklstring(L, 1, &pubkey_sz);
+    int code = rsa_init_public_key(pubkey_b64, pubkey_sz);
+    lua_pushinteger(L, code);
+    return 1;
+}
+
+static int lrsa_init_private_key(lua_State* L) {
+    size_t prikey_sz = 0;
+    uint8_t* prikey_b64 = (uint8_t*)luaL_checklstring(L, 1, &prikey_sz);
+    int code = rsa_init_private_key(prikey_b64, prikey_sz);
+    lua_pushinteger(L, code);
+    return 1;
+}
+
+static int lrsa_public_encrypt(lua_State* L) {
+    size_t key_sz = 0; uint32_t dest_sz = 0;
+    uint8_t dest[RSA_MAX_MODULUS_BITS];
+    uint8_t* key = (uint8_t*)luaL_checklstring(L, 1, &key_sz);
+    int code = rsa_public_encrypt(dest, &dest_sz, key, key_sz);
+    if (code == 0) {
+        lua_pushlstring(L, (const char*)dest, dest_sz);
+        return 1;
+    }
+    lua_pushnil(L);
+    lua_pushinteger(L, code);
+    return 2;
+}
+
+static int lrsa_public_decrypt(lua_State* L) {
+    size_t key_sz = 0; uint32_t dest_sz = 0;
+    uint8_t dest[RSA_MAX_MODULUS_BITS];
+    uint8_t* key = (uint8_t*)luaL_checklstring(L, 1, &key_sz);
+    int code = rsa_public_decrypt(dest, &dest_sz, key, key_sz);
+    if (code == 0) {
+        lua_pushlstring(L, (const char*)dest, dest_sz);
+        return 1;
+    }
+    lua_pushnil(L);
+    lua_pushinteger(L, code);
+    return 2;
+}
+
+static int lrsa_private_encrypt(lua_State* L) {
+    size_t key_sz = 0; uint32_t dest_sz = 0;
+    uint8_t dest[RSA_MAX_MODULUS_BITS];
+    uint8_t* key = (uint8_t*)luaL_checklstring(L, 1, &key_sz);
+    int code = rsa_private_encrypt(dest, &dest_sz, key, key_sz);
+    if (code == 0) {
+        lua_pushlstring(L, (const char*)dest, dest_sz);
+        return 1;
+    }
+    lua_pushnil(L);
+    lua_pushinteger(L, code);
+    return 2;
+}
+
+static int lrsa_private_decrypt(lua_State* L) {
+    size_t key_sz = 0; uint32_t dest_sz = 0;
+    uint8_t dest[RSA_MAX_MODULUS_BITS];
+    uint8_t* key = (uint8_t*)luaL_checklstring(L, 1, &key_sz);
+    int code = rsa_private_decrypt(dest, &dest_sz, key, key_sz);
+    if (code == 0) {
+        lua_pushlstring(L, (const char*)dest, dest_sz);
+        return 1;
+    }
+    lua_pushnil(L);
+    lua_pushinteger(L, code);
+    return 2;
+}
+
 static const luaL_Reg lcrypt_funcs[] = {
     { "md5", lmd5 },
     { "sha1", lsha1 },
@@ -459,6 +499,12 @@ static const luaL_Reg lcrypt_funcs[] = {
     { "xxtea_encode", lxxtea_encode },
     { "xxtea_decode", lxxtea_decode },
     { "xor_byte", lxor_byte },
+    { "rsa_pencode", lrsa_public_encrypt },
+    { "rsa_sencode", lrsa_private_encrypt },
+    { "rsa_pdecode", lrsa_public_decrypt },
+    { "rsa_sdecode", lrsa_private_decrypt },
+    { "rsa_init_pkey", lrsa_init_public_key },
+    { "rsa_init_skey", lrsa_init_private_key },
     { NULL, NULL },
 };
 

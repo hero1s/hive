@@ -1,6 +1,7 @@
 --dbindex_mgr.lua
 import("agent/rmsg_agent.lua")
 local tinsert       = table.insert
+local tjoin         = table_ext.join
 local log_err       = logger.err
 local log_info      = logger.info
 local log_warn      = logger.warn
@@ -54,11 +55,13 @@ function DBIndexMgr:gm_check_db_index(build)
 end
 
 function DBIndexMgr:build_index(rebuild)
+    log_info("[DBIndexMgr][build_index] %s", rebuild)
     self:build_dbindex(rebuild)
     rmsg_agent:build_index(self.sharding)
 end
 
 function DBIndexMgr:check_dbindexes()
+    log_info("[DBIndexMgr][check_dbindexes]")
     local success    = true
     local miss       = {}
     local dbindex_db = config_mgr:init_table("dbindex", "db_name", "table_name", "name")
@@ -66,10 +69,13 @@ function DBIndexMgr:check_dbindexes()
         local db_name    = conf.db_name
         local table_name = conf.table_name
         local only_key   = true
+        if self.auto_build then
+            only_key = false
+        end
         --线上分片键只检测key
---[[        if self.sharding and conf.sharding then
+        if self.sharding and conf.sharding then
             only_key = true
-        end]]
+        end
         local check_key = {}
         for _, v in ipairs(conf.keys) do
             check_key[v] = 1
@@ -79,10 +85,16 @@ function DBIndexMgr:check_dbindexes()
             tinsert(miss, { db = db_name, co = table_name, key = check_key })
         end
     end
+    local ok, res = rmsg_agent:check_indexes(self.sharding)
+    if not ok then
+        miss    = tjoin(res, miss)
+        success = false
+    end
     return success, miss
 end
 
 function DBIndexMgr:build_dbindex(rebuild)
+    log_info("[DBIndexMgr][build_dbindex] %s", rebuild)
     local dbindex_db = config_mgr:init_table("dbindex", "db_name", "table_name", "name")
     for _, conf in dbindex_db:iterator() do
         if self.sharding and conf.sharding then
@@ -128,6 +140,7 @@ end
 
 --db连接成功
 function DBIndexMgr:on_service_ready(id, service_name)
+    log_info("[DBIndexMgr][on_service_ready] %s", service.id2nick(id))
     if self.status > 0 then
         return
     end

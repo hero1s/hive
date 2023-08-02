@@ -58,6 +58,9 @@
     <ClInclude Include="src\lcrypt\md5.h">
       <Filter>lcrypt</Filter>
     </ClInclude>
+    <ClInclude Include="src\lcrypt\rsa.h">
+      <Filter>lcrypt</Filter>
+    </ClInclude>
     <ClInclude Include="src\lcrypt\sha1.h">
       <Filter>lcrypt</Filter>
     </ClInclude>
@@ -139,6 +142,9 @@
       <Filter>lcrypt</Filter>
     </ClCompile>
     <ClCompile Include="src\lcrypt\md5.c">
+      <Filter>lcrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lcrypt\rsa.c">
       <Filter>lcrypt</Filter>
     </ClCompile>
     <ClCompile Include="src\lcrypt\sha1.c">

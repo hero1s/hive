@@ -30,7 +30,7 @@ function EventMgr:on_second()
 end
 
 --延迟一帧
-function EventMgr:fire_next_frame(event, ...)
+function EventMgr:fire_frame(event, ...)
     if type(event) == "function" then
         tinsert(self.fevent_set, event)
         return
@@ -42,7 +42,7 @@ function EventMgr:fire_next_frame(event, ...)
 end
 
 --延迟一秒
-function EventMgr:fire_next_second(event, ...)
+function EventMgr:fire_second(event, ...)
     if type(event) == "function" then
         tinsert(self.sevent_set, event)
         return
