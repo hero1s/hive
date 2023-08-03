@@ -8,12 +8,13 @@ local tinsert       = table.insert
 
 local FlagMask      = enum("FlagMask")
 local KernCode      = enum("KernCode")
+local PeriodTime    = enum("PeriodTime")
 local ServiceStatus = enum("ServiceStatus")
 local RpcServer     = import("network/rpc_server.lua")
 
 local thread_mgr    = hive.get("thread_mgr")
 local event_mgr     = hive.get("event_mgr")
-local update_mgr    = hive.get("update_mgr")
+local timer_mgr     = hive.get("timer_mgr")
 
 local RouterServer  = singleton()
 local prop          = property(RouterServer)
@@ -23,7 +24,9 @@ function RouterServer:__init()
     self:setup()
     event_mgr:add_listener(self, "rpc_sync_router_info")
 
-    update_mgr:attach_minute(self)
+    timer_mgr:loop(PeriodTime.MINUTE_MS, function()
+        self:sync_all_node_info()
+    end)
 end
 
 function RouterServer:setup()
@@ -32,14 +35,6 @@ function RouterServer:setup()
     self.rpc_server = RpcServer(self, "0.0.0.0", port, environ.status("HIVE_ADDR_INDUCE"))
     service.make_node(self.rpc_server:get_port())
     lbus.set_router_id(hive.id)
-end
-
-function RouterServer:on_minute()
-    if self.change then
-        self:sync_all_node_info()
-        self.change = false
-    end
-    log_info("[RouterServer][on_minute] router:%s,service:%s", self.rpc_server:service_count(hive.service_id), self.rpc_server:service_count(0))
 end
 
 --其他服务器节点关闭
@@ -74,14 +69,18 @@ function RouterServer:update_router_node_info(client, status)
     self.change = true
 end
 
-function RouterServer:sync_all_node_info()
-    local nodes = {}
-    for _, client in self.rpc_server:iterator() do
-        if client.id then
-            tinsert(nodes, client.id)
+function RouterServer:sync_all_node_info(force)
+    if self.change or force then
+        local nodes = {}
+        for _, client in self.rpc_server:iterator() do
+            if client.id then
+                tinsert(nodes, client.id)
+            end
         end
+        self:broadcast_router("rpc_sync_router_info", hive.id, nodes, 1)
+        log_info("[RouterServer][sync_all_node_info] router:%s,service:%s", self.rpc_server:service_count(hive.service_id), self.rpc_server:service_count(0))
+        self.change = false
     end
-    self:broadcast_router("rpc_sync_router_info", hive.id, nodes, 1)
 end
 
 function RouterServer:broadcast_router(rpc, ...)
@@ -119,14 +118,18 @@ end
 function RouterServer:on_client_beat(client, status_info)
     local status = status_info.status
     --设置hash限流,挂起状态不再分配hash消息派发
-    if status == ServiceStatus.HALT and hive.is_runing() then
-        log_info("[RouterServer][on_client_beat] add ban hash server %s", client.name)
-        lbus.set_node_status(client.id, 1)
-        client.ban_hash = true
-    elseif client.ban_hash then
-        lbus.set_node_status(client.id, 0)
-        client.ban_hash = false
-        log_info("[RouterServer][on_client_beat] remove ban hash server %s", client.name)
+    if status == ServiceStatus.HALT then
+        if not client.ban_hash then
+            log_info("[RouterServer][on_client_beat] add ban hash server %s", client.name)
+            lbus.set_node_status(client.id, 1)
+            client.ban_hash = true
+        end
+    else
+        if client.ban_hash then
+            lbus.set_node_status(client.id, 0)
+            client.ban_hash = false
+            log_info("[RouterServer][on_client_beat] remove ban hash server %s", client.name)
+        end
     end
 end
 
