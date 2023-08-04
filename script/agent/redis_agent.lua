@@ -31,7 +31,7 @@ function RedisAgent:set(key, value, etime)
     if type(value) == "table" then
         value = json_encode(value)
     end
-    local ok, code, res = self:execute({ "set", key, value, "ex", etime or -1 }, key)
+    local ok, code, res = self:execute({ "set", key, value, "ex", etime or 0xFFFFFFFF }, key)
     if check_success(code, ok) then
         return true
     end

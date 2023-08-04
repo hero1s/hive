@@ -106,7 +106,24 @@ namespace tools
 	double CHelper::CpuUsePercent()
 	{
 #ifdef WIN32
-		return 1;
+		static thread_local FILETIME pre_idle_time;
+		static thread_local FILETIME pre_kernel_time;
+		static thread_local FILETIME pre_user_time;
+				
+		FILETIME idle_time;		
+		FILETIME kernel_time;
+		FILETIME user_time;
+		auto ret = GetSystemTimes(&idle_time, &kernel_time, &user_time);
+		auto idle = CompareFileTime(pre_idle_time, idle_time);
+		auto kernel = CompareFileTime(pre_kernel_time, kernel_time);
+		auto user = CompareFileTime(pre_user_time, user_time);
+		auto rate = (kernel + user - idle) / (1.0 * (kernel + user));
+
+		pre_idle_time = idle_time;
+		pre_kernel_time = kernel_time;
+		pre_user_time = user_time;
+
+		return rate*100;
 #else
 		static thread_local CPU_OCCUPY last;
 		CPU_OCCUPY cur;
