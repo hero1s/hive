@@ -436,14 +436,28 @@ function MongoDB:insert(co_name, doc)
     return self:runCommand("insert", co_name, "documents", { doc })
 end
 
+function MongoDB:unsafe_insert(co_name, doc)
+    return self:sendCommand("insert", co_name, "documents", { doc })
+end
+
 function MongoDB:update(co_name, update, selector, upsert, multi)
     local cmd_data = { q = selector, u = update, upsert = upsert, multi = multi }
     return self:runCommand("update", co_name, "updates", { cmd_data })
 end
 
+function MongoDB:unsafe_update(co_name, update, selector, upsert, multi)
+    local cmd_data = { q = selector, u = update, upsert = upsert, multi = multi }
+    return self:sendCommand("update", co_name, "updates", { cmd_data })
+end
+
 function MongoDB:delete(co_name, selector, onlyone)
     local cmd_data = { q = selector, limit = onlyone and 1 or 0 }
     return self:runCommand("delete", co_name, "deletes", { cmd_data })
+end
+
+function MongoDB:unsafe_delete(co_name, selector, onlyone)
+    local cmd_data = { q = selector, limit = onlyone and 1 or 0 }
+    return self:sendCommand("delete", co_name, "deletes", { cmd_data })
 end
 
 function MongoDB:count(co_name, query, limit, skip)

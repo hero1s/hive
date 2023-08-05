@@ -20,8 +20,11 @@ function MongoMgr:__init()
     event_mgr:add_listener(self, "mongo_find", "find")
     event_mgr:add_listener(self, "mongo_count", "count")
     event_mgr:add_listener(self, "mongo_insert", "insert")
+    event_mgr:add_listener(self, "mongo_unsafe_insert", "unsafe_insert")
     event_mgr:add_listener(self, "mongo_delete", "delete")
+    event_mgr:add_listener(self, "mongo_unsafe_delete", "unsafe_delete")
     event_mgr:add_listener(self, "mongo_update", "update")
+    event_mgr:add_listener(self, "mongo_unsafe_update", "unsafe_update")
     event_mgr:add_listener(self, "mongo_find_and_modify", "find_and_modify")
     event_mgr:add_listener(self, "mongo_execute", "execute")
     event_mgr:add_listener(self, "mongo_find_one", "find_one")
@@ -99,12 +102,36 @@ function MongoMgr:insert(db_name, coll_name, obj)
     return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
 end
 
+function MongoMgr:unsafe_insert(db_name, coll_name, obj)
+    local mongodb = self:get_db(db_name)
+    if mongodb then
+        local ok, res_oe = mongodb:unsafe_insert(coll_name, obj)
+        if not ok then
+            log_err("[MongoMgr][unsafe_insert] execute %s failed, because: %s", tpack(coll_name, obj), res_oe)
+        end
+        return ok and SUCCESS or MONGO_FAILED, res_oe
+    end
+    return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
+end
+
 function MongoMgr:update(db_name, coll_name, obj, selector, upsert, multi)
     local mongodb = self:get_db(db_name)
     if mongodb then
         local ok, res_oe = mongodb:update(coll_name, obj, selector, upsert, multi)
         if not ok then
             log_err("[MongoMgr][update] execute %s failed, because: %s", tpack(coll_name, obj, selector, upsert, multi), res_oe)
+        end
+        return ok and SUCCESS or MONGO_FAILED, res_oe
+    end
+    return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
+end
+
+function MongoMgr:unsafe_update(db_name, coll_name, obj, selector, upsert, multi)
+    local mongodb = self:get_db(db_name)
+    if mongodb then
+        local ok, res_oe = mongodb:unsafe_update(coll_name, obj, selector, upsert, multi)
+        if not ok then
+            log_err("[MongoMgr][unsafe_update] execute %s failed, because: %s", tpack(coll_name, obj, selector, upsert, multi), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end
@@ -129,6 +156,18 @@ function MongoMgr:delete(db_name, coll_name, selector, onlyone)
         local ok, res_oe = mongodb:delete(coll_name, selector, onlyone)
         if not ok then
             log_err("[MongoMgr][delete] execute %s failed, because: %s", tpack(coll_name, selector, onlyone), res_oe)
+        end
+        return ok and SUCCESS or MONGO_FAILED, res_oe
+    end
+    return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
+end
+
+function MongoMgr:unsafe_delete(db_name, coll_name, selector, onlyone)
+    local mongodb = self:get_db(db_name)
+    if mongodb then
+        local ok, res_oe = mongodb:unsafe_delete(coll_name, selector, onlyone)
+        if not ok then
+            log_err("[MongoMgr][unsafe_delete] execute %s failed, because: %s", tpack(coll_name, selector, onlyone), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end

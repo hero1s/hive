@@ -53,7 +53,7 @@ namespace tools
 		unsigned int softirq;
 	}CPU_OCCUPY;
 
-	int get_cpuoccupy(CPU_OCCUPY* cpust) //对无类型get函数含有一个形参结构体类弄的指针O  
+	void get_cpuoccupy(CPU_OCCUPY* cpust) //对无类型get函数含有一个形参结构体类弄的指针O  
 	{
 		FILE* fd;
 		char buff[256];
@@ -61,7 +61,6 @@ namespace tools
 		fgets(buff, sizeof(buff), fd);
 		sscanf(buff, "%s %u %u %u %u %u %u %u", cpust->name, &cpust->user, &cpust->nice, &cpust->system, &cpust->idle, &cpust->lowait, &cpust->irq, &cpust->softirq);
 		fclose(fd);
-		return 0;
 	}
 	double cal_cpuoccupy(CPU_OCCUPY* o, CPU_OCCUPY* n)
 	{
@@ -106,24 +105,7 @@ namespace tools
 	double CHelper::CpuUsePercent()
 	{
 #ifdef WIN32
-		static thread_local FILETIME pre_idle_time;
-		static thread_local FILETIME pre_kernel_time;
-		static thread_local FILETIME pre_user_time;
-				
-		FILETIME idle_time;		
-		FILETIME kernel_time;
-		FILETIME user_time;
-		auto ret = GetSystemTimes(&idle_time, &kernel_time, &user_time);
-		auto idle = CompareFileTime(pre_idle_time, idle_time);
-		auto kernel = CompareFileTime(pre_kernel_time, kernel_time);
-		auto user = CompareFileTime(pre_user_time, user_time);
-		auto rate = (kernel + user - idle) / (1.0 * (kernel + user));
-
-		pre_idle_time = idle_time;
-		pre_kernel_time = kernel_time;
-		pre_user_time = user_time;
-
-		return rate*100;
+		return 1;
 #else
 		static thread_local CPU_OCCUPY last;
 		CPU_OCCUPY cur;

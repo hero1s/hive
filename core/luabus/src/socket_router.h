@@ -80,6 +80,7 @@ public:
 
 	uint32_t map_token(uint32_t node_id, uint32_t token, uint16_t hash);
 	uint32_t set_node_status(uint32_t node_id, uint8_t status);
+	void set_service_name(uint32_t service_id, std::string service_name);
 	void map_router_node(uint32_t router_id, uint32_t target_id, uint8_t status);	
 	void set_router_id(uint32_t node_id);
 	uint32_t choose_master(uint32_t group_idx);
@@ -96,9 +97,12 @@ public:
 protected:
 	uint32_t find_transfer_router(uint32_t target_id, uint16_t group_idx);
 	uint16_t cur_index() { return get_node_index(m_node_id); };
+	std::string get_service_name(uint32_t service_id);
+	std::string get_service_nick(uint32_t target_id);
 
 private:
 	std::shared_ptr<socket_mgr> m_mgr;
+	std::unordered_map<uint32_t, std::string> m_service_names;
 	std::array<service_group, MAX_SERVICE_GROUP> m_groups;
 	std::unordered_map<uint32_t, router_node> m_routers;
 	std::unordered_map<uint32_t, router_node>::iterator m_router_iter = m_routers.begin();

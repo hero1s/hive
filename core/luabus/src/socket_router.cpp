@@ -44,6 +44,10 @@ uint32_t socket_router::set_node_status(uint32_t node_id, uint8_t status) {
 	return 0;
 }
 
+void socket_router::set_service_name(uint32_t service_id, std::string service_name) {
+	m_service_names[service_id] = service_name;
+}
+
 void socket_router::map_router_node(uint32_t router_id, uint32_t target_id, uint8_t status) {
 	if (router_id == m_node_id)return;
 	if (get_group_idx(router_id) != m_router_idx) {
@@ -139,7 +143,7 @@ bool socket_router::do_forward_target(router_header* header, char* data, size_t 
 	auto& group = m_groups[group_idx];
 	auto pTarget = group.get_target(target_id);
 	if (pTarget == nullptr) {
-		error = fmt::format("router[{}] forward-target not find,target_id:{}, group:{},index:{}", cur_index(), target_id, group_idx, get_node_index(target_id));
+		error = fmt::format("router[{}] forward-target not find,target:{}", cur_index(), get_service_nick(target_id));
 		return router ? false : do_forward_router(header, data - len, data_len + len, error, rpc_type::forward_target, target_id, 0);
 	}
 	size_t header_len = format_header(m_header_data, sizeof(m_header_data), header, rpc_type::remote_call);
@@ -162,7 +166,7 @@ bool socket_router::do_forward_master(router_header* header, char* data, size_t 
 
 	auto token = m_groups[group_idx].master.token;
 	if (token == 0) {
-		error = fmt::format("router[{}] forward-master:{} token=0", cur_index(),group_idx);
+		error = fmt::format("router[{}] forward-master:{} token=0", cur_index(),get_service_name(group_idx));
 		return router ? false : do_forward_router(header, data - len, data_len + len, error, rpc_type::forward_master, 0, group_idx);
 	}
 
@@ -224,7 +228,7 @@ bool socket_router::do_forward_hash(router_header* header, char* data, size_t da
 		m_mgr->sendv(pTarget->token, items, _countof(items));
 		return true;
 	} else {
-		error = fmt::format("router[{}] forward-hash not nodes:{},hash:{}", cur_index(), group_idx,hash);
+		error = fmt::format("router[{}] forward-hash not nodes:{},hash:{}", cur_index(), get_service_name(group_idx),hash);
 		return router ? false : do_forward_router(header, data - hlen - glen, data_len + hlen + glen, error, rpc_type::forward_hash, 0, group_idx);
 	}
 }
@@ -233,19 +237,19 @@ bool socket_router::do_forward_router(router_header* header, char* data, size_t 
 {
 	auto router_id = find_transfer_router(target_id, group_idx);
 	if (router_id == 0) {
-		error += fmt::format(" | not router can find:{},{}", target_id,group_idx);
+		error += fmt::format(" | not router can find:{},{}",get_service_nick(target_id),get_service_name(group_idx));
 		return false;
 	}
 	service_node* ptarget = m_groups[m_router_idx].get_target(router_id);
 	if (ptarget == nullptr) {
-		error += fmt::format(" | not this router:{},{},{}",get_node_index(router_id),target_id,group_idx);
+		error += fmt::format(" | not this router:{},{},{}",get_service_nick(router_id),get_service_nick(target_id),get_service_name(group_idx));
 		return false;
 	}
 	size_t header_len = format_header(m_header_data, sizeof(m_header_data), header, (rpc_type)((uint8_t)msgid + (uint8_t)rpc_type::forward_router));
 	sendv_item items[] = { {m_header_data, header_len}, {data, data_len} };
 	if (ptarget->token != 0) {
 		m_mgr->sendv(ptarget->token, items, _countof(items));
-		std::cout << fmt::format("forward router:{} msg:{},{},data_len:{}",ptarget->index,target_id,group_idx,data_len) << std::endl;
+		std::cout << fmt::format("forward router:{} msg:{},{},data_len:{}",ptarget->index,get_service_nick(target_id),get_service_name(group_idx),data_len) << std::endl;
 		return true;
 	}
 	error += fmt::format(" | all router is disconnect");
@@ -291,3 +295,15 @@ uint32_t socket_router::find_transfer_router(uint32_t target_id, uint16_t group_
 	return 0;
 }
 
+std::string socket_router::get_service_name(uint32_t service_id) {
+	auto it = m_service_names.find(service_id);
+	if (it != m_service_names.end()) {
+		return it->second;
+	}
+	return fmt::format("{}", service_id);
+}
+std::string socket_router::get_service_nick(uint32_t target_id) {
+	auto service_id = get_group_idx(target_id);
+	auto index = get_node_index(target_id);
+	return fmt::format("{}_{}", get_service_name(service_id), index);
+}

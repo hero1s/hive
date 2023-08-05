@@ -43,9 +43,19 @@ function MongoAgent:delete(db_query, hash_key, db_name)
     return self:execute("mongo_delete", db_query, hash_key, db_name)
 end
 
+--db_query: {coll_name, selector, single}
+function MongoAgent:unsafe_delete(db_query, hash_key, db_name)
+    return self:execute("mongo_unsafe_delete", db_query, hash_key, db_name)
+end
+
 --db_query: {coll_name, obj, selector, upsert, multi}
 function MongoAgent:update(db_query, hash_key, db_name)
     return self:execute("mongo_update", db_query, hash_key, db_name)
+end
+
+--db_query: {coll_name, obj, selector, upsert, multi}
+function MongoAgent:unsafe_update(db_query, hash_key, db_name)
+    return self:execute("mongo_unsafe_update", db_query, hash_key, db_name)
 end
 
 function MongoAgent:find_and_modify(db_query, hash_key, db_name)
@@ -55,6 +65,11 @@ end
 --db_query: {coll_name, obj}
 function MongoAgent:insert(db_query, hash_key, db_name)
     return self:execute("mongo_insert", db_query, hash_key, db_name)
+end
+
+--db_query: {coll_name, obj}
+function MongoAgent:unsafe_insert(db_query, hash_key, db_name)
+    return self:execute("mongo_unsafe_insert", db_query, hash_key, db_name)
 end
 
 --db_query: {coll_name, selector}

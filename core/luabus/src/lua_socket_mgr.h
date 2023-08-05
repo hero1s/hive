@@ -19,6 +19,7 @@ public:
 	int set_node_status(uint32_t node_id, uint8_t status);
 	void map_router_node(uint32_t router_id, uint32_t target_id, uint8_t status);
 	void set_router_id(int id);
+	void set_service_name(uint32_t service_id, std::string service_name);
 	void set_rpc_key(std::string key);
 	const std::string get_rpc_key();
 

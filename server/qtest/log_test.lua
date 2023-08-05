@@ -6,21 +6,26 @@ local lnow_ms   = ltimer.now_ms
 local log_info  = logger.info
 local log_debug = logfeature.debug("lualog")
 
-local function logger_test(cycle)
-    local t1 = lnow_ms()
-    for i = 1, cycle do
-        log_info("logger_test : now output logger cycle : %d", i)
+local json_str  = [[
+{"openid":"o6FYl6OiHFKt6YqlYOtI2Jyn-Tfk","nickname":"炫喵","sex":0,"language":"","city":"","province":"","country":"","headimgurl":"@P�C\/132","privilege":[],"unionid":"o1A_Bjp2VuahI2yq27I0AVmC-2hE"}
+]]
+
+log_debug("begin:%s", json_str)
+
+local ok, res = hive.json_decode(json_str, true)
+
+if string.find(json_str, "http") == nil then
+    log_debug("success")
+    local pos = string.find(json_str, "headimgurl")
+    if pos then
+        json_str = string.sub(json_str, 1, pos + 12) .. "\"}"
     end
-    local t2 = lnow_ms()
-    return t2 - t1
+    ok, res = hive.json_decode(json_str, true)
+    log_debug("%s,%s", ok, res)
+else
+    log_debug("failed")
 end
 
-local params = { 1, 2, }
-for _, cycle in ipairs(params) do
-    local time = logger_test(cycle)
-    log_debug(string.format("logger_test: cycle %d use time %s ms!", cycle, time))
-end
-
-log_info("logger test end")
+log_debug("end:%s", json_str)
 
 --os.exit()

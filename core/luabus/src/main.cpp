@@ -59,7 +59,7 @@ namespace luabus {
         lluabus.set_function("set_router_id", [](int id) { return socket_mgr.set_router_id(id); });
         lluabus.set_function("set_rpc_key", [](std::string key) { return socket_mgr.set_rpc_key(key); });
         lluabus.set_function("get_rpc_key", []() { return socket_mgr.get_rpc_key(); });
-
+        lluabus.set_function("set_service_name", [](uint32_t service_id, std::string service_name) { return socket_mgr.set_service_name(service_id,service_name); });
 
         lluabus.new_enum("eproto_type",
             "rpc", eproto_type::proto_rpc,

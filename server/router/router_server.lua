@@ -35,6 +35,11 @@ function RouterServer:setup()
     self.rpc_server = RpcServer(self, "0.0.0.0", port, environ.status("HIVE_ADDR_INDUCE"))
     service.make_node(self.rpc_server:get_port())
     lbus.set_router_id(hive.id)
+    --设置服务表
+    local services = service.services()
+    for service, service_id in pairs(services) do
+        lbus.set_service_name(service_id,service)
+    end
 end
 
 --其他服务器节点关闭
