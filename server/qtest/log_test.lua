@@ -12,7 +12,8 @@ local json_str  = [[
 
 log_debug("begin:%s", json_str)
 
-local ok, res = hive.json_decode(json_str, true)
+local ok, res = hive.try_json_decode(json_str, true)
+log_debug("begin ok:%s,res:%s",ok,res)
 
 if string.find(json_str, "http") == nil then
     log_debug("success")

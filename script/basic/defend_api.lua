@@ -16,14 +16,14 @@ local dtraceback = debug.traceback
 --通过这个装饰器,方便查错
 function hive.xpcall(func, format, ...)
     local ok, err = xpcall(func, dtraceback, ...)
-    if not ok then
+    if not ok and format then
         log_err(sformat(format, err))
     end
 end
 
 function hive.xpcall_ret(func, format, ...)
     local result = tpack(xpcall(func, dtraceback, ...))
-    if not result[1] then
+    if not result[1] and format then
         log_err(sformat(format, result[2]))
     end
     return tunpack(result)
@@ -62,6 +62,18 @@ function hive.json_decode(json_str, result)
     local ok, res = xpcall_ret(ljson.decode, "[hive.json_decode] error:%s", json_str)
     if not ok then
         log_err("[hive][json_decode] err json_str:[%s]", json_str)
+    end
+    if result then
+        return ok, ok and res or nil
+    else
+        return ok and res or nil
+    end
+end
+
+function hive.try_json_decode(json_str, result)
+    local ok, res = xpcall_ret(ljson.decode, nil, json_str)
+    if not ok then
+        log_warn("[hive][try_json_decode] err json_str:[%s]", json_str)
     end
     if result then
         return ok, ok and res or nil
