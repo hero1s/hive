@@ -125,6 +125,7 @@
       {{% if STDCPP == "c++20" then %}}
       <LanguageStandard>stdcpp20</LanguageStandard>
       {{% end %}}
+      <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     {{% if PROJECT_TYPE == "static" then %}}
     <Lib>

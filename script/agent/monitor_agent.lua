@@ -178,7 +178,6 @@ end
 function MonitorAgent:rpc_reload()
     log_info("[MonitorAgent][rpc_reload]")
     signal.hotfix()
-    --hive.protobuf_mgr:reload() todo 暂时不热更协议 toney
 end
 
 function MonitorAgent:rpc_collect_gc()

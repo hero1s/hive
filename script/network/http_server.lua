@@ -28,6 +28,7 @@ prop:reader("put_handlers", {})     --put_handlers
 prop:reader("del_handlers", {})     --del_handlers
 prop:reader("post_handlers", {})    --post_handlers
 prop:accessor("limit_ips", nil)
+prop:reader("qps_counter", nil)
 
 function HttpServer:__init(http_addr, induce)
     self:setup(http_addr, induce)
@@ -44,7 +45,8 @@ function HttpServer:setup(http_addr, induce)
         return
     end
     log_info("[HttpServer][setup] listen(%s:%s) success!", self.ip, self.port)
-    self.listener = socket
+    self.listener    = socket
+    self.qps_counter = hive.make_sampling("http_qps")
 end
 
 function HttpServer:close(token, socket)
@@ -131,6 +133,7 @@ end
 
 --http post 回调
 function HttpServer:on_http_request(handlers, socket, url, ...)
+    self.qps_counter:count_increase()
     local handler_info = handlers[url] or handlers["*"]
     if handler_info then
         local handler, target = tunpack(handler_info)

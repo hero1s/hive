@@ -144,6 +144,8 @@ local function notify_rpc(session_id, title, rpc, ...)
         log_info("[Worker][on_reload]worker:%s reload for signal !", TITLE)
         --重新加载脚本
         update_mgr:check_hotfix()
+        --事件通知
+        event_mgr:notify_trigger("on_reload")
         return
     end
     local rpc_datas = event_mgr:notify_listener(rpc, ...)

@@ -265,11 +265,11 @@ pre_build:
 	mkdir -p $(INT_DIR)/{{%= fmtsub_dir %}}
 {{% end %}}
 {{% for _, pre_cmd in ipairs(NWINDOWS_PREBUILDS) do %}}
-	{{%= pre_cmd[1] %}} {{%= pre_cmd[2] %}}
+	{{%= pre_cmd %}}
 {{% end %}}
 
 #后编译
 post_build:
 {{% for _, post_cmd in ipairs(NWINDOWS_POSTBUILDS) do %}}
-	{{%= post_cmd[1] %}} {{%= post_cmd[2] %}}
+	{{%= post_cmd %}}
 {{% end %}}

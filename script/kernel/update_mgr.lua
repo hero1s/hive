@@ -190,6 +190,8 @@ function UpdateMgr:check_signal(scheduler)
         local signal = sig_get()
         if sig_reload(signal) then
             self:check_hotfix()
+            --事件通知
+            event_mgr:notify_trigger("on_reload")
             --通知woker更新
             scheduler:broadcast("on_reload")
         end

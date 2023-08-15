@@ -1,34 +1,39 @@
 --protobuf_mgr.lua
 --升级pb库时,修改lpb_tointegerx函数支持浮点数自动转整数
 
-local protobuf      = require('pb')
-local lstdfs        = require('lstdfs')
+local protobuf     = require('pb')
+local lstdfs       = require('lstdfs')
 
-local pairs         = pairs
-local ipairs        = ipairs
-local pcall         = pcall
-local ldir          = lstdfs.dir
-local lappend       = lstdfs.append
-local lfilename     = lstdfs.filename
-local lextension    = lstdfs.extension
-local supper        = string.upper
-local ssplit        = string_ext.split
-local sends_with    = string_ext.ends_with
-local tunpack       = table.unpack
-local log_err       = logger.err
-local env_get       = environ.get
-local setmetatable  = setmetatable
-local pb_decode     = protobuf.decode
-local pb_encode     = protobuf.encode
-local pb_enum_id    = protobuf.enum
+local pairs        = pairs
+local ipairs       = ipairs
+local pcall        = pcall
+local ldir         = lstdfs.dir
+local lappend      = lstdfs.append
+local lfilename    = lstdfs.filename
+local lextension   = lstdfs.extension
+local supper       = string.upper
+local ssplit       = string_ext.split
+local sends_with   = string_ext.ends_with
+local tunpack      = table.unpack
+local log_err      = logger.err
+local log_warn     = logger.warn
+local env_get      = environ.get
+local setmetatable = setmetatable
+local pb_decode    = protobuf.decode
+local pb_encode    = protobuf.encode
+local pb_enum_id   = protobuf.enum
 
-local ProtobufMgr = singleton()
-local prop = property(ProtobufMgr)
+local event_mgr    = hive.get("event_mgr")
+
+local ProtobufMgr  = singleton()
+local prop         = property(ProtobufMgr)
 prop:accessor("pb_indexs", {})
 prop:accessor("allow_reload", false)
 
 function ProtobufMgr:__init()
     self:load_protos()
+    --监听热更新
+    event_mgr:add_trigger(self, "on_reload")
 end
 
 --加载pb文件
@@ -128,19 +133,19 @@ end
 
 function ProtobufMgr:define_enum(full_name)
     local pb_enum = _G
-    local nodes = ssplit(full_name, ".")
+    local nodes   = ssplit(full_name, ".")
     for _, name in ipairs(nodes) do
         if not pb_enum[name] then
             pb_enum[name] = {}
         end
         pb_enum = pb_enum[name]
     end
-    setmetatable(pb_enum, {__index = pbenum(full_name)})
+    setmetatable(pb_enum, { __index = pbenum(full_name) })
 end
 
 function ProtobufMgr:define_command(full_name, proto_name)
     local package_name = tunpack(ssplit(full_name, "."))
-    local enum_set = _G[package_name]
+    local enum_set     = _G[package_name]
     if not enum_set then
         return
     end
@@ -158,10 +163,11 @@ function ProtobufMgr:define_command(full_name, proto_name)
 end
 
 -- 重新加载
-function ProtobufMgr:reload()
+function ProtobufMgr:on_reload()
     if not self.allow_reload then
         return
     end
+    log_warn("[ProtobufMgr][on_reload]")
     -- gc env_
     protobuf.clear()
     -- register pb文件
