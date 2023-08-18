@@ -63,8 +63,9 @@ Distributed game server framework based on CPP 17 && LUA 5.4
 
 
 ## todo list 
-  - 目前应用于即将上线百万pcu大型实时在线FPS项目,不是实验项目,是实战项目,必须过百万pcu的压测,同步更新优化(部分功能会延迟或简化).多多关注,建议,star
+  - 目前应用于已上线百万pcu大型实时在线FPS项目,不是实验项目,是实战项目,必须过百万pcu的压测,同步更新优化(部分功能会延迟或简化).多多关注,建议,star
   - 相互交流&学习&借鉴(个人QQ:8242117)
   - c++ gateway服务,路由代理
   - 完善文档及工具链,编写demo
   - 优化性能,完善精简代码
+  - 优化luakit，lua与c++交互方式，实现pb,redis,mongo,http,rpc等接口交互的全c++实现，更高性能，更少gc
