@@ -40,8 +40,10 @@ private:
     unsigned char* m_pos = nullptr;
     unsigned char* m_end = nullptr;
     int m_table_depth = 0;
+#ifdef AR_SHARED_STRING
     std::vector<const char*> m_shared_string;
     std::vector<size_t> m_shared_strlen;
+#endif // AR_SHARED_STRING
     unsigned char* m_ar_buffer = nullptr;
     unsigned char* m_lz_buffer = nullptr;
     size_t m_ar_buffer_size = 0;

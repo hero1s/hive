@@ -9,7 +9,7 @@ PROJECT_TYPE = "static"
 
 --需要定义的选项
 DEFINES = {
-	"FMT_HEADER_ONLY","DELAY_SEND","CHECK_SEQ"
+	"FMT_HEADER_ONLY","DELAY_SEND","CHECK_SEQ","AR_SHARED_STRING"
 }
 
 --需要的include目录
