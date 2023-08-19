@@ -207,10 +207,19 @@ end
 
 local function shuffle(arr)
     local count = #arr
-    while count > 1 do
-        local n            = random(1, count - 1)
-        arr[count], arr[n] = arr[n], arr[count]
-        count              = count - 1
+    if count <= 1 then
+        return arr
+    end
+    if count == 2 then
+        if random(1, 2) == 1 then
+            arr[1], arr[2] = arr[2], arr[1]
+        end
+    else
+        while count > 1 do
+            local n            = random(1, count - 1)
+            arr[count], arr[n] = arr[n], arr[count]
+            count              = count - 1
+        end
     end
     return arr
 end

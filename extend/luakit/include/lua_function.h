@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "lua_stack.h"
 
 namespace luakit {
@@ -37,7 +37,7 @@ namespace luakit {
     inline return_type call_helper(lua_State* L, std::function<return_type(arg_types...)> func, std::index_sequence<integers...>&&) {
         return func(lua_to_native<arg_types>(L, integers + 1)...);
     }
-    
+
     template<size_t... integers, typename return_type, typename... arg_types>
     inline return_type call_helper(lua_State* L, std::function<return_type(lua_State*, arg_types...)> func, std::index_sequence<integers...>&&) {
         return func(L, lua_to_native<arg_types>(L, integers + 1)...);
@@ -101,7 +101,7 @@ namespace luakit {
             return native_to_lua(L, call_helper(L, func, std::make_index_sequence<sizeof...(arg_types)>()));
         };
     }
-    
+
     //适配无返回值std::function全局函数
     template <typename... arg_types>
     inline global_function lua_adapter(std::function<void(arg_types...)> func) {
@@ -243,7 +243,7 @@ namespace luakit {
 
     //call function
     //-------------------------------------------------------------------------------
-    static bool lua_call_function(lua_State* L, exception_handler handler, int arg_count, int ret_count) {
+    inline bool lua_call_function(lua_State* L, exception_handler handler, int arg_count, int ret_count) {
         int func_idx = lua_gettop(L) - arg_count;
         if (func_idx <= 0 || !lua_isfunction(L, func_idx))
             return false;
@@ -275,6 +275,17 @@ namespace luakit {
     }
 
     template <typename... ret_types, typename... arg_types>
+    bool lua_call_function(lua_State* L, exception_handler handler, luacodec* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
+        native_to_lua_mutil(L, std::forward<arg_types>(args)...);
+        int arg_num = codec->decode(L);
+        if (!lua_call_function(L, handler, arg_num + sizeof...(arg_types), sizeof...(ret_types)))
+            return false;
+        lua_to_native_mutil(L, rets, std::make_index_sequence<sizeof...(ret_types)>());
+        lua_pop(L, (int)sizeof...(ret_types));
+        return true;
+    }
+
+    template <typename... ret_types, typename... arg_types>
     bool call_global_function (lua_State* L, const char* function, exception_handler handler, std::tuple<ret_types&...>&& rets, arg_types... args) {
         if (!get_global_function(L, function)) return false;
         return lua_call_function(L, handler, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
@@ -286,10 +297,22 @@ namespace luakit {
         return lua_call_function(L, handler, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
     }
 
+    template <typename... ret_types, typename... arg_types>
+    bool call_table_function(lua_State* L, const char* table, const char* function, exception_handler handler, luacodec* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
+        if (!get_table_function(L, table, function)) return false;
+        return lua_call_function(L, handler, codec, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
+    }
+
     template <typename T, typename... ret_types, typename... arg_types>
     bool call_object_function(lua_State* L, T* o, const char* function, exception_handler handler, std::tuple<ret_types&...>&& rets, arg_types... args) {
         if (!get_object_function(L, o, function)) return false;
         return lua_call_function(L, handler, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
+    }
+
+    template <typename T, typename... ret_types, typename... arg_types>
+    bool call_object_function(lua_State* L, T* o, const char* function, exception_handler handler, luacodec* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
+        if (!get_object_function(L, o, function)) return false;
+        return lua_call_function(L, handler, codec, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
     }
 
     template <typename T>
@@ -298,7 +321,7 @@ namespace luakit {
     }
 
     template<typename... arg_types>
-    static int variadic_return(lua_State* L, arg_types... args) {
+    inline int variadic_return(lua_State* L, arg_types... args) {
         int _[] = { args_return<arg_types>(L, std::move(args))... };
         return sizeof...(arg_types);
     }

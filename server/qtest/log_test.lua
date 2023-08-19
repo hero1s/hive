@@ -13,7 +13,7 @@ local json_str  = [[
 log_debug("begin:%s", json_str)
 
 local ok, res = hive.try_json_decode(json_str, true)
-log_debug("begin ok:%s,res:%s",ok,res)
+log_debug("begin ok:%s,res:%s", ok, res)
 
 if string.find(json_str, "http") == nil then
     log_debug("success")
@@ -28,5 +28,12 @@ else
 end
 
 log_debug("end:%s", json_str)
+
+local tmp = { 1, 2, 3 }
+
+for i = 1, 10 do
+    table_ext.shuffle(tmp)
+    log_debug("shuffle:%s", tmp)
+end
 
 --os.exit()

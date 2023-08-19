@@ -176,7 +176,7 @@ function UpdateMgr:update_by_time(now, clock_ms)
 end
 
 function UpdateMgr:check_service_stop(scheduler)
-    if scheduler and hive.service_status == ServiceStatus.STOP then
+    if scheduler and hive.status_stop() then
         if hive.safe_stop and event_mgr:fire_vote("vote_stop_service") then
             log_warn("[UpdateMgr][check_service_stop] all vote agree,will stop service:%s", hive.name)
             event_mgr:notify_trigger("evt_service_shutdown")
@@ -191,7 +191,9 @@ function UpdateMgr:check_signal(scheduler)
         if sig_reload(signal) then
             self:check_hotfix()
             --事件通知
-            event_mgr:notify_trigger("on_reload")
+            thread_mgr:fork(function()
+                event_mgr:notify_trigger("on_reload")
+            end)
             --通知woker更新
             scheduler:broadcast("on_reload")
         end
@@ -226,7 +228,9 @@ function UpdateMgr:check_new_day()
     if self.last_check_time > 0 and self.last_check_time < hive.now then
         if not is_same_day(self.last_check_time, hive.now) then
             log_info("[UpdateMgr][check_new_day] notify [%s] this time is new day!!!", hive.name)
-            event_mgr:notify_trigger("evt_new_day")
+            thread_mgr:fork(function()
+                event_mgr:notify_trigger("evt_new_day")
+            end)
         end
     end
     self.last_check_time = hive.now

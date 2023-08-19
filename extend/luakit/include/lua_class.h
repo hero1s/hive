@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "lua_function.h"
 
 namespace luakit {
@@ -61,7 +61,7 @@ namespace luakit {
             };
         }
     };
-    
+
     //类成员元素的声
     struct class_member {
         bool is_function = false;

@@ -177,6 +177,14 @@ function hive.status_run()
     return false
 end
 
+function hive.status_halt()
+    return hive.service_status == ServiceStatus.HALT
+end
+
+function hive.status_stop()
+    return hive.service_status == ServiceStatus.STOP
+end
+
 function hive.is_ready()
     if hive.rely_router then
         local router_mgr = hive.get("router_mgr")

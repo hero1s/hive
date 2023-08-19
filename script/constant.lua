@@ -117,10 +117,5 @@ RobotType.RANDOM                  = 0       -- 随机账号
 RobotType.COMPOSE                 = 1       -- 组合账号
 RobotType.PLAYER                  = 2       -- 指定账号
 
--- ds集群网络节点
-local DSCluster                 = enum("DSCluster", 0)
-DSCluster.NANJING                = 1 -- 南京集群
-DSCluster.GUANGZHOU              = 2 -- 广州集群
-DSCluster.TIANJIN                = 3 -- 天津集群
-DSCluster.CHONGQING              = 4 -- 重庆集群
+
 

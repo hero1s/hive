@@ -61,7 +61,19 @@ namespace luakit {
             return 0;
         }
 
-        int read(lua_State* L) {
+        template<typename T = uint8_t>
+        T* read() {
+            size_t tpe_len = sizeof(T);
+            size_t data_len = m_tail - m_head;
+            if (tpe_len > 0 && data_len >= tpe_len) {
+                uint8_t* head = m_head;
+                m_head += tpe_len;
+                return (T*)head;
+            }
+            return nullptr;
+        }
+
+        int recv(lua_State* L) {
             size_t data_len = m_tail - m_head;
             size_t read_len = lua_tointeger(L, 1);
             if (read_len > 0 && data_len >= read_len) {
@@ -95,7 +107,7 @@ namespace luakit {
         }
 
     protected:
-        uint8_t* m_head;
-        uint8_t* m_tail;
+        uint8_t* m_head = nullptr;
+        uint8_t* m_tail = nullptr;
     };
 }

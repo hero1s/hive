@@ -74,7 +74,7 @@ namespace luakit {
         lua_table new_enum(const char* name, enum_value... args) {
             lua_guard g(m_L);
             lua_rawgeti(m_L, LUA_REGISTRYINDEX, m_index);
-            lua_newtable(m_L);
+            lua_createtable(m_L, 0, 8);
             lua_pushstring(m_L, name);
             lua_pushvalue(m_L, -2);
             lua_settable(m_L, -4);

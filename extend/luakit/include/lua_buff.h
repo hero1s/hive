@@ -4,13 +4,13 @@
 namespace luakit {
 
     const size_t BUFFER_DEF = 64 * 1024;        //64K
-    const size_t BUFFER_MAX = 64 * 1024 * 1024; //64M
-    const size_t ALIGN_SIZE = 32;               //水位
+    const size_t BUFFER_MAX = 16 * 1024 * 1024; //16M
+    const size_t ALIGN_SIZE = 16;               //水位
 
-    class var_buffer {
+    class luabuf {
     public:
-        var_buffer() { _alloc(); }
-        ~var_buffer() { free(m_data); }
+        luabuf() { _alloc(); }
+        ~luabuf() { free(m_data); }
 
         void reset() {
             if (m_size != BUFFER_DEF) {
@@ -32,7 +32,7 @@ namespace luakit {
         size_t empty() {
             return m_tail == m_head;
         }
-        
+
         void clean() {
             size_t data_len = m_tail - m_head;
             if (m_size > m_max && data_len < BUFFER_DEF) {
@@ -77,8 +77,6 @@ namespace luakit {
                 if (m_size > m_max && data_len < BUFFER_DEF) {
                     _regularize();
                     _resize(m_size / 2);
-                } else if (data_len == 0) {
-                    _regularize();
                 }
                 return erase_len;
             }
@@ -139,13 +137,25 @@ namespace luakit {
             return std::string((const char*)m_head, len);
         }
 
+        size_t write(const char* src, size_t len) {
+            return push_data((const uint8_t*)src, len);
+        }
+
         template<typename T>
         size_t write(T value) {
             return push_data((const uint8_t*)&value, sizeof(T));
         }
 
-        size_t write(const char* src, size_t len) {
-            return push_data((const uint8_t*)src, len);
+        template<typename T = uint8_t>
+        T* read() {
+            size_t tpe_len = sizeof(T);
+            size_t data_len = m_tail - m_head;
+            if (tpe_len > 0 && data_len >= tpe_len) {
+                uint8_t* head = m_head;
+                m_head += tpe_len;
+                return (T*)head;
+            }
+            return nullptr;
         }
 
     protected:

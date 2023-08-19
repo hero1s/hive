@@ -211,7 +211,7 @@ function MonitorAgent:rpc_set_env(key, value)
 end
 
 function MonitorAgent:rpc_set_server_status(status)
-    if hive.service_status == ServiceStatus.STOP then
+    if hive.status_stop() then
         log_err("[MonitorAgent][rpc_set_server_status] change status irreversible: %s --> %s ", status, hive.service_status)
         return
     end
@@ -219,7 +219,7 @@ function MonitorAgent:rpc_set_server_status(status)
 end
 
 function MonitorAgent:rpc_hive_quit(reason)
-    if hive.safe_stop and hive.service_status ~= ServiceStatus.STOP then
+    if hive.safe_stop and not hive.status_stop() then
         hive.change_service_status(ServiceStatus.STOP)
     end
 end

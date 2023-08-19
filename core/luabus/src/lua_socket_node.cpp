@@ -80,10 +80,6 @@ int lua_socket_node::call_text(lua_State* L) {
 	return 1;
 }
 
-int lua_socket_node::call_slice(slice* slice) {
-	return m_mgr->send(m_token,(const char*)slice->head(), slice->size());
-}
-
 size_t lua_socket_node::format_header(lua_State* L, BYTE* header_data, size_t data_len, rpc_type msgid) {
 	uint32_t offset = 0;
 	router_header header;

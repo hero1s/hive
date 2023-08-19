@@ -412,7 +412,7 @@ namespace lcodec {
         }
 
     public:
-        var_buffer m_buffer;
+        luabuf m_buffer;
         std::vector<std::string> m_sshares;
     };
 }

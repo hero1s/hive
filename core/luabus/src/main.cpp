@@ -88,7 +88,6 @@ namespace luabus {
             "call", &lua_socket_node::call,
             "call_pack",&lua_socket_node::call_pack,
             "call_text",&lua_socket_node::call_text,
-            "call_slice", &lua_socket_node::call_slice,
             "forward_hash", &lua_socket_node::forward_hash,
             "forward_target", &lua_socket_node::forward_target,
             "forward_master", &lua_socket_node::forward_by_group<rpc_type::forward_master>,

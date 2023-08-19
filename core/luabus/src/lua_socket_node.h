@@ -17,7 +17,6 @@ struct lua_socket_node final
 	int call(lua_State* L);
 	int call_pack(lua_State* L);
 	int call_text(lua_State* L);
-	int call_slice(slice* slice);
 
 	void close();
 	void set_send_buffer_size(size_t size) { m_mgr->set_send_buffer_size(m_token, size); }

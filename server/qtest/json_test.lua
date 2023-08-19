@@ -8,8 +8,8 @@ local log_debug   = logger.debug
 local new_guid    = lcodec.guid_new
 local json_encode = cjson.encode
 local json_decode = cjson.decode
-local lencode     = lcodec.encode_slice
-local ldecode     = lcodec.decode_slice
+local lencode     = lcodec.encode
+local ldecode     = lcodec.decode
 local lclock_ms   = ltimer.clock_ms
 
 local func_list   = {

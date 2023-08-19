@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <set>
 #include <map>
@@ -11,7 +11,6 @@
 #include <functional>
 #include <type_traits>
 #include <assert.h>
-#include <cstring>
 
 extern "C"
 {
@@ -35,12 +34,8 @@ namespace luakit {
         return meta_name;
     }
 
-    template<typename T>
-    const char* lua_get_object_key(void* obj) {
-        thread_local char objkey[MAX_LUA_META_KEY];
-        using OT = std::remove_cv_t<std::remove_pointer_t<T>>;
-        snprintf(objkey, MAX_LUA_META_KEY, "%p@%zu", obj, typeid(OT).hash_code());
-        return objkey;
+    inline size_t lua_get_object_key(void* obj) {
+        return (size_t)obj;
     }
 
     class lua_guard {

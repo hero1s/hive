@@ -55,7 +55,7 @@ for _, path in ipairs(ssplit(package.path, ";")) do
 end
 
 local function can_reload(fullpath)
-    if sfind(fullpath, "/hive/script/basic") then
+    if sfind(fullpath, "/hive/script/basic/oop") then
         return false
     end
     return true

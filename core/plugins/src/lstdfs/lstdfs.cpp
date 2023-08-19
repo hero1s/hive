@@ -203,7 +203,7 @@ namespace lstdfs {
             return luakit::variadic_return(L, files);
         }
         catch (filesystem::filesystem_error const& e) {
-            return luakit::variadic_return(L, 0, e.what());
+            return luakit::variadic_return(L, nullptr, e.what());
         }
     }
 

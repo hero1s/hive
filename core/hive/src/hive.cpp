@@ -154,7 +154,11 @@ bool hive_app::load(int argc, const char* argv[]) {
 #else
 	setenv("LUA_CPATH", "!/lib/?.dll;", 0);
 #endif
-
+	//检测缺失参数
+	if (getenv("HIVE_ENTRY") == NULL) {
+		std::cout << "HIVE_ENTRY is null" << std::endl;
+		bRet = false;
+	}
 	return bRet;
 }
 
@@ -181,7 +185,7 @@ void hive_app::run() {
 	//begin worker操作接口
 	hive.set_function("worker_update", [&](size_t to) { m_schedulor.update(); });
 	hive.set_function("worker_shutdown", [&]() { m_schedulor.shutdown(); });
-	hive.set_function("worker_broadcast", [&](slice* buf) { return m_schedulor.broadcast(buf); });
+	hive.set_function("worker_broadcast", [&](lua_State* L) { return m_schedulor.broadcast(L); });
 	hive.set_function("worker_setup", [&](lua_State* L, std::string service) {
 		m_schedulor.setup(L, service);
 		return 0;
@@ -189,9 +193,8 @@ void hive_app::run() {
 	hive.set_function("worker_startup", [&](std::string name, std::string entry) {
 		return m_schedulor.startup(name, entry);
 		});
-	hive.set_function("worker_call", [&](std::string name, slice* buf) {
-		if (buf == nullptr)return false;
-		return m_schedulor.call(name, buf);
+	hive.set_function("worker_call", [&](lua_State* L, std::string name) {
+		return m_schedulor.call(L, name);
 		});
 	
 	//end worker接口

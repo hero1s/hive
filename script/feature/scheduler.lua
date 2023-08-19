@@ -1,13 +1,9 @@
 --scheduler.lua
-local lcodec             = require("lcodec")
 local pcall              = pcall
 local log_info           = logger.info
 local log_err            = logger.err
-local tpack              = table.pack
 local tunpack            = table.unpack
 
-local lencode            = lcodec.encode_slice
-local ldecode            = lcodec.decode_slice
 local worker_call        = hive.worker_call
 local worker_broadcast   = hive.worker_broadcast
 local worker_update      = hive.worker_update
@@ -45,13 +41,13 @@ end
 
 --访问其他线程任务
 function Scheduler:broadcast(rpc, ...)
-    worker_broadcast(lencode(0, FLAG_REQ, "master", rpc, ...))
+    worker_broadcast(0, FLAG_REQ, "master", rpc, ...)
 end
 
 --访问其他线程任务
 function Scheduler:call(name, rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    if worker_call(name, lencode(session_id, FLAG_REQ, "master", rpc, ...)) then
+    if worker_call(name, session_id, FLAG_REQ, "master", rpc, ...) then
         return thread_mgr:yield(session_id, rpc, THREAD_RPC_TIMEOUT)
     end
     return false, "call failed!"
@@ -59,35 +55,23 @@ end
 
 --访问其他线程任务
 function Scheduler:send(name, rpc, ...)
-    worker_call(name, lencode(0, FLAG_REQ, "master", rpc, ...))
+    worker_call(name, 0, FLAG_REQ, "master", rpc, ...)
 end
 
 --事件分发
 local function notify_rpc(session_id, title, rpc, ...)
     local rpc_datas = event_mgr:notify_listener(rpc, ...)
     if session_id > 0 then
-        worker_call(title, lencode(session_id, FLAG_RES, tunpack(rpc_datas)))
+        worker_call(title, session_id, FLAG_RES, tunpack(rpc_datas))
     end
 end
 
---事件分发
-local function scheduler_rpc(session_id, flag, ...)
+function hive.on_scheduler(session_id, flag, ...)
     if flag == FLAG_REQ then
-        notify_rpc(session_id, ...)
-    else
-        thread_mgr:response(session_id, ...)
-    end
-end
-
-function hive.on_scheduler(slice)
-    local rpc_res = tpack(pcall(ldecode, slice))
-    if not rpc_res[1] then
-        log_err("[Scheduler][on_scheduler] decode failed %s!", rpc_res[2])
+        thread_mgr:fork(notify_rpc, session_id, ...)
         return
     end
-    thread_mgr:fork(function()
-        scheduler_rpc(tunpack(rpc_res, 2))
-    end)
+    thread_mgr:response(session_id, ...)
 end
 
 hive.scheduler = Scheduler()

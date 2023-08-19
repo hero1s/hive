@@ -98,15 +98,15 @@ LDFLAGS += -L$(SOLUTION_DIR)library
 #自动生成目标
 OBJS =
 #子目录
-OBJS += $(patsubst $(SRC_DIR)/lualog/%.c, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.c)))
-OBJS += $(patsubst $(SRC_DIR)/lualog/%.m, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.m)))
-OBJS += $(patsubst $(SRC_DIR)/lualog/%.cc, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.cc)))
-OBJS += $(patsubst $(SRC_DIR)/lualog/%.cpp, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.cpp)))
-#子目录
 OBJS += $(patsubst $(SRC_DIR)/worker/%.c, $(INT_DIR)/worker/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/worker/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/worker/%.m, $(INT_DIR)/worker/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/worker/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/worker/%.cc, $(INT_DIR)/worker/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/worker/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/worker/%.cpp, $(INT_DIR)/worker/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/worker/*.cpp)))
+#子目录
+OBJS += $(patsubst $(SRC_DIR)/lualog/%.c, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/lualog/%.m, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/lualog/%.cc, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/lualog/%.cpp, $(INT_DIR)/lualog/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lualog/*.cpp)))
 #根目录
 OBJS += $(patsubst $(SRC_DIR)/%.c, $(INT_DIR)/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/%.m, $(INT_DIR)/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/*.m)))
@@ -137,8 +137,8 @@ clean :
 pre_build:
 	mkdir -p $(INT_DIR)
 	mkdir -p $(TARGET_DIR)
-	mkdir -p $(INT_DIR)/lualog
 	mkdir -p $(INT_DIR)/worker
+	mkdir -p $(INT_DIR)/lualog
 
 #后编译
 post_build:

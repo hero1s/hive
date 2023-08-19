@@ -33,7 +33,10 @@ function ConfigMgr:reload(notify)
     if notify then
         local event_mgr = hive.load("event_mgr")
         if event_mgr then
-            event_mgr:notify_trigger("reload_config", reload_cfg_map)
+            local thread_mgr = hive.get("thread_mgr")
+            thread_mgr:fork(function()
+                event_mgr:notify_trigger("reload_config", reload_cfg_map)
+            end)
         end
     end
 end

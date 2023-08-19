@@ -38,31 +38,37 @@ namespace lworker {
             return false;
         }
 
-        void broadcast(slice* buf) {
+        int broadcast(lua_State* L) {
             std::unique_lock<spin_mutex> lock(m_mutex);
             for (auto it : m_worker_map) {
-                it.second->call(buf);
+                it.second->call(L);
             }
+            return 0;
         }
         
-        bool call(std::string& name, slice* buf) {
+        int call(lua_State* L, std::string& name) {
             if (name == "master") {
-                return call(buf);
+                lua_pushboolean(L, call(L));
+                return 1;
             }
             auto workor = find_worker(name);
             if (workor) {
-                return workor->call(buf);
+                lua_pushboolean(L, workor->call(L));
+                return 1;
             }
             LOG_ERROR(fmt::format("thread call [{}] work is not exist", name));
-            return false;
+            lua_pushboolean(L, false);
+            return 1;
         }
 
-        bool call(slice* buf) {
+        bool call(lua_State* L) {
+            size_t data_len;
             std::unique_lock<spin_mutex> lock(m_mutex);
-            uint8_t* target = m_write_buf->peek_space(buf->size() + sizeof(uint32_t));
-            if (target) {                
-                m_write_buf->write<uint32_t>(buf->size());
-                m_write_buf->push_data(buf->head(), buf->size());
+            uint8_t* data = m_codec->encode(L, 2, &data_len);
+            uint8_t* target = m_write_buf->peek_space(data_len + sizeof(uint32_t));
+            if (target) {
+                m_write_buf->write<uint32_t>(data_len);
+                m_write_buf->push_data(data, data_len);
                 return true;
             }
             LOG_ERROR(fmt::format("thread call buffer is full!,size:{}",m_write_buf->size()));
@@ -82,7 +88,8 @@ namespace lworker {
             const char* service = m_service.c_str();
             slice* slice = read_slice(m_read_buf, &plen);
             while (slice) {
-                m_lua->table_call(service, "on_scheduler", nullptr, std::tie(), slice);
+                m_codec->set_slice(slice);
+                m_lua->table_call(service, "on_scheduler", nullptr, m_codec.get(), std::tie());
                 m_read_buf->pop_size(plen);
                 if (ltimer::steady_ms() - clock_ms > 100) {
                     LOG_WARN(fmt::format("on_scheduler is busy,remain:{}", m_read_buf->size()));
@@ -113,9 +120,10 @@ namespace lworker {
         std::string m_service;
         std::shared_ptr<kit_state> m_lua = nullptr;
         std::map<std::string, std::shared_ptr<worker>> m_worker_map;
-        std::shared_ptr<var_buffer> m_slice = std::make_shared<var_buffer>();
-        std::shared_ptr<var_buffer> m_read_buf = std::make_shared<var_buffer>();
-        std::shared_ptr<var_buffer> m_write_buf = std::make_shared<var_buffer>();
+        std::shared_ptr<luabuf> m_slice = std::make_shared<luabuf>();
+        std::shared_ptr<luabuf> m_read_buf = std::make_shared<luabuf>();
+        std::shared_ptr<luabuf> m_write_buf = std::make_shared<luabuf>();
+        std::shared_ptr<luacodec> m_codec = std::make_shared<luacodec>();
     };
 }
 

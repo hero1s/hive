@@ -2,21 +2,16 @@
 import("basic/basic.lua")
 import("kernel/mem_monitor.lua")
 import("kernel/config_mgr.lua")
-local lcodec             = require("lcodec")
 local ltimer             = require("ltimer")
 local lbus               = require("luabus")
 
-local pcall              = pcall
 local hxpcall            = hive.xpcall
 local log_info           = logger.info
---local log_warn           = logger.warn
 local log_err            = logger.err
 local tpack              = table.pack
 local tunpack            = table.unpack
 local raw_yield          = coroutine.yield
 local raw_resume         = coroutine.resume
-local lencode            = lcodec.encode_slice
-local ldecode            = lcodec.decode_slice
 local lclock_ms          = ltimer.clock_ms
 local ltime              = ltimer.time
 
@@ -150,35 +145,23 @@ local function notify_rpc(session_id, title, rpc, ...)
     end
     local rpc_datas = event_mgr:notify_listener(rpc, ...)
     if session_id > 0 then
-        hive.call(title, lencode(session_id, FLAG_RES, tunpack(rpc_datas)))
-    end
-end
-
---事件分发
-local function worker_rpc(session_id, flag, ...)
-    if flag == FLAG_REQ then
-        notify_rpc(session_id, ...)
-    else
-        thread_mgr:response(session_id, ...)
+        hive.call(title, session_id, FLAG_RES, tunpack(rpc_datas))
     end
 end
 
 --rpc调用
-hive.on_worker   = function(slice)
-    local rpc_res = tpack(pcall(ldecode, slice))
-    if not rpc_res[1] then
-        log_err("[hive][on_worker] decode failed %s!", rpc_res[2])
+hive.on_worker   = function(session_id, flag, ...)
+    if flag == FLAG_REQ then
+        thread_mgr:fork(notify_rpc, session_id, ...)
         return
     end
-    thread_mgr:fork(function()
-        worker_rpc(tunpack(rpc_res, 2))
-    end)
+    thread_mgr:response(session_id, ...)
 end
 
 --访问主线程
 hive.call_master = function(rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    if hive.call("master", lencode(session_id, FLAG_REQ, TITLE, rpc, ...)) then
+    if hive.call("master", session_id, FLAG_REQ, TITLE, rpc, ...) then
         return thread_mgr:yield(session_id, rpc, THREAD_RPC_TIMEOUT)
     end
     return false, "call failed!"
@@ -186,13 +169,13 @@ end
 
 --通知主线程
 hive.send_master = function(rpc, ...)
-    hive.call("master", lencode(0, FLAG_REQ, TITLE, rpc, ...))
+    hive.call("master", 0, FLAG_REQ, TITLE, rpc, ...)
 end
 
 --访问其他线程
 hive.call_worker = function(name, rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    if hive.call(name, lencode(session_id, FLAG_REQ, TITLE, rpc, ...)) then
+    if hive.call(name, session_id, FLAG_REQ, TITLE, rpc, ...) then
         return thread_mgr:yield(session_id, rpc, THREAD_RPC_TIMEOUT)
     end
     return false, "call failed!"
@@ -200,5 +183,5 @@ end
 
 --通知其他线程
 hive.send_worker = function(name, rpc, ...)
-    hive.call(name, lencode(0, FLAG_REQ, TITLE, rpc, ...))
+    hive.call(name, 0, FLAG_REQ, TITLE, rpc, ...)
 end

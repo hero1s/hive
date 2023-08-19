@@ -1,5 +1,6 @@
 #pragma once
 #include "lua_buff.h"
+#include "lua_codec.h"
 #include "lua_table.h"
 #include "lua_class.h"
 
@@ -10,11 +11,12 @@ namespace luakit {
         kit_state() {
             m_L = luaL_newstate();
             luaL_openlibs(m_L);
+            new_class<luacodec>();
             new_class<class_member>();
             new_class<function_wrapper>();
             new_class<slice>(
                 "size", &slice::size,
-                "read", &slice::read,
+                "recv", &slice::recv,
                 "peek", &slice::check,
                 "string", &slice::string,
                 "contents", &slice::contents
@@ -68,6 +70,11 @@ namespace luakit {
             return call_table_function(m_L, table, function, handler, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
         }
 
+        template <typename... ret_types, typename... arg_types>
+        bool table_call(const char* table, const char* function, exception_handler handler, luacodec* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
+            return call_table_function(m_L, table, function, handler, codec, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
+        }
+
         bool table_call(const char* table, const char* function, exception_handler handler = nullptr) {
             return call_table_function(m_L, table, function, handler, std::tie());
         }
@@ -77,15 +84,20 @@ namespace luakit {
             return call_object_function<T>(m_L, obj, function, handler, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
         }
 
+        template <typename T, typename... ret_types, typename... arg_types>
+        bool object_call(T* obj, const char* function, exception_handler handler, luacodec* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
+            return call_object_function<T>(m_L, obj, function, handler, codec, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
+        }
+
         template <typename T>
         bool object_call(T* obj, const char* function, exception_handler handler = nullptr) {
             return call_object_function<T>(function, obj, handler, std::tie());
         }
-        
+
         bool run_file(const std::string& filename, exception_handler handler = nullptr) {
             return run_file(filename.c_str(), handler);
         }
-        
+
         bool run_file(const char* filename, exception_handler handler = nullptr) {
             lua_guard g(m_L);
             if (luaL_loadfile(m_L, filename)) {
@@ -114,7 +126,7 @@ namespace luakit {
 
         lua_table new_table(const char* name = nullptr) {
             lua_guard g(m_L);
-            lua_newtable(m_L);
+            lua_createtable(m_L, 0, 8);
             if (name) {
                 lua_pushvalue(m_L, -1);
                 lua_setglobal(m_L, name);
@@ -153,7 +165,7 @@ namespace luakit {
             return reference(m_L);
         }
 
-        lua_State* L() { 
+        lua_State* L() {
             return m_L;
         }
 
