@@ -14,11 +14,6 @@ namespace luakit {
         if constexpr (std::is_same_v<T, bool>) {
             return lua_toboolean(L, i) != 0;
         }
-        else if constexpr (std::is_same_v<T, std::string>) {
-            size_t len;
-            const char* str = lua_tolstring(L, i, &len);
-            return str == nullptr ? "" : std::string(str, len);
-        }
         else if constexpr (std::is_integral_v<T>) {
             return (T)lua_tointeger(L, i);
         }
@@ -27,6 +22,16 @@ namespace luakit {
         }
         else if constexpr (std::is_enum<T>::value) {
             return (T)lua_tonumber(L, i);
+        }
+        else if constexpr (std::is_same_v<T, std::string>) {
+            size_t len;
+            const char* str = lua_tolstring(L, i, &len);
+            return str == nullptr ? "" : std::string(str, len);
+        }
+        else if constexpr (std::is_same_v<T, std::string_view>) {
+            size_t len;
+            const char* str = lua_tolstring(L, i, &len);
+            return str == nullptr ? "" : std::string_view(str, len);
         }
         else if constexpr (std::is_pointer_v<T>) {
             using type = std::remove_volatile_t<std::remove_pointer_t<T>>;
@@ -45,9 +50,6 @@ namespace luakit {
         if constexpr (std::is_same_v<T, bool>) {
             lua_pushboolean(L, v);
         }
-        else if constexpr (std::is_same_v<T, std::string>) {
-            lua_pushlstring(L, v.c_str(), v.size());
-        }
         else if constexpr (std::is_integral_v<T>) {
             lua_pushinteger(L, (lua_Integer)v);
         }
@@ -56,6 +58,12 @@ namespace luakit {
         }
         else if constexpr (std::is_enum<T>::value) {
             lua_pushinteger(L, (lua_Integer)v);
+        }
+        else if constexpr (std::is_same_v<T, std::string>) {
+            lua_pushlstring(L, v.c_str(), v.size());
+        }
+        else if constexpr (std::is_same_v<T, std::string_view>) {
+            lua_pushlstring(L, v.data(), v.size());
         }
         else if constexpr (std::is_pointer_v<T>) {
             using type = std::remove_cv_t<std::remove_pointer_t<T>>;

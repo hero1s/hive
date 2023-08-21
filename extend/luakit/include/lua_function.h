@@ -275,7 +275,7 @@ namespace luakit {
     }
 
     template <typename... ret_types, typename... arg_types>
-    bool lua_call_function(lua_State* L, exception_handler handler, luacodec* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
+    bool lua_call_function(lua_State* L, exception_handler handler, codec_base* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
         native_to_lua_mutil(L, std::forward<arg_types>(args)...);
         int arg_num = codec->decode(L);
         if (!lua_call_function(L, handler, arg_num + sizeof...(arg_types), sizeof...(ret_types)))
@@ -298,7 +298,7 @@ namespace luakit {
     }
 
     template <typename... ret_types, typename... arg_types>
-    bool call_table_function(lua_State* L, const char* table, const char* function, exception_handler handler, luacodec* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
+    bool call_table_function(lua_State* L, const char* table, const char* function, exception_handler handler, codec_base* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
         if (!get_table_function(L, table, function)) return false;
         return lua_call_function(L, handler, codec, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
     }
@@ -310,7 +310,7 @@ namespace luakit {
     }
 
     template <typename T, typename... ret_types, typename... arg_types>
-    bool call_object_function(lua_State* L, T* o, const char* function, exception_handler handler, luacodec* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
+    bool call_object_function(lua_State* L, T* o, const char* function, exception_handler handler, codec_base* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
         if (!get_object_function(L, o, function)) return false;
         return lua_call_function(L, handler, codec, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
     }

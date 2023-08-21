@@ -11,7 +11,7 @@
 #include <fstream>
 #include <iostream>
 #include <filesystem>
-#include <unordered_map>
+#include <map>
 #include <condition_variable>
 #include <assert.h>
 
@@ -28,6 +28,7 @@
 using namespace std::chrono;
 using namespace std::filesystem;
 using sstring = std::string;
+using vstring = std::string_view;
 using cstring = const std::string;
 
 template <class T>
@@ -119,12 +120,12 @@ namespace logger {
         bool is_grow() const { return grow_; }
         void set_grow(bool grow) { grow_ = grow; }
         log_level level() const { return level_; }
-        cstring tag() const { return tag_; }
-        cstring msg() const { return msg_; }
-        cstring source() const { return source_; }
-        cstring feature() const { return feature_; }
+        vstring tag() const { return tag_; }
+        vstring msg() const { return msg_; }
+        vstring source() const { return source_; }
+        vstring feature() const { return feature_; }
         const log_time& get_log_time()const { return log_time_; }
-        void option(log_level level, cstring& msg, cstring& tag, cstring& feature, const char* source, int line) {
+        void option(log_level level, vstring msg, vstring tag, vstring feature, vstring source, int line) {
             log_time_ = log_time::now();
             feature_ = feature;
             source_ = source;
@@ -138,8 +139,7 @@ namespace logger {
         int                 line_ = 0;
         bool                grow_ = false;
         log_time            log_time_;
-        sstring             msg_, feature_, tag_;
-        const char*         source_;
+        sstring             source_, msg_, feature_, tag_;
         log_level           level_ = log_level::LOG_LEVEL_DEBUG;
     }; // class log_message
     typedef std::list<sptr<log_message>> log_message_list;
@@ -223,7 +223,7 @@ namespace logger {
     class log_dest {
     public:
         virtual void flush() {};
-        virtual void raw_write(sstring& msg, log_level lvl) = 0;
+        virtual void raw_write(vstring msg, log_level lvl) = 0;
         virtual void write(sptr<log_message> logmsg);
         virtual void ignore_prefix(bool prefix) { ignore_prefix_ = prefix; }
         virtual void ignore_suffix(bool suffix) { ignore_suffix_ = suffix; }
@@ -240,7 +240,7 @@ namespace logger {
 
     class stdio_dest : public log_dest {
     public:
-        virtual void raw_write(sstring& msg, log_level lvl) {
+        virtual void raw_write(vstring msg, log_level lvl) {
 #ifdef WIN32
             auto colors = level_colors<log_level>()();
             std::cout << colors[(int)lvl];
@@ -258,9 +258,9 @@ namespace logger {
                 file_->close();
             }
         }
-        virtual void raw_write(sstring& msg, log_level lvl) {
+        virtual void raw_write(vstring msg, log_level lvl) {
             logsize_ += msg.size();
-            if (file_) file_->write(msg.c_str(), msg.size());
+            if (file_) file_->write(msg.data(), msg.size());
         }
         virtual void flush() {
             if (file_) file_->flush();
@@ -268,7 +268,7 @@ namespace logger {
         const log_time& file_time() const { return file_time_; }
 
     protected:
-        virtual void create(path file_path, cstring& file_name, const log_time& file_time) {
+        virtual void create(path file_path, vstring file_name, const log_time& file_time) {
             if (file_) {
                 file_->flush();
                 file_->close();
@@ -307,7 +307,7 @@ namespace logger {
     class log_rollingfile : public log_file_base {
     public:
         log_rollingfile(size_t max_logsize = 10000) : log_file_base(max_logsize) {}
-        void setup(path& log_path, cstring& service, cstring& feature, size_t clean_time = CLEAN_TIME) {
+        void setup(path& log_path, vstring service, vstring feature, size_t clean_time = CLEAN_TIME) {
             feature_ = feature;
             log_path_ = log_path;
             clean_time_ = clean_time;
@@ -353,12 +353,12 @@ namespace logger {
     public:
         ~log_service() { stop(); }
         void daemon(bool status) { log_daemon_ = status; }
-        void option(sstring& log_path, sstring& service, sstring& index, rolling_type type) {
+        void option(vstring log_path, vstring service, vstring index, rolling_type type) {
             log_path_ = log_path, service_ = service; rolling_type_ = type;
             log_path_.append(fmt::format("{}-{}", service, index));
         }
 
-        path build_path(cstring& feature, cstring& lpath) {
+        path build_path(vstring feature, vstring lpath) {
             if (lpath.empty()) {
                 path log_path = log_path_;
                 if (feature != service_) {
@@ -375,7 +375,7 @@ namespace logger {
         void set_max_logsize(size_t max_logsize) { max_logsize_ = max_logsize; }
         void set_clean_time(size_t clean_time) { clean_time_ = clean_time; }
 
-        bool add_dest(sstring& feature, cstring& log_path) {
+        bool add_dest(vstring feature, vstring log_path) {
             std::unique_lock<spin_mutex> lock(mutex_);
             if (dest_features_.find(feature) == dest_features_.end()) {
                 sptr<log_dest> logfile = nullptr;
@@ -418,7 +418,7 @@ namespace logger {
             return true;
         }
 
-        void del_dest(sstring& feature) {
+        void del_dest(vstring feature) {
             std::unique_lock<spin_mutex> lock(mutex_);
             auto it = dest_features_.find(feature);
             if (it != dest_features_.end()) {
@@ -434,7 +434,7 @@ namespace logger {
             }
         }
 
-        void ignore_prefix(cstring& feature, bool prefix) {
+        void ignore_prefix(vstring feature, bool prefix) {
             auto iter = dest_features_.find(feature);
             if (iter != dest_features_.end()) {
                 iter->second->ignore_prefix(prefix);
@@ -445,7 +445,7 @@ namespace logger {
             for (auto dest : dest_lvls_) dest.second->ignore_prefix(prefix);
         }
 
-        void ignore_suffix(cstring& feature, bool suffix) {
+        void ignore_suffix(vstring feature, bool suffix) {
             auto iter = dest_features_.find(feature);
             if (iter != dest_features_.end()) {
                 iter->second->ignore_suffix(suffix);
@@ -456,7 +456,7 @@ namespace logger {
             for (auto dest : dest_lvls_) dest.second->ignore_suffix(suffix);
         }
 
-        void ignore_def(cstring& feature, bool def) {
+        void ignore_def(vstring feature, bool def) {
             auto iter = dest_features_.find(feature);
             if (iter != dest_features_.end()) {
                 iter->second->ignore_def(def);
@@ -525,7 +525,7 @@ namespace logger {
             return &service;
         }
 
-        void output(log_level level, const cstring& msg, cstring& tag, cstring& feature, const char* source = nullptr, int line = 0) {
+        void output(log_level level, vstring msg, vstring tag, vstring feature, vstring source = "", int line = 0) {
             if (!log_filter_.is_filter(level)) {
                 auto logmsg_ = message_pool_->allocate();
                 logmsg_->option(level, msg, tag, feature, source, line);
@@ -580,8 +580,8 @@ namespace logger {
         sptr<log_message> stop_msg_ = nullptr;
         sptr<log_message_queue> logmsgque_ = nullptr;
         sptr<log_message_pool> message_pool_ = nullptr;
-        std::unordered_map<log_level, sptr<log_dest>> dest_lvls_;
-        std::unordered_map<sstring, sptr<log_dest>> dest_features_;
+        std::map<log_level, sptr<log_dest>,std::less<>> dest_lvls_;
+        std::map<sstring, sptr<log_dest>,std::less<>> dest_features_;
         size_t max_logsize_ = MAX_LOG_SIZE, clean_time_ = CLEAN_TIME;
         bool log_daemon_ = false;
     }; // class log_service
@@ -605,7 +605,7 @@ namespace logger {
 
     inline cstring log_dest::build_suffix(sptr<log_message> logmsg) {
         if (!ignore_suffix_) {
-            return fmt::format("[{}:{}]", logmsg->source().c_str(), logmsg->line());
+            return fmt::format("[{}:{}]", logmsg->source().data(), logmsg->line());
         }
         return "";
     }

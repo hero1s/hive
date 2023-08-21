@@ -5,232 +5,235 @@
 #include "lua_kit.h"
 
 using namespace std;
+using namespace luakit;
 using namespace std::chrono;
+using namespace std::filesystem;
+using fspath = std::filesystem::path;
 
 namespace lstdfs {
 
     struct file_info {
-        std::string name;
-        std::string type;
+        string name;
+        string type;
     };
-    using file_vector = std::vector<file_info*>;
-    using path_vector = std::vector<std::string>;
+    using path_vector = vector<string>;
+    using file_vector = vector<file_info*>;
 
-    std::string lstdfs_absolute(std::string path) {
-        return filesystem::absolute(path).string();
+    string lstdfs_absolute(string_view path) {
+        return absolute(path).string();
     }
 
-    std::string lstdfs_current_path() {
-        return filesystem::current_path().string();
+    string lstdfs_current_path() {
+        return current_path().string();
     }
 
-    std::string lstdfs_temp_dir() {
-        return filesystem::temp_directory_path().string();
+    string lstdfs_temp_dir() {
+        return temp_directory_path().string();
     }
 
-    int lstdfs_chdir(lua_State* L, std::string path) {
+    int lstdfs_chdir(lua_State* L, string_view path) {
         try {
-            filesystem::current_path(path);
-            return luakit::variadic_return(L, true);
+            current_path(path);
+            return variadic_return(L, true);
         }
-        catch (filesystem::filesystem_error const& e) {
-            return luakit::variadic_return(L, false, e.what());
+        catch (filesystem_error const& e) {
+            return variadic_return(L, false, e.what());
         }
     }
 
-    int lstdfs_mkdir(lua_State* L, std::string path) {
+    int lstdfs_mkdir(lua_State* L, string_view path) {
         try {
-            bool res = filesystem::create_directories(path);
-            return luakit::variadic_return(L, res);
+            bool res = create_directories(path);
+            return variadic_return(L, res);
         }
-        catch (filesystem::filesystem_error const& e) {
-            return luakit::variadic_return(L, false, e.what());
+        catch (filesystem_error const& e) {
+            return variadic_return(L, false, e.what());
         }
     }
 
-    int lstdfs_remove(lua_State* L, std::string path, bool rmall) {
+    int lstdfs_remove(lua_State* L, string_view path, bool rmall) {
         try {
             if (rmall) {
-                auto size = filesystem::remove_all(path);
-                return luakit::variadic_return(L, size > 0);
+                auto size = remove_all(path);
+                return variadic_return(L, size > 0);
             }
-            bool res = filesystem::remove(path);
-            return luakit::variadic_return(L, res);
+            bool res = remove(path);
+            return variadic_return(L, res);
         }
-        catch (filesystem::filesystem_error const& e) {
-            return luakit::variadic_return(L, false, e.what());
+        catch (filesystem_error const& e) {
+            return variadic_return(L, false, e.what());
         }
     }
 
-    int lstdfs_copy(lua_State* L, std::string from, std::string to, filesystem::copy_options option) {
+    int lstdfs_copy(lua_State* L, string_view from, string_view to, copy_options option) {
         try {
             filesystem::copy(from, to, option);
-            return luakit::variadic_return(L, true);
+            return variadic_return(L, true);
         }
-        catch (filesystem::filesystem_error const& e) {
-            return luakit::variadic_return(L, false, e.what());
+        catch (filesystem_error const& e) {
+            return variadic_return(L, false, e.what());
         }
     }
-    int lstdfs_copy_file(lua_State* L, std::string from, std::string to, filesystem::copy_options option) {
+    int lstdfs_copy_file(lua_State* L, string_view from, string_view to, copy_options option) {
         try {
-            filesystem::copy_file(from, to, option);
-            return luakit::variadic_return(L, true);
+            copy_file(from, to, option);
+            return variadic_return(L, true);
         }
-        catch (filesystem::filesystem_error const& e) {
-            return luakit::variadic_return(L, false, e.what());
+        catch (filesystem_error const& e) {
+            return variadic_return(L, false, e.what());
         }
     }
 
-    int lstdfs_rename(lua_State* L, std::string pold, std::string pnew) {
+    int lstdfs_rename(lua_State* L, string_view pold, string_view pnew) {
         try {
-            filesystem::rename(pold, pnew);
-            return luakit::variadic_return(L, true);
+            rename(pold, pnew);
+            return variadic_return(L, true);
         }
-        catch (filesystem::filesystem_error const& e) {
-            return luakit::variadic_return(L, false, e.what());
+        catch (filesystem_error const& e) {
+            return variadic_return(L, false, e.what());
         }
     }
 
-    bool lstdfs_exists(std::string path) {
-        return filesystem::exists(path);
+    bool lstdfs_exists(string_view path) {
+        return exists(path);
     }
 
-    std::string lstdfs_root_name(std::string path) {
-        return filesystem::path(path).root_name().string();
+    string lstdfs_root_name(string_view path) {
+        return fspath(path).root_name().string();
     }
 
-    std::string lstdfs_filename(std::string path) {
-        return filesystem::path(path).filename().string();
+    string lstdfs_filename(string_view path) {
+        return fspath(path).filename().string();
     }
 
-    std::string lstdfs_extension(std::string path) {
-        return filesystem::path(path).extension().string();
+    string lstdfs_extension(string_view path) {
+        return fspath(path).extension().string();
     }
 
-    std::string lstdfs_root_path(std::string path) {
-        return filesystem::path(path).root_path().string();
+    string lstdfs_root_path(string_view path) {
+        return fspath(path).root_path().string();
     }
 
-    std::string lstdfs_parent_path(std::string path) {
-        return filesystem::path(path).parent_path().string();
+    string lstdfs_parent_path(string_view path) {
+        return fspath(path).parent_path().string();
     }
 
-    std::string lstdfs_relative_path(std::string path) {
-        return filesystem::path(path).relative_path().string();
+    string lstdfs_relative_path(string_view path) {
+        return fspath(path).relative_path().string();
     }
 
-    std::string lstdfs_append(std::string path, std::string append_path) {
-        return filesystem::path(path).append(append_path).string();
+    string lstdfs_append(string_view path, string_view append_path) {
+        return fspath(path).append(append_path).string();
     }
 
-    std::string lstdfs_concat(std::string path, std::string concat_path) {
-        return filesystem::path(path).concat(concat_path).string();
+    string lstdfs_concat(string_view path, string_view concat_path) {
+        return fspath(path).concat(concat_path).string();
     }
 
-    std::string lstdfs_remove_filename(std::string path) {
-        return filesystem::path(path).remove_filename().string();
+    string lstdfs_remove_filename(string_view path) {
+        return fspath(path).remove_filename().string();
     }
 
-    std::string lstdfs_replace_filename(std::string path, std::string filename) {
-        return filesystem::path(path).replace_filename(filename).string();
+    string lstdfs_replace_filename(string_view path, string_view filename) {
+        return fspath(path).replace_filename(filename).string();
     }
 
-    std::string lstdfs_replace_extension(std::string path, std::string extens) {
-        return filesystem::path(path).replace_extension(extens).string();
+    string lstdfs_replace_extension(string_view path, string_view extens) {
+        return fspath(path).replace_extension(extens).string();
     }
 
-    std::string lstdfs_make_preferred(std::string path) {
-        return filesystem::path(path).make_preferred().string();
+    string lstdfs_make_preferred(string_view path) {
+        return fspath(path).make_preferred().string();
     }
 
-    std::string lstdfs_stem(std::string path) {
-        return filesystem::path(path).stem().string();
+    string lstdfs_stem(string_view path) {
+        return fspath(path).stem().string();
     }
 
-    bool lstdfs_is_directory(std::string path) {
-        return filesystem::is_directory(path);
+    bool lstdfs_is_directory(string_view path) {
+        return is_directory(path);
     }
 
-    bool lstdfs_is_absolute(std::string path) {
-        return filesystem::path(path).is_absolute();
+    bool lstdfs_is_absolute(string_view path) {
+        return fspath(path).is_absolute();
     }
 
-    int lstdfs_last_write_time(lua_State* L, std::string path) {
+    int lstdfs_last_write_time(lua_State* L, string_view path) {
         try {
-            auto ftime = filesystem::last_write_time(path);
-            auto sctp = time_point_cast<system_clock::duration>(ftime - filesystem::file_time_type::clock::now() + system_clock::now());
-            std::time_t cftime = system_clock::to_time_t(sctp);
-            return luakit::variadic_return(L, cftime);
+            auto ftime = last_write_time(path);
+            auto sctp = time_point_cast<system_clock::duration>(ftime - file_time_type::clock::now() + system_clock::now());
+            time_t cftime = system_clock::to_time_t(sctp);
+            return variadic_return(L, cftime);
         }
-        catch (filesystem::filesystem_error const& e) {
-            return luakit::variadic_return(L, 0, e.what());
+        catch (filesystem_error const& e) {
+            return variadic_return(L, 0, e.what());
         }
     }
 
-    std::string get_file_type(const filesystem::path& path) {
-        filesystem::file_status s = filesystem::status(path);
+    string get_file_type(fspath path) {
+        file_status s = status(path);
         switch (s.type()) {
-        case filesystem::file_type::none: return "none";
-        case filesystem::file_type::not_found: return "not_found";
-        case filesystem::file_type::regular: return "regular";
-        case filesystem::file_type::directory: return "directory";
-        case filesystem::file_type::symlink: return "symlink";
-        case filesystem::file_type::block: return "block";
-        case filesystem::file_type::character: return "character";
-        case filesystem::file_type::fifo: return "fifo";
-        case filesystem::file_type::socket: return "socket";
-        case filesystem::file_type::unknown: return "unknown";
+        case file_type::none: return "none";
+        case file_type::not_found: return "not_found";
+        case file_type::regular: return "regular";
+        case file_type::directory: return "directory";
+        case file_type::symlink: return "symlink";
+        case file_type::block: return "block";
+        case file_type::character: return "character";
+        case file_type::fifo: return "fifo";
+        case file_type::socket: return "socket";
+        case file_type::unknown: return "unknown";
         default: return "implementation-defined";
         }
     }
 
-    std::string lstdfs_filetype(std::string path) {
-        return get_file_type(filesystem::path(path));
+    string lstdfs_filetype(string_view path) {
+        return get_file_type(path);
     }
 
-    int lstdfs_dir(lua_State* L, std::string path, bool recursive) {
+    int lstdfs_dir(lua_State* L, string_view path, bool recursive) {
         try {
             file_vector files;
             if (recursive) {
-                for (auto entry : filesystem::recursive_directory_iterator(path)) {
-                    files.push_back(new file_info({ entry.path().string(), get_file_type(entry.path()) }));
+                for (auto entry : recursive_directory_iterator(path)) {
+                    files.push_back(new file_info({ entry.path().string(), get_file_type(entry.path())}));
                 }
-                return luakit::variadic_return(L, files);
+                return variadic_return(L, files);
             }
-            for (auto entry : filesystem::directory_iterator(path)) {
+            for (auto entry : directory_iterator(path)) {
                 files.push_back(new file_info({ entry.path().string(), get_file_type(entry.path()) }));
             }
-            return luakit::variadic_return(L, files);
+            return variadic_return(L, files);
         }
-        catch (filesystem::filesystem_error const& e) {
-            return luakit::variadic_return(L, nullptr, e.what());
+        catch (filesystem_error const& e) {
+            return variadic_return(L, nullptr, e.what());
         }
     }
 
-    path_vector lstdfs_split(std::string cpath) {
+    path_vector lstdfs_split(string_view cpath) {
         path_vector values;
-        filesystem::path path = filesystem::path(cpath);
+        fspath path = fspath(cpath);
         for (auto it = path.begin(); it != path.end(); ++it) {
             values.push_back((*it).string());
         }
         return values;
     }
 
-    luakit::lua_table open_lstdfs(lua_State* L) {
-        luakit::kit_state kit_state(L);
+    lua_table open_lstdfs(lua_State* L) {
+        kit_state kit_state(L);
         kit_state.new_class<file_info>("name", &file_info::name, "type", &file_info::type);
         auto lstdfs = kit_state.new_table();
         lstdfs.new_enum("copy_options",
-            "none", filesystem::copy_options::none,
-            "recursive", filesystem::copy_options::recursive,
-            "recursive", filesystem::copy_options::recursive,
-            "copy_symlinks", filesystem::copy_options::copy_symlinks,
-            "copy_symlinks", filesystem::copy_options::copy_symlinks,
-            "skip_symlinks", filesystem::copy_options::skip_symlinks,
-            "create_symlinks", filesystem::copy_options::create_symlinks,
-            "directories_only", filesystem::copy_options::directories_only,
-            "create_hard_links", filesystem::copy_options::create_hard_links,
-            "overwrite_existing", filesystem::copy_options::overwrite_existing
+            "none", copy_options::none,
+            "recursive", copy_options::recursive,
+            "recursive", copy_options::recursive,
+            "copy_symlinks", copy_options::copy_symlinks,
+            "copy_symlinks", copy_options::copy_symlinks,
+            "skip_symlinks", copy_options::skip_symlinks,
+            "create_symlinks", copy_options::create_symlinks,
+            "directories_only", copy_options::directories_only,
+            "create_hard_links", copy_options::create_hard_links,
+            "overwrite_existing", copy_options::overwrite_existing
         );
         lstdfs.set_function("dir", lstdfs_dir);
         lstdfs.set_function("stem", lstdfs_stem);

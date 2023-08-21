@@ -11,7 +11,7 @@ namespace luakit {
         kit_state() {
             m_L = luaL_newstate();
             luaL_openlibs(m_L);
-            new_class<luacodec>();
+            new_class<codec_base>();
             new_class<class_member>();
             new_class<function_wrapper>();
             new_class<slice>(
@@ -71,7 +71,7 @@ namespace luakit {
         }
 
         template <typename... ret_types, typename... arg_types>
-        bool table_call(const char* table, const char* function, exception_handler handler, luacodec* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
+        bool table_call(const char* table, const char* function, exception_handler handler, codec_base* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
             return call_table_function(m_L, table, function, handler, codec, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
         }
 
@@ -85,7 +85,7 @@ namespace luakit {
         }
 
         template <typename T, typename... ret_types, typename... arg_types>
-        bool object_call(T* obj, const char* function, exception_handler handler, luacodec* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
+        bool object_call(T* obj, const char* function, exception_handler handler, codec_base* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
             return call_object_function<T>(m_L, obj, function, handler, codec, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
         }
 

@@ -11,12 +11,12 @@ namespace lworker {
     class scheduler : public ischeduler
     {
     public:
-        void setup(lua_State* L, std::string& service) {
+        void setup(lua_State* L, std::string_view service) {
             m_service = service;
             m_lua = std::make_shared<kit_state>(L);
         }
 
-        std::shared_ptr<worker> find_worker(std::string& name) {
+        std::shared_ptr<worker> find_worker(std::string_view name) {
             std::unique_lock<spin_mutex> lock(m_mutex);
             auto it = m_worker_map.find(name);
             if (it != m_worker_map.end()) {
@@ -25,7 +25,7 @@ namespace lworker {
             return nullptr;
         }
 
-        bool startup(std::string& name, std::string& entry) {
+        bool startup(std::string_view name, std::string_view entry) {
             std::unique_lock<spin_mutex> lock(m_mutex);
             auto it = m_worker_map.find(name);
             if (it == m_worker_map.end()) {
@@ -46,7 +46,7 @@ namespace lworker {
             return 0;
         }
         
-        int call(lua_State* L, std::string& name) {
+        int call(lua_State* L, std::string_view name) {
             if (name == "master") {
                 lua_pushboolean(L, call(L));
                 return 1;
@@ -99,7 +99,7 @@ namespace lworker {
             }
         }
 
-        void destory(std::string& name) {
+        void destory(std::string_view name) {
             std::unique_lock<spin_mutex> lock(m_mutex);
             auto it = m_worker_map.find(name);
             if (it != m_worker_map.end()) {
@@ -119,11 +119,11 @@ namespace lworker {
         spin_mutex m_mutex;
         std::string m_service;
         std::shared_ptr<kit_state> m_lua = nullptr;
-        std::map<std::string, std::shared_ptr<worker>> m_worker_map;
+        std::map<std::string, std::shared_ptr<worker>, std::less<>> m_worker_map;
         std::shared_ptr<luabuf> m_slice = std::make_shared<luabuf>();
         std::shared_ptr<luabuf> m_read_buf = std::make_shared<luabuf>();
         std::shared_ptr<luabuf> m_write_buf = std::make_shared<luabuf>();
-        std::shared_ptr<luacodec> m_codec = std::make_shared<luacodec>();
+        std::shared_ptr<codec_base> m_codec = std::make_shared<luacodec>();
     };
 }
 

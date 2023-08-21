@@ -70,7 +70,7 @@ static int lset_env(lua_State* L) {
 	return 0;
 }
 
-static std::string add_lua_path(std::string path) {
+static std::string_view add_lua_path(std::string_view path) {
 	auto p = getenv("LUA_PATH");
 	std::string cur_path = (p != NULL) ? p : "";
 #ifdef WIN32
@@ -98,7 +98,7 @@ void hive_app::setup(int argc, const char* argv[]) {
 	}
 }
 
-void hive_app::exception_handler(const std::string& msg, std::string& err) {
+void hive_app::exception_handler(const std::string_view msg, std::string_view err) {
 	LOG_FATAL(fmt::format(msg, err));
 	log_service::instance()->stop();
 #if WIN32
@@ -124,7 +124,7 @@ bool hive_app::load(int argc, const char* argv[]) {
 		lua.set_function("set_env", lset_env);
 		lua.set_function("add_lua_path", add_lua_path);
 
-		lua.run_file(lua_conf, [&](std::string err) {
+		lua.run_file(lua_conf, [&](std::string_view err) {
 			std::cout << "load lua config err: " << err << std::endl;
 			bRet = false;
 			});
@@ -186,33 +186,33 @@ void hive_app::run() {
 	hive.set_function("worker_update", [&](size_t to) { m_schedulor.update(); });
 	hive.set_function("worker_shutdown", [&]() { m_schedulor.shutdown(); });
 	hive.set_function("worker_broadcast", [&](lua_State* L) { return m_schedulor.broadcast(L); });
-	hive.set_function("worker_setup", [&](lua_State* L, std::string service) {
+	hive.set_function("worker_setup", [&](lua_State* L, std::string_view service) {
 		m_schedulor.setup(L, service);
 		return 0;
 		});
-	hive.set_function("worker_startup", [&](std::string name, std::string entry) {
+	hive.set_function("worker_startup", [&](std::string_view name, std::string_view entry) {
 		return m_schedulor.startup(name, entry);
 		});
-	hive.set_function("worker_call", [&](lua_State* L, std::string name) {
+	hive.set_function("worker_call", [&](lua_State* L, std::string_view name) {
 		return m_schedulor.call(L, name);
 		});
 	
 	//end worker接口
 
-	lua.run_script(g_sandbox, [&](std::string err) {
+	lua.run_script(g_sandbox, [&](std::string_view err) {
 		exception_handler("load sandbox err: ", err);
 		});
 	
-	lua.run_script(fmt::format("require '{}'", getenv("HIVE_ENTRY")), [&](std::string err) {
+	lua.run_script(fmt::format("require '{}'", getenv("HIVE_ENTRY")), [&](std::string_view err) {
 		exception_handler(fmt::format("load entry [{}] err: ", getenv("HIVE_ENTRY")), err);
 		});
 	while (hive.get_function("run")) {
-		hive.call([&](std::string err) {
+		hive.call([&](std::string_view err) {
 			LOG_FATAL(fmt::format("hive run err: {} ", err));
 			});
 	}
 	if (hive.get_function("exit")) {
-		hive.call([&](std::string err) {
+		hive.call([&](std::string_view err) {
 			LOG_FATAL(fmt::format("hive exit err: {} ", err));
 			});
 	}

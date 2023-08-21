@@ -25,7 +25,7 @@ namespace luakit {
 #define MAX_LUA_META_KEY 128
 
     //异常处理器
-    using exception_handler = std::function<void(std::string err)>;
+    using exception_handler = std::function<void(std::string_view err)>;
 
     template<typename T>
     const char* lua_get_meta_name() {

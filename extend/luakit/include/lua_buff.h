@@ -33,6 +33,10 @@ namespace luakit {
             return m_tail == m_head;
         }
 
+        uint8_t* head() {
+            return m_head;
+        }
+
         void clean() {
             size_t data_len = m_tail - m_head;
             if (m_size > m_max && data_len < BUFFER_DEF) {
@@ -132,9 +136,9 @@ namespace luakit {
             return m_head;
         }
 
-        std::string string() {
+        std::string_view string() {
             size_t len = (size_t)(m_tail - m_head);
-            return std::string((const char*)m_head, len);
+            return std::string_view((const char*)m_head, len);
         }
 
         size_t write(const char* src, size_t len) {

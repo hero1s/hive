@@ -367,7 +367,17 @@ namespace luakit {
         return 2;
     }
 
-    class luacodec {
+    class codec_base {
+    public:
+        void __gc() {}
+        virtual uint8_t* encode(lua_State* L, int index, size_t* len) = 0;
+        virtual size_t decode(lua_State* L) = 0;
+        void set_slice(slice* slice) { m_slice = slice; }
+    protected:
+        slice* m_slice = nullptr;
+    };
+
+    class luacodec : public codec_base {
     public:
         virtual uint8_t* encode(lua_State* L, int index, size_t* len) {
             m_buf.clean();
@@ -389,14 +399,7 @@ namespace luakit {
             return lua_gettop(L) - old_top;
         }
 
-        void set_slice(slice* slice) {
-            m_slice = slice;
-        }
-        
-        void __gc() {}
-
     protected:
         luabuf m_buf;
-        slice* m_slice = nullptr;
     };
 }

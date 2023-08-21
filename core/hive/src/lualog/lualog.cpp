@@ -20,20 +20,20 @@ namespace logger {
         lualog.set_function("set_clean_time", [](size_t time) { log_service::instance()->set_clean_time(time); });
         lualog.set_function("filter", [](int lv, bool on) { log_service::instance()->filter((log_level)lv, on); });
         lualog.set_function("is_filter", [](int lv) { return log_service::instance()->is_filter((log_level)lv); });
-        lualog.set_function("del_dest", [](std::string feature) { log_service::instance()->del_dest(feature); });
-        lualog.set_function("add_dest", [](std::string feature, std::string log_path) { return log_service::instance()->add_dest(feature,log_path); });
+        lualog.set_function("del_dest", [](vstring feature) { log_service::instance()->del_dest(feature); });
+        lualog.set_function("add_dest", [](vstring feature, vstring log_path) { return log_service::instance()->add_dest(feature,log_path); });
         lualog.set_function("del_lvl_dest", [](int lv) { log_service::instance()->del_lvl_dest((log_level)lv); });
         lualog.set_function("add_lvl_dest", [](int lv) { return log_service::instance()->add_lvl_dest((log_level)lv); });
-        lualog.set_function("ignore_prefix", [](std::string feature, bool prefix) { log_service::instance()->ignore_prefix(feature, prefix); });
-        lualog.set_function("ignore_suffix", [](std::string feature, bool suffix) { log_service::instance()->ignore_suffix(feature, suffix); });
-        lualog.set_function("ignore_def", [](std::string feature, bool def) { log_service::instance()->ignore_def(feature, def); });        
-        lualog.set_function("trace", [](std::string msg, std::string tag, std::string feature) { log_service::instance()->output(log_level::LOG_LEVEL_TRACE,msg,tag, feature); });
-        lualog.set_function("debug", [](std::string msg, std::string tag, std::string feature) { log_service::instance()->output(log_level::LOG_LEVEL_DEBUG,msg, tag, feature); });
-        lualog.set_function("info", [](std::string msg, std::string tag, std::string feature) { log_service::instance()->output(log_level::LOG_LEVEL_INFO,msg, tag, feature); });
-        lualog.set_function("warn", [](std::string msg, std::string tag, std::string feature) { log_service::instance()->output(log_level::LOG_LEVEL_WARN,msg, tag, feature); });
-        lualog.set_function("error", [](std::string msg, std::string tag, std::string feature) { log_service::instance()->output(log_level::LOG_LEVEL_ERROR,msg, tag, feature); });
-        lualog.set_function("fatal", [](std::string msg, std::string tag, std::string feature) { log_service::instance()->output(log_level::LOG_LEVEL_FATAL,msg, tag, feature); });
-        lualog.set_function("option", [](std::string log_path, std::string service, std::string index, rolling_type type){
+        lualog.set_function("ignore_prefix", [](vstring feature, bool prefix) { log_service::instance()->ignore_prefix(feature, prefix); });
+        lualog.set_function("ignore_suffix", [](vstring feature, bool suffix) { log_service::instance()->ignore_suffix(feature, suffix); });
+        lualog.set_function("ignore_def", [](vstring feature, bool def) { log_service::instance()->ignore_def(feature, def); });
+        lualog.set_function("trace", [](vstring msg, vstring tag, vstring feature) { log_service::instance()->output(log_level::LOG_LEVEL_TRACE,msg,tag, feature); });
+        lualog.set_function("debug", [](vstring msg, vstring tag, vstring feature) { log_service::instance()->output(log_level::LOG_LEVEL_DEBUG,msg, tag, feature); });
+        lualog.set_function("info", [](vstring msg, vstring tag, vstring feature) { log_service::instance()->output(log_level::LOG_LEVEL_INFO,msg, tag, feature); });
+        lualog.set_function("warn", [](vstring msg, vstring tag, vstring feature) { log_service::instance()->output(log_level::LOG_LEVEL_WARN,msg, tag, feature); });
+        lualog.set_function("error", [](vstring msg, vstring tag, vstring feature) { log_service::instance()->output(log_level::LOG_LEVEL_ERROR,msg, tag, feature); });
+        lualog.set_function("fatal", [](vstring msg, vstring tag, vstring feature) { log_service::instance()->output(log_level::LOG_LEVEL_FATAL,msg, tag, feature); });
+        lualog.set_function("option", [](vstring log_path, vstring service, vstring index, rolling_type type){
             log_service::instance()->option(log_path, service, index, type);
         });
         return lualog;
