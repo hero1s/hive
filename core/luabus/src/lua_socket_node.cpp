@@ -281,25 +281,20 @@ void lua_socket_node::on_call(router_header* header, char* data, size_t data_len
 }
 
 void lua_socket_node::on_call_pack(char* data, size_t data_len) {
-	m_msg_body.clear();
 	auto head = (socket_header*)data;
-	m_msg_body.append(data + sizeof(socket_header), data_len - sizeof(socket_header));
-
+	std::string_view m_msg_body(data + sizeof(socket_header), data_len - sizeof(socket_header));
 	luakit::kit_state kit_state(m_lvm);
 	kit_state.object_call(this, "on_call_pack",nullptr, std::tie(), data_len, head->cmd_id, head->flag, head->session_id, m_msg_body);
 }
 
 void lua_socket_node::on_call_text(char* data, size_t data_len) {
-	m_msg_body.clear();
-	m_msg_body.append(data, data_len);
-
+	std::string_view m_msg_body(data, data_len);
 	luakit::kit_state kit_state(m_lvm);
 	kit_state.object_call(this, "on_call_text",nullptr, std::tie(), data_len, m_msg_body);
 }
 
 void lua_socket_node::on_call_common(char* data, size_t data_len) {
-	m_msg_body.clear();
-	m_msg_body.append(data, data_len);
+	std::string_view m_msg_body(data, data_len);
 	luakit::kit_state kit_state(m_lvm);
 	kit_state.object_call(this, "on_call_common", nullptr, std::tie(), data_len,m_msg_body);
 }

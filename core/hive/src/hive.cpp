@@ -70,7 +70,7 @@ static int lset_env(lua_State* L) {
 	return 0;
 }
 
-static std::string_view add_lua_path(std::string_view path) {
+static std::string add_lua_path(std::string_view path) {
 	auto p = getenv("LUA_PATH");
 	std::string cur_path = (p != NULL) ? p : "";
 #ifdef WIN32
