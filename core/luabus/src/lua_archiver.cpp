@@ -96,10 +96,9 @@ void* lua_archiver::save(size_t* data_len, lua_State* L, int first, int last) {
     m_end = m_ar_buffer + m_ar_buffer_size;
     m_pos = m_begin + 1;
     m_table_depth = 0;
-#ifdef AR_SHARED_STRING
     m_shared_string.clear();
     m_shared_strlen.clear();
-#endif
+
     for (int i = first; i <= last; i++) {
         if (!save_value(L, i))
             return nullptr;
@@ -137,10 +136,9 @@ int lua_archiver::load(lua_State* L, const void* data, size_t data_len) {
             return 0;
         m_pos++;
     }
-#ifdef AR_SHARED_STRING
+
     m_shared_string.clear();
     m_shared_strlen.clear();
-#endif
     m_arr_reserve = m_max_arr_reserve;
     m_hash_reserve = m_max_hash_reserve;
 
@@ -315,21 +313,18 @@ bool lua_archiver::save_string(lua_State* L, int idx) {
         return false;
     memcpy(m_pos, str, len);
     m_pos += len;
-#ifdef AR_SHARED_STRING
+
     if (m_shared_string.size() < max_share_string) {
         m_shared_string.push_back(str);
     }
-#endif
 
     return true;
 }
 
 int lua_archiver::find_shared_str(const char* str) {
-#ifdef AR_SHARED_STRING
     auto it = std::find(m_shared_string.begin(), m_shared_string.end(), str);
     if (it != m_shared_string.end())
         return (int)(it - m_shared_string.begin());
-#endif
     return -1;
 }
 
@@ -398,14 +393,12 @@ bool lua_archiver::load_value(lua_State* L, bool tab_key) {
         m_pos += decode_len;
         if (str_len > (uint64_t)(m_end - m_pos))
             return false;
-#ifdef AR_SHARED_STRING
         m_shared_string.push_back((char*)m_pos);
         m_shared_strlen.push_back((size_t)str_len);
-#endif
         lua_pushlstring(L, (char*)m_pos, (size_t)str_len);
         m_pos += str_len;
         break;
-#ifdef AR_SHARED_STRING
+
     case ar_type::string_idx:
         decode_len = decode_u64(&str_idx, m_pos, (size_t)(m_end - m_pos));
         if (decode_len == 0 || str_idx >= m_shared_string.size())
@@ -413,7 +406,7 @@ bool lua_archiver::load_value(lua_State* L, bool tab_key) {
         m_pos += decode_len;
         lua_pushlstring(L, m_shared_string[(int)str_idx], m_shared_strlen[(int)str_idx]);
         break;
-#endif
+
     case ar_type::table_head:
         return load_table(L);
 

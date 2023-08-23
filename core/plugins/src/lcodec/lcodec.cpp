@@ -4,13 +4,12 @@
 namespace lcodec {
 
     thread_local ketama thread_ketama;
-    thread_local serializer thread_seri;//toney
     thread_local luakit::luabuf thread_buff;
     static int serialize(lua_State* L) {
-        return thread_seri.serialize(L);
+        return luakit::serialize(L, &thread_buff);
     }
     static int unserialize(lua_State* L) {
-        return thread_seri.unserialize(L);
+        return luakit::unserialize(L);
     }
     static int encode(lua_State* L) {
         return luakit::encode(L, &thread_buff);

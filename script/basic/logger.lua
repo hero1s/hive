@@ -67,12 +67,12 @@ local function logger_output(feature, notify, lvl, lvl_name, fmt, log_conf, ...)
         return false
     end
     local content
-    local lvl_func, extend, swline, max_depth, max_len = tunpack(log_conf)
+    local lvl_func, extend, swline = tunpack(log_conf)
     if extend then
         local args = tpack(...)
         for i, arg in pairs(args) do
             if type(arg) == "table" then
-                args[i] = serialize(arg, swline and 1 or 0, max_depth, max_len)
+                args[i] = serialize(arg, swline and 1 or 0)
             end
         end
         content = sformat(fmt, tunpack(args, 1, args.n))
@@ -106,13 +106,13 @@ local function trim_src(short_src)
 end
 
 local LOG_LEVEL_OPTIONS = {
-    --lvl_func,    extend,  swline, max_depth
-    [LOG_LEVEL.TRACE] = { "trace", { llog.trace, true, false, 12, 4096 } },
-    [LOG_LEVEL.DEBUG] = { "debug", { llog.debug, true, false, 8, 4096 } },
-    [LOG_LEVEL.INFO]  = { "info", { llog.info, false, false, 0, 4096 } },
-    [LOG_LEVEL.WARN]  = { "warn", { llog.warn, true, false, 8, 4096 } },
-    [LOG_LEVEL.ERROR] = { "err", { llog.error, true, false, 8, 4096 } },
-    [LOG_LEVEL.FATAL] = { "fatal", { llog.fatal, true, true, 8, 4096 } }
+    --lvl_func,    extend,  swline
+    [LOG_LEVEL.TRACE] = { "trace", { llog.trace, true, false } },
+    [LOG_LEVEL.DEBUG] = { "debug", { llog.debug, true, false } },
+    [LOG_LEVEL.INFO]  = { "info", { llog.info, false, false } },
+    [LOG_LEVEL.WARN]  = { "warn", { llog.warn, true, false } },
+    [LOG_LEVEL.ERROR] = { "err", { llog.error, true, false } },
+    [LOG_LEVEL.FATAL] = { "fatal", { llog.fatal, true, true } }
 }
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl_name, log_conf = tunpack(conf)

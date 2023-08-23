@@ -19,7 +19,6 @@
     <ClInclude Include="src\lcodec\hash.h"/>
     <ClInclude Include="src\lcodec\ketama.h"/>
     <ClInclude Include="src\lcodec\lcodec.h"/>
-    <ClInclude Include="src\lcodec\serializer.h"/>
     <ClInclude Include="src\lcodec\utf8.h"/>
     <ClInclude Include="src\lcrypt\base64.h"/>
     <ClInclude Include="src\lcrypt\des56.h"/>

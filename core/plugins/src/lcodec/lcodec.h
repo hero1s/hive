@@ -2,7 +2,6 @@
 #pragma once
 #include "lua_kit.h"
 
-#include "serializer.h"
 #include "crc.h"
 #include "bitarray.h"
 #include "guid.h"

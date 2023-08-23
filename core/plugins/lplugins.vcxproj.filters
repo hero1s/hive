@@ -37,9 +37,6 @@
     <ClInclude Include="src\lcodec\lcodec.h">
       <Filter>lcodec</Filter>
     </ClInclude>
-    <ClInclude Include="src\lcodec\serializer.h">
-      <Filter>lcodec</Filter>
-    </ClInclude>
     <ClInclude Include="src\lcodec\utf8.h">
       <Filter>lcodec</Filter>
     </ClInclude>

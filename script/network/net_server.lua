@@ -94,9 +94,9 @@ function NetServer:on_socket_accept(session)
         session.set_recv_buffer_size(self.buff_size)
     end
     -- 绑定call回调
-    session.on_call_pack  = function(recv_len, cmd_id, flag, session_id, data)
+    session.on_call_pack  = function(cmd_id, flag, session_id, data)
         thread_mgr:fork(function()
-            proxy_agent:statistics("on_proto_recv", cmd_id, recv_len)
+            proxy_agent:statistics("on_proto_recv", cmd_id, #data)
             hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, cmd_id, flag, session_id, data)
         end)
     end
