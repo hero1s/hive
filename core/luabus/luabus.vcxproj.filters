@@ -4,9 +4,6 @@
     <ClInclude Include="src\io_buffer.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="src\lua_archiver.h">
-      <Filter>inc</Filter>
-    </ClInclude>
     <ClInclude Include="src\lua_socket_mgr.h">
       <Filter>inc</Filter>
     </ClInclude>
@@ -45,9 +42,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\lua_archiver.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\lua_socket_mgr.cpp">
       <Filter>src</Filter>
     </ClCompile>

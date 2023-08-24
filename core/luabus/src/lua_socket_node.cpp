@@ -6,15 +6,14 @@
 #include <iostream>
 
 lua_socket_node::lua_socket_node(uint32_t token, lua_State* L, std::shared_ptr<socket_mgr>& mgr,
-	std::shared_ptr<lua_archiver>& ar, std::shared_ptr<socket_router> router, bool blisten, eproto_type proto_type)
-	: m_token(token), m_lvm(L), m_mgr(mgr), m_archiver(ar), m_router(router), m_proto_type(proto_type) {
+	codec_base* codec, std::shared_ptr<socket_router> router, bool blisten, eproto_type proto_type)
+	: m_token(token), m_mgr(mgr), m_codec(codec), m_router(router), m_proto_type(proto_type) {
 	m_mgr->get_remote_ip(m_token, m_ip);
-
+	m_luakit = std::make_shared<luakit::kit_state>(L);
 	if (blisten) {
 		m_mgr->set_accept_callback(token, [=](uint32_t steam_token, eproto_type proto_type) {
-			luakit::kit_state kit_state(m_lvm);
-			auto stream = new lua_socket_node(steam_token, m_lvm, m_mgr, m_archiver, m_router, false, proto_type);
-			kit_state.object_call(this, "on_accept", nullptr, std::tie(), stream);
+			auto stream = new lua_socket_node(steam_token, m_luakit->L(), m_mgr, m_codec, m_router, false, proto_type);
+			m_luakit->object_call(this, "on_accept", nullptr, std::tie(), stream);
 			});
 	}
 
@@ -22,8 +21,7 @@ lua_socket_node::lua_socket_node(uint32_t token, lua_State* L, std::shared_ptr<s
 		if (ok) {
 			m_mgr->get_remote_ip(m_token, m_ip);
 		}
-		luakit::kit_state kit_state(m_lvm);
-		kit_state.object_call(this, "on_connect", nullptr, std::tie(), ok ? "ok" : reason);
+		m_luakit->object_call(this, "on_connect", nullptr, std::tie(), ok ? "ok" : reason);
 		if (!ok) {
 			this->m_token = 0;
 		}
@@ -32,8 +30,7 @@ lua_socket_node::lua_socket_node(uint32_t token, lua_State* L, std::shared_ptr<s
 	m_mgr->set_error_callback(token, [=](const char* err) {
 		auto token = m_token;
 		m_token = 0;
-		luakit::kit_state kit_state(m_lvm);
-		kit_state.object_call(this, "on_error", nullptr, std::tie(), token, err);
+		m_luakit->object_call(this, "on_error", nullptr, std::tie(), token, err);
 		});
 
 	m_mgr->set_package_callback(token, [=](char* data, size_t data_len) {
@@ -118,7 +115,7 @@ int lua_socket_node::call(lua_State* L) {
 	}
 	size_t header_len = format_header(L, header, sizeof(header), rpc_type::remote_call);
 	size_t data_len = 0;
-	void* data = m_archiver->save(&data_len, L, 4, top);
+	void* data = m_codec->encode(L, 4, &data_len);
 	if (data == nullptr) {
 		lua_pushinteger(L, -2);
 		return 1;
@@ -140,7 +137,7 @@ int lua_socket_node::forward_target(lua_State* L) {
 	uint32_t service_id = (uint32_t)lua_tointeger(L, 4);
 	size_t svr_id_len = encode_u64(svr_id_data, sizeof(svr_id_data), service_id);
 	size_t data_len = 0;
-	void* data = m_archiver->save(&data_len, L, 5, top);
+	void* data = m_codec->encode(L, 5, &data_len);
 	if (data == nullptr) {
 		lua_pushinteger(L, -2);
 		return 1;
@@ -171,7 +168,7 @@ int lua_socket_node::forward_hash(lua_State* L) {
 	size_t hash_len = encode_u64(hash_data, sizeof(hash_data), hash_key);
 
 	size_t data_len = 0;
-	void* data = m_archiver->save(&data_len, L, 6, top);
+	void* data = m_codec->encode(L, 6, &data_len);
 	if (data == nullptr) {
 		lua_pushinteger(L, -2);
 		return 1;
@@ -252,50 +249,32 @@ void lua_socket_node::on_recv(char* data, size_t data_len) {
 
 void lua_socket_node::on_forward_error(router_header* header) {
 	if (header->session_id > 0) {//sendµÄÔÝÊ±ºöÂÔ toney
-		luakit::kit_state kit_state(m_lvm);
-		kit_state.object_call(this, "on_forward_error", nullptr, std::tie(), header->session_id, m_error_msg, header->source_id);
+		m_luakit->object_call(this, "on_forward_error", nullptr, std::tie(), header->session_id, m_error_msg, header->source_id);
 	}
 }
 
 void lua_socket_node::on_forward_broadcast(router_header* header, size_t broadcast_num) {
 	if (header->session_id > 0) {
-		luakit::kit_state kit_state(m_lvm);
-		kit_state.object_call(this, "on_forward_broadcast", nullptr, std::tie(), header->session_id, broadcast_num);
+		m_luakit->object_call(this, "on_forward_broadcast", nullptr, std::tie(), header->session_id, broadcast_num);
 	}
 }
 
 void lua_socket_node::on_call(router_header* header, char* data, size_t data_len) {
-	luakit::lua_guard g(m_lvm);
-	if (!luakit::get_object_function(m_lvm, this, "on_call"))
-		return;
-
-	lua_pushinteger(m_lvm, data_len);
-	lua_pushinteger(m_lvm, header->session_id);
-	lua_pushinteger(m_lvm, header->rpc_flag);
-	lua_pushinteger(m_lvm, header->source_id);
-	int param_count = m_archiver->load(m_lvm, data, data_len);
-	if (param_count == 0)
-		return;
-
-	luakit::lua_call_function(m_lvm, nullptr, param_count + 4, 0);
+	auto s = slice((uint8_t*)data, data_len);
+	m_codec->set_slice(&s);
+	m_luakit->object_call(this, "on_call", nullptr, m_codec, std::tie(), data_len, header->session_id, header->rpc_flag, header->source_id);
 }
 
 void lua_socket_node::on_call_pack(char* data, size_t data_len) {
 	auto head = (socket_header*)data;
-	std::string_view m_msg_body(data + sizeof(socket_header), data_len - sizeof(socket_header));
-	luakit::kit_state kit_state(m_lvm);
-	kit_state.object_call(this, "on_call_pack",nullptr, std::tie(), head->cmd_id, head->flag, head->session_id, m_msg_body);
+	m_luakit->object_call(this, "on_call_pack",nullptr, std::tie(), head->cmd_id, head->flag, head->session_id, std::string_view(data + sizeof(socket_header), data_len - sizeof(socket_header)));
 }
 
 void lua_socket_node::on_call_text(char* data, size_t data_len) {
-	std::string_view m_msg_body(data, data_len);
-	luakit::kit_state kit_state(m_lvm);
-	kit_state.object_call(this, "on_call_text",nullptr, std::tie(), m_msg_body);
+	m_luakit->object_call(this, "on_call_text",nullptr, std::tie(), std::string_view(data, data_len));
 }
 
 void lua_socket_node::on_call_common(char* data, size_t data_len) {
-	std::string_view m_msg_body(data, data_len);
-	luakit::kit_state kit_state(m_lvm);
-	kit_state.object_call(this, "on_call_common", nullptr, std::tie(), m_msg_body);
+	m_luakit->object_call(this, "on_call_common", nullptr, std::tie(), std::string_view(data, data_len));
 }
 

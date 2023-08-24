@@ -3,7 +3,6 @@
 #include <array>
 #include <vector>
 #include "socket_mgr.h"
-#include "lua_archiver.h"
 #include "socket_router.h"
 
 static thread_local BYTE header[ROUTER_HEAD_LEN];
@@ -11,7 +10,7 @@ static thread_local BYTE header[ROUTER_HEAD_LEN];
 struct lua_socket_node final
 {
 	lua_socket_node(uint32_t token, lua_State* L, std::shared_ptr<socket_mgr>& mgr,
-		std::shared_ptr<lua_archiver>& ar, std::shared_ptr<socket_router> router, bool blisten = false, eproto_type proto_type = eproto_type::proto_rpc);
+		codec_base* codec, std::shared_ptr<socket_router> router, bool blisten = false, eproto_type proto_type = eproto_type::proto_rpc);
 	~lua_socket_node();
 
 	int call(lua_State* L);
@@ -43,7 +42,7 @@ struct lua_socket_node final
 		size_t group_id_len = encode_u64(group_id_data, sizeof(group_id_data), group_id);
 
 		size_t data_len = 0;
-		void* data = m_archiver->save(&data_len, L, 5, top);
+		void* data = m_codec->encode(L, 5, &data_len);
 		if (data == nullptr) {
 			lua_pushinteger(L, -2);
 			return 1;
@@ -71,9 +70,9 @@ private:
 	size_t format_header(lua_State* L, BYTE* header_data, size_t data_len, rpc_type msgid);
 	size_t parse_header(BYTE* data, size_t data_len, uint64_t* msgid, router_header* header);
 
-	lua_State* m_lvm = nullptr;
+	codec_base* m_codec = nullptr;
+	std::shared_ptr<kit_state> m_luakit;
 	std::shared_ptr<socket_mgr> m_mgr;
-	std::shared_ptr<lua_archiver> m_archiver;
 	std::shared_ptr<socket_router> m_router;
 	eproto_type m_proto_type;
 	std::string m_error_msg;

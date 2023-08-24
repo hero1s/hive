@@ -3,7 +3,6 @@
 
 namespace lcodec {
 
-    thread_local ketama thread_ketama;
     thread_local luakit::luabuf thread_buff;
     static int serialize(lua_State* L) {
         return luakit::serialize(L, &thread_buff);
@@ -17,19 +16,6 @@ namespace lcodec {
     static int decode(lua_State* L) {
         return luakit::decode(L, &thread_buff);
     }
-    static bool ketama_insert(std::string name, uint32_t node_id) {
-        return thread_ketama.insert(name, node_id, 255);
-    }
-    static void ketama_remove(uint32_t node_id) {
-        thread_ketama.remove(node_id);
-    }
-    static uint32_t ketama_next(uint32_t node_id) {
-        return thread_ketama.next(node_id);
-    }
-    static std::map<uint32_t, uint32_t> ketama_map() {
-        return thread_ketama.virtual_map;
-    }
-
     static std::string utf8_gbk(std::string str) {
         char pOut[1024];
         memset(pOut, 0, sizeof(pOut));
@@ -108,10 +94,6 @@ namespace lcodec {
         llcodec.set_function("fnv_1_32", fnv_1_32_l);
         llcodec.set_function("fnv_1a_32", fnv_1a_32_l);
         llcodec.set_function("murmur3_32", murmur3_32_l);
-        llcodec.set_function("ketama_insert", ketama_insert);
-        llcodec.set_function("ketama_remove", ketama_remove);
-        llcodec.set_function("ketama_next", ketama_next);
-        llcodec.set_function("ketama_map", ketama_map);
         llcodec.set_function("bitarray", barray);
 
         llcodec.set_function("utf8_gbk", utf8_gbk);

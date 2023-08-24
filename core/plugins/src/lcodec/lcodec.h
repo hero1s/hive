@@ -6,5 +6,4 @@
 #include "bitarray.h"
 #include "guid.h"
 #include "hash.h"
-#include "ketama.h"
 #include "utf8.h"

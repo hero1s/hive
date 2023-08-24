@@ -3,13 +3,10 @@
 #include "lua_socket_mgr.h"
 #include "lua_socket_node.h"
 
-// 64M
-constexpr int LUA_AR_BUFFER_SIZE = 64 * 1024 * 1024;
-
 bool lua_socket_mgr::setup(lua_State* L, uint32_t max_fd) {
 	m_lvm = L;
 	m_mgr = std::make_shared<socket_mgr>();
-	m_archiver = std::make_shared<lua_archiver>(LUA_AR_BUFFER_SIZE);
+	m_codec = std::make_shared<luacodec>();
 	m_router = std::make_shared<socket_router>(m_mgr);
 	return m_mgr->setup(max_fd);
 }
@@ -25,7 +22,7 @@ int lua_socket_mgr::listen(lua_State* L, const char* ip, int port) {
 		return luakit::variadic_return(L, nullptr, err);
 	}
 
-	auto listener = new lua_socket_node(token, m_lvm, m_mgr, m_archiver, m_router, true, proto_type);
+	auto listener = new lua_socket_node(token, m_lvm, m_mgr, m_codec.get(), m_router, true, proto_type);
 	return luakit::variadic_return(L, listener, "ok");
 }
 
@@ -41,12 +38,8 @@ int lua_socket_mgr::connect(lua_State* L, const char* ip, const char* port, int 
 		return luakit::variadic_return(L, nullptr, err);
 	}
 
-	auto stream = new lua_socket_node(token, m_lvm, m_mgr, m_archiver, m_router, false, proto_type);
+	auto stream = new lua_socket_node(token, m_lvm, m_mgr, m_codec.get(), m_router, false, proto_type);
 	return luakit::variadic_return(L, stream, "ok");
-}
-
-void lua_socket_mgr::set_package_size(size_t size) {
-	m_archiver->set_buffer_size(size);
 }
 
 int lua_socket_mgr::map_token(uint32_t node_id, uint32_t token,uint16_t hash) {

@@ -17,7 +17,6 @@ INCLUDES = {
 	"../../extend/lua/lua",
     "../../extend/fmt/include",
     "../../extend/luakit/include",
-    "../plugins/src/lcrypt",
 }
 ---子目录路径
 
