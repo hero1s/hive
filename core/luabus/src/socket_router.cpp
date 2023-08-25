@@ -4,7 +4,6 @@
 #include <string.h>
 #include <algorithm>
 #include "fmt/core.h"
-#include "var_int.h"
 #include "socket_router.h"
 
 uint32_t socket_router::map_token(uint32_t node_id, uint32_t token, uint16_t hash) {
@@ -120,74 +119,45 @@ void socket_router::flush_hash_node(uint32_t group_idx) {
 	}
 }
 
-
-size_t socket_router::format_header(BYTE* header_data, size_t data_len, router_header* header, rpc_type msgid) {
-	size_t offset = 0;
-	offset += encode_u64(header_data + offset, data_len - offset, (char)msgid);
-	offset += encode_u64(header_data + offset, data_len - offset, header->session_id);
-	offset += encode_u64(header_data + offset, data_len - offset, header->rpc_flag);
-	offset += encode_u64(header_data + offset, data_len - offset, header->source_id);
-	return offset;
-}
-
 bool socket_router::do_forward_target(router_header* header, char* data, size_t data_len, std::string& error, bool router) {
-	uint64_t target_id = 0;
-	size_t len = decode_u64(&target_id, (BYTE*)data, data_len);
-	if (len == 0) {
-		error = fmt::format("router[{}] forward-target not decode", cur_index());
-		return false;
-	}
-	data += len;
-	data_len -= len;
+	uint64_t target_id = header->target_id;
 	uint32_t group_idx = get_group_idx(target_id);
 	auto& group = m_groups[group_idx];
 	auto pTarget = group.get_target(target_id);
 	if (pTarget == nullptr) {
 		error = fmt::format("router[{}] forward-target not find,target:{}", cur_index(), get_service_nick(target_id));
-		return router ? false : do_forward_router(header, data - len, data_len + len, error, rpc_type::forward_target, target_id, 0);
+		return router ? false : do_forward_router(header, data, data_len, error, rpc_type::forward_target, target_id, 0);
 	}
-	size_t header_len = format_header(m_header_data, sizeof(m_header_data), header, rpc_type::remote_call);
-
-	sendv_item items[] = { {m_header_data, header_len}, {data, data_len} };
+	header->msg_id = (uint8_t)rpc_type::remote_call;
+	sendv_item items[] = { {header, sizeof(router_header)}, {data, data_len} };
 	m_mgr->sendv(pTarget->token, items, _countof(items));
 	return true;
 }
 
 bool socket_router::do_forward_master(router_header* header, char* data, size_t data_len, std::string& error, bool router) {
-	uint64_t group_idx = 0;
-	size_t len = decode_u64(&group_idx, (BYTE*)data, data_len);
-	if (len == 0 || group_idx >= m_groups.size()) {
+	uint32_t group_idx = header->target_id;
+	if (group_idx >= m_groups.size()) {
 		error = fmt::format("router[{}] forward-master not decode", cur_index());
 		return false;
 	}
-
-	data += len;
-	data_len -= len;
-
 	auto token = m_groups[group_idx].master.token;
 	if (token == 0) {
 		error = fmt::format("router[{}] forward-master:{} token=0", cur_index(),get_service_name(group_idx));
-		return router ? false : do_forward_router(header, data - len, data_len + len, error, rpc_type::forward_master, 0, group_idx);
+		return router ? false : do_forward_router(header, data, data_len, error, rpc_type::forward_master, 0, group_idx);
 	}
-
-	size_t header_len = format_header(m_header_data, sizeof(m_header_data), header, rpc_type::remote_call);
-
-	sendv_item items[] = { {m_header_data, header_len}, {data, data_len} };
+	header->msg_id = (uint8_t)rpc_type::remote_call;
+	sendv_item items[] = { {header, sizeof(router_header)}, {data, data_len} };
 	m_mgr->sendv(token, items, _countof(items));
 	return true;
 }
 
 bool socket_router::do_forward_broadcast(router_header* header, int source, char* data, size_t data_len, size_t& broadcast_num) {
-	uint64_t group_idx = 0;
-	size_t len = decode_u64(&group_idx, (BYTE*)data, data_len);
-	if (len == 0 || group_idx >= m_groups.size())
+	uint32_t group_idx = header->target_id;
+	if (group_idx >= m_groups.size())
 		return false;
 
-	data += len;
-	data_len -= len;
-
-	size_t header_len = format_header(m_header_data, sizeof(m_header_data), header, rpc_type::remote_call);
-	sendv_item items[] = { {m_header_data, header_len}, {data, data_len} };
+	header->msg_id = (uint8_t)rpc_type::remote_call;
+	sendv_item items[] = { {header, sizeof(router_header)}, {data, data_len} };
 
 	auto& group = m_groups[group_idx];
 	for (auto& [id,target] : group.mp_nodes) {
@@ -200,36 +170,22 @@ bool socket_router::do_forward_broadcast(router_header* header, int source, char
 }
 
 bool socket_router::do_forward_hash(router_header* header, char* data, size_t data_len, std::string& error, bool router) {
-	uint64_t group_idx = 0;
-	size_t glen = decode_u64(&group_idx, (BYTE*)data, data_len);
-	if (glen == 0 || group_idx >= m_groups.size()) {
+	uint16_t hash = header->target_id & 0xffff;
+	uint16_t group_idx = header->target_id >> 16 & 0xffff;
+	if (group_idx >= m_groups.size()) {
 		error = fmt::format("router[{}] forward-hash not decode group", cur_index());
 		return false;
 	}
-
-	data += glen;
-	data_len -= glen;
-
-	uint64_t hash = 0;
-	size_t hlen = decode_u64(&hash, (BYTE*)data, data_len);
-	if (hlen == 0) {
-		error = fmt::format("router[{}] forward-hash not decode hash", cur_index());
-		return false;
-	}
-
-	data += hlen;
-	data_len -= hlen;
-
 	auto& group = m_groups[group_idx];
 	auto pTarget = group.hash_target(hash);
 	if (pTarget != nullptr) {
-		size_t header_len = format_header(m_header_data, sizeof(m_header_data), header, rpc_type::remote_call);
-		sendv_item items[] = { {m_header_data, header_len}, {data, data_len} };
+		header->msg_id = (uint8_t)rpc_type::remote_call;
+		sendv_item items[] = { {header, sizeof(router_header)}, {data, data_len} };
 		m_mgr->sendv(pTarget->token, items, _countof(items));
 		return true;
 	} else {
 		error = fmt::format("router[{}] forward-hash not nodes:{},hash:{}", cur_index(), get_service_name(group_idx),hash);
-		return router ? false : do_forward_router(header, data - hlen - glen, data_len + hlen + glen, error, rpc_type::forward_hash, 0, group_idx);
+		return router ? false : do_forward_router(header, data, data_len, error, rpc_type::forward_hash, 0, group_idx);
 	}
 }
 
@@ -245,8 +201,8 @@ bool socket_router::do_forward_router(router_header* header, char* data, size_t 
 		error += fmt::format(" | not this router:{},{},{}",get_service_nick(router_id),get_service_nick(target_id),get_service_name(group_idx));
 		return false;
 	}
-	size_t header_len = format_header(m_header_data, sizeof(m_header_data), header, (rpc_type)((uint8_t)msgid + (uint8_t)rpc_type::forward_router));
-	sendv_item items[] = { {m_header_data, header_len}, {data, data_len} };
+	header->msg_id = (uint8_t)msgid + (uint8_t)rpc_type::forward_router;	
+	sendv_item items[] = { {header, sizeof(router_header)}, {data, data_len} };
 	if (ptarget->token != 0) {
 		m_mgr->sendv(ptarget->token, items, _countof(items));
 		std::cout << fmt::format("forward router:{} msg:{},{},data_len:{}",ptarget->index,get_service_nick(target_id),get_service_name(group_idx),data_len) << std::endl;

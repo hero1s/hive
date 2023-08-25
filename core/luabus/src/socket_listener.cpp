@@ -1,5 +1,4 @@
 ﻿#include "stdafx.h"
-#include "var_int.h"
 #include "socket_mgr.h"
 #include "socket_listener.h"
 

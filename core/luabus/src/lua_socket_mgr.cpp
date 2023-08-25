@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include "var_int.h"
 #include "lua_socket_mgr.h"
 #include "lua_socket_node.h"
 

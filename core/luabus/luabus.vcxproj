@@ -19,7 +19,6 @@
     <ClInclude Include="src\socket_tcp.h"/>
     <ClInclude Include="src\socket_udp.h"/>
     <ClInclude Include="src\stdafx.h"/>
-    <ClInclude Include="src\var_int.h"/>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\lua_socket_mgr.cpp"/>
@@ -35,7 +34,6 @@
     <ClCompile Include="src\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\var_int.cpp"/>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{EC8C4743-6D5F-E10D-3D10-98330150B2C9}</ProjectGuid>

@@ -1,10 +1,10 @@
 ﻿#include "stdafx.h"
 #include <algorithm>
 #include <assert.h>
-#include "var_int.h"
 #include "socket_mgr.h"
 #include "socket_helper.h"
 #include "socket_stream.h"
+#include "socket_router.h"
 #include "fmt/core.h"
 
 #ifdef __linux
@@ -265,18 +265,10 @@ void socket_stream::try_connect() {
 
 int socket_stream::send(const void* data, size_t data_len)
 {
-	int send_len = 0;
 	if (m_link_status != elink_status::link_connected)
-		return send_len;
+		return 0;
 
-	// rpc模式需要发送特殊的head
-	if (eproto_type::proto_rpc == m_proto_type) {
-		BYTE header[MAX_VARINT_SIZE];
-		size_t header_len = encode_u64(header, sizeof(header), data_len);
-		send_len += stream_send((char*)header, header_len);
-	}
-	send_len += stream_send((char*)data, data_len);
-	return send_len;
+	return stream_send((char*)data, data_len);
 }
 
 int socket_stream::sendv(const sendv_item items[], int count)
@@ -285,16 +277,6 @@ int socket_stream::sendv(const sendv_item items[], int count)
 	if (m_link_status != elink_status::link_connected)
 		return send_len;
 
-	size_t data_len = 0;
-	for (int i = 0; i < count; i++) {
-		data_len += items[i].len;
-	}
-	// rpc模式需要发送特殊的head
-	if (eproto_type::proto_rpc == m_proto_type) {
-		BYTE  header[MAX_VARINT_SIZE];
-		size_t header_len = encode_u64(header, sizeof(header), data_len);
-		send_len += stream_send((char*)header, header_len);
-	}
 	for (int i = 0; i < count; i++) {
 		auto item = items[i];
 		send_len += stream_send((char*)item.data, item.len);
@@ -535,7 +517,7 @@ void socket_stream::dispatch_package(bool reset) {
 	}
 	m_need_dispatch_pkg = false;
 	while (m_link_status == elink_status::link_connected) {
-		uint64_t package_size = 0;
+		uint32_t package_size = 0;
 		size_t data_len = 0, header_len = 0;
 		auto* data = m_recv_buffer.peek_data(&data_len);
 		if (eproto_type::proto_rpc == m_proto_type) {
@@ -547,9 +529,12 @@ void socket_stream::dispatch_package(bool reset) {
 				}
 				break;
 			}
-			// rpc模式使用decode_u64获取head
-			header_len = decode_u64(&package_size, data, data_len);
-			if (header_len == 0) break;
+			header_len = sizeof(router_header);
+			if (data_len < header_len) {
+				break;
+			}
+			router_header* header = (router_header*)data;
+			package_size = header->rpc_len;
 		}
 		else if (eproto_type::proto_pack == m_proto_type) {
 			// pack模式获取socket_header
@@ -600,6 +585,9 @@ void socket_stream::dispatch_package(bool reset) {
 			m_recv_seq_id++;
 			m_package_cb((char*)data, header_len + (size_t)package_size);
 		}
+		else if (eproto_type::proto_rpc == m_proto_type) {
+			m_package_cb((char*)data, header_len + (size_t)package_size);
+		}
 		else {
 			m_package_cb((char*)data + header_len, (size_t)package_size);
 		}
@@ -636,6 +624,7 @@ int socket_stream::handshake_rpc(BYTE* data, size_t data_len) {
 	m_recv_buffer.pop_data(s_handshake_verify.length());
 	m_last_recv_time = steady_ms();
 	m_handshake = true;
+	std::cout << "handshake success" << std::endl;
 	return 0;
 }
 

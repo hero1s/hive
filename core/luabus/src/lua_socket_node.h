@@ -5,8 +5,6 @@
 #include "socket_mgr.h"
 #include "socket_router.h"
 
-static thread_local BYTE header[ROUTER_HEAD_LEN];
-
 struct lua_socket_node final
 {
 	lua_socket_node(uint32_t token, lua_State* L, std::shared_ptr<socket_mgr>& mgr,
@@ -35,11 +33,9 @@ struct lua_socket_node final
 			lua_pushinteger(L, -1);
 			return 1;
 		}
-
-		size_t header_len = format_header(L, header, sizeof(header), forward_method);
-		uint32_t group_id = (uint32_t)lua_tointeger(L, 4);
-		BYTE group_id_data[MAX_VARINT_SIZE];
-		size_t group_id_len = encode_u64(group_id_data, sizeof(group_id_data), group_id);
+		router_header header;
+		size_t header_len = format_header(L, &header, forward_method);
+		header.target_id = (uint16_t)lua_tointeger(L, 4);
 
 		size_t data_len = 0;
 		void* data = m_codec->encode(L, 5, &data_len);
@@ -47,11 +43,11 @@ struct lua_socket_node final
 			lua_pushinteger(L, -2);
 			return 1;
 		}
-
-		sendv_item items[] = { {header, header_len}, {group_id_data, group_id_len}, {data, data_len} };
+		header.rpc_len = data_len;
+		sendv_item items[] = { {&header, header_len}, {data, data_len} };
 		m_mgr->sendv(m_token, items, _countof(items));
 
-		size_t send_len = header_len + group_id_len + data_len;
+		size_t send_len = header_len + data_len;
 		lua_pushinteger(L, data_len);
 		return 1;
 	}
@@ -67,8 +63,7 @@ private:
 	void on_call(router_header* header, char* data, size_t data_len);
 	void on_forward_broadcast(router_header* header, size_t target_size);
 	void on_forward_error(router_header* header);
-	size_t format_header(lua_State* L, BYTE* header_data, size_t data_len, rpc_type msgid);
-	size_t parse_header(BYTE* data, size_t data_len, uint64_t* msgid, router_header* header);
+	size_t format_header(lua_State* L, router_header* header, rpc_type msgid);
 
 	codec_base* m_codec = nullptr;
 	std::shared_ptr<kit_state> m_luakit;

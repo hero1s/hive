@@ -3,7 +3,6 @@
 #include <array>
 #include <vector>
 #include <set>
-#include "var_int.h"
 #include "socket_mgr.h"
 #include "socket_helper.h"
 
@@ -40,12 +39,13 @@ struct router_node {
 	}
 };
 
-constexpr int ROUTER_HEAD_LEN = MAX_VARINT_SIZE * 4;
-
 struct router_header {
-	uint64_t rpc_flag   = 0;
-	uint64_t source_id  = 0;
-	uint64_t session_id = 0;
+	uint8_t  msg_id		= 0;
+	uint8_t  rpc_flag   = 0;
+	uint32_t rpc_len	= 0;
+	uint32_t source_id  = 0;
+	uint32_t session_id = 0;
+	uint32_t target_id  = 0;
 };
 
 struct service_group {
@@ -90,7 +90,6 @@ public:
 	bool do_forward_master(router_header* header, char* data, size_t data_len, std::string& error, bool router);
 	bool do_forward_broadcast(router_header* header, int source, char* data, size_t data_len, size_t& broadcast_num);
 	bool do_forward_hash(router_header* header, char* data, size_t data_len, std::string& error, bool router);
-	size_t format_header(BYTE* header_data, size_t data_len, router_header* header, rpc_type msgid);
 
 	bool do_forward_router(router_header* header, char* data, size_t data_len, std::string& error, rpc_type msgid,uint64_t target_id, uint16_t group_idx);
 
@@ -108,6 +107,5 @@ private:
 	std::unordered_map<uint32_t, router_node>::iterator m_router_iter = m_routers.begin();
 	int16_t m_router_idx = -1;
 	uint32_t m_node_id = 0;
-	BYTE m_header_data[ROUTER_HEAD_LEN];
 };
 

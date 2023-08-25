@@ -37,9 +37,6 @@
     <ClInclude Include="src\stdafx.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="src\var_int.h">
-      <Filter>inc</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\lua_socket_mgr.cpp">
@@ -73,9 +70,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\stdafx.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\var_int.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

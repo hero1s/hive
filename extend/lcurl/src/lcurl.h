@@ -96,7 +96,7 @@ namespace lcurl {
 			}
 			int len = data.size();
 			if (body_field || len > 0) {
-				curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+				curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.data());
 				curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, len);
 			}
 			if (curl_multi_add_handle(curlm, curl) == CURLM_OK) {
