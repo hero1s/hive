@@ -18,8 +18,7 @@ namespace luakit {
                 "size", &slice::size,
                 "recv", &slice::recv,
                 "peek", &slice::check,
-                "string", &slice::string,
-                "contents", &slice::contents
+                "string", &slice::string
             );
         }
         kit_state(lua_State* L) : m_L(L) {}

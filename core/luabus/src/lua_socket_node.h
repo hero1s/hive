@@ -65,9 +65,9 @@ private:
 	void on_forward_error(router_header* header);
 	size_t format_header(lua_State* L, router_header* header, rpc_type msgid);
 
-	codec_base* m_codec = nullptr;
 	std::shared_ptr<kit_state> m_luakit;
 	std::shared_ptr<socket_mgr> m_mgr;
+	codec_base* m_codec = nullptr;
 	std::shared_ptr<socket_router> m_router;
 	eproto_type m_proto_type;
 	std::string m_error_msg;

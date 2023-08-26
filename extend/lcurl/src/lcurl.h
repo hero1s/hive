@@ -90,7 +90,7 @@ namespace lcurl {
 		}
 
 	private:
-		bool request(string_view data, bool body_field = false) {
+		bool request(string_view& data, bool body_field = false) {
 			if (header) {
 				curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
 			}

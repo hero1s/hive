@@ -64,9 +64,9 @@ function NetClient:connect(block)
             thread_mgr:response(block_id, succes, res)
         end
     end
-    socket.on_call_pack = function(cmd_id, flag, session_id, data)
+    socket.on_call_pack = function(recv_len, cmd_id, flag, session_id, data)
         thread_mgr:fork(function()
-            proxy_agent:statistics("on_proto_recv", cmd_id, #data)
+            proxy_agent:statistics("on_proto_recv", cmd_id, recv_len)
             hxpcall(self.on_socket_rpc, "on_socket_rpc: %s", self, socket, cmd_id, flag, session_id, data)
         end)
     end

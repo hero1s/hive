@@ -136,7 +136,7 @@ end
 function WebSocket:accept(session, ip, port)
     self.ip, self.port = ip, port
     session.set_timeout(self.timeout)
-    session.on_call_text = function(data)
+    session.on_call_text = function(recv_len, data)
         thread_mgr:fork(function()
             hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, data)
         end)

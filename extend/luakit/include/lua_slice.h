@@ -93,11 +93,9 @@ namespace luakit {
             return m_head;
         }
 
-        int contents(lua_State* L) {
+        std::string_view contents() {
             size_t len = (size_t)(m_tail - m_head);
-            lua_pushlightuserdata(L, (void*)m_head);
-            lua_pushinteger(L, len);
-            return 2;
+            return std::string_view((const char*)m_head, len);
         }
 
         int string(lua_State* L) {
@@ -105,7 +103,7 @@ namespace luakit {
             lua_pushlstring(L, (const char*)m_head, len);
             return 1;
         }
-
+        
     protected:
         uint8_t* m_head = nullptr;
         uint8_t* m_tail = nullptr;

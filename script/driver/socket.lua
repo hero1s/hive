@@ -92,7 +92,7 @@ function Socket:connect(ip, port, ptype)
         end
         thread_mgr:response(block_id, success, res)
     end
-    session.on_call_text = function(data)
+    session.on_call_text = function(recv_len, data)
         self:on_socket_recv(session, data)
     end
     session.on_error     = function(token, err)
@@ -132,7 +132,7 @@ end
 
 function Socket:accept(session, ip, port)
     session.set_timeout(self.timeout)
-    session.on_call_text = function(data)
+    session.on_call_text = function(recv_len, data)
         self:on_socket_recv(session, data)
     end
     session.on_error     = function(token, err)
