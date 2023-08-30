@@ -5,13 +5,14 @@
 #include <iostream>
 
 lua_socket_node::lua_socket_node(uint32_t token, lua_State* L, std::shared_ptr<socket_mgr>& mgr,
-	codec_base* codec, std::shared_ptr<socket_router> router, bool blisten, eproto_type proto_type)
-	: m_token(token), m_mgr(mgr), m_codec(codec), m_router(router), m_proto_type(proto_type) {
+	std::shared_ptr<socket_router> router, bool blisten, eproto_type proto_type)
+	: m_token(token), m_mgr(mgr), m_router(router), m_proto_type(proto_type) {
 	m_mgr->get_remote_ip(m_token, m_ip);
 	m_luakit = std::make_shared<luakit::kit_state>(L);
 	if (blisten) {
 		m_mgr->set_accept_callback(token, [=](uint32_t steam_token, eproto_type proto_type) {
-			auto stream = new lua_socket_node(steam_token, m_luakit->L(), m_mgr, m_codec, m_router, false, proto_type);
+			auto stream = new lua_socket_node(steam_token, m_luakit->L(), m_mgr, m_router, false, proto_type);
+			stream->set_codec(m_codec);
 			m_luakit->object_call(this, "on_accept", nullptr, std::tie(), stream);
 			});
 	}
@@ -76,81 +77,49 @@ int lua_socket_node::call_text(lua_State* L) {
 	return 1;
 }
 
-size_t lua_socket_node::format_header(lua_State* L, router_header *header, rpc_type msgid) {	
-	header->session_id = (uint32_t)lua_tointeger(L, 1);
-	header->rpc_flag = (uint8_t)lua_tointeger(L, 2);
-	header->source_id = (uint32_t)lua_tointeger(L, 3);
-	header->msg_id = (uint8_t)msgid;
-	return sizeof(router_header);
-}
-
-int lua_socket_node::call(lua_State* L) {
-	int top = lua_gettop(L);
-	if (top < 4) {
-		lua_pushinteger(L, -1);
-		return 1;
-	}
-	router_header header;
-	size_t header_len = format_header(L, &header, rpc_type::remote_call);
+int lua_socket_node::call(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id) {
 	size_t data_len = 0;
 	void* data = m_codec->encode(L, 4, &data_len);
-	if (data == nullptr) {
-		lua_pushinteger(L, -2);
-		return 1;
-	}
+	router_header header;
+	header.session_id = session_id;
+	header.rpc_flag   = flag;
+	header.source_id  = source_id;
+	header.msg_id     = (uint8_t)rpc_type::remote_call;
 	header.rpc_len = data_len;
-	sendv_item items[] = { {&header, header_len}, {data, data_len} };
+	sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
 	auto send_len = m_mgr->sendv(m_token, items, _countof(items));
 	lua_pushinteger(L, send_len);
 	return 1;
 }
 
-int lua_socket_node::forward_target(lua_State* L) {
-	int top = lua_gettop(L);
-	if (top < 5) {
-		lua_pushinteger(L, -1);
-		return 1;
-	}
-	router_header header;
-	size_t header_len = format_header(L, &header, rpc_type::forward_target);
-	header.target_id = (uint32_t)lua_tointeger(L, 4);
+int lua_socket_node::forward_target(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id, uint32_t target) {
 	size_t data_len = 0;
 	void* data = m_codec->encode(L, 5, &data_len);
-	if (data == nullptr) {
-		lua_pushinteger(L, -2);
-		return 1;
-	}
+	router_header header;
+	header.session_id = session_id;
+	header.rpc_flag = flag;
+	header.source_id = source_id;
+	header.msg_id = (uint8_t)rpc_type::forward_target;
+	header.target_id = target;
 	header.rpc_len = data_len;
-	sendv_item items[] = { {&header, header_len}, {data, data_len} };
-	m_mgr->sendv(m_token, items, _countof(items));
-
-	size_t send_len = header_len + data_len;
+	sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
+	auto send_len = m_mgr->sendv(m_token, items, _countof(items));
 	lua_pushinteger(L, send_len);
 	return 1;
 }
 
-int lua_socket_node::forward_hash(lua_State* L) {
-	int top = lua_gettop(L);
-	if (top < 6) {
-		lua_pushinteger(L, -1);
-		return 1;
-	}
-	router_header header;
-	size_t header_len = format_header(L, &header, rpc_type::forward_hash);
-	uint16_t group_id = (uint16_t)lua_tointeger(L, 4);
-	uint16_t hash_key = (uint16_t)luaL_optinteger(L, 5, 0);
-	header.target_id = group_id << 16 | hash_key;
+int lua_socket_node::forward_hash(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id, uint16_t service_id, uint16_t hash) {
 	size_t data_len = 0;
 	void* data = m_codec->encode(L, 6, &data_len);
-	if (data == nullptr) {
-		lua_pushinteger(L, -2);
-		return 1;
-	}
+	router_header header;
+	header.session_id = session_id;
+	header.rpc_flag = flag;
+	header.source_id = source_id;
+	header.msg_id = (uint8_t)rpc_type::forward_hash;
+	header.target_id = service_id << 16 | hash;
 	header.rpc_len = data_len;
-	sendv_item items[] = { {&header, header_len}, {data, data_len} };
-	m_mgr->sendv(m_token, items, _countof(items));
-
-	size_t send_len = header_len + data_len;
+	sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
+	auto send_len = m_mgr->sendv(m_token, items, _countof(items));
 	lua_pushinteger(L, send_len);
 	return 1;
 }
