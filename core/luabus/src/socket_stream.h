@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "socket_helper.h"
-#include "io_buffer.h"
 #include "socket_mgr.h"
 
 struct socket_stream : public socket_object
@@ -23,8 +22,6 @@ struct socket_stream : public socket_object
 	void set_package_callback(const std::function<void(char*, size_t)>& cb) override { m_package_cb = cb; }
 	void set_error_callback(const std::function<void(const char*)>& cb) override { m_error_cb = cb; }
 	void set_connect_callback(const std::function<void(bool, const char*)>& cb) override { m_connect_cb = cb; }
-	void set_send_buffer_size(size_t size) override { m_send_buffer.resize(size, true); }
-	void set_recv_buffer_size(size_t size) override { m_recv_buffer.resize(size, true); }
 	void set_timeout(int duration) override { m_timeout = duration; }
 	void set_nodelay(int flag) override { set_no_delay(m_socket, flag); }
 	void set_flow_ctrl(int ctrl_package, int ctrl_bytes) override { m_fc_ctrl_package = ctrl_package; m_fc_ctrl_bytes = ctrl_bytes; m_last_fc_time = steady_ms(); }
@@ -59,8 +56,8 @@ struct socket_stream : public socket_object
 	eproto_type     m_proto_type = eproto_type::proto_rpc;
 	elink_type      m_link_type = elink_type::elink_tcp_client;
 	socket_t m_socket = INVALID_SOCKET;
-	io_buffer m_recv_buffer;
-	io_buffer m_send_buffer;
+	luabuf m_recv_buffer;
+	luabuf m_send_buffer;
 
 	std::string m_node_name;
 	std::string m_service_name;

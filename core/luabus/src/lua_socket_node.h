@@ -14,10 +14,9 @@ struct lua_socket_node final
 	int call(lua_State* L,uint32_t session_id,uint8_t flag,uint32_t source_id);
 	int call_pack(lua_State* L);
 	int call_text(lua_State* L);
+	int call_data(lua_State* L);
 
 	void close();
-	void set_send_buffer_size(size_t size) { m_mgr->set_send_buffer_size(m_token, size); }
-	void set_recv_buffer_size(size_t size) { m_mgr->set_recv_buffer_size(m_token, size); }
 	void set_timeout(int ms) { m_mgr->set_timeout(m_token, ms); }
 	void set_nodelay(bool flag) { m_mgr->set_nodelay(m_token, flag); }
 	void set_codec(codec_base* codec) { m_codec = codec; }
@@ -31,16 +30,20 @@ struct lua_socket_node final
 	int forward_by_group(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id, uint16_t service_id) {
 		size_t data_len = 0;
 		void* data = m_codec->encode(L, 5, &data_len);
-		router_header header;
-		header.session_id = session_id;
-		header.rpc_flag = flag;
-		header.source_id = source_id;
-		header.msg_id = (uint8_t)forward_method;
-		header.target_id = service_id;
-		header.rpc_len = data_len;
-		sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
-		auto send_len = m_mgr->sendv(m_token, items, _countof(items));
-		lua_pushinteger(L, send_len);
+		if (data_len <= SOCKET_PACKET_MAX) {
+			router_header header;
+			header.session_id = session_id;
+			header.rpc_flag = flag;
+			header.source_id = source_id;
+			header.msg_id = (uint8_t)forward_method;
+			header.target_id = service_id;
+			header.rpc_len = data_len;
+			sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
+			auto send_len = m_mgr->sendv(m_token, items, _countof(items));
+			lua_pushinteger(L, send_len);
+			return 1;
+		}
+		lua_pushinteger(L, 0);
 		return 1;
 	}
 
