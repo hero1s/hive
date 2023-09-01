@@ -12,7 +12,7 @@ struct lua_socket_node final
 	~lua_socket_node();
 
 	int call(lua_State* L,uint32_t session_id,uint8_t flag,uint32_t source_id);
-	int call_pack(lua_State* L);
+	int call_head(lua_State* L, uint32_t cmd_id, uint8_t flag, uint32_t session_id, std::string_view buff);
 	int call_text(lua_State* L);
 	int call_data(lua_State* L);
 
@@ -37,7 +37,7 @@ struct lua_socket_node final
 			header.source_id = source_id;
 			header.msg_id = (uint8_t)forward_method;
 			header.target_id = service_id;
-			header.rpc_len = data_len;
+			header.len = data_len + sizeof(router_header);
 			sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
 			auto send_len = m_mgr->sendv(m_token, items, _countof(items));
 			lua_pushinteger(L, send_len);
@@ -51,11 +51,11 @@ public:
 	std::string m_ip;
 	uint32_t m_token = 0;
 private:
-	void on_recv(char* data, size_t data_len);
-	void on_call_pack(char* data, size_t data_len);
-	void on_call_text(char* data, size_t data_len);
-	void on_call_common(char* data, size_t data_len);
-	void on_call(router_header* header, char* data, size_t data_len);
+	int on_recv(slice* slice);
+	int on_call_head(slice* slice);
+	int on_call_text(slice* slice);
+	int on_call_data(slice* slice);
+	void on_call(router_header* header, slice* slice);
 	void on_forward_broadcast(router_header* header, size_t target_size);
 	void on_forward_error(router_header* header);
 

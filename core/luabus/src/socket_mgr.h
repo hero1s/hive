@@ -29,11 +29,12 @@ enum elink_type : uint8_t
 // 协议类型
 enum class eproto_type : int
 {
-	proto_rpc		= 0,   // rpc协议
-	proto_pack		= 1,   // pack协议
-	proto_text		= 2,   // text协议
-	proto_common	= 3,   // 通用协议，协议前4个字节为长度
-	proto_max		= 4,   // max 
+	proto_rpc		= 0,   // rpc协议,根据协议头解析
+	proto_head		= 1,   // head协议,根据协议头解析
+	proto_text		= 2,   // text协议,文本协议
+	proto_mongo		= 3,   // mongo协议，协议前4个字节为长度
+	proto_mysql		= 4,   // mysql协议，协议前3个字节为长度
+	proto_max		= 5,   // max 
 };
 
 struct sendv_item
@@ -56,7 +57,7 @@ struct socket_object
 	virtual int  sendv(const sendv_item items[], int count) { return 0; };
 	virtual void set_accept_callback(const std::function<void(int, eproto_type)>& cb) { }
 	virtual void set_connect_callback(const std::function<void(bool, const char*)>& cb) { }
-	virtual void set_package_callback(const std::function<void(char*, size_t)>& cb) { }
+	virtual void set_package_callback(const std::function<int(slice*)>& cb) { }
 	virtual void set_error_callback(const std::function<void(const char*)>& cb) { }
 
 #ifdef _MSC_VER
@@ -102,7 +103,7 @@ public:
 
 	void set_accept_callback(uint32_t token, const std::function<void(uint32_t, eproto_type eproto_type)>& cb);
 	void set_connect_callback(uint32_t token, const std::function<void(bool, const char*)>& cb);
-	void set_package_callback(uint32_t token, const std::function<void(char*, size_t)>& cb);
+	void set_package_callback(uint32_t token, const std::function<int(slice*)>& cb);
 	void set_error_callback(uint32_t token, const std::function<void(const char*)>& cb);
 
 	bool watch_listen(socket_t fd, socket_object* object);

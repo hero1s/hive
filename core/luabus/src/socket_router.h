@@ -42,7 +42,7 @@ struct router_node {
 struct router_header {
 	uint8_t  msg_id		= 0;
 	uint8_t  rpc_flag   = 0;
-	uint32_t rpc_len	= 0;
+	uint32_t len		= 0;
 	uint32_t source_id  = 0;
 	uint32_t session_id = 0;
 	uint32_t target_id  = 0;

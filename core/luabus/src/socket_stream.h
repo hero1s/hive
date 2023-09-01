@@ -19,7 +19,7 @@ struct socket_stream : public socket_object
 	void try_connect();
 	void close() override;
 	void set_accept_callback(const std::function<void(int, eproto_type)>& cb) override { m_accept_cb = cb; }
-	void set_package_callback(const std::function<void(char*, size_t)>& cb) override { m_package_cb = cb; }
+	void set_package_callback(const std::function<int(slice*)>& cb) override { m_package_cb = cb; }
 	void set_error_callback(const std::function<void(const char*)>& cb) override { m_error_cb = cb; }
 	void set_connect_callback(const std::function<void(bool, const char*)>& cb) override { m_connect_cb = cb; }
 	void set_timeout(int duration) override { m_timeout = duration; }
@@ -90,6 +90,6 @@ struct socket_stream : public socket_object
 
 	std::function<void(int, eproto_type)> m_accept_cb = nullptr;
 	std::function<void(const char*)> m_error_cb = nullptr;
-	std::function<void(char*, size_t)> m_package_cb = nullptr;
+	std::function<int(slice*)> m_package_cb = nullptr;
 	std::function<void(bool, const char*)> m_connect_cb = nullptr;
 };

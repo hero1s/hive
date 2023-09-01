@@ -119,7 +119,7 @@ bool socket_stream::update(int64_t now,bool check_timeout) {
 				return true;
 			}
 			// 限流检测
-			if (eproto_type::proto_pack == m_proto_type) {
+			if (eproto_type::proto_head == m_proto_type) {
 				if (check_flow_ctrl(now)) {
 					on_error(fmt::format("trigger package:{} or bytes:{},escape_time:{} flowctrl line,will be closed", m_fc_package, m_fc_bytes, now - m_last_fc_time).c_str());
 					return true;
@@ -514,8 +514,7 @@ void socket_stream::dispatch_package(bool reset) {
 	}
 	m_need_dispatch_pkg = false;
 	while (m_link_status == elink_status::link_connected) {
-		uint32_t package_size = 0;
-		size_t data_len = 0, header_len = 0;
+		size_t data_len = 0, package_size = 0;
 		auto* data = m_recv_buffer.data(&data_len);
 		if (eproto_type::proto_rpc == m_proto_type) {
 			// 检测握手
@@ -526,18 +525,26 @@ void socket_stream::dispatch_package(bool reset) {
 				}
 				break;
 			}
-			header_len = sizeof(router_header);
-			if (data_len < header_len) {
+			size_t header_len = sizeof(router_header);
+			auto data = m_recv_buffer.peek_data(header_len);
+			if (!data) {
 				break;
 			}
 			router_header* header = (router_header*)data;
-			package_size = header->rpc_len;
-		}
-		else if (eproto_type::proto_pack == m_proto_type) {
-			// pack模式获取socket_header
-			header_len = sizeof(socket_header);
-			if (data_len < header_len)
+			// 当前包长小于headlen, 关闭连接
+			if (header->len < header_len) {
+				on_error("package-length-err");
 				break;
+			}
+			package_size = header->len;
+		}
+		else if (eproto_type::proto_head == m_proto_type) {
+			// pack模式获取socket_header
+			size_t header_len = sizeof(socket_header);
+			auto data = m_recv_buffer.peek_data(header_len);
+			if (!data) {
+				break;
+			}
 			socket_header* header = (socket_header*)data;
 			// 当前包长小于headlen，关闭连接
 			if (header->len < header_len) {
@@ -559,17 +566,27 @@ void socket_stream::dispatch_package(bool reset) {
 			m_fc_package++;
 			m_fc_bytes += header->len;
 
-			package_size = header->len - header_len;
+			package_size = header->len;
 		}
-		else if (eproto_type::proto_common == m_proto_type) {
-			header_len = sizeof(uint32_t);
-			if (data_len < header_len)break;
-			//头长度只包含内容，不包括长度
-			package_size = *((uint32_t*)data);
+		else if (eproto_type::proto_mongo == m_proto_type) {
+			uint32_t* length = (uint32_t*)m_recv_buffer.peek_data(sizeof(uint32_t));
+			if (!length) {
+				break;
+			}
+			//package_size = length + contents
+			package_size = *length;
+		}
+		else if (eproto_type::proto_mysql == m_proto_type) {
+			uint32_t* length = (uint32_t*)m_recv_buffer.peek_data(sizeof(uint32_t));
+			if (!length) {
+				break;
+			}
+			//package_size = length + serialize_id + contents
+			package_size = ((*length) >> 8) + sizeof(uint32_t);
 		}
 		else if (eproto_type::proto_text == m_proto_type) {
+			package_size = m_recv_buffer.size();
 			if (data_len == 0) break;
-			package_size = data_len;
 		}
 		else {
 			on_error(fmt::format("proto-type-not-suppert!:{},ip:{}", (int)m_proto_type,m_ip).c_str());
@@ -577,22 +594,21 @@ void socket_stream::dispatch_package(bool reset) {
 		}
 
 		// 数据包还没有收完整
-		if (data_len < header_len + package_size) break;
-		if (eproto_type::proto_pack == m_proto_type) {
-			m_recv_seq_id++;
-			m_package_cb((char*)data, header_len + (size_t)package_size);
+		if (data_len < package_size) break;
+		int read_size = m_package_cb(m_recv_buffer.get_slice(package_size));
+		// 数据包还没有收完整
+		if (read_size == 0) {
+			break;
 		}
-		else if (eproto_type::proto_rpc == m_proto_type) {
-			m_package_cb((char*)data, header_len + (size_t)package_size);
+		// 数据包解析失败
+		if (read_size < 0) {
+			on_error("package-read-err");
+			break;
 		}
-		else {
-			m_package_cb((char*)data + header_len, (size_t)package_size);
-		}
-
 		// 接收缓冲读游标调整
-		m_recv_buffer.pop_size(header_len + (size_t)package_size);
+		m_recv_buffer.pop_size(read_size);
 		m_last_recv_time = steady_ms();
-
+		m_recv_seq_id++;
 		// 防止单个连接处理太久
 		if ((m_last_recv_time - m_tick_dispatch_time) > max_process_time()) {
 			m_need_dispatch_pkg = true;
@@ -690,7 +706,7 @@ bool socket_stream::check_flow_ctrl(int64_t now) {
 //客户端延迟包发送
 bool socket_stream::need_delay_send() {
 #ifdef DELAY_SEND
-	if (eproto_type::proto_pack == m_proto_type || eproto_type::proto_rpc == m_proto_type) {
+	if (eproto_type::proto_head == m_proto_type || eproto_type::proto_rpc == m_proto_type) {
 		return true;
 	}
 #endif // DELAY_SEND
@@ -698,7 +714,7 @@ bool socket_stream::need_delay_send() {
 }
 
 int64_t socket_stream::max_process_time() {
-	if (eproto_type::proto_pack == m_proto_type) {
+	if (eproto_type::proto_head == m_proto_type) {
 		return 10;
 	} else if (eproto_type::proto_text == m_proto_type) {
 		return 100;

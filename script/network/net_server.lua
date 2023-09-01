@@ -88,7 +88,7 @@ function NetServer:on_socket_accept(session)
     -- 设置超时(心跳)
     session.set_timeout(self.timeout)
     -- 绑定call回调
-    session.on_call_pack  = function(recv_len, cmd_id, flag, session_id, data)
+    session.on_call_head  = function(recv_len, cmd_id, flag, session_id, data)
         thread_mgr:fork(function()
             proxy_agent:statistics("on_proto_recv", cmd_id, recv_len)
             hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, cmd_id, flag, session_id, data)
@@ -112,7 +112,7 @@ function NetServer:write(session, cmd_id, data, session_id, flag)
         return false
     end
     -- call lbus
-    local send_len = session.call_pack(cmd_id, pflag, session_id or 0, body)
+    local send_len = session.call_head(cmd_id, pflag, session_id or 0, body)
     if send_len > 0 then
         proxy_agent:statistics("on_proto_send", cmd_id, send_len)
         if self.log_client_msg then
@@ -135,7 +135,7 @@ function NetServer:broadcast(cmd_id, data, filter)
     end
     for _, session in pairs(self.sessions) do
         if not filter or filter(session) then
-            local send_len = session.call_pack(cmd_id, pflag, 0, body)
+            local send_len = session.call_head(cmd_id, pflag, 0, body)
             if send_len > 0 then
                 proxy_agent:statistics("on_proto_send", cmd_id, send_len)
             elseif send_len < 0 then
@@ -158,7 +158,7 @@ end
 -- 发送buff消息
 function NetServer:send_buff(session, cmd_id, data, session_id)
     local flag     = (session_id and session_id > 0) and FLAG_RES or FLAG_REQ
-    local send_len = session.call_pack(cmd_id, flag, session_id or 0, data)
+    local send_len = session.call_head(cmd_id, flag, session_id or 0, data)
     if send_len > 0 then
         proxy_agent:statistics("on_proto_send", cmd_id, send_len)
         if self.log_client_msg then

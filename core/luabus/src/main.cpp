@@ -63,9 +63,10 @@ namespace luabus {
 
         lluabus.new_enum("eproto_type",
             "rpc", eproto_type::proto_rpc,
-            "head", eproto_type::proto_pack,
+            "head", eproto_type::proto_head,
             "text", eproto_type::proto_text,
-            "common", eproto_type::proto_common
+            "mongo", eproto_type::proto_mongo,
+            "mysql", eproto_type::proto_mysql
         );
         kit_state.new_class<socket_udp>(
             "send", &socket_udp::send,
@@ -86,7 +87,7 @@ namespace luabus {
             "ip", &lua_socket_node::m_ip,
             "token", &lua_socket_node::m_token,
             "call", &lua_socket_node::call,
-            "call_pack",&lua_socket_node::call_pack,
+            "call_head",&lua_socket_node::call_head,
             "call_text",&lua_socket_node::call_text,
             "call_data", &lua_socket_node::call_data,
             "forward_hash", &lua_socket_node::forward_hash,
