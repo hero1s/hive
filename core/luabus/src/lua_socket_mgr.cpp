@@ -22,7 +22,9 @@ int lua_socket_mgr::listen(lua_State* L, const char* ip, int port) {
 	}
 
 	auto listener = new lua_socket_node(token, m_lvm, m_mgr, m_router, true, proto_type);
-	listener->set_codec(m_codec.get());
+	if (proto_type < eproto_type::proto_text) {
+		listener->set_codec(m_codec.get());
+	}
 	return luakit::variadic_return(L, listener, "ok");
 }
 
@@ -39,7 +41,9 @@ int lua_socket_mgr::connect(lua_State* L, const char* ip, const char* port, int 
 	}
 
 	auto stream = new lua_socket_node(token, m_lvm, m_mgr, m_router, false, proto_type);
-	stream->set_codec(m_codec.get());
+	if (proto_type < eproto_type::proto_text) {
+		stream->set_codec(m_codec.get());
+	}
 	return luakit::variadic_return(L, stream, "ok");
 }
 

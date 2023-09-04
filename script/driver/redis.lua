@@ -340,14 +340,14 @@ function RedisDB:setup_pool(hosts)
         log_err("[RedisDB][setup_pool] redis config err: hosts is empty")
         return
     end
-    local count = POOL_COUNT
-    while count > 0 do
-        for ip, port in pairs(hosts) do
-            local socket            = Socket(self, ip, port)
+    local count = 1
+    for _, host in pairs(hosts) do
+        for c = 1, POOL_COUNT do
+            local socket            = Socket(self, host[1], host[2])
             self.connections[count] = socket
             socket.task_queue       = QueueFIFO()
             socket:set_id(count)
-            count = count - 1
+            count = count + 1
         end
     end
 end

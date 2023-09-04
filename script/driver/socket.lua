@@ -66,6 +66,12 @@ function Socket:listen(ip, port, ptype)
     return true
 end
 
+function Socket:set_codec(codec)
+    if self.session then
+        self.session.set_codec(codec)
+    end
+end
+
 function Socket:connect(ip, port, ptype)
     if self.session then
         if self.alive then
@@ -93,7 +99,10 @@ function Socket:connect(ip, port, ptype)
         thread_mgr:response(block_id, success, res)
     end
     session.on_call_text = function(recv_len, data)
-        self:on_socket_recv(session, data)
+        self:on_socket_recv_text(session, data)
+    end
+    session.on_call_data = function(recv_len, ...)
+        self:on_socket_recv_data(session, ...)
     end
     session.on_error     = function(token, err)
         self:on_socket_error(token, err)
@@ -111,11 +120,17 @@ function Socket:on_socket_accept(session)
     socket:accept(session, session.ip, self.port)
 end
 
-function Socket:on_socket_recv(session, data)
+function Socket:on_socket_recv_text(session, data)
     thread_mgr:fork(function()
         self.recvbuf = self.recvbuf .. data
         self.host:on_socket_recv(self, self.token)
     end)
+end
+
+function Socket:on_socket_recv_data(session, ...)
+    thread_mgr:fork(function(...)
+        self.host:on_socket_recv(self, ...)
+    end, ...)
 end
 
 function Socket:on_socket_error(token, err)
@@ -132,7 +147,10 @@ end
 function Socket:accept(session, ip, port)
     session.set_timeout(self.timeout)
     session.on_call_text = function(recv_len, data)
-        self:on_socket_recv(session, data)
+        self:on_socket_recv_text(session, data)
+    end
+    session.on_call_data = function(recv_len, ...)
+        self:on_socket_recv_data(session, ...)
     end
     session.on_error     = function(token, err)
         self:on_socket_error(token, err)
@@ -175,6 +193,15 @@ function Socket:send(data)
     end
     log_err("[Socket][send] the socket not alive, can't send")
     return false
+end
+
+function Socket:send_data(...)
+    if self.alive then
+        local send_len = self.session.call_data(...)
+        return send_len > 0
+    end
+    log_err("[Socket][send_data] the socket not alive, can't send")
+    return false, "socket not alive"
 end
 
 return Socket

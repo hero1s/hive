@@ -633,8 +633,8 @@ function MysqlDB:close()
 end
 
 function MysqlDB:choose_host(hosts)
-    for host, port in pairs(hosts) do
-        self.ip, self.port = host, port
+    for _, host in pairs(hosts) do
+        self.ip, self.port = host[1], host[2]
         break
     end
 end

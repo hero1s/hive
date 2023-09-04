@@ -234,14 +234,16 @@ int lua_socket_node::on_call_head(slice* slice) {
 }
 
 int lua_socket_node::on_call_text(slice* slice) {
-	m_luakit->object_call(this, "on_call_text",nullptr, std::tie(), slice->size(), slice->contents());
-	return slice->size();
-
-	//bool success = true;
-	//m_codec->set_slice(slice);
-	//size_t buf_size = slice->size();
-	//m_luakit->object_call(this, "on_call_data", [&](std::string_view) { success = false; }, m_codec, std::tie(), buf_size);
-	//return success ? (buf_size - slice->size()) : -1;
+	if (m_codec) {
+		bool success = true;
+		m_codec->set_slice(slice);
+		size_t buf_size = slice->size();
+		m_luakit->object_call(this, "on_call_data", [&](std::string_view) { success = false; }, m_codec, std::tie(), buf_size);
+		return success ? (buf_size - slice->size()) : -1;
+	} else {
+		m_luakit->object_call(this, "on_call_text", nullptr, std::tie(), slice->size(), slice->contents());
+		return slice->size();
+	}
 }
 
 int lua_socket_node::on_call_data(slice* slice) {
