@@ -3,7 +3,22 @@
 
 namespace lcodec {
 
+    thread_local rdscodec thread_rds;
+    thread_local httpcodec thread_http;
     thread_local luakit::luabuf thread_buff;
+
+    static rdscodec* rds_codec(codec_base* codec) {
+        thread_rds.set_codec(codec);
+        thread_rds.set_buff(&thread_buff);
+        return &thread_rds;
+    }
+
+    static httpcodec* http_codec(codec_base* codec) {
+        thread_http.set_codec(codec);
+        thread_http.set_buff(&thread_buff);
+        return &thread_http;
+    }
+
     static int serialize(lua_State* L) {
         return luakit::serialize(L, &thread_buff);
     }
@@ -95,6 +110,8 @@ namespace lcodec {
         llcodec.set_function("fnv_1a_32", fnv_1a_32_l);
         llcodec.set_function("murmur3_32", murmur3_32_l);
         llcodec.set_function("bitarray", barray);
+        llcodec.set_function("rediscodec", rds_codec);
+        llcodec.set_function("httpcodec", http_codec);
 
         llcodec.set_function("utf8_gbk", utf8_gbk);
         llcodec.set_function("gbk_utf8", gbk_utf8);

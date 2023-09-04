@@ -7,3 +7,5 @@
 #include "guid.h"
 #include "hash.h"
 #include "utf8.h"
+#include "http.h"
+#include "redis.h"

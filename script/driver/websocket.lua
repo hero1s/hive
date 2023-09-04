@@ -14,7 +14,7 @@ local lxor_byte         = lcrypt.xor_byte
 local lb64encode        = lcrypt.b64_encode
 
 local hxpcall           = hive.xpcall
-
+local eproto_type       = lbus.eproto_type
 local thread_mgr        = hive.get("thread_mgr")
 
 local NETWORK_TIMEOUT   = hive.enum("NetwkTime", "NETWORK_TIMEOUT")
@@ -26,8 +26,7 @@ prop:reader("ip", nil)
 prop:reader("host", nil)
 prop:reader("token", nil)
 prop:reader("alive", false)
-prop:reader("alive_time", 0)
-prop:reader("proto_type", 2)
+prop:reader("proto_type", eproto_type.text)
 prop:reader("session", nil)         --连接成功对象
 prop:reader("listener", nil)
 prop:reader("recvbuf", "")
@@ -89,8 +88,7 @@ end
 function WebSocket:on_socket_recv(session, data)
     local token = session.token
     if self.alive then
-        self.alive_time = hive.clock_ms
-        self.recvbuf    = self.recvbuf .. data
+        self.recvbuf = self.recvbuf .. data
         while true do
             local frame = self:recv_frame()
             if not frame then

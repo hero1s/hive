@@ -17,7 +17,9 @@
     <ClInclude Include="src\lcodec\crc.h"/>
     <ClInclude Include="src\lcodec\guid.h"/>
     <ClInclude Include="src\lcodec\hash.h"/>
+    <ClInclude Include="src\lcodec\http.h"/>
     <ClInclude Include="src\lcodec\lcodec.h"/>
+    <ClInclude Include="src\lcodec\redis.h"/>
     <ClInclude Include="src\lcodec\utf8.h"/>
     <ClInclude Include="src\lcrypt\base64.h"/>
     <ClInclude Include="src\lcrypt\des56.h"/>

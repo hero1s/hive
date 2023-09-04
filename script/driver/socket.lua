@@ -7,6 +7,7 @@ local ends_with       = string_ext.ends_with
 local split_pos       = string_ext.split_pos
 local hxpcall         = hive.xpcall
 
+local eproto_type     = lbus.eproto_type
 local thread_mgr      = hive.get("thread_mgr")
 
 local CONNECT_TIMEOUT = hive.enum("NetwkTime", "CONNECT_TIMEOUT")
@@ -19,8 +20,7 @@ prop:reader("port", 0)
 prop:reader("host", nil)
 prop:reader("token", nil)
 prop:reader("alive", false)
-prop:reader("alive_time", 0)
-prop:reader("proto_type", 2)
+prop:reader("proto_type", eproto_type.text)
 prop:reader("session", nil)          --连接成功对象
 prop:reader("listener", nil)
 prop:reader("recvbuf", "")
@@ -113,8 +113,7 @@ end
 
 function Socket:on_socket_recv(session, data)
     thread_mgr:fork(function()
-        self.recvbuf    = self.recvbuf .. data
-        self.alive_time = hive.clock_ms
+        self.recvbuf = self.recvbuf .. data
         self.host:on_socket_recv(self, self.token)
     end)
 end
