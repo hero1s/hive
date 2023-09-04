@@ -38,7 +38,7 @@ function RouterServer:setup()
     --设置服务表
     local services = service.services()
     for service, service_id in pairs(services) do
-        lbus.set_service_name(service_id,service)
+        lbus.set_service_name(service_id, service)
     end
 end
 
@@ -123,7 +123,7 @@ end
 function RouterServer:on_client_beat(client, status_info)
     local status = status_info.status
     --设置hash限流,挂起状态不再分配hash消息派发
-    if status == ServiceStatus.HALT then
+    if status < ServiceStatus.RUN or status == ServiceStatus.HALT then
         if not client.ban_hash then
             log_info("[RouterServer][on_client_beat] add ban hash server %s", client.name)
             lbus.set_node_status(client.id, 1)

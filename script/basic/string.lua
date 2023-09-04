@@ -89,7 +89,7 @@ function string_ext.protoaddr(value)
     end
 end
 
---移除首位空格
+--移除首尾空格
 function string_ext.trim(str)
     return (str:gsub("^%s*(.-)%s*$", "%1"))
 end

@@ -127,8 +127,8 @@ function UpdateMgr:update(scheduler, now_ms, clock_ms)
         return
     end
     hive.now = now
-    --检测停服
-    self:check_service_stop(scheduler)
+    --检测服务状态
+    self:check_service_status(scheduler)
     --检查信号
     if self:check_signal(scheduler) then
         return
@@ -175,12 +175,21 @@ function UpdateMgr:update_by_time(now, clock_ms)
     self:update_hour(clock_ms, cur_hour, time)
 end
 
-function UpdateMgr:check_service_stop(scheduler)
-    if scheduler and hive.status_stop() then
-        if hive.safe_stop and event_mgr:fire_vote("vote_stop_service") then
-            log_warn("[UpdateMgr][check_service_stop] all vote agree,will stop service:%s", hive.name)
-            event_mgr:notify_trigger("evt_service_shutdown")
-            signal_quit()
+function UpdateMgr:check_service_status(scheduler)
+    if scheduler then
+        --准备就绪
+        if hive.service_status == ServiceStatus.READY then
+            if hive.is_ready() and event_mgr:fire_vote("vote_ready_service") then
+                hive.change_service_status(ServiceStatus.RUN)
+            end
+        end
+        --停服
+        if hive.status_stop() then
+            if hive.safe_stop and event_mgr:fire_vote("vote_stop_service") then
+                log_warn("[UpdateMgr][check_service_stop] all vote agree,will stop service:%s", hive.name)
+                event_mgr:notify_trigger("evt_service_shutdown")
+                signal_quit()
+            end
         end
     end
 end

@@ -143,10 +143,6 @@ end
 
 --启动后
 function hive.after_start()
-    local timer_mgr = hive.get("timer_mgr")
-    timer_mgr:once(1000, function()
-        hive.change_service_status(ServiceStatus.RUN)
-    end)
     update_mgr:update(scheduler, ltime())
     --开启debug模式
     if environ.status("HIVE_DEBUG") then
@@ -164,10 +160,7 @@ function hive.change_service_status(status)
 end
 
 function hive.is_runing()
-    if hive.service_status < ServiceStatus.RUN or hive.service_status > ServiceStatus.BUSY then
-        return false
-    end
-    return hive.is_ready()
+    return hive.status_run() and hive.is_ready()
 end
 
 function hive.status_run()

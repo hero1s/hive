@@ -2,29 +2,29 @@
 import("basic/cmdline.lua")
 import("agent/online_agent.lua")
 
-local gm_page      = nil
-local HttpServer   = import("network/http_server.lua")
+local gm_page       = nil
+local HttpServer    = import("network/http_server.lua")
 
-local json_decode  = hive.json_decode
-local tunpack      = table.unpack
-local env_get      = environ.get
-local log_err      = logger.err
-local log_debug    = logger.debug
-local readfile     = io_ext.readfile
-local strim        = string_ext.trim
+local json_decode   = hive.json_decode
+local tunpack       = table.unpack
+local env_get       = environ.get
+local log_err       = logger.err
+local log_debug     = logger.debug
+local readfile      = io_ext.readfile
+local strim         = string_ext.trim
 
-local GMType       = enum("GMType")
-local KernCode     = enum("KernCode")
-local SUCCESS      = KernCode.SUCCESS
+local GMType        = enum("GMType")
+local KernCode      = enum("KernCode")
+local SUCCESS       = KernCode.SUCCESS
+local check_success = hive.success
+local cmdline       = hive.get("cmdline")
+local event_mgr     = hive.get("event_mgr")
+local router_mgr    = hive.get("router_mgr")
+local online_agent  = hive.get("online_agent")
+local update_mgr    = hive.get("update_mgr")
 
-local cmdline      = hive.get("cmdline")
-local event_mgr    = hive.get("event_mgr")
-local router_mgr   = hive.get("router_mgr")
-local online_agent = hive.get("online_agent")
-local update_mgr   = hive.get("update_mgr")
-
-local AdminMgr     = singleton()
-local prop         = property(AdminMgr)
+local AdminMgr      = singleton()
+local prop          = property(AdminMgr)
 prop:reader("http_server", nil)
 prop:reader("deploy", "local")
 prop:reader("services", {})
@@ -207,6 +207,12 @@ function AdminMgr:exec_player_cmd(cmd_name, player_id, ...)
             return { code = 1, msg = codeoe }
         end
         return { code = codeoe, msg = res }
+    end
+    local ok1, code, lobby_id = online_agent:query_player(player_id)
+    if check_success(code, ok1) and lobby_id == 0 then
+        --离线处理
+        router_mgr:call_lobby_hash(player_id, "rpc_offline_player_gm", cmd_name, player_id, ...)
+        return { code = SUCCESS, msg = "玩家不在线,已发送离线处理" }
     end
     local ok, codeoe, res = online_agent:call_lobby(player_id, "rpc_command_execute", cmd_name, player_id, ...)
     if not ok then
