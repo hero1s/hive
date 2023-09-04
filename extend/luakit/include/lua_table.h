@@ -48,18 +48,18 @@ namespace luakit {
         }
 
         template <typename... ret_types, typename... arg_types>
-        bool call(const char* function, exception_handler handler, std::tuple<ret_types&...>&& rets, arg_types... args) {
+        bool call(const char* function, error_fn efn, std::tuple<ret_types&...>&& rets, arg_types... args) {
             if (!get_function(function)) return false;
-            return lua_call_function(m_L, handler, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
+            return lua_call_function(m_L, efn, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
         }
 
-        bool call(const char* function, exception_handler handler = nullptr) {
+        bool call(const char* function, error_fn efn = nullptr) {
             if (!get_function(function)) return false;
-            return lua_call_function(m_L, handler, std::tie());
+            return lua_call_function(m_L, efn, std::tie());
         }
 
-        bool call(exception_handler handler = nullptr) {
-            return lua_call_function(m_L, handler, std::tie());
+        bool call(error_fn efn = nullptr) {
+            return lua_call_function(m_L, efn, std::tie());
         }
 
         void create_with() {}

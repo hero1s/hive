@@ -4,6 +4,8 @@
 #pragma warning(disable: 4267)
 #endif
 
+#include <stdexcept>
+
 #include "lua_buff.h"
 
 namespace luakit {
@@ -40,7 +42,7 @@ namespace luakit {
     T value_decode(lua_State* L, slice* slice) {
         T* value = slice->read<T>();
         if (value == nullptr) {
-            luaL_error(L, "decode can't unpack one value");
+            throw std::length_error("decode can't unpack one value");
         }
         return *value;
     }
@@ -161,9 +163,8 @@ namespace luakit {
             return;
         }
         auto str = (const char*)slice->peek(sz);
-        if (str == nullptr) {
-            luaL_error(L, "decode string is out of range");
-            return;
+        if (str == nullptr || sz > USHRT_MAX) {
+            throw std::length_error("decode string is out of range");
         }
         slice->erase(sz);
         lua_pushlstring(L, str, sz);
@@ -227,13 +228,17 @@ namespace luakit {
     }
 
     inline int decode_slice(lua_State* L, slice* slice) {
-        lua_settop(L, 0);
-        while (1) {
-            uint8_t* type = slice->read();
-            if (type == nullptr) break;
-            decode_value(L, slice, *type);
-        }
-        return lua_gettop(L);
+        int top = lua_gettop(L);
+        try {
+            while (1) {
+                uint8_t* type = slice->read();
+                if (type == nullptr) break;
+                decode_value(L, slice, *type);
+            }
+        } catch (const std::exception& e){
+            luaL_error(L, e.what());
+        }       
+        return lua_gettop(L) - top;
     }
 
     inline int decode(lua_State* L, luabuf* buff) {
@@ -279,18 +284,30 @@ namespace luakit {
 
     inline void serialize_table(lua_State* L, luabuf* buff, int index, int depth, int line) {
         index = lua_absindex(L, index);
-        bool barray = is_array(L, index, lua_rawlen(L, index));
+        size_t rawlen = lua_rawlen(L, index);
+        bool barray = is_array(L, index, rawlen);
 
         int size = 0;
-        lua_pushnil(L);
         serialize_value(buff, "{");
         serialize_crcn(buff, depth, line);
-        while (lua_next(L, index) != 0) {
-            if (size++ > 0) {
-                serialize_value(buff, ",");
-                serialize_crcn(buff, depth, line);
+        if (barray) {
+            for (int i = 1; i <= rawlen; ++i){
+                if (size++ > 0) {
+                    serialize_value(buff, ",");
+                    serialize_crcn(buff, depth, line);
+                }
+                lua_geti(L, index, i);
+                serialize_one(L, buff, -1, depth, line);
+                lua_pop(L, 1);
             }
-            if (!barray) {
+        }
+        else {
+            lua_pushnil(L);
+            while (lua_next(L, index) != 0) {
+                if (size++ > 0) {
+                    serialize_value(buff, ",");
+                    serialize_crcn(buff, depth, line);
+                }
                 if (lua_isnumber(L, -2)) {
                     lua_pushvalue(L, -2);
                     serialize_quote(buff, lua_tostring(L, -1), "[", "]=");
@@ -304,9 +321,9 @@ namespace luakit {
                     serialize_one(L, buff, -2, depth, line);
                     serialize_value(buff, "=");
                 }
+                serialize_one(L, buff, -1, depth, line);
+                lua_pop(L, 1);
             }
-            serialize_one(L, buff, -1, depth, line);
-            lua_pop(L, 1);
         }
         serialize_crcn(buff, depth - 1, line);
         serialize_value(buff, "}");
@@ -370,8 +387,13 @@ namespace luakit {
     class codec_base {
     public:
         void __gc() {}
-        virtual uint8_t* encode(lua_State* L, int index, size_t* len) = 0;
         virtual size_t decode(lua_State* L) = 0;
+        virtual uint8_t* encode(lua_State* L, int index, size_t* len) = 0;
+        size_t decode(lua_State* L, uint8_t* data, size_t len) {
+            slice mslice(data, len);
+            m_slice = &mslice;
+            return decode(L);
+        }
         void set_slice(slice* slice) { m_slice = slice; }
     protected:
         slice* m_slice = nullptr;
@@ -390,13 +412,15 @@ namespace luakit {
 
         virtual size_t decode(lua_State* L) {
             if (!m_slice) return 0;
-            int old_top = lua_gettop(L);
+            int top = lua_gettop(L);
             while (1) {
                 uint8_t* type = m_slice->read();
                 if (type == nullptr) break;
                 decode_value(L, m_slice, *type);
             }
-            return lua_gettop(L) - old_top;
+            size_t argnum = lua_gettop(L) - top;
+            m_slice = nullptr;
+            return argnum;
         }
 
     protected:

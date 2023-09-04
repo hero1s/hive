@@ -52,75 +52,75 @@ namespace luakit {
         }
 
         template <typename... ret_types, typename... arg_types>
-        bool call(const char* function, exception_handler handler, std::tuple<ret_types&...>&& rets, arg_types... args) {
-            return call_global_function(m_L, function, handler, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
+        bool call(const char* function, error_fn efn, std::tuple<ret_types&...>&& rets, arg_types... args) {
+            return call_global_function(m_L, function, efn, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
         }
 
-        bool call(const char* function, exception_handler handler = nullptr) {
-            return call_global_function(m_L, function, handler, std::tie());
+        bool call(const char* function, error_fn efn = nullptr) {
+            return call_global_function(m_L, function, efn, std::tie());
         }
 
-        bool call(exception_handler handler = nullptr) {
-            return lua_call_function(m_L, handler, std::tie());
-        }
-
-        template <typename... ret_types, typename... arg_types>
-        bool table_call(const char* table, const char* function, exception_handler handler, std::tuple<ret_types&...>&& rets, arg_types... args) {
-            return call_table_function(m_L, table, function, handler, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
+        bool call(error_fn efn = nullptr) {
+            return lua_call_function(m_L, efn, std::tie());
         }
 
         template <typename... ret_types, typename... arg_types>
-        bool table_call(const char* table, const char* function, exception_handler handler, codec_base* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
-            return call_table_function(m_L, table, function, handler, codec, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
+        bool table_call(const char* table, const char* function, error_fn efn, std::tuple<ret_types&...>&& rets, arg_types... args) {
+            return call_table_function(m_L, table, function, efn, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
         }
 
-        bool table_call(const char* table, const char* function, exception_handler handler = nullptr) {
-            return call_table_function(m_L, table, function, handler, std::tie());
+        template <typename... ret_types, typename... arg_types>
+        bool table_call(const char* table, const char* function, error_fn efn, codec_base* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
+            return call_table_function(m_L, table, function, efn, codec, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
+        }
+
+        bool table_call(const char* table, const char* function, error_fn efn = nullptr) {
+            return call_table_function(m_L, table, function, efn, std::tie());
         }
 
         template <typename T, typename... ret_types, typename... arg_types>
-        bool object_call(T* obj, const char* function, exception_handler handler, std::tuple<ret_types&...>&& rets, arg_types... args) {
-            return call_object_function<T>(m_L, obj, function, handler, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
+        bool object_call(T* obj, const char* function, error_fn efn, std::tuple<ret_types&...>&& rets, arg_types... args) {
+            return call_object_function<T>(m_L, obj, function, efn, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
         }
 
         template <typename T, typename... ret_types, typename... arg_types>
-        bool object_call(T* obj, const char* function, exception_handler handler, codec_base* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
-            return call_object_function<T>(m_L, obj, function, handler, codec, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
+        bool object_call(T* obj, const char* function, error_fn efn, codec_base* codec, std::tuple<ret_types&...>&& rets, arg_types... args) {
+            return call_object_function<T>(m_L, obj, function, efn, codec, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
         }
 
         template <typename T>
-        bool object_call(T* obj, const char* function, exception_handler handler = nullptr) {
-            return call_object_function<T>(function, obj, handler, std::tie());
+        bool object_call(T* obj, const char* function, error_fn efn = nullptr) {
+            return call_object_function<T>(function, obj, efn, std::tie());
         }
 
-        bool run_file(const std::string& filename, exception_handler handler = nullptr) {
-            return run_file(filename.c_str(), handler);
+        bool run_file(const std::string& filename, error_fn efn = nullptr) {
+            return run_file(filename.c_str(), efn);
         }
 
-        bool run_file(const char* filename, exception_handler handler = nullptr) {
+        bool run_file(const char* filename, error_fn efn = nullptr) {
             lua_guard g(m_L);
             if (luaL_loadfile(m_L, filename)) {
-                if (handler) {
-                    handler(lua_tostring(m_L, -1));
+                if (efn) {
+                    efn(lua_tostring(m_L, -1));
                 }
                 return false;
             }
-            return lua_call_function(m_L, handler, 0, 0);
+            return lua_call_function(m_L, efn, 0, 0);
         }
 
-        bool run_script(const std::string& script, exception_handler handler = nullptr) {
-            return run_script(script.c_str(), handler);
+        bool run_script(const std::string& script, error_fn efn= nullptr) {
+            return run_script(script.c_str(), efn);
         }
 
-        bool run_script(const char* script, exception_handler handler = nullptr) {
+        bool run_script(const char* script, error_fn efn= nullptr) {
             lua_guard g(m_L);
             if (luaL_loadstring(m_L, script)) {
-                if (handler) {
-                    handler(lua_tostring(m_L, -1));
+                if (efn) {
+                    efn(lua_tostring(m_L, -1));
                 }
                 return false;
             }
-            return lua_call_function(m_L, handler, 0, 0);
+            return lua_call_function(m_L, efn, 0, 0);
         }
 
         lua_table new_table(const char* name = nullptr) {
