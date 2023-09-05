@@ -1,5 +1,4 @@
 -- rpc_client.lua
-local lbus           = require("luabus")
 local jumphash       = codec.jumphash
 local tunpack        = table.unpack
 local tpack          = table.pack
@@ -82,7 +81,7 @@ function RpcClient:connect()
         return true
     end
     --开始连接
-    local socket, cerr = lbus.connect(self.ip, self.port, NetwkTime.CONNECT_TIMEOUT)
+    local socket, cerr = luabus.connect(self.ip, self.port, NetwkTime.CONNECT_TIMEOUT)
     if not socket then
         log_err("[RpcClient][connect] failed to connect: %s:%d err=%s", self.ip, self.port, cerr)
         return false, cerr

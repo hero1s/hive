@@ -1,6 +1,4 @@
 --environ.lua
-local luabus    = require("luabus")
-
 local tonumber  = tonumber
 local ogetenv   = os.getenv
 local tunpack   = table.unpack

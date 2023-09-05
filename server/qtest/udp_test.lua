@@ -1,6 +1,4 @@
 -- udp_test.lua
-local luabus     = require("luabus")
-
 local log_debug  = logger.debug
 
 local thread_mgr = hive.get("thread_mgr")

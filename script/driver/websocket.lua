@@ -1,6 +1,5 @@
 --websocket.lua
 local lhttp             = require("lhttp")
-local lbus              = require("luabus")
 
 local ssub              = string.sub
 local spack             = string.pack
@@ -13,7 +12,7 @@ local lxor_byte         = crypt.xor_byte
 local lb64encode        = crypt.b64_encode
 
 local hxpcall           = hive.xpcall
-local eproto_type       = lbus.eproto_type
+local eproto_type       = luabus.eproto_type
 local thread_mgr        = hive.get("thread_mgr")
 
 local NETWORK_TIMEOUT   = hive.enum("NetwkTime", "NETWORK_TIMEOUT")
@@ -55,7 +54,7 @@ function WebSocket:listen(ip, port)
     if self.listener then
         return true
     end
-    self.listener = lbus.listen(ip, port, self.proto_type)
+    self.listener = luabus.listen(ip, port, self.proto_type)
     if not self.listener then
         log_err("[WebSocket][listen] failed to listen: %s:%d type=%d", ip, port, self.proto_type)
         return false

@@ -5,27 +5,27 @@ local hgetenv  = hive.getenv
 --加载全局扩展库，使用顶级域名
 local librarys = {
     --日志库
-    log      = require("lualog"),
+    log    = require("lualog"),
     --文件系统库
-    stdfs    = require("lstdfs"),
+    stdfs  = require("lstdfs"),
     --定时器库
-    timer    = require("ltimer"),
+    timer  = require("ltimer"),
     --json库
-    json     = require("lyyjson"),
+    json   = require("lyyjson"),
     --bson库
-    bson     = require("bson"),
+    bson   = require("bson"),
     --编码库
-    codec    = require("lcodec"),
+    codec  = require("lcodec"),
     --加密解密库
-    crypt    = require("lcrypt"),
+    crypt  = require("lcrypt"),
+    --网络库
+    luabus = require("luabus"),
 }
 
 --特定模块
 if hgetenv("HIVE_MODE") then
     --Curl库
-    librarys.curl   = require("lcurl")
-    --网络库
-    librarys.luabus = require("luabus")
+    librarys.curl = require("lcurl")
 end
 
 --index

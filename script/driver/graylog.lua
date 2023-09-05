@@ -1,6 +1,5 @@
 --graylog.lua
 import("network/http_client.lua")
-local luabus      = require("luabus")
 
 local log_err     = logger.err
 local log_info    = logger.info

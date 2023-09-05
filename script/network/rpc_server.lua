@@ -1,5 +1,4 @@
 --rpc_server.lua
-local lbus        = require("luabus")
 local next        = next
 local pairs       = pairs
 local tunpack     = table.unpack
@@ -37,7 +36,7 @@ function RpcServer:__init(holder, ip, port, induce)
         return
     end
     local real_port = induce and (port + hive.index - 1) or port
-    self.listener   = lbus.listen(ip, real_port)
+    self.listener   = luabus.listen(ip, real_port)
     if not self.listener then
         log_err("[RpcServer][setup] now listen %s:%s failed", ip, real_port)
         signal_quit()
@@ -204,7 +203,7 @@ function RpcServer:rpc_register(client, node, ...)
         -- 检查重复注册
         local eclient = self:get_client_by_id(node.id)
         if eclient then
-            local rpc_key = lbus.get_rpc_key()
+            local rpc_key = luabus.get_rpc_key()
             log_err("[RpcServer][rpc_register] client(%s) be kickout, same service is run!,rpckey:%s", eclient.name, rpc_key)
             self:send(client, "rpc_service_kickout", hive.id, "service replace")
             return

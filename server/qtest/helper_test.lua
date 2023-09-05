@@ -1,5 +1,4 @@
 local lhelper = require("lhelper")
-local luabus  = require("luabus")
 
 logger.debug("mem_available:%s",lhelper.mem_available())
 logger.debug("cpu_use_percent:%s",lhelper.cpu_use_percent())

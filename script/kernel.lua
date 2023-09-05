@@ -1,7 +1,6 @@
 --kernel.lua
 import("basic/basic.lua")
 import("kernel/mem_monitor.lua")
-local lbus          = require("luabus")
 
 local tpack         = table.pack
 local tunpack       = table.unpack
@@ -34,8 +33,8 @@ end
 local function init_network()
     local max_conn = environ.number("HIVE_MAX_CONN", 4096)
     local rpc_key  = environ.get("HIVE_RPC_KEY", "hive2022")
-    lbus.init_socket_mgr(max_conn)
-    lbus.set_rpc_key(rpc_key)
+    luabus.init_socket_mgr(max_conn)
+    luabus.set_rpc_key(rpc_key)
 end
 
 --初始化路由
@@ -189,7 +188,7 @@ end
 hive.run  = function()
     local sclock_ms = lclock_ms()
     scheduler:update()
-    lbus.wait(10)
+    luabus.wait(10)
     --系统更新
     local now_ms, clock_ms = ltime()
     update_mgr:update(scheduler, now_ms, clock_ms)

@@ -1,4 +1,4 @@
-local lbus         = require("luabus")
+
 local log_err      = logger.err
 local hxpcall      = hive.xpcall
 local b64_encode   = crypt.b64_encode
@@ -41,7 +41,7 @@ function NetClient:connect(block)
     if self.socket then
         return true
     end
-    local socket, cerr = lbus.connect(self.ip, self.port, NetwkTime.CONNECT_TIMEOUT, self.proto_type)
+    local socket, cerr = luabus.connect(self.ip, self.port, NetwkTime.CONNECT_TIMEOUT, self.proto_type)
     if not socket then
         log_err("[NetClient][connect] failed to connect: %s:%d type=%d, err=%s", self.ip, self.port, self.proto_type, cerr)
         return false, cerr
@@ -168,7 +168,7 @@ function NetClient:write(cmd_id, data, session_id, flag)
         log_err("[NetClient][write] encode failed! cmd_id:%s,data:%s", cmd_id, data)
         return false
     end
-    -- call lbus
+    -- call luabus
     local send_len = self.socket.call_head(cmd_id, pflag, session_id or 0, body)
     if send_len < 0 then
         log_err("[NetClient][write] call_pack failed! code:%s,cmd_id:%s,len:%s", send_len, cmd_id, #body)

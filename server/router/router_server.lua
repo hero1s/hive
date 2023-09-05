@@ -1,5 +1,4 @@
 --router_server.lua
-local lbus          = require("luabus")
 local log_info      = logger.info
 local log_debug     = logger.debug
 local sidhash       = service.hash
@@ -34,17 +33,17 @@ function RouterServer:setup()
     --启动server
     self.rpc_server = RpcServer(self, "0.0.0.0", port, environ.status("HIVE_ADDR_INDUCE"))
     service.make_node(self.rpc_server:get_port())
-    lbus.set_router_id(hive.id)
+    luabus.set_router_id(hive.id)
     --设置服务表
     local services = service.services()
     for service, service_id in pairs(services) do
-        lbus.set_service_name(service_id, service)
+        luabus.set_service_name(service_id, service)
     end
 end
 
 --其他服务器节点关闭
 function RouterServer:on_client_error(client, client_token, err)
-    local master_id = lbus.map_token(client.id, 0)
+    local master_id = luabus.map_token(client.id, 0)
     self:update_router_node_info(client, 0)
     log_info("[RouterServer][on_client_error] %s lost: %s,master:%s", client.name, err, id2nick(master_id))
 end
@@ -67,7 +66,7 @@ end
 function RouterServer:update_router_node_info(client, status)
     local router_id = hive.id
     local target_id = client.id
-    lbus.map_router_node(router_id, target_id, status)
+    luabus.map_router_node(router_id, target_id, status)
     if status == 0 then
         self:broadcast_router("rpc_sync_router_info", router_id, { target_id }, status)
     end
@@ -101,10 +100,10 @@ end
 function RouterServer:rpc_sync_router_info(router_id, target_ids, status)
     log_debug("[RouterServer][rpc_sync_router_info] router_id:%s,target_ids:%s,status:%s", id2nick(router_id), #target_ids, status)
     if #target_ids > 1 then
-        lbus.map_router_node(router_id, 0, 0)
+        luabus.map_router_node(router_id, 0, 0)
     end
     for _, id in pairs(target_ids) do
-        lbus.map_router_node(router_id, id, status)
+        luabus.map_router_node(router_id, id, status)
     end
 end
 
@@ -114,7 +113,7 @@ function RouterServer:on_client_register(client, node_info)
     local service_hash = sidhash(client.service_id)
     --固定hash自动设置为最大index服务[约定固定hash服务的index为连续的1-n,且运行过程中不能扩容]
     local hash_value   = service_hash > 0 and client.index or 0
-    local master_id    = lbus.map_token(client.id, client.token, hash_value)
+    local master_id    = luabus.map_token(client.id, client.token, hash_value)
     self:update_router_node_info(client, 1)
     log_info("[RouterServer][service_register] service: %s,hash:%s,master:%s", client.name, service_hash, master_id)
 end
@@ -126,12 +125,12 @@ function RouterServer:on_client_beat(client, status_info)
     if status < ServiceStatus.RUN or status == ServiceStatus.HALT then
         if not client.ban_hash then
             log_info("[RouterServer][on_client_beat] add ban hash server %s", client.name)
-            lbus.set_node_status(client.id, 1)
+            luabus.set_node_status(client.id, 1)
             client.ban_hash = true
         end
     else
         if client.ban_hash then
-            lbus.set_node_status(client.id, 0)
+            luabus.set_node_status(client.id, 0)
             client.ban_hash = false
             log_info("[RouterServer][on_client_beat] remove ban hash server %s", client.name)
         end

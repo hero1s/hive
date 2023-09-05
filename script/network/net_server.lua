@@ -1,5 +1,4 @@
 --net_server.lua
-local lbus             = require("luabus")
 local log_err          = logger.err
 local log_info         = logger.info
 local log_warn         = logger.warn
@@ -61,7 +60,7 @@ function NetServer:setup(ip, port, induce)
         return
     end
     local real_port = induce and (port + hive.index - 1) or port
-    self.listener   = lbus.listen(ip, real_port, self.proto_type)
+    self.listener   = luabus.listen(ip, real_port, self.proto_type)
     if not self.listener then
         log_err("[NetServer][setup] failed to listen: %s:%d type=%d", ip, real_port, self.proto_type)
         signal_quit()
@@ -110,7 +109,7 @@ function NetServer:write(session, cmd_id, data, session_id, flag)
         log_err("[NetServer][write] encode failed! cmd_id:%s,data:%s", cmd_id, data)
         return false
     end
-    -- call lbus
+    -- call luabus
     local send_len = session.call_head(cmd_id, pflag, session_id or 0, body)
     if send_len > 0 then
         proxy_agent:statistics("on_proto_send", cmd_id, send_len)

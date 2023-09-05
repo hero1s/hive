@@ -1,5 +1,4 @@
 --socket.lua
-local lbus            = require("luabus")
 local ssub            = string.sub
 local log_err         = logger.err
 local log_info        = logger.info
@@ -7,7 +6,7 @@ local ends_with       = string_ext.ends_with
 local split_pos       = string_ext.split_pos
 local hxpcall         = hive.xpcall
 
-local eproto_type     = lbus.eproto_type
+local eproto_type     = luabus.eproto_type
 local thread_mgr      = hive.get("thread_mgr")
 
 local CONNECT_TIMEOUT = hive.enum("NetwkTime", "CONNECT_TIMEOUT")
@@ -53,7 +52,7 @@ function Socket:listen(ip, port, ptype)
     if ptype then
         self.proto_type = ptype
     end
-    self.listener = lbus.listen(ip, port, self.proto_type)
+    self.listener = luabus.listen(ip, port, self.proto_type)
     if not self.listener then
         log_err("[Socket][listen] failed to listen: %s:%d type=%d", ip, port, self.proto_type)
         return false
@@ -82,7 +81,7 @@ function Socket:connect(ip, port, ptype)
     if ptype then
         self.proto_type = ptype
     end
-    local session, cerr = lbus.connect(ip, port, CONNECT_TIMEOUT, self.proto_type)
+    local session, cerr = luabus.connect(ip, port, CONNECT_TIMEOUT, self.proto_type)
     if not session then
         log_err("[Socket][connect] failed to connect: %s:%d type=%d, err=%s", ip, port, self.proto_type, cerr)
         return false, cerr
