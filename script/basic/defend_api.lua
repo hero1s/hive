@@ -1,7 +1,4 @@
-﻿local ljson      = require("lyyjson")
-
-local lclock_ms  = timer.clock_ms
-
+﻿local lclock_ms  = timer.clock_ms
 local log_err    = logger.err
 local log_warn   = logger.warn
 local sformat    = string.format
@@ -59,7 +56,7 @@ end
 local xpcall_ret = hive.xpcall_ret
 
 function hive.json_decode(json_str, result)
-    local ok, res = xpcall_ret(ljson.decode, "[hive.json_decode] error:%s", json_str)
+    local ok, res = xpcall_ret(json.decode, "[hive.json_decode] error:%s", json_str)
     if not ok then
         log_err("[hive][json_decode] err json_str:[%s]", json_str)
     end
@@ -71,7 +68,7 @@ function hive.json_decode(json_str, result)
 end
 
 function hive.try_json_decode(json_str, result)
-    local ok, res = xpcall_ret(ljson.decode, nil, json_str)
+    local ok, res = xpcall_ret(json.decode, nil, json_str)
     if not ok then
         log_warn("[hive][try_json_decode] err json_str:[%s]", json_str)
     end
@@ -83,7 +80,7 @@ function hive.try_json_decode(json_str, result)
 end
 
 function hive.json_encode(body)
-    local ok, jstr = xpcall_ret(ljson.encode, "[hive.json_encode] error:%s", body)
+    local ok, jstr = xpcall_ret(json.encode, "[hive.json_encode] error:%s", body)
     if not ok then
         log_err("[hive][json_encode] err body:[%s]", body)
     end

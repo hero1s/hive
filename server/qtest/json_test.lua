@@ -2,18 +2,14 @@
 local lcodec      = require("lcodec")
 local ltimer      = require("ltimer")
 local yyjson      = require("lyyjson")
-local cjson       = require("lcjson")
 
 local log_debug   = logger.debug
 local new_guid    = lcodec.guid_new
-local json_encode = cjson.encode
-local json_decode = cjson.decode
 local lencode     = lcodec.encode
 local ldecode     = lcodec.decode
 local lclock_ms   = ltimer.clock_ms
 
 local func_list   = {
-    ["cjson"]  = { json_encode, json_decode },
     ["yyjson"] = { yyjson.encode, yyjson.decode },
     ["lua"]    = { lencode, ldecode },
 }
@@ -96,12 +92,6 @@ local function test_small(json_type, test_code)
     log_debug("small   %s[%s],count:%s cost_ms:%s,avg:%s", json_type, test_code, count, cost_ms, cost_ms / count)
 end
 local test_type = "yyjson"
-test_big(test_type, "decode")
-test_big(test_type, "encode")
-test_small(test_type, "decode")
-test_small(test_type, "encode")
-
-test_type = "cjson"
 test_big(test_type, "decode")
 test_big(test_type, "encode")
 test_small(test_type, "decode")
