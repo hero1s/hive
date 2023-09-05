@@ -2,7 +2,6 @@
 import("basic/basic.lua")
 import("kernel/mem_monitor.lua")
 import("kernel/config_mgr.lua")
-local ltimer             = require("ltimer")
 local lbus               = require("luabus")
 
 local hxpcall            = hive.xpcall
@@ -12,8 +11,8 @@ local tpack              = table.pack
 local tunpack            = table.unpack
 local raw_yield          = coroutine.yield
 local raw_resume         = coroutine.resume
-local lclock_ms          = ltimer.clock_ms
-local ltime              = ltimer.time
+local lclock_ms          = timer.clock_ms
+local ltime              = timer.time
 
 local event_mgr          = hive.load("event_mgr")
 local co_hookor          = hive.load("co_hookor")

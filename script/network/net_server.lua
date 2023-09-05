@@ -1,5 +1,4 @@
 --net_server.lua
-local lcrypt           = require("lcrypt")
 local lbus             = require("luabus")
 local log_err          = logger.err
 local log_info         = logger.info
@@ -7,10 +6,10 @@ local log_warn         = logger.warn
 local hxpcall          = hive.xpcall
 local env_number       = environ.number
 local signal_quit      = signal.quit
-local b64_encode       = lcrypt.b64_encode
-local b64_decode       = lcrypt.b64_decode
-local lz4_encode       = lcrypt.lz4_encode
-local lz4_decode       = lcrypt.lz4_decode
+local b64_encode       = crypt.b64_encode
+local b64_decode       = crypt.b64_decode
+local lz4_encode       = crypt.lz4_encode
+local lz4_decode       = crypt.lz4_decode
 
 local event_mgr        = hive.get("event_mgr")
 local thread_mgr       = hive.get("thread_mgr")

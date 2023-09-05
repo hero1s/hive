@@ -1,5 +1,4 @@
 --influx.lua
-local lcodec = require("lcodec")
 import("network/http_client.lua")
 local log_err     = logger.err
 local log_info    = logger.info
@@ -8,7 +7,7 @@ local tconcat     = table.concat
 local sgsub       = string.gsub
 local sformat     = string.format
 local ssplit      = string_ext.split
-local serialize   = lcodec.serialize
+local serialize   = codec.serialize
 
 local http_client = hive.get("http_client")
 local WEEK_S      = hive.enum("PeriodTime", "WEEK_S")

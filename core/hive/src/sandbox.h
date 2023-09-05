@@ -2,8 +2,7 @@
 
 static const char* g_sandbox = u8R"__(
 --sandbox.lua
-local logger      = require("lualog")
-local lstdfs      = require("lstdfs")
+require("basic.library")
 
 local pairs       = pairs
 local loadfile    = loadfile
@@ -14,13 +13,13 @@ local tsort       = table.sort
 local sformat     = string.format
 local sfind       = string.find
 local dtraceback  = debug.traceback
-local file_time   = lstdfs.last_write_time
-local ldir        = lstdfs.dir
-local lfilename   = lstdfs.filename
-local lextension  = lstdfs.extension
-local is_dir      = lstdfs.is_directory
-local log_info    = logger.warn
-local log_err     = logger.error
+local file_time   = stdfs.last_write_time
+local ldir        = stdfs.dir
+local lfilename   = stdfs.filename
+local lextension  = stdfs.extension
+local is_dir      = stdfs.is_directory
+local log_info    = log.warn
+local log_err     = log.error
 
 local load_files  = {}
 local load_codes  = {}
@@ -155,7 +154,7 @@ function hive.import_file_dir(filename)
     if not node or not node.fullpath then
         return nil
     end
-    return lstdfs.parent_path(node.fullpath)
+    return stdfs.parent_path(node.fullpath)
 end
 
 function hive.reload()

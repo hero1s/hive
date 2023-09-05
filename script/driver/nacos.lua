@@ -1,11 +1,10 @@
 --nacos.lua
 import("network/http_client.lua")
 local ljson          = require("lyyjson")
-local lcrypt         = require("lcrypt")
 
 local log_err        = logger.err
 local log_info       = logger.info
-local lmd5           = lcrypt.md5
+local lmd5           = crypt.md5
 local tconcat        = table.concat
 local sformat        = string.format
 local json_decode    = ljson.decode

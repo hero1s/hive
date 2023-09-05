@@ -1,6 +1,4 @@
 ﻿---devops_gm_mgr.lua
-local lstdfs        = require('lstdfs')
-local lcodec        = require("lcodec")
 local sdump         = string.dump
 local log_err       = logger.err
 local log_warn      = logger.warn
@@ -139,9 +137,9 @@ function DevopsGmMgr:gm_cfg_reload(is_remote)
         -- 遍历配置表，依次查询本地文件是否存在远端
         -- 存在则拉取并覆盖
 
-        local current_path = lstdfs.current_path()
+        local current_path = stdfs.current_path()
         local cfg_path     = current_path .. "/../server/config/"
-        local cur_dirs     = lstdfs.dir(cfg_path)
+        local cur_dirs     = stdfs.dir(cfg_path)
         for _, file in pairs(cur_dirs) do
             thread_mgr:fork(function()
                 local full_file_name  = file.name
@@ -178,7 +176,7 @@ function DevopsGmMgr:gm_count_obj(less_num, service_name, index)
 end
 
 function DevopsGmMgr:gm_guid_view(guid)
-    local group, index, gtype, time, serial = lcodec.guid_source(guid)
+    local group, index, gtype, time, serial = codec.guid_source(guid)
     return { group = group, gtype = gtype, index = index, time = time_str(time), serial = serial }
 end
 
@@ -189,8 +187,8 @@ function DevopsGmMgr:gm_log_format(data, swline)
     if type(swline) ~= "number" then
         swline = 0
     end
-    local data_t = lcodec.unserialize(data)
-    return lcodec.serialize(data_t, swline)
+    local data_t = codec.unserialize(data)
+    return codec.serialize(data_t, swline)
 end
 
 function DevopsGmMgr:gm_db_get(db_name, table_name, key_name, key_value)

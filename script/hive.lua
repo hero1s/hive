@@ -1,7 +1,6 @@
 --hive.lua
-local lcodec    = require("lcodec")
-local guid_new  = lcodec.guid_new
-local hash_code = lcodec.hash_code
+local guid_new  = codec.guid_new
+local hash_code = codec.hash_code
 local odate     = os.date
 local log_err   = logger.err
 local sformat   = string.format

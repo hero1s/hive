@@ -1,6 +1,5 @@
 --perfeval_mgr.lua
-local ltimer      = require("ltimer")
-local lclock_ms   = ltimer.clock_ms
+local lclock_ms   = timer.clock_ms
 
 local tinsert     = table.insert
 local tsort       = table.sort

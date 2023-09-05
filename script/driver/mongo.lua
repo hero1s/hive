@@ -1,8 +1,5 @@
 --mongo.lua
-local bson          = require("bson")
 local lmongo        = require("mongo")
-local ltimer        = require("ltimer")
-local lcrypt        = require("lcrypt")
 local Socket        = import("driver/socket.lua")
 local log_warn      = logger.warn
 local log_err       = logger.err
@@ -24,14 +21,14 @@ local sgsub         = string.gsub
 local sformat       = string.format
 local sgmatch       = string.gmatch
 local mtointeger    = math.tointeger
-local lmd5          = lcrypt.md5
-local lsha1         = lcrypt.sha1
-local lrandomkey    = lcrypt.randomkey
-local lb64encode    = lcrypt.b64_encode
-local lb64decode    = lcrypt.b64_decode
-local lhmac_sha1    = lcrypt.hmac_sha1
-local lxor_byte     = lcrypt.xor_byte
-local lclock_ms     = ltimer.clock_ms
+local lmd5          = crypt.md5
+local lsha1         = crypt.sha1
+local lrandomkey    = crypt.randomkey
+local lb64encode    = crypt.b64_encode
+local lb64decode    = crypt.b64_decode
+local lhmac_sha1    = crypt.hmac_sha1
+local lxor_byte     = crypt.xor_byte
+local lclock_ms     = timer.clock_ms
 
 local mreply        = lmongo.reply
 local mopmsg        = lmongo.op_msg

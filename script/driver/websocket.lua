@@ -1,6 +1,5 @@
 --websocket.lua
 local lhttp             = require("lhttp")
-local lcrypt            = require("lcrypt")
 local lbus              = require("luabus")
 
 local ssub              = string.sub
@@ -9,9 +8,9 @@ local sformat           = string.format
 local sunpack           = string.unpack
 local log_err           = logger.err
 local log_info          = logger.info
-local lsha1             = lcrypt.sha1
-local lxor_byte         = lcrypt.xor_byte
-local lb64encode        = lcrypt.b64_encode
+local lsha1             = crypt.sha1
+local lxor_byte         = crypt.xor_byte
+local lb64encode        = crypt.b64_encode
 
 local hxpcall           = hive.xpcall
 local eproto_type       = lbus.eproto_type

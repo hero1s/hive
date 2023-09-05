@@ -14,7 +14,6 @@ import("constant.lua")
 
 import("basic/signal.lua")
 import("basic/environ.lua")
-import("basic/console.lua")
 import("basic/service.lua")
 import("basic/listener.lua")
 import("basic/defend_api.lua")

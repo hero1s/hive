@@ -1,8 +1,7 @@
 import("agent/mongo_agent.lua")
-local ltimer        = require("ltimer")
-local bson          = require("bson")
+
 local bdate         = bson.date
-local lnow_ms       = ltimer.now_ms
+local lnow_ms       = timer.now_ms
 local tinsert       = table.insert
 local log_err       = logger.err
 local log_info      = logger.info

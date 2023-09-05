@@ -182,6 +182,7 @@ void hive_app::run() {
 	hive.set_function("ignore_signal", [](int n) { signal(n, SIG_IGN); });
 	hive.set_function("default_signal", [](int n) { signal(n, SIG_DFL); });
 	hive.set_function("register_signal", [](int n) { signal(n, on_signal); });
+	hive.set_function("getenv", [&](const char* key) { return getenv(key); });
 	//begin worker操作接口
 	hive.set_function("worker_update", [&](size_t to) { m_schedulor.update(); });
 	hive.set_function("worker_shutdown", [&]() { m_schedulor.shutdown(); });

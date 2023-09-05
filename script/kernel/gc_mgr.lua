@@ -3,10 +3,9 @@
 --两种情况下触发：1.内存距离上次清理增长超过传入阈值 2.持续未清理时间超过MAX_IDLE_TIME
 --gc最终方案，根据内存增量，计算步长
 -- 压测1W人在线，6秒增加内存186M，现网400人在线，6秒增加内存8M，暂定每秒增加20MB内存，就开启急速垃圾回收
-local ltimer              = require("ltimer")
 local lhelper             = require("lhelper")
 local mem_usage           = lhelper.mem_usage
-local lclock_ms           = ltimer.clock_ms
+local lclock_ms           = timer.clock_ms
 local collectgarbage      = collectgarbage
 local mfloor              = math.floor
 local log_info            = logger.info

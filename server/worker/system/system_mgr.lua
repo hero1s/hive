@@ -1,6 +1,5 @@
 --system_mgr.lua
-local ltimer     = require("ltimer")
-local lclock_ms  = ltimer.clock_ms
+local lclock_ms  = timer.clock_ms
 local oexec      = os.execute
 local log_err    = logger.err
 local log_info   = logger.info

@@ -1,12 +1,11 @@
 --zipkin.lua
 import("network/http_client.lua")
-local lcrypt        = require("lcrypt")
 
 local log_err       = logger.err
 local log_info      = logger.info
 local sformat       = string.format
-local lrandomkey    = lcrypt.randomkey
-local lhex_encode   = lcrypt.hex_encode
+local lrandomkey    = crypt.randomkey
+local lhex_encode   = crypt.hex_encode
 
 local thread_mgr    = hive.get("thread_mgr")
 local http_client   = hive.get("http_client")

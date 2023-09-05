@@ -2,15 +2,14 @@
 import("basic/basic.lua")
 import("kernel/mem_monitor.lua")
 local lbus          = require("luabus")
-local ltimer        = require("ltimer")
 
 local tpack         = table.pack
 local tunpack       = table.unpack
 local log_err       = logger.err
 local raw_yield     = coroutine.yield
 local raw_resume    = coroutine.resume
-local lclock_ms     = ltimer.clock_ms
-local ltime         = ltimer.time
+local lclock_ms     = timer.clock_ms
+local ltime         = timer.time
 
 local HiveMode      = enum("HiveMode")
 local ServiceStatus = enum("ServiceStatus")

@@ -1,6 +1,5 @@
 --channel.lua
-local ltimer       = require("ltimer")
-local lclock_ms    = ltimer.clock_ms
+local lclock_ms    = timer.clock_ms
 local tinsert      = table.insert
 local check_failed = hive.failed
 local log_warn     = logger.warn

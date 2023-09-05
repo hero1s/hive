@@ -637,7 +637,6 @@ int socket_stream::handshake_rpc(BYTE* data, size_t data_len) {
 	m_recv_buffer.pop_size(s_handshake_verify.length());
 	m_last_recv_time = steady_ms();
 	m_handshake = true;
-	std::cout << "handshake success" << std::endl;
 	return 0;
 }
 

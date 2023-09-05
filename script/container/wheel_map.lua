@@ -1,6 +1,5 @@
 -- wheel_map.lua
-local lcodec   = require("lcodec")
-local jumphash = lcodec.jumphash
+local jumphash = codec.jumphash
 
 local WheelMap = class()
 local prop     = property(WheelMap)

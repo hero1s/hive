@@ -4,11 +4,13 @@ self=false
 stds.hive = {
     globals = {
         --common
-        "tonubmer", "lfs", "util", "coroutine", "ncmd_cs", "ncmd_ds",
-        "hive_const", "table_ext", "string_ext", "math_ext", "http_helper", "redis_key", "io_ext","datetime_ext", "mongo_key",
-        "hive", "environ", "signal", "http", "guid_room", "guid_player","guid_item","luabt", "service", "logger", "utility",
-        "import","import_dir", "class", "enum", "mixin", "property", "singleton", "super", "implemented","logfeature",
-        "classof", "is_class", "is_subclass", "instanceof", "conv_class"
+        "tonumber", "coroutine", "ncmd_cs", "ncmd_ds","set_env",
+        "table_ext", "string_ext", "math_ext", "http_helper", "redis_key", "io_ext","datetime_ext", "mongo_key",
+        "hive", "environ", "signal", "http", "luabt", "service", "logger", "utility",
+        "import", "class", "enum", "enum_kv_list", "mixin", "property", "singleton", "super", "implemented","logfeature",
+        "classof", "is_class", "is_subclass", "instanceof","is_singleton", "conv_class","show_class_track","set_open_track","set_const_table",
+        --library
+        "codec", "crypt", "stdfs", "luabus", "json", "curl", "timer", "log", "http", "bson",
     }
 }
 std = "max+hive"

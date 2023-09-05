@@ -1,7 +1,6 @@
 -- rpc_client.lua
-local lcodec         = require("lcodec")
 local lbus           = require("luabus")
-local jumphash       = lcodec.jumphash
+local jumphash       = codec.jumphash
 local tunpack        = table.unpack
 local tpack          = table.pack
 local log_err        = logger.err

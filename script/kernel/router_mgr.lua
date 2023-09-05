@@ -1,6 +1,5 @@
 -- router_mgr.lua
-local lcodec           = require("lcodec")
-local jumphash         = lcodec.jumphash
+local jumphash         = codec.jumphash
 local pairs            = pairs
 local log_err          = logger.err
 local log_info         = logger.info

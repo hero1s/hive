@@ -1,10 +1,9 @@
 --mysql.lua
-local lcrypt                     = require("lcrypt")
 local Socket                     = import("driver/socket.lua")
 local QueueFIFO                  = import("container/queue_fifo.lua")
 
 local tonumber                   = tonumber
-local lsha1                      = lcrypt.sha1
+local lsha1                      = crypt.sha1
 local ssub                       = string.sub
 local srep                       = string.rep
 local sgsub                      = string.gsub

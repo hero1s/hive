@@ -1,8 +1,5 @@
 --logger.lua
 --logger功能支持
-local llog        = require("lualog")
-local lstdfs      = require("lstdfs")
-local lcodec      = require("lcodec")
 local pcall       = pcall
 local pairs       = pairs
 local sformat     = string.format
@@ -11,12 +8,12 @@ local ssub        = string.sub
 local dgetinfo    = debug.getinfo
 local tpack       = table.pack
 local tunpack     = table.unpack
-local fsstem      = lstdfs.stem
-local serialize   = lcodec.serialize
-local lwarn       = llog.warn
-local lfilter     = llog.filter
+local fsstem      = stdfs.stem
+local serialize   = codec.serialize
+local lwarn       = log.warn
+local lfilter     = log.filter
 
-local LOG_LEVEL   = llog.LOG_LEVEL
+local LOG_LEVEL   = log.LOG_LEVEL
 
 logger            = {}
 logfeature        = {}
@@ -36,15 +33,15 @@ function logger.init()
     logshow                   = environ.number("HIVE_LOG_SHOW", 0)
     log_lvl                   = environ.number("HIVE_LOG_LVL", 1)
 
-    llog.set_max_logsize(log_size)
-    llog.set_clean_time(maxdays * 24 * 3600)
-    llog.option(path, service_name, index, rolltype);
+    log.set_max_logsize(log_size)
+    log.set_clean_time(maxdays * 24 * 3600)
+    log.option(path, service_name, index, rolltype);
     --设置日志过滤
     logger.filter(log_lvl)
     --添加输出目标
-    llog.add_dest(service_name);
+    log.add_dest(service_name);
     --错误日志备份
-    llog.add_lvl_dest(LOG_LEVEL.ERROR)
+    log.add_lvl_dest(LOG_LEVEL.ERROR)
 end
 
 function logger.add_monitor(monitor, lvl)
@@ -57,7 +54,7 @@ end
 
 function logger.filter(level)
     for lvl = LOG_LEVEL.TRACE, LOG_LEVEL.FATAL do
-        --llog.filter(level, on/off)
+        --log.filter(level, on/off)
         lfilter(lvl, lvl >= level)
     end
 end
@@ -107,12 +104,12 @@ end
 
 local LOG_LEVEL_OPTIONS = {
     --lvl_func,    extend,  swline
-    [LOG_LEVEL.TRACE] = { "trace", { llog.trace, true, false } },
-    [LOG_LEVEL.DEBUG] = { "debug", { llog.debug, true, false } },
-    [LOG_LEVEL.INFO]  = { "info", { llog.info, false, false } },
-    [LOG_LEVEL.WARN]  = { "warn", { llog.warn, true, false } },
-    [LOG_LEVEL.ERROR] = { "err", { llog.error, true, false } },
-    [LOG_LEVEL.FATAL] = { "fatal", { llog.fatal, true, true } }
+    [LOG_LEVEL.TRACE] = { "trace", { log.trace, true, false } },
+    [LOG_LEVEL.DEBUG] = { "debug", { log.debug, true, false } },
+    [LOG_LEVEL.INFO]  = { "info", { log.info, false, false } },
+    [LOG_LEVEL.WARN]  = { "warn", { log.warn, true, false } },
+    [LOG_LEVEL.ERROR] = { "err", { log.error, true, false } },
+    [LOG_LEVEL.FATAL] = { "fatal", { log.fatal, true, true } }
 }
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl_name, log_conf = tunpack(conf)
@@ -138,9 +135,9 @@ for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
             local info = dgetinfo(2, "S")
             feature    = fsstem(info.short_src)
         end
-        llog.add_dest(feature, path)
-        llog.ignore_prefix(feature, prefix)
-        llog.ignore_def(feature, def)
+        log.add_dest(feature, path)
+        log.ignore_prefix(feature, prefix)
+        log.ignore_def(feature, def)
         return function(fmt, ...)
             local ok, res = pcall(logger_output, feature, false, lvl, lvl_name, fmt, log_conf, ...)
             if not ok then

@@ -1,7 +1,5 @@
 --update_mgr.lua
-local lcodec        = require("lcodec")
-local ltimer        = require("ltimer")
-local ltime         = ltimer.time
+local ltime         = timer.time
 local pairs         = pairs
 local odate         = os.date
 local log_info      = logger.info
@@ -11,7 +9,7 @@ local sig_check     = signal.check
 local signal_quit   = signal.quit
 local sig_reload    = signal.reload
 local tweak         = table_ext.weak
-local guid_new      = lcodec.guid_new
+local guid_new      = codec.guid_new
 local is_same_day   = datetime_ext.is_same_day
 
 local timer_mgr     = hive.get("timer_mgr")

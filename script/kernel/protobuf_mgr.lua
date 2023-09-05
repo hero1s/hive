@@ -2,15 +2,14 @@
 --升级pb库时,修改lpb_tointegerx函数支持浮点数自动转整数
 
 local protobuf     = require('pb')
-local lstdfs       = require('lstdfs')
 
 local pairs        = pairs
 local ipairs       = ipairs
 local pcall        = pcall
-local ldir         = lstdfs.dir
-local lappend      = lstdfs.append
-local lfilename    = lstdfs.filename
-local lextension   = lstdfs.extension
+local ldir         = stdfs.dir
+local lappend      = stdfs.append
+local lfilename    = stdfs.filename
+local lextension   = stdfs.extension
 local supper       = string.upper
 local ssplit       = string_ext.split
 local sends_with   = string_ext.ends_with

@@ -1,17 +1,15 @@
 --timer_mgr.lua
-local ltimer          = require("ltimer")
-local lcodec          = require("lcodec")
 local log_err         = logger.err
 local log_info        = logger.info
 local ipairs          = ipairs
 local tpack           = table.pack
 local tunpack         = table.unpack
-local new_guid        = lcodec.guid_new
-local lclock_ms       = ltimer.clock_ms
-local lnow_ms         = ltimer.now_ms
-local lcron_next      = ltimer.cron_next
-local ltinsert        = ltimer.insert
-local ltupdate        = ltimer.update
+local new_guid        = codec.guid_new
+local lclock_ms       = timer.clock_ms
+local lnow_ms         = timer.now_ms
+local lcron_next      = timer.cron_next
+local ltinsert        = timer.insert
+local ltupdate        = timer.update
 
 --定时器精度，20ms
 local TIMER_ACCURYACY = 20

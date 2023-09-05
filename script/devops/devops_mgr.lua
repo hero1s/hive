@@ -45,12 +45,11 @@ function DevopsMgr:file_pid_oper(is_create)
     if not hive.is_linux() then
         return
     end
-    local lstdfs   = require("lstdfs")
     local filename = self:pid_file_name()
     if is_create then
-        local is_dir = lstdfs.is_directory("./pid")
+        local is_dir = stdfs.is_directory("./pid")
         if is_dir ~= true then
-            lstdfs.mkdir("./pid")
+            stdfs.mkdir("./pid")
             log_err("pid dir is not exist,create")
         end
         local file = io.open(filename, "w")
@@ -68,7 +67,7 @@ function DevopsMgr:file_pid_oper(is_create)
             pid = tonumber(pid)
         end
         if pid == hive.pid then
-            lstdfs.remove(filename)
+            stdfs.remove(filename)
         end
     end
 end

@@ -1,6 +1,6 @@
 ﻿local ljson      = require("lyyjson")
-local ltimer     = require("ltimer")
-local lclock_ms  = ltimer.clock_ms
+
+local lclock_ms  = timer.clock_ms
 
 local log_err    = logger.err
 local log_warn   = logger.warn

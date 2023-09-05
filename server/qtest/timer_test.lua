@@ -3,7 +3,7 @@ local ltimer    = require("ltimer")
 local sformat   = string.format
 local log_info  = logger.info
 
---llog.init("./newlog/", "qtest", 500000)
+--log.init("./newlog/", "qtest", 500000)
 
 local msec, sec = ltimer.time()
 log_info("time: sec:%s, msec:%s", sec, msec)
