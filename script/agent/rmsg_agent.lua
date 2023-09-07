@@ -4,7 +4,7 @@ local config_mgr  = hive.get("config_mgr")
 local thread_mgr  = hive.get("thread_mgr")
 local sformat     = string.format
 local tjoin       = table_ext.join
-
+local PeriodTime  = enum("PeriodTime")
 local RmsgAgent   = singleton()
 local prop        = property(RmsgAgent)
 prop:accessor("rmsgs", {})
@@ -49,6 +49,13 @@ end
 
 function RmsgAgent:send_message(rmsg_type, from, to, body, typ, id)
     return self.rmsgs[rmsg_type]:send_message(from, to, body, typ or rmsg_type, id)
+end
+
+function RmsgAgent:safe_send_message(rmsg_type, from, to, body, typ, id)
+    local uuid = id or hive.new_guid()
+    thread_mgr:success_call(PeriodTime.SECOND_10_MS, function()
+        return self:send_message(rmsg_type, from, to, body, typ, uuid)
+    end)
 end
 
 function RmsgAgent:delete_message(rmsg_type, to, timestamp)

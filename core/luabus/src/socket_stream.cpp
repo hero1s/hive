@@ -516,7 +516,9 @@ void socket_stream::dispatch_package(bool reset) {
 	while (m_link_status == elink_status::link_connected) {
 		size_t data_len = 0, package_size = 0;
 		auto* data = m_recv_buffer.data(&data_len);
-		if (eproto_type::proto_rpc == m_proto_type) {
+		if (data_len == 0) break;
+		switch (m_proto_type) {
+		case eproto_type::proto_rpc: {
 			// 检测握手
 			if (!m_handshake) {
 				auto ret = handshake_rpc(data, data_len);
@@ -526,10 +528,7 @@ void socket_stream::dispatch_package(bool reset) {
 				break;
 			}
 			size_t header_len = sizeof(router_header);
-			auto data = m_recv_buffer.peek_data(header_len);
-			if (!data) {
-				break;
-			}
+			if(!m_recv_buffer.peek_data(header_len))return;
 			router_header* header = (router_header*)data;
 			// 当前包长小于headlen, 关闭连接
 			if (header->len < header_len) {
@@ -537,60 +536,51 @@ void socket_stream::dispatch_package(bool reset) {
 				break;
 			}
 			package_size = header->len;
-		}
-		else if (eproto_type::proto_head == m_proto_type) {
-			// pack模式获取socket_header
+		}break;
+		case eproto_type::proto_head: {
 			size_t header_len = sizeof(socket_header);
-			auto data = m_recv_buffer.peek_data(header_len);
-			if (!data) {
-				break;
-			}
+			if(!m_recv_buffer.peek_data(header_len))return;
 			socket_header* header = (socket_header*)data;
 			// 当前包长小于headlen，关闭连接
 			if (header->len < header_len) {
 				on_error(fmt::format("package-length-err:{}/{},ip:{}", header->len, header_len,m_ip).c_str());
-				break;
+				return;
 			}
 			// 当前包头标识的数据超过最大长度
 			if (header->len > NET_PACKET_MAX_LEN) {
 				on_error(fmt::format("package-parse-large:{},ip:{}", header->len,m_ip).c_str());
-				break;
+				return;
 			}
 #ifdef CHECK_SEQ
 			// 当前包序号错误
 			if (header->seq_id != m_recv_seq_id) {
 				on_error(fmt::format("seq_id not eq,ip:{},recv:{}--cur:{},cmd:{},len:{}", m_ip, header->seq_id, m_recv_seq_id, header->cmd_id, header->len).c_str());
-				break;
+				return;
 			}
 #endif
 			m_fc_package++;
 			m_fc_bytes += header->len;
 
 			package_size = header->len;
-		}
-		else if (eproto_type::proto_mongo == m_proto_type) {
+		}break;
+		case eproto_type::proto_mongo: {
 			uint32_t* length = (uint32_t*)m_recv_buffer.peek_data(sizeof(uint32_t));
-			if (!length) {
-				break;
-			}
+			if (!length) return;
 			//package_size = length + contents
 			package_size = *length;
-		}
-		else if (eproto_type::proto_mysql == m_proto_type) {
+		}break;
+		case eproto_type::proto_mysql: {
 			uint32_t* length = (uint32_t*)m_recv_buffer.peek_data(sizeof(uint32_t));
-			if (!length) {
-				break;
-			}
+			if (!length) return;
 			//package_size = length + serialize_id + contents
 			package_size = ((*length) >> 8) + sizeof(uint32_t);
-		}
-		else if (eproto_type::proto_text == m_proto_type) {
-			package_size = m_recv_buffer.size();
-			if (data_len == 0) break;
-		}
-		else {
-			on_error(fmt::format("proto-type-not-suppert!:{},ip:{}", (int)m_proto_type,m_ip).c_str());
+		}break;
+		case eproto_type::proto_text: 
+			package_size = data_len;
 			break;
+		default: 
+			on_error(fmt::format("proto-type-not-suppert!:{},ip:{}", (int)m_proto_type,m_ip).c_str());
+			return;
 		}
 
 		// 数据包还没有收完整
