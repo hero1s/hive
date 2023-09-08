@@ -4,6 +4,7 @@
 namespace lcodec {
 
     thread_local rdscodec thread_rds;
+    thread_local wsscodec thread_wss;
     thread_local httpcodec thread_http;
     thread_local luakit::luabuf thread_buff;
 
@@ -11,6 +12,12 @@ namespace lcodec {
         thread_rds.set_codec(codec);
         thread_rds.set_buff(&thread_buff);
         return &thread_rds;
+    }
+
+    static wsscodec* wss_codec(codec_base* codec) {
+        thread_wss.set_codec(codec);
+        thread_wss.set_buff(&thread_buff);
+        return &thread_wss;
     }
 
     static httpcodec* http_codec(codec_base* codec) {

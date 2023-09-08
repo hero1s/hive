@@ -9,3 +9,4 @@
 #include "utf8.h"
 #include "http.h"
 #include "redis.h"
+#include "websocket.h"

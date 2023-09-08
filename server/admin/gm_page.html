@@ -318,7 +318,7 @@
                 url:"/message",
                 type: "POST",
                 dataType: "json",
-                contentType: "utf-8",
+                contentType: "application/json",
                 data: JSON.stringify({ data : json_data }),
                 success: function (res) {
                     if (res.code != 0) {

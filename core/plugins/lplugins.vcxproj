@@ -17,8 +17,10 @@
     <ClInclude Include="src\lcodec\hash.h"/>
     <ClInclude Include="src\lcodec\http.h"/>
     <ClInclude Include="src\lcodec\lcodec.h"/>
+    <ClInclude Include="src\lcodec\mysql.h"/>
     <ClInclude Include="src\lcodec\redis.h"/>
     <ClInclude Include="src\lcodec\utf8.h"/>
+    <ClInclude Include="src\lcodec\websocket.h"/>
     <ClInclude Include="src\lcrypt\base64.h"/>
     <ClInclude Include="src\lcrypt\des56.h"/>
     <ClInclude Include="src\lcrypt\lcrypt.h"/>
@@ -28,12 +30,9 @@
     <ClInclude Include="src\lcrypt\sha1.h"/>
     <ClInclude Include="src\lcrypt\sha2.h"/>
     <ClInclude Include="src\lcrypt\xxtea.h"/>
-    <ClInclude Include="src\lhttp\http.h"/>
     <ClInclude Include="src\lrandom\random.hpp"/>
     <ClInclude Include="src\ltimer\croncpp.h"/>
     <ClInclude Include="src\ltimer\ltimer.h"/>
-    <ClInclude Include="src\lyyjson\buffer.hpp"/>
-    <ClInclude Include="src\lyyjson\yyjson.h"/>
     <ClInclude Include="src\lzset\zset.hpp"/>
     <ClInclude Include="src\protobuf\pb.h"/>
     <ClInclude Include="src\tools\helper.h"/>
@@ -55,12 +54,9 @@
     <ClCompile Include="src\lcrypt\sha1.c"/>
     <ClCompile Include="src\lcrypt\sha2.c"/>
     <ClCompile Include="src\lcrypt\xxtea.c"/>
-    <ClCompile Include="src\lhttp\lhttp.cpp"/>
     <ClCompile Include="src\lrandom\lrandom.cpp"/>
     <ClCompile Include="src\lstdfs\lstdfs.cpp"/>
     <ClCompile Include="src\ltimer\ltimer.cpp"/>
-    <ClCompile Include="src\lyyjson\lyyjson.cpp"/>
-    <ClCompile Include="src\lyyjson\yyjson.c"/>
     <ClCompile Include="src\lzset\lzset.cpp"/>
     <ClCompile Include="src\mongo\lua-mongo.c"/>
     <ClCompile Include="src\protobuf\pb.c"/>

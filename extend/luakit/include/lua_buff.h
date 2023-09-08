@@ -87,10 +87,10 @@ namespace luakit {
             return 0;
         }
 
-        uint8_t* peek_data(size_t peek_len) {
-            size_t data_len = m_tail - m_head;
+        uint8_t* peek_data(size_t peek_len, size_t offset = 0) {
+            size_t data_len = m_tail - m_head - offset;
             if (peek_len > 0 && data_len >= peek_len) {
-                return m_head;
+                return m_head + offset;
             }
             return nullptr;
         }

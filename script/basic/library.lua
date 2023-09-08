@@ -11,7 +11,7 @@ local librarys = {
     --定时器库
     timer  = require("ltimer"),
     --json库
-    json   = require("lyyjson"),
+    json   = require("ljson"),
     --bson库
     bson   = require("bson"),
     --编码库

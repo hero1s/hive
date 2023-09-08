@@ -4,14 +4,11 @@ import("agent/online_agent.lua")
 
 local gm_page       = nil
 local HttpServer    = import("network/http_server.lua")
-
-local json_decode   = hive.json_decode
 local tunpack       = table.unpack
 local env_get       = environ.get
 local log_err       = logger.err
 local log_debug     = logger.debug
 local readfile      = io_ext.readfile
-local strim         = string_ext.trim
 
 local GMType        = enum("GMType")
 local KernCode      = enum("KernCode")
@@ -116,24 +113,20 @@ function AdminMgr:on_gm_page(url, querys, request)
 end
 
 --gm列表
-function AdminMgr:on_gmlist(url, querys, request)
+function AdminMgr:on_gmlist(url, querys)
     return cmdline:get_command_defines()
 end
 
 --后台GM调用，字符串格式
-function AdminMgr:on_command(url, body, request)
+function AdminMgr:on_command(url, body)
     log_debug("[AdminMgr][on_command] body: %s", body)
-    local cmd_req = json_decode(body)
-    local data    = strim(cmd_req.data)
-    return self:exec_command(data)
+    return self:exec_command(body.data)
 end
 
 --后台GM调用，table格式
-function AdminMgr:on_message(url, body, request)
+function AdminMgr:on_message(url, body)
     log_debug("[AdminMgr][on_message] body: %s", body)
-    local cmd_req = json_decode(body)
-    local data    = cmd_req.data
-    return self:exec_message(data)
+    return self:exec_message(body.data)
 end
 
 -------------------------------------------------------------------------

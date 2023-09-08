@@ -1,28 +1,25 @@
 --http_server.lua
-local lhttp             = require("lhttp")
 local Socket            = import("driver/socket.lua")
 
 local type              = type
-local tostring          = tostring
 local log_warn          = logger.warn
 local log_info          = logger.info
 local log_debug         = logger.debug
 local log_err           = logger.err
-local json_encode       = hive.json_encode
 local tunpack           = table.unpack
 local signal_quit       = signal.quit
 local saddr             = string_ext.addr
 
 local HTTP_CALL_TIMEOUT = hive.enum("NetwkTime", "HTTP_CALL_TIMEOUT")
-local thread_mgr        = hive.get("thread_mgr")
 
 local HttpServer        = class()
 local prop              = property(HttpServer)
 prop:reader("listener", nil)        --网络连接对象
 prop:reader("ip", nil)              --http server地址
 prop:reader("port", 8080)           --http server端口
+prop:reader("codec", nil)           --codec
+prop:reader("listener", nil)        --网络连接对象
 prop:reader("clients", {})          --clients
-prop:reader("requests", {})         --requests
 prop:reader("get_handlers", {})     --get_handlers
 prop:reader("put_handlers", {})     --put_handlers
 prop:reader("del_handlers", {})     --del_handlers
@@ -31,6 +28,8 @@ prop:accessor("limit_ips", nil)
 prop:reader("qps_counter", nil)
 
 function HttpServer:__init(http_addr, induce)
+    local jcodec = json.jsoncodec()
+    self.codec   = codec.httpcodec(jcodec)
     self:setup(http_addr, induce)
 end
 
@@ -50,8 +49,7 @@ function HttpServer:setup(http_addr, induce)
 end
 
 function HttpServer:close(token, socket)
-    self.clients[token]  = nil
-    self.requests[token] = nil
+    self.clients[token] = nil
     socket:close()
 end
 
@@ -61,8 +59,7 @@ function HttpServer:on_socket_error(socket, token, err)
         self.listener = nil
         return
     end
-    self.clients[token]  = nil
-    self.requests[token] = nil
+    self.clients[token] = nil
 end
 
 function HttpServer:on_socket_accept(socket, token)
@@ -73,38 +70,23 @@ function HttpServer:on_socket_accept(socket, token)
         return
     end
     self.clients[token] = socket
+    socket:set_codec(self.codec)
 end
 
-function HttpServer:on_socket_recv(socket, token)
-    local client = self.clients[token]
-    if not client then
-        return
+function HttpServer:on_socket_recv(socket, method, url, params, headers, body)
+    log_debug("[HttpServer][on_socket_recv] recv:[%s][%s],params:%s,headers:%s,body:%s", method, url, params, headers, body)
+    if method == "GET" then
+        return self:on_http_request(self.get_handlers, socket, url, params, headers)
     end
-    local request = self.requests[token]
-    if not request then
-        request              = lhttp.create_request()
-        self.requests[token] = request
+    if method == "POST" then
+        return self:on_http_request(self.post_handlers, socket, url, body, params, headers)
     end
-    local buf = socket:get_recvbuf()
-    if not request.parse(buf) then
-        return
+    if method == "PUT" then
+        return self:on_http_request(self.put_handlers, socket, url, body, params, headers)
     end
-    socket:pop(#buf)
-    thread_mgr:fork(function()
-        local method = request.method
-        if method == "GET" then
-            return self:on_http_request(self.get_handlers, socket, request.url, request.get_params(), request)
-        end
-        if method == "POST" then
-            return self:on_http_request(self.post_handlers, socket, request.url, request.body, request)
-        end
-        if method == "PUT" then
-            return self:on_http_request(self.put_handlers, socket, request.url, request.body, request)
-        end
-        if method == "DELETE" then
-            return self:on_http_request(self.del_handlers, socket, request.url, request.get_params(), request)
-        end
-    end)
+    if method == "DELETE" then
+        return self:on_http_request(self.del_handlers, socket, url, params, headers)
+    end
 end
 
 --注册get回调
@@ -170,24 +152,14 @@ function HttpServer:response(socket, status, response, headers)
     if not token or not response then
         return
     end
-    local new_resp = lhttp.create_response()
-    for key, value in pairs(headers or {}) do
-        new_resp.set_header(key, value)
+    if not headers then
+        headers = { ["Content-Type"] = "application/json" }
     end
-    new_resp.set_header("connection", "close")
-    if type(response) == "table" then
-        new_resp.set_header("Content-Type", "application/json")
-        new_resp.content = json_encode(response)
-    elseif type(response) == "string" then
-        new_resp.content = response
-        local html       = response:find("<html")
-        new_resp.set_header("Content-Type", html and "text/html" or "text/plain")
-    else
-        new_resp.set_header("Content-Type", "text/plain")
-        new_resp.content = tostring(response)
+    if type(response) == "string" then
+        local html              = response:find("<html")
+        headers["Content-Type"] = html and "text/html" or "text/plain"
     end
-    new_resp.status = status
-    socket:send(new_resp.serialize())
+    socket:send_data(status, headers, response)
     self:close(token, socket)
 end
 

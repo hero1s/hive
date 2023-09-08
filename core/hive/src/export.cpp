@@ -20,10 +20,8 @@ extern "C"
 		REGISTER_CUSTOM_LIBRARY("mongo", luaopen_mongo);
 		REGISTER_CUSTOM_LIBRARY("ltimer", luaopen_ltimer);
 		REGISTER_CUSTOM_LIBRARY("lcodec", luaopen_lcodec);
-		REGISTER_CUSTOM_LIBRARY("lhttp", luaopen_lhttp);
 		REGISTER_CUSTOM_LIBRARY("lstdfs", luaopen_lstdfs);
 		REGISTER_CUSTOM_LIBRARY("lcrypt", luaopen_lcrypt);
-		REGISTER_CUSTOM_LIBRARY("lyyjson", luaopen_lyyjson);
 		REGISTER_CUSTOM_LIBRARY("luabus", luaopen_luabus);
 		REGISTER_CUSTOM_LIBRARY("laes256", luaopen_aes256);
 

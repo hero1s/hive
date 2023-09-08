@@ -237,7 +237,7 @@ namespace luakit {
             }
         } catch (const std::exception& e){
             luaL_error(L, e.what());
-        }       
+        }
         return lua_gettop(L) - top;
     }
 
