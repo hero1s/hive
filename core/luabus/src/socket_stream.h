@@ -53,7 +53,6 @@ struct socket_stream : public socket_object
 	int64_t max_process_time();
 
 	socket_mgr* m_mgr = nullptr;
-	eproto_type     m_proto_type = eproto_type::proto_rpc;
 	elink_type      m_link_type = elink_type::elink_tcp_client;
 	socket_t m_socket = INVALID_SOCKET;
 	luabuf m_recv_buffer;

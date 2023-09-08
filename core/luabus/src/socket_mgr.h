@@ -32,9 +32,10 @@ enum class eproto_type : int
 	proto_rpc		= 0,   // rpc协议,根据协议头解析
 	proto_head		= 1,   // head协议,根据协议头解析
 	proto_text		= 2,   // text协议,文本协议
-	proto_mongo		= 3,   // mongo协议，协议前4个字节为长度
-	proto_mysql		= 4,   // mysql协议，协议前3个字节为长度
-	proto_max		= 5,   // max 
+	proto_wss		= 3,   // wss协议，协议前n个字节带长度
+	proto_mongo		= 4,   // mongo协议，协议前4个字节为长度
+	proto_mysql		= 5,   // mysql协议，协议前3个字节为长度
+	proto_max		= 6,   // max 
 };
 
 struct sendv_item
@@ -71,6 +72,7 @@ struct socket_object
 	elink_status link_status() { return m_link_status; };
 	void set_handshake(bool status) { m_handshake = status; };
 protected:
+	eproto_type m_proto_type = eproto_type::proto_rpc;
 	elink_status m_link_status = elink_status::link_init;
 	bool         m_handshake = true; //握手状态
 };

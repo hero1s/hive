@@ -4,8 +4,9 @@
 
 #ifdef _MSC_VER
 socket_listener::socket_listener(socket_mgr* mgr,
-	LPFN_ACCEPTEX accept_func, LPFN_GETACCEPTEXSOCKADDRS addrs_func, eproto_type proto_type) : m_proto_type(proto_type) {
+	LPFN_ACCEPTEX accept_func, LPFN_GETACCEPTEXSOCKADDRS addrs_func, eproto_type proto_type) {
 	mgr->increase_count();
+	m_proto_type = proto_type;
 	m_mgr = mgr;
 	m_accept_func = accept_func;
 	m_addrs_func = addrs_func;

@@ -119,6 +119,7 @@ namespace lcodec {
         llcodec.set_function("bitarray", barray);
         llcodec.set_function("rediscodec", rds_codec);
         llcodec.set_function("httpcodec", http_codec);
+        llcodec.set_function("wsscodec", wss_codec);
 
         llcodec.set_function("utf8_gbk", utf8_gbk);
         llcodec.set_function("gbk_utf8", gbk_utf8);

@@ -17,8 +17,9 @@ static const int s_send_flag = 0;
 
 #ifdef _MSC_VER
 socket_stream::socket_stream(socket_mgr* mgr, LPFN_CONNECTEX connect_func, eproto_type proto_type, elink_type link_type) :
-	m_proto_type(proto_type), m_link_type(link_type) {
+	m_link_type(link_type) {
 	mgr->increase_count();
+	m_proto_type = proto_type;
 	m_mgr = mgr;
 	m_connect_func = connect_func;
 	m_ip[0] = 0;
@@ -28,7 +29,7 @@ socket_stream::socket_stream(socket_mgr* mgr, LPFN_CONNECTEX connect_func, eprot
 #endif
 
 socket_stream::socket_stream(socket_mgr* mgr, eproto_type proto_type, elink_type link_type) :
-	m_proto_type(proto_type), m_link_type(link_type) {
+	m_link_type(link_type) {
 	mgr->increase_count();
 	m_proto_type = proto_type;
 	m_mgr = mgr;
@@ -574,6 +575,19 @@ void socket_stream::dispatch_package(bool reset) {
 			if (!length) return;
 			//package_size = length + serialize_id + contents
 			package_size = ((*length) >> 8) + sizeof(uint32_t);
+		}break;
+		case eproto_type::proto_wss: {
+			uint16_t* length = (uint16_t*)m_recv_buffer.peek_data(sizeof(uint16_t));
+			if (!length) return;
+			uint16_t payload = (*length) & 0x7f;
+			if (payload < 0x7e) {
+				package_size = payload + sizeof(uint16_t);
+			}
+			else {
+				size_t* length = (size_t*)m_recv_buffer.peek_data((payload == 0x7f) ? 8 : 2, sizeof(uint16_t));
+				if (!length) return;
+				package_size = (*length) + sizeof(uint16_t);
+			}
 		}break;
 		case eproto_type::proto_text: 
 			package_size = data_len;

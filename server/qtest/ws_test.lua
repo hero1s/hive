@@ -9,5 +9,5 @@ local on_message = function(url, message)
 end
 local WSServer = import("network/ws_server.lua")
 local server = WSServer("0.0.0.0:8001")
-server:register_handler("*", on_message)
+--server:register_handler("*", on_message)
 hive.server = server

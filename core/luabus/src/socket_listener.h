@@ -34,7 +34,6 @@ struct socket_listener : public socket_object
 
 private:
 	socket_mgr* m_mgr = nullptr;
-	eproto_type      m_proto_type;
 	socket_t m_socket = INVALID_SOCKET;
 	std::function<void(const char*)> m_error_cb;
 	std::function<void(int, eproto_type eproto_type)> m_accept_cb;
