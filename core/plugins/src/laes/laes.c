@@ -23,7 +23,7 @@ static int lencrypt(lua_State *L) {
 	luaL_argcheck(L,aes != NULL,1,"Need a aes object");
 	size_t length = 0;
 	const char *in = luaL_checklstring(L,2,&length);
-	//Ìî³äPKCS
+	//PKCS
 	PKCS7_Padding* pPaddingResult = addPadding(in, length, BLOCK_SIZE_128_BIT);
 	if (pPaddingResult == NULL) {
 		return luaL_argerror(L, 1, "input string's param");
@@ -73,6 +73,7 @@ static int ldecrypt(lua_State *L) {
 	}
 	PKCS7_unPadding* pUnpaddingResult = removePadding(buf,length);
 	if (pUnpaddingResult == NULL) {
+		free(buf);
 		return luaL_argerror(L, 1, "remove padding error");
 	}
 	lua_pushlstring(L, (const char*)pUnpaddingResult->dataWithoutPadding, pUnpaddingResult->dataLengthWithoutPadding);

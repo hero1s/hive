@@ -60,6 +60,15 @@ function RedisAgent:delete(key)
     return false
 end
 
+function RedisAgent:expire(key, seconds)
+    local ok, code, res = self:execute({ "expire", key, seconds }, key)
+    if check_success(code, ok) then
+        return true
+    end
+    log_err("[RedisAgent][expire] ok:%s,code:%s,res:%s,ref:%s", ok, code, res, hive.where_call())
+    return false
+end
+
 function RedisAgent:start_local_run()
     if self.local_run then
         return

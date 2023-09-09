@@ -180,15 +180,15 @@ end
 
 function NetServer:encode(cmd_id, data, flag)
     local encode_data = self.coder:encode(cmd_id, data)
-    -- 加密处理
-    if out_encrypt then
-        encode_data = b64_encode(encode_data)
-        flag        = flag | FLAG_ENCRYPT
-    end
     -- 压缩处理
     if out_press then
         encode_data = lz4_encode(encode_data)
         flag        = flag | FLAG_ZIP
+    end
+    -- 加密处理
+    if out_encrypt then
+        encode_data = b64_encode(encode_data)
+        flag        = flag | FLAG_ENCRYPT
     end
     return encode_data, flag
 end
@@ -198,13 +198,13 @@ function NetServer:decode(cmd_id, data, flag)
         return nil
     end
     local de_data = data
-    if flag & FLAG_ZIP == FLAG_ZIP then
-        --解压处理
-        de_data = lz4_decode(de_data)
-    end
     if flag & FLAG_ENCRYPT == FLAG_ENCRYPT then
         --解密处理
         de_data = b64_decode(de_data)
+    end
+    if flag & FLAG_ZIP == FLAG_ZIP then
+        --解压处理
+        de_data = lz4_decode(de_data)
     end
     return self.coder:decode(cmd_id, de_data)
 end
