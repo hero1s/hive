@@ -18,8 +18,8 @@ socket_listener::socket_listener(socket_mgr* mgr,
 #endif
 
 #if defined(__linux) || defined(__APPLE__)
-socket_listener::socket_listener(socket_mgr* mgr, eproto_type proto_type) :
-	m_proto_type(proto_type) {
+socket_listener::socket_listener(socket_mgr* mgr, eproto_type proto_type) {
+	m_proto_type = proto_type;
 	mgr->increase_count();
 	m_mgr = mgr;
 }
