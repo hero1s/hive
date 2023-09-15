@@ -2,8 +2,6 @@
 local ssub            = string.sub
 local log_err         = logger.err
 local log_info        = logger.info
-local ends_with       = string_ext.ends_with
-local split_pos       = string_ext.split_pos
 local hxpcall         = hive.xpcall
 
 local eproto_type     = luabus.eproto_type
@@ -165,14 +163,6 @@ function Socket:peek(len, offset)
     offset = offset or 0
     if offset + len <= #self.recvbuf then
         return ssub(self.recvbuf, offset + 1, offset + len)
-    end
-end
-
-function Socket:peek_lines(split_char)
-    if #self.recvbuf >= #split_char then
-        if ends_with(self.recvbuf, split_char) then
-            return split_pos(self.recvbuf, split_char)
-        end
     end
 end
 

@@ -1,7 +1,6 @@
 --redis_mgr.lua
 local sformat      = string.format
 local tpack        = table.pack
-local mrandom      = math_ext.random
 local log_err      = logger.err
 local KernCode     = enum("KernCode")
 local SUCCESS      = KernCode.SUCCESS
@@ -50,7 +49,7 @@ end
 
 function RedisMgr:execute(db_name, primary_id, cmd, ...)
     local redisdb = self:get_db(db_name)
-    if redisdb and redisdb:set_executer(primary_id or mrandom()) then
+    if redisdb then
         local ok, res_oe = redisdb:execute(cmd, ...)
         if not ok then
             log_err("[RedisMgr][execute] execute %s (%s) failed, because: %s", cmd, tpack(...), res_oe)
