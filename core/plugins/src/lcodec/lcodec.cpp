@@ -3,27 +3,33 @@
 
 namespace lcodec {
 
-    thread_local rdscodec thread_rds;
-    thread_local wsscodec thread_wss;
-    thread_local httpcodec thread_http;
     thread_local luakit::luabuf thread_buff;
 
     static rdscodec* rds_codec(codec_base* codec) {
-        thread_rds.set_codec(codec);
-        thread_rds.set_buff(&thread_buff);
-        return &thread_rds;
+        rdscodec* rcodec = new rdscodec();
+        rcodec->set_codec(codec);
+        rcodec->set_buff(&thread_buff);
+        return rcodec;
     }
 
     static wsscodec* wss_codec(codec_base* codec) {
-        thread_wss.set_codec(codec);
-        thread_wss.set_buff(&thread_buff);
-        return &thread_wss;
+        wsscodec* wcodec = new wsscodec();
+        wcodec->set_codec(codec);
+        wcodec->set_buff(&thread_buff);
+        return wcodec;
     }
 
     static httpcodec* http_codec(codec_base* codec) {
-        thread_http.set_codec(codec);
-        thread_http.set_buff(&thread_buff);
-        return &thread_http;
+        httpcodec* hcodec = new httpcodec();
+        hcodec->set_codec(codec);
+        hcodec->set_buff(&thread_buff);
+        return hcodec;
+    }
+
+    static mysqlscodec* mysql_codec(size_t session_id) {
+        mysqlscodec* codec = new mysqlscodec(session_id);
+        codec->set_buff(&thread_buff);
+        return codec;
     }
 
     static int serialize(lua_State* L) {
@@ -117,10 +123,11 @@ namespace lcodec {
         llcodec.set_function("fnv_1a_32", fnv_1a_32_l);
         llcodec.set_function("murmur3_32", murmur3_32_l);
         llcodec.set_function("bitarray", barray);
+        llcodec.set_function("mysqlcodec", mysql_codec);
         llcodec.set_function("rediscodec", rds_codec);
         llcodec.set_function("httpcodec", http_codec);
         llcodec.set_function("wsscodec", wss_codec);
-
+        
         llcodec.set_function("utf8_gbk", utf8_gbk);
         llcodec.set_function("gbk_utf8", gbk_utf8);
 

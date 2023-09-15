@@ -32,10 +32,8 @@ enum class eproto_type : int
 	proto_rpc		= 0,   // rpc协议,根据协议头解析
 	proto_head		= 1,   // head协议,根据协议头解析
 	proto_text		= 2,   // text协议,文本协议
-	proto_wss		= 3,   // wss协议，协议前n个字节带长度
-	proto_mongo		= 4,   // mongo协议，协议前4个字节为长度
-	proto_mysql		= 5,   // mysql协议，协议前3个字节为长度
-	proto_max		= 6,   // max 
+	proto_codec		= 3,   // 自定义协议:wss,mongo,mysql协议
+	proto_max		= 4,   // max 
 };
 
 struct sendv_item
@@ -56,6 +54,7 @@ struct socket_object
 	virtual void set_flow_ctrl(int ctrl_package, int ctrl_bytes){ }
 	virtual int  send(const void* data, size_t data_len) { return 0; }
 	virtual int  sendv(const sendv_item items[], int count) { return 0; };
+	virtual void set_codec(codec_base* codec) { m_codec = codec; }
 	virtual void set_accept_callback(const std::function<void(int, eproto_type)>& cb) { }
 	virtual void set_connect_callback(const std::function<void(bool, const char*)>& cb) { }
 	virtual void set_package_callback(const std::function<int(slice*)>& cb) { }
@@ -72,6 +71,7 @@ struct socket_object
 	elink_status link_status() { return m_link_status; };
 	void set_handshake(bool status) { m_handshake = status; };
 protected:
+	codec_base* m_codec = nullptr;
 	eproto_type m_proto_type = eproto_type::proto_rpc;
 	elink_status m_link_status = elink_status::link_init;
 	bool         m_handshake = true; //握手状态
@@ -101,6 +101,7 @@ public:
 	int  send(uint32_t token, const void* data, size_t data_len);
 	int  sendv(uint32_t token, const sendv_item items[], int count);
 	void close(uint32_t token);
+	void set_codec(uint32_t token, codec_base* codec);
 	bool get_remote_ip(uint32_t token, std::string& ip);
 
 	void set_accept_callback(uint32_t token, const std::function<void(uint32_t, eproto_type eproto_type)>& cb);

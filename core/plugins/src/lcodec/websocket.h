@@ -9,6 +9,24 @@ namespace lcodec {
 
     class wsscodec : public codec_base {
     public:
+        virtual const char* name() { 
+            return "wss"; 
+        }
+
+        virtual int load_packet(size_t data_len) {
+            if (!m_slice) return 0;
+            uint8_t* payload = (uint8_t*)m_slice->peek(sizeof(uint8_t), 1);
+            if (!payload) return 0;
+            uint8_t masklen = (((*payload) & 0x80) == 0x80) ? 4 : 0;
+            uint8_t payloadlen = (*payload) & 0x7f;
+            if (payloadlen < 0x7e) {
+                return masklen + payloadlen + sizeof(uint16_t);
+            }
+            size_t* length = (size_t*)m_slice->peek((payloadlen == 0x7f) ? 8 : 2, sizeof(uint16_t));
+            if (!length) return 0;
+            return masklen + (*length) + sizeof(uint16_t);
+        }
+
         virtual uint8_t* encode(lua_State* L, int index, size_t* len) {
             m_buf->clean();
             uint8_t* body = nullptr;
@@ -33,9 +51,8 @@ namespace lcodec {
         }
 
         virtual size_t decode(lua_State* L) {
-            if (!m_slice) return 0;
             uint8_t head = *(uint8_t*)m_slice->read<uint8_t>();
-            if ((head & 0x80) != 0x80) throw length_error("shared packet not suppert!");
+            if ((head & 0x80) != 0x80) throw invalid_argument("sharded packet not suppert!");
             uint8_t payload  = *(uint8_t*)m_slice->read<uint8_t>();
             uint8_t opcode = head & 0xf;
             bool mask = ((payload & 0x80) == 0x80);
@@ -68,10 +85,6 @@ namespace lcodec {
             m_jcodec = codec;
         }
 
-        void set_buff(luabuf* buf) {
-            m_buf = buf;
-        }
-
     protected:
         char* xor_byte(char* buffer, char* mask, size_t blen, size_t mlen) {
             for (int i = 0; i < blen; i++) {
@@ -81,7 +94,6 @@ namespace lcodec {
         }
 
     protected:
-        luabuf*     m_buf = nullptr;
         codec_base* m_jcodec = nullptr;
     };
 }

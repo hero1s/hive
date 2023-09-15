@@ -564,30 +564,19 @@ void socket_stream::dispatch_package(bool reset) {
 
 			package_size = header->len;
 		}break;
-		case eproto_type::proto_mongo: {
-			uint32_t* length = (uint32_t*)m_recv_buffer.peek_data(sizeof(uint32_t));
-			if (!length) return;
-			//package_size = length + contents
-			package_size = *length;
-		}break;
-		case eproto_type::proto_mysql: {
-			uint32_t* length = (uint32_t*)m_recv_buffer.peek_data(sizeof(uint32_t));
-			if (!length) return;
-			//package_size = length + serialize_id + contents
-			package_size = ((*length) >> 8) + sizeof(uint32_t);
-		}break;
-		case eproto_type::proto_wss: {
-			uint16_t* length = (uint16_t*)m_recv_buffer.peek_data(sizeof(uint16_t));
-			if (!length) return;
-			uint16_t payload = (*length) & 0x7f;
-			if (payload < 0x7e) {
-				package_size = payload + sizeof(uint16_t);
+		case eproto_type::proto_codec: {
+			slice* slice = m_recv_buffer.get_slice();
+			m_codec->set_slice(slice);
+			//解析数据包头长度
+			auto len = m_codec->load_packet(data_len);
+			//当前包头长度解析失败, 关闭连接
+			if (len < 0) {
+				on_error("package-length-err");
+				break;
 			}
-			else {
-				size_t* length = (size_t*)m_recv_buffer.peek_data((payload == 0x7f) ? 8 : 2, sizeof(uint16_t));
-				if (!length) return;
-				package_size = (*length) + sizeof(uint16_t);
-			}
+			// 数据包还没有收完整
+			if (len == 0) break;
+			package_size = len;
 		}break;
 		case eproto_type::proto_text: 
 			package_size = data_len;
@@ -600,13 +589,13 @@ void socket_stream::dispatch_package(bool reset) {
 		// 数据包还没有收完整
 		if (data_len < package_size) break;
 		int read_size = m_package_cb(m_recv_buffer.get_slice(package_size));
-		// 数据包还没有收完整
-		if (read_size == 0) {
+		//数据包解析失败
+		if (m_proto_type == eproto_type::proto_codec && m_codec->failed()) {
+			on_error(m_codec->err());
 			break;
 		}
-		// 数据包解析失败
-		if (read_size < 0) {
-			on_error("package-read-err");
+		// 数据包还没有收完整
+		if (read_size == 0) {
 			break;
 		}
 		// 接收缓冲读游标调整

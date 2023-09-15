@@ -11,13 +11,15 @@ local signal_quit       = signal.quit
 local saddr             = string_ext.addr
 
 local HTTP_CALL_TIMEOUT = hive.enum("NetwkTime", "HTTP_CALL_TIMEOUT")
+local eproto_type       = luabus.eproto_type
 
 local HttpServer        = class()
 local prop              = property(HttpServer)
 prop:reader("listener", nil)        --网络连接对象
 prop:reader("ip", nil)              --http server地址
 prop:reader("port", 8080)           --http server端口
-prop:reader("codec", nil)           --codec
+prop:reader("hcodec", nil)          --codec
+prop:reader("jcodec", nil)          --codec
 prop:reader("listener", nil)        --网络连接对象
 prop:reader("clients", {})          --clients
 prop:reader("get_handlers", {})     --get_handlers
@@ -28,8 +30,8 @@ prop:accessor("limit_ips", nil)
 prop:reader("qps_counter", nil)
 
 function HttpServer:__init(http_addr, induce)
-    local jcodec = json.jsoncodec()
-    self.codec   = codec.httpcodec(jcodec)
+    self.jcodec = json.jsoncodec()
+    self.hcodec = codec.httpcodec(self.jcodec)
     self:setup(http_addr, induce)
 end
 
@@ -38,7 +40,8 @@ function HttpServer:setup(http_addr, induce)
     self.port          = induce and (self.port + hive.index - 1) or self.port
     local socket       = Socket(self)
     socket:set_timeout(HTTP_CALL_TIMEOUT)
-    if not socket:listen(self.ip, self.port) then
+    socket:set_codec(self.hcodec)
+    if not socket:listen(self.ip, self.port, eproto_type.codec) then
         log_err("[HttpServer][setup] now listen %s failed", http_addr)
         signal_quit(1)
         return
@@ -59,6 +62,7 @@ function HttpServer:on_socket_error(socket, token, err)
         self.listener = nil
         return
     end
+    log_debug("[HttpServer][on_socket_error] client(token:%s) close(%s)!", token, err)
     self.clients[token] = nil
 end
 
@@ -70,7 +74,7 @@ function HttpServer:on_socket_accept(socket, token)
         return
     end
     self.clients[token] = socket
-    socket:set_codec(self.codec)
+    socket:set_codec(self.hcodec)
 end
 
 function HttpServer:on_socket_recv(socket, method, url, params, headers, body)

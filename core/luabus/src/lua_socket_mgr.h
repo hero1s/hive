@@ -23,8 +23,8 @@ public:
 
 private:
 	lua_State* m_lvm = nullptr;
-	std::shared_ptr<socket_mgr> m_mgr;
-	std::shared_ptr<luacodec> m_codec;
-	std::shared_ptr<socket_router> m_router;
+	stdsptr<socket_mgr> m_mgr;
+	stdsptr<luacodec> m_codec;
+	stdsptr<socket_router> m_router;
 };
 

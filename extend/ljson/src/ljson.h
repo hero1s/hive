@@ -213,6 +213,10 @@ namespace ljson {
 
     class jsoncodec : public codec_base {
     public:
+        virtual int load_packet(size_t data_len) {
+            return data_len;
+        }
+
         virtual uint8_t* encode(lua_State* L, int index, size_t* len) {
             yyjson_write_err err;
             yyjson_mut_doc* doc = yyjson_mut_doc_new(nullptr);
@@ -230,6 +234,10 @@ namespace ljson {
             m_json->decode_one(L, yyjson_doc_get_root(doc), true);
             yyjson_doc_free(doc);
             return lua_gettop(L) - otop;
+        }
+        
+        virtual const char* name() { 
+            return "json"; 
         }
 
         void set_json(yyjson* json) {

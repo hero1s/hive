@@ -1,4 +1,5 @@
 #pragma once
+#include <deque>
 #include <string>
 
 #ifdef _MSC_VER
@@ -17,33 +18,47 @@ namespace lcodec {
 
     class rdscodec : public codec_base {
     public:
+        virtual void clean() {
+            sessions.clear();
+        }
+
+        virtual const char* name() { 
+            return "redis"; 
+        }
+
+        virtual int load_packet(size_t data_len) {
+            if (!m_slice) return 0;
+            return data_len;
+        }
+
         virtual uint8_t* encode(lua_State* L, int index, size_t* len) {
             m_buf->clean();
             int n = lua_gettop(L);
+            uint32_t session_id = lua_tointeger(L, index++);
             char* head = (char*)m_buf->peek_space(HEAD_SIZE);
-            m_buf->pop_space(sprintf(head, "*%d\r\n", n));
-            for (int i = 1; i <= n; ++i) {
+            m_buf->pop_space(sprintf(head, "*%d\r\n", n - index + 1));
+            for (int i = index; i <= n; ++i) {
                 encode_bulk_string(L, i);
             }
+            sessions.push_back(session_id);
             return m_buf->data(len);
         }
 
         virtual size_t decode(lua_State* L) {
-            if (!m_slice) return 0;
             int top = lua_gettop(L);
             size_t osize = m_slice->size();
             string_view buf = m_slice->contents();
+            lua_pushinteger(L, sessions.empty() ? 0 : sessions.front());
             parse_redis_packet(L, buf);
             m_slice->erase(osize - buf.size());
+            if (!sessions.empty()) {
+                sessions.pop_front();
+            }
             return lua_gettop(L) - top;
         }
 
         void set_codec(codec_base* codec) {
             m_jcodec = codec;
-        }
-
-        void set_buff(luabuf* buf) {
-            m_buf = buf;
         }
 
     protected:
@@ -200,7 +215,7 @@ namespace lcodec {
         }
 
     protected:
-        luabuf*     m_buf = nullptr;
+        deque<uint32_t> sessions;
         codec_base* m_jcodec = nullptr;
     };
 }

@@ -17,12 +17,6 @@ function Listener:__init()
     self._ignores   = {}     -- map<cmd, bool>
 end
 
-function Listener:verify_trigger(trigger)
-    if not is_singleton(trigger) and not trigger.trigger then
-        log_warn("[Listener][verify_trigger] the trigger is not singleton,dot forget remove listen:%s", tostring(trigger))
-    end
-end
-
 function Listener:add_trigger(trigger, event, handler)
     local func_name     = handler or event
     local callback_func = trigger[func_name]
@@ -60,7 +54,6 @@ function Listener:remove_trigger(trigger, event)
 end
 
 function Listener:add_listener(listener, event, handler)
-    self:verify_trigger(listener)
     if self._listeners[event] then
         log_err("[Listener][add_listener] event(%s) repeat!", event)
         return
@@ -79,7 +72,6 @@ function Listener:remove_listener(event)
 end
 
 function Listener:add_cmd_listener(listener, cmd, handler)
-    self:verify_trigger(listener)
     if self._commands[cmd] then
         log_err("[Listener][add_cmd_listener] cmd(%s) repeat!", cmd)
         return

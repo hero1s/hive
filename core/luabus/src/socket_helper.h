@@ -59,6 +59,9 @@ bool wsa_send_empty(socket_t fd, WSAOVERLAPPED& ovl);
 bool wsa_recv_empty(socket_t fd, WSAOVERLAPPED& ovl);
 #endif
 
+template <typename T>
+using stdsptr = std::shared_ptr<T>;
+
 bool make_ip_addr(sockaddr_storage* addr, size_t* len, const char ip[], int port);
 // ip字符串建议大小: char ip[INET6_ADDRSTRLEN];
 bool get_ip_string(char ip[], size_t ip_size, const void* addr, size_t addr_len);

@@ -5,6 +5,9 @@ local log_info        = logger.info
 local log_debug       = logger.debug
 local lsha1           = crypt.sha1
 local lb64encode      = crypt.b64_encode
+local jsoncodec       = json.jsoncodec
+local wsscodec        = codec.wsscodec
+local httpcodec       = codec.httpcodec
 local xpcall          = hive.xpcall
 
 local eproto_type     = luabus.eproto_type
@@ -17,6 +20,7 @@ local prop            = property(WebSocket)
 prop:reader("ip", nil)
 prop:reader("host", nil)
 prop:reader("token", nil)
+prop:reader("jcodec", nil)           --codec
 prop:reader("wcodec", nil)           --codec
 prop:reader("hcodec", nil)           --codec
 prop:reader("alive", false)
@@ -25,10 +29,10 @@ prop:reader("listener", nil)
 prop:reader("port", 0)
 
 function WebSocket:__init(host)
-    self.host    = host
-    local jcodec = json.jsoncodec()
-    self.wcodec  = codec.wsscodec(jcodec)
-    self.hcodec  = codec.httpcodec(jcodec)
+    self.host   = host
+    self.jcodec = jsoncodec()
+    self.wcodec = wsscodec(self.jcodec)
+    self.hcodec = httpcodec(self.jcodec)
 end
 
 function WebSocket:close()
@@ -47,7 +51,7 @@ function WebSocket:listen(ip, port, ptype)
     if self.listener then
         return true
     end
-    self.listener = luabus.listen(ip, port, ptype or eproto_type.text)
+    self.listener = luabus.listen(ip, port, ptype or eproto_type.codec)
     if not self.listener then
         log_err("[WebSocket][listen] failed to listen: %s:%d", ip, port)
         return false

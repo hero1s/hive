@@ -7,8 +7,8 @@
 
 struct lua_socket_node final
 {
-	lua_socket_node(uint32_t token, lua_State* L, std::shared_ptr<socket_mgr>& mgr,
-		std::shared_ptr<socket_router> router, bool blisten = false, eproto_type proto_type = eproto_type::proto_rpc);
+	lua_socket_node(uint32_t token, lua_State* L, stdsptr<socket_mgr>& mgr,
+		stdsptr<socket_router> router, bool blisten = false, eproto_type proto_type = eproto_type::proto_rpc);
 	~lua_socket_node();
 
 	int call(lua_State* L,uint32_t session_id,uint8_t flag,uint32_t source_id);
@@ -19,7 +19,10 @@ struct lua_socket_node final
 	void close();
 	void set_timeout(int ms) { m_mgr->set_timeout(m_token, ms); }
 	void set_nodelay(bool flag) { m_mgr->set_nodelay(m_token, flag); }
-	void set_codec(codec_base* codec) { m_codec = codec; }
+	void set_codec(codec_base* codec) {
+		m_codec = codec;
+		m_mgr->set_codec(m_token, codec);
+	}
 	void set_flow_ctrl(int ctrl_package, int ctrl_bytes) { m_mgr->set_flow_ctrl(m_token, ctrl_package, ctrl_bytes); }
 	bool can_send() { return m_mgr->can_send(m_token); }
 
@@ -59,10 +62,10 @@ private:
 	void on_forward_broadcast(router_header* header, size_t target_size);
 	void on_forward_error(router_header* header);
 
-	std::shared_ptr<kit_state> m_luakit;
-	std::shared_ptr<socket_mgr> m_mgr;
+	stdsptr<kit_state> m_luakit;
+	stdsptr<socket_mgr> m_mgr;
 	codec_base* m_codec = nullptr;
-	std::shared_ptr<socket_router> m_router;
+	stdsptr<socket_router> m_router;
 	eproto_type m_proto_type;
 	std::string m_error_msg;
 	uint8_t m_send_seq_id = 0;

@@ -65,9 +65,7 @@ namespace luabus {
             "rpc", eproto_type::proto_rpc,
             "head", eproto_type::proto_head,
             "text", eproto_type::proto_text,
-            "wss", eproto_type::proto_wss,
-            "mongo", eproto_type::proto_mongo,
-            "mysql", eproto_type::proto_mysql
+            "codec", eproto_type::proto_codec
         );
         kit_state.new_class<socket_udp>(
             "send", &socket_udp::send,

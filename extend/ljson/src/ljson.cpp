@@ -4,11 +4,11 @@
 
 namespace ljson {
     thread_local yyjson thread_json;
-    thread_local jsoncodec thread_codec;
     
     static jsoncodec* json_codec() {
-        thread_codec.set_json(&thread_json);
-        return &thread_codec;
+        jsoncodec* codec = new jsoncodec();
+        codec->set_json(&thread_json);
+        return codec;
     }
 
     luakit::lua_table open_ljson(lua_State* L) {

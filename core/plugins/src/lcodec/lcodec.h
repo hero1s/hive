@@ -10,3 +10,4 @@
 #include "http.h"
 #include "redis.h"
 #include "websocket.h"
+#include "mysql.h"

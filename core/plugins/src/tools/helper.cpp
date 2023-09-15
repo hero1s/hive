@@ -29,8 +29,8 @@ namespace tools
 #ifdef WIN32
 	__int64 CompareFileTime(FILETIME time1, FILETIME time2)
 	{
-		__int64 a = time1.dwHighDateTime << 32 | time1.dwLowDateTime;
-		__int64 b = time2.dwHighDateTime << 32 | time2.dwLowDateTime;
+		__int64 a = (__int64)time1.dwHighDateTime << 32 | time1.dwLowDateTime;
+		__int64 b = (__int64)time2.dwHighDateTime << 32 | time2.dwLowDateTime;
 		return (b - a);
 	}
 #else

@@ -1,22 +1,23 @@
 --statis_mgr.lua
-local LinuxStatis = import("feature/linux.lua")
-local InfluxDB    = import("driver/influx.lua")
+local LinuxStatis          = import("feature/linux.lua")
+local InfluxDB             = import("driver/influx.lua")
 
-local tsort       = table.sort
-local tinsert     = table.insert
-local tremove_out = table_ext.tremove_out
-local tkvarray    = table_ext.kvarray
-local log_warn    = logger.warn
+local tsort                = table.sort
+local tinsert              = table.insert
+local tremove_out          = table_ext.tremove_out
+local tkvarray             = table_ext.kvarray
+local log_warn             = logger.warn
+local log_err              = logger.err
+local env_get              = environ.get
+local env_addr             = environ.addr
+local event_mgr            = hive.get("event_mgr")
+local update_mgr           = hive.get("update_mgr")
 
-local env_get     = environ.get
-local env_addr    = environ.addr
-local event_mgr   = hive.get("event_mgr")
-local update_mgr  = hive.get("update_mgr")
+local PeriodTime           = enum("PeriodTime")
+local MaxMessageLen<const> = 32 * 1024
 
-local PeriodTime  = enum("PeriodTime")
-
-local StatisMgr   = singleton()
-local prop        = property(StatisMgr)
+local StatisMgr            = singleton()
+local prop                 = property(StatisMgr)
 prop:reader("influx", nil)              --influx
 prop:reader("statis", {})               --statis
 prop:reader("statis_status", false)     --统计开关
@@ -119,6 +120,9 @@ end
 
 -- 统计proto协议接收(KB)
 function StatisMgr:on_proto_send(cmd_id, send_len)
+    if send_len > MaxMessageLen then
+        log_err("[StatisMgr][on_proto_send] the msg is very long,cmd_id:%s,len:%s", cmd_id, send_len)
+    end
     if self.statis_status then
         if self.influx then
             local fields = { count = send_len }

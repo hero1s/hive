@@ -17,10 +17,10 @@ uint32_t socket_router::map_token(uint32_t node_id, uint32_t token, uint16_t has
 		group.mp_nodes.erase(node_id);
 	}
 	else {
-		service_node node;
-		node.id = node_id;
-		node.token = token;
-		node.index = get_node_index(node_id);
+		auto node = std::make_shared<service_node>();
+		node->id = node_id;
+		node->token = token;
+		node->index = get_node_index(node_id);
 		group.mp_nodes[node_id] = node;
 	}
 	flush_hash_node(group_idx);
@@ -60,18 +60,18 @@ void socket_router::map_router_node(uint32_t router_id, uint32_t target_id, uint
 			return;
 		}
 		if (status == 0) {
-			it->second.targets.erase(target_id);
+			it->second->targets.erase(target_id);
 		} else {
-			it->second.targets.insert(target_id);
+			it->second->targets.insert(target_id);
 		}
-		it->second.flush_group();
+		it->second->flush_group();
 	} else {
 		if (status != 0) {
-			router_node node;
-			node.id = router_id;
-			node.targets.insert(target_id);
-			node.flush_group();
-			m_routers.insert(std::pair(node.id, node));
+			auto node = std::make_shared<router_node>();
+			node->id = router_id;
+			node->targets.insert(target_id);
+			node->flush_group();
+			m_routers.insert(std::pair(node->id, node));
 			m_router_iter = m_routers.begin();
 		}
 	}
@@ -86,13 +86,13 @@ uint32_t socket_router::choose_master(uint32_t group_idx) {
 	if (group_idx < m_groups.size()) {
 		auto& group = m_groups[group_idx];
 		if (group.mp_nodes.empty()) {
-			group.master = service_node{};
+			group.master = nullptr;
 			return 0;
 		}
 		for (auto& [id, node] : group.mp_nodes) {
-			if (node.status == 0) {
+			if (node->status == 0) {
 				group.master = node;
-				return group.master.id;
+				return group.master->id;
 			}
 		}
 	}
@@ -110,7 +110,7 @@ void socket_router::flush_hash_node(uint32_t group_idx) {
 		} else {
 			group.hash_ids.clear();
 			for (const auto& [id,node] : group.mp_nodes) {
-				if (node.status == 0) {
+				if (node->status == 0) {
 					group.hash_ids.push_back(id);
 				}				
 			}
@@ -140,14 +140,14 @@ bool socket_router::do_forward_master(router_header* header, char* data, size_t 
 		error = fmt::format("router[{}] forward-master not decode", cur_index());
 		return false;
 	}
-	auto token = m_groups[group_idx].master.token;
-	if (token == 0) {
+	auto master = m_groups[group_idx].master;
+	if (master == nullptr) {
 		error = fmt::format("router[{}] forward-master:{} token=0", cur_index(),get_service_name(group_idx));
 		return router ? false : do_forward_router(header, data, data_len, error, rpc_type::forward_master, 0, group_idx);
 	}
 	header->msg_id = (uint8_t)rpc_type::remote_call;
 	sendv_item items[] = { {header, sizeof(router_header)}, {data, data_len} };
-	m_mgr->sendv(token, items, _countof(items));
+	m_mgr->sendv(master->token, items, _countof(items));
 	return true;
 }
 
@@ -161,8 +161,8 @@ bool socket_router::do_forward_broadcast(router_header* header, int source, char
 
 	auto& group = m_groups[group_idx];
 	for (auto& [id,target] : group.mp_nodes) {
-		if (target.token != 0 && target.token != source) {
-			m_mgr->sendv(target.token, items, _countof(items));
+		if (target->token != 0 && target->token != source) {
+			m_mgr->sendv(target->token, items, _countof(items));
 			broadcast_num++;
 		}
 	}
@@ -196,7 +196,7 @@ bool socket_router::do_forward_router(router_header* header, char* data, size_t 
 		error += fmt::format(" | not router can find:{},{}",get_service_nick(target_id),get_service_name(group_idx));
 		return false;
 	}
-	service_node* ptarget = m_groups[m_router_idx].get_target(router_id);
+	auto ptarget = m_groups[m_router_idx].get_target(router_id);
 	if (ptarget == nullptr) {
 		error += fmt::format(" | not this router:{},{},{}",get_service_nick(router_id),get_service_nick(target_id),get_service_name(group_idx));
 		return false;
@@ -221,13 +221,13 @@ uint32_t socket_router::find_transfer_router(uint32_t target_id, uint16_t group_
 	}
 	if (target_id > 0) {
 		for (auto it = m_router_iter; it != m_routers.end();it++) {
-			if (it->second.targets.find(target_id) != it->second.targets.end()) {
+			if (it->second->targets.find(target_id) != it->second->targets.end()) {
 				m_router_iter = it;
 				return it->first;
 			}
 		}
 		for (auto it = m_routers.begin(); it != m_router_iter; it++) {
-			if (it->second.targets.find(target_id) != it->second.targets.end()) {
+			if (it->second->targets.find(target_id) != it->second->targets.end()) {
 				m_router_iter = it;
 				return it->first;
 			}
@@ -236,13 +236,13 @@ uint32_t socket_router::find_transfer_router(uint32_t target_id, uint16_t group_
 	}
 	if (group_idx > 0) {
 		for (auto it = m_router_iter; it != m_routers.end(); it++) {
-			if (it->second.groups.find(group_idx) != it->second.groups.end()) {
+			if (it->second->groups.find(group_idx) != it->second->groups.end()) {
 				m_router_iter = it;
 				return it->first;
 			}
 		}
 		for (auto it = m_routers.begin(); it != m_router_iter; it++) {
-			if (it->second.groups.find(group_idx) != it->second.groups.end()) {
+			if (it->second->groups.find(group_idx) != it->second->groups.end()) {
 				m_router_iter = it;
 				return it->first;
 			}

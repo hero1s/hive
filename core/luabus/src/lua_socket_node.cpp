@@ -4,8 +4,8 @@
 #include "socket_helper.h"
 #include <iostream>
 
-lua_socket_node::lua_socket_node(uint32_t token, lua_State* L, std::shared_ptr<socket_mgr>& mgr,
-	std::shared_ptr<socket_router> router, bool blisten, eproto_type proto_type)
+lua_socket_node::lua_socket_node(uint32_t token, lua_State* L, stdsptr<socket_mgr>& mgr,
+	stdsptr<socket_router> router, bool blisten, eproto_type proto_type)
 	: m_token(token), m_mgr(mgr), m_router(router), m_proto_type(proto_type) {
 	m_mgr->get_remote_ip(m_token, m_ip);
 	m_luakit = std::make_shared<luakit::kit_state>(L);

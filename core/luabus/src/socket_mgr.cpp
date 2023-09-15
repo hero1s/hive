@@ -281,6 +281,13 @@ void socket_mgr::close(uint32_t token) {
 	}
 }
 
+void socket_mgr::set_codec(uint32_t token, codec_base* codec) {
+	auto node = get_object(token);
+	if (node) {
+		node->set_codec(codec);
+	}
+}
+
 bool socket_mgr::get_remote_ip(uint32_t token, std::string& ip) {
 	auto node = get_object(token);
 	if (node) {

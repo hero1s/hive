@@ -50,23 +50,23 @@ struct router_header {
 
 struct service_group {
 	uint16_t hash = 0;
-	service_node master;
+	stdsptr<service_node> master = nullptr;
 	std::vector<uint32_t> hash_ids;
-	std::unordered_map<uint32_t, service_node> mp_nodes;
-	inline service_node* get_target(uint32_t id) {
+	std::unordered_map<uint32_t, stdsptr<service_node>> mp_nodes;
+	inline stdsptr<service_node> get_target(uint32_t id) {
 		auto it = mp_nodes.find(id);
 		if (it != mp_nodes.end()) {
-			return &it->second;
+			return it->second;
 		}
 		return nullptr;
 	}
-	inline service_node* hash_target(uint64_t hash) {
+	inline stdsptr<service_node> hash_target(uint64_t hash) {
 		auto count = hash_ids.size();
 		if (count > 0) {
 			auto id = hash_ids[hash % count];
 			auto it = mp_nodes.find(id);
 			if (it != mp_nodes.end()) {
-				return &it->second;
+				return it->second;
 			}
 		}
 		return nullptr;
@@ -76,7 +76,7 @@ struct service_group {
 class socket_router
 {
 public:
-	socket_router(std::shared_ptr<socket_mgr>& mgr) : m_mgr(mgr) { }
+	socket_router(stdsptr<socket_mgr>& mgr) : m_mgr(mgr) { }
 
 	uint32_t map_token(uint32_t node_id, uint32_t token, uint16_t hash);
 	uint32_t set_node_status(uint32_t node_id, uint8_t status);
@@ -100,11 +100,11 @@ protected:
 	std::string get_service_nick(uint32_t target_id);
 
 private:
-	std::shared_ptr<socket_mgr> m_mgr;
+	stdsptr<socket_mgr> m_mgr;
 	std::unordered_map<uint32_t, std::string> m_service_names;
 	std::array<service_group, MAX_SERVICE_GROUP> m_groups;
-	std::unordered_map<uint32_t, router_node> m_routers;
-	std::unordered_map<uint32_t, router_node>::iterator m_router_iter = m_routers.begin();
+	std::unordered_map<uint32_t, stdsptr<router_node>> m_routers;
+	std::unordered_map<uint32_t, stdsptr<router_node>>::iterator m_router_iter = m_routers.begin();
 	int16_t m_router_idx = -1;
 	uint32_t m_node_id = 0;
 };

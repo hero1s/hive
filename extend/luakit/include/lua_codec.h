@@ -42,7 +42,7 @@ namespace luakit {
     T value_decode(lua_State* L, slice* slice) {
         T* value = slice->read<T>();
         if (value == nullptr) {
-            throw std::length_error("decode can't unpack one value");
+            throw std::invalid_argument("decode can't unpack one value");
         }
         return *value;
     }
@@ -164,7 +164,7 @@ namespace luakit {
         }
         auto str = (const char*)slice->peek(sz);
         if (str == nullptr || sz > USHRT_MAX) {
-            throw std::length_error("decode string is out of range");
+            throw std::invalid_argument("decode string is out of range");
         }
         slice->erase(sz);
         lua_pushlstring(L, str, sz);
@@ -386,28 +386,64 @@ namespace luakit {
 
     class codec_base {
     public:
-        void __gc() {}
+        codec_base(){}
+        virtual ~codec_base(){}
         virtual size_t decode(lua_State* L) = 0;
+        virtual int load_packet(size_t data_len) = 0;
         virtual uint8_t* encode(lua_State* L, int index, size_t* len) = 0;
         size_t decode(lua_State* L, uint8_t* data, size_t len) {
             slice mslice(data, len);
             m_slice = &mslice;
             return decode(L);
         }
+        virtual void reset() { 
+            m_err = "";
+            m_failed = false;
+        }
+        virtual void error(const std::string& err) {
+            m_err = err;
+            m_failed = true;
+        }
+        virtual void clean() {}
+        virtual bool failed() { return m_failed; } 
+        virtual const char* name() { return "codec_base"; }
+        virtual const char* err() { return m_err.c_str(); }
+
+        void set_buff(luabuf* buf) { m_buf = buf; }
         void set_slice(slice* slice) { m_slice = slice; }
+
     protected:
+        bool m_failed = false;
+        std::string m_err = "";
+        luabuf* m_buf = nullptr;
         slice* m_slice = nullptr;
     };
-
+    static thread_local luakit::luabuf thread_buff;
     class luacodec : public codec_base {
     public:
+        luacodec() { set_buff(&thread_buff); }
+        virtual ~luacodec() {}
+        virtual const char* name() {
+            return "lua";
+        }
+
+        virtual int load_packet(size_t data_len) {
+            if (!m_slice) return 0;
+            uint32_t* packet_len = (uint32_t*)m_slice->peek(sizeof(uint32_t));
+            if (!packet_len) return 0;
+            if (*packet_len > 0xffffff) return -1;
+            if (*packet_len > data_len) return 0;
+            if (!m_slice->peek(*packet_len)) return 0;
+            return *packet_len;
+        }
+
         virtual uint8_t* encode(lua_State* L, int index, size_t* len) {
-            m_buf.clean();
+            m_buf->clean();
             int n = lua_gettop(L);
             for (int i = index; i <= n; i++) {
-                encode_one(L, &m_buf, i, 0);
+                encode_one(L, m_buf, i, 0);
             }
-            return m_buf.data(len);
+            return m_buf->data(len);
         }
 
         virtual size_t decode(lua_State* L) {
@@ -422,8 +458,5 @@ namespace luakit {
             m_slice = nullptr;
             return argnum;
         }
-
-    protected:
-        luabuf m_buf;
     };
 }
