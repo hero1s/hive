@@ -9,6 +9,8 @@ local log_err           = logger.err
 local tunpack           = table.unpack
 local signal_quit       = signal.quit
 local saddr             = string_ext.addr
+local jsoncodec         = json.jsoncodec
+local httpcodec         = codec.httpcodec
 
 local HTTP_CALL_TIMEOUT = hive.enum("NetwkTime", "HTTP_CALL_TIMEOUT")
 local eproto_type       = luabus.eproto_type
@@ -30,8 +32,8 @@ prop:accessor("limit_ips", nil)
 prop:reader("qps_counter", nil)
 
 function HttpServer:__init(http_addr, induce)
-    self.jcodec = json.jsoncodec()
-    self.hcodec = codec.httpcodec(self.jcodec)
+    self.jcodec = jsoncodec()
+    self.hcodec = httpcodec(self.jcodec)
     self:setup(http_addr, induce)
 end
 
@@ -40,12 +42,12 @@ function HttpServer:setup(http_addr, induce)
     self.port          = induce and (self.port + hive.index - 1) or self.port
     local socket       = Socket(self)
     socket:set_timeout(HTTP_CALL_TIMEOUT)
-    socket:set_codec(self.hcodec)
-    if not socket:listen(self.ip, self.port, eproto_type.codec) then
+    if not socket:listen(self.ip, self.port, eproto_type.text) then
         log_err("[HttpServer][setup] now listen %s failed", http_addr)
         signal_quit(1)
         return
     end
+    socket:set_codec(self.hcodec)
     log_info("[HttpServer][setup] listen(%s:%s) success!", self.ip, self.port)
     self.listener    = socket
     self.qps_counter = hive.make_sampling("http_qps")
@@ -74,7 +76,6 @@ function HttpServer:on_socket_accept(socket, token)
         return
     end
     self.clients[token] = socket
-    socket:set_codec(self.hcodec)
 end
 
 function HttpServer:on_socket_recv(socket, method, url, params, headers, body)

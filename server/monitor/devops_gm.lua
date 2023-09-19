@@ -187,8 +187,8 @@ function DevopsGmMgr:gm_log_format(data, swline)
     if type(swline) ~= "number" then
         swline = 0
     end
-    local data_t = codec.unserialize(data)
-    return codec.serialize(data_t, swline)
+    local data_t = luakit.unserialize(data)
+    return luakit.serialize(data_t, swline)
 end
 
 function DevopsGmMgr:gm_db_get(db_name, table_name, key_name, key_value)

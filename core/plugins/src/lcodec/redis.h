@@ -18,14 +18,6 @@ namespace lcodec {
 
     class rdscodec : public codec_base {
     public:
-        virtual void clean() {
-            sessions.clear();
-        }
-
-        virtual const char* name() { 
-            return "redis"; 
-        }
-
         virtual int load_packet(size_t data_len) {
             if (!m_slice) return 0;
             return data_len;
@@ -50,10 +42,9 @@ namespace lcodec {
             string_view buf = m_slice->contents();
             lua_pushinteger(L, sessions.empty() ? 0 : sessions.front());
             parse_redis_packet(L, buf);
-            m_slice->erase(osize - buf.size());
-            if (!sessions.empty()) {
-                sessions.pop_front();
-            }
+            if (!sessions.empty()) sessions.pop_front();
+            m_packet_len = osize - buf.size();
+            m_slice->erase(m_packet_len);
             return lua_gettop(L) - top;
         }
 

@@ -3,9 +3,9 @@
 #include "lua_socket_node.h"
 
 bool lua_socket_mgr::setup(lua_State* L, uint32_t max_fd) {
-	m_lvm = L;
+	m_luakit = std::make_shared<kit_state>(L);
 	m_mgr = std::make_shared<socket_mgr>();
-	m_codec = std::make_shared<luacodec>();
+	m_codec = m_luakit->create_codec();
 	m_router = std::make_shared<socket_router>(m_mgr);
 	return m_mgr->setup(max_fd);
 }
@@ -21,9 +21,9 @@ int lua_socket_mgr::listen(lua_State* L, const char* ip, int port) {
 		return luakit::variadic_return(L, nullptr, err);
 	}
 
-	auto listener = new lua_socket_node(token, m_lvm, m_mgr, m_router, true, proto_type);
-	if (proto_type < eproto_type::proto_text) {
-		listener->set_codec(m_codec.get());
+	auto listener = new lua_socket_node(token, m_luakit->L(), m_mgr, m_router, true, proto_type);
+	if (proto_type == eproto_type::proto_rpc || proto_type == eproto_type::proto_head) {
+		listener->set_codec(m_codec);
 	}
 	return luakit::variadic_return(L, listener, "ok");
 }
@@ -40,9 +40,9 @@ int lua_socket_mgr::connect(lua_State* L, const char* ip, const char* port, int 
 		return luakit::variadic_return(L, nullptr, err);
 	}
 
-	auto stream = new lua_socket_node(token, m_lvm, m_mgr, m_router, false, proto_type);
-	if (proto_type < eproto_type::proto_text) {
-		stream->set_codec(m_codec.get());
+	auto stream = new lua_socket_node(token, m_luakit->L(), m_mgr, m_router, false, proto_type);
+	if (proto_type == eproto_type::proto_rpc || proto_type == eproto_type::proto_head) {
+		stream->set_codec(m_codec);
 	}
 	return luakit::variadic_return(L, stream, "ok");
 }

@@ -9,7 +9,7 @@ local dgetinfo    = debug.getinfo
 local tpack       = table.pack
 local tunpack     = table.unpack
 local fsstem      = stdfs.stem
-local serialize   = codec.serialize
+local serialize   = luakit.serialize
 local lwarn       = log.warn
 local lfilter     = log.filter
 

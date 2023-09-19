@@ -9,6 +9,7 @@ local b64_encode       = crypt.b64_encode
 local b64_decode       = crypt.b64_decode
 local lz4_encode       = crypt.lz4_encode
 local lz4_decode       = crypt.lz4_decode
+local eproto_type      = luabus.eproto_type
 
 local event_mgr        = hive.get("event_mgr")
 local thread_mgr       = hive.get("thread_mgr")
@@ -35,7 +36,7 @@ local NetServer        = class()
 local prop             = property(NetServer)
 prop:reader("ip", "")                   --监听ip
 prop:reader("port", 0)                  --监听端口
-prop:reader("proto_type", 1)
+prop:reader("proto_type", eproto_type.head)
 prop:reader("sessions", {})             --会话列表
 prop:reader("session_type", "default")  --会话类型
 prop:reader("session_count", 0)         --会话数量

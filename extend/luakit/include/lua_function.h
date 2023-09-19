@@ -279,7 +279,6 @@ namespace luakit {
         int arg_num = sizeof...(arg_types);
         native_to_lua_mutil(L, std::forward<arg_types>(args)...);
         try {
-            codec->reset();
             arg_num += codec->decode(L);
         } catch(const std::length_error&) {
             return false;

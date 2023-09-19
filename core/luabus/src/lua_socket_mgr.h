@@ -22,9 +22,9 @@ public:
 	const std::string get_rpc_key();
 
 private:
-	lua_State* m_lvm = nullptr;
+	stdsptr<kit_state> m_luakit = nullptr;
 	stdsptr<socket_mgr> m_mgr;
-	stdsptr<luacodec> m_codec;
+	codec_base* m_codec = nullptr;
 	stdsptr<socket_router> m_router;
 };
 

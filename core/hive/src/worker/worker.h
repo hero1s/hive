@@ -74,6 +74,9 @@ namespace lworker {
             size_t data_len;
             std::unique_lock<spin_mutex> lock(m_mutex);
             uint8_t* data = m_codec->encode(L, 2, &data_len);
+            if (data == nullptr) {
+                return false;
+            }
             uint8_t* target = m_write_buf->peek_space(data_len + sizeof(uint32_t));
             if (target) {
                 m_write_buf->write<uint32_t>(data_len);
@@ -97,13 +100,17 @@ namespace lworker {
             slice* slice = read_slice(m_read_buf, &plen);
             while (slice) {
                 m_codec->set_slice(slice);
-                m_lua->table_call(service, "on_worker", nullptr, m_codec.get(), std::tie());
-                m_read_buf->pop_size(plen);            
-                if (ltimer::steady_ms() - clock_ms > 100) {
-                    LOG_WARN(fmt::format("on_worker [{}]  is busy,remain:{}",m_name,m_read_buf->size()));
+                m_lua->table_call(service, "on_worker", nullptr, m_codec, std::tie());
+                if (m_codec->failed()) {
+                    m_read_buf->clean();
                     break;
-                }                
-                slice = read_slice(m_read_buf, &plen);                
+                }
+                m_read_buf->pop_size(plen);
+                if (ltimer::steady_ms() - clock_ms > 100) {
+                    LOG_WARN(fmt::format("on_worker [{}]  is busy,remain:{}", m_name, m_read_buf->size()));
+                    break;
+                }
+                slice = read_slice(m_read_buf, &plen);
             }
         }
 
@@ -114,6 +121,7 @@ namespace lworker {
         }
 
         void run(){
+            m_codec = m_lua->create_codec();
             auto hive = m_lua->new_table(m_service.c_str());
             hive.set("pid", ::getpid());
             hive.set("title", m_name);
@@ -151,12 +159,12 @@ namespace lworker {
         std::thread m_thread;
         bool m_stop = false;
         bool m_running = false;
+        codec_base* m_codec = nullptr;
         ischeduler* m_schedulor = nullptr;
         std::string m_name, m_entry, m_service;
         std::shared_ptr<kit_state> m_lua = std::make_shared<kit_state>();
         std::shared_ptr<luabuf> m_read_buf = std::make_shared<luabuf>();
         std::shared_ptr<luabuf> m_write_buf = std::make_shared<luabuf>();
-        std::shared_ptr<codec_base> m_codec = std::make_shared<luacodec>();
     };
 }
 

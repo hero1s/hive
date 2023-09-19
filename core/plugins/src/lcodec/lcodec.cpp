@@ -5,45 +5,33 @@ namespace lcodec {
 
     thread_local luakit::luabuf thread_buff;
 
-    static rdscodec* rds_codec(codec_base* codec) {
+    static codec_base* rds_codec(codec_base* codec) {
         rdscodec* rcodec = new rdscodec();
         rcodec->set_codec(codec);
         rcodec->set_buff(&thread_buff);
         return rcodec;
     }
 
-    static wsscodec* wss_codec(codec_base* codec) {
+    static codec_base* wss_codec(codec_base* codec) {
         wsscodec* wcodec = new wsscodec();
         wcodec->set_codec(codec);
         wcodec->set_buff(&thread_buff);
         return wcodec;
     }
 
-    static httpcodec* http_codec(codec_base* codec) {
+    static codec_base* http_codec(codec_base* codec) {
         httpcodec* hcodec = new httpcodec();
         hcodec->set_codec(codec);
         hcodec->set_buff(&thread_buff);
         return hcodec;
     }
 
-    static mysqlscodec* mysql_codec(size_t session_id) {
+    static codec_base* mysql_codec(size_t session_id) {
         mysqlscodec* codec = new mysqlscodec(session_id);
         codec->set_buff(&thread_buff);
         return codec;
     }
 
-    static int serialize(lua_State* L) {
-        return luakit::serialize(L, &thread_buff);
-    }
-    static int unserialize(lua_State* L) {
-        return luakit::unserialize(L);
-    }
-    static int encode(lua_State* L) {
-        return luakit::encode(L, &thread_buff);
-    }
-    static int decode(lua_State* L) {
-        return luakit::decode(L, &thread_buff);
-    }
     static std::string utf8_gbk(std::string str) {
         char pOut[1024];
         memset(pOut, 0, sizeof(pOut));
@@ -104,10 +92,6 @@ namespace lcodec {
     luakit::lua_table open_lcodec(lua_State* L) {
         luakit::kit_state kit_state(L);
         auto llcodec = kit_state.new_table();
-        llcodec.set_function("encode", encode);
-        llcodec.set_function("decode", decode);
-        llcodec.set_function("serialize", serialize);
-        llcodec.set_function("unserialize", unserialize);
         llcodec.set_function("guid_new", guid_new);
         llcodec.set_function("guid_encode", guid_encode);
         llcodec.set_function("guid_decode", guid_decode);

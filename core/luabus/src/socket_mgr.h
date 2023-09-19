@@ -31,9 +31,8 @@ enum class eproto_type : int
 {
 	proto_rpc		= 0,   // rpc协议,根据协议头解析
 	proto_head		= 1,   // head协议,根据协议头解析
-	proto_text		= 2,   // text协议,文本协议
-	proto_codec		= 3,   // 自定义协议:wss,mongo,mysql协议
-	proto_max		= 4,   // max 
+	proto_text		= 2,   // text协议，mysql/mongo/http/wss/redis
+	proto_max		= 3,   // max 
 };
 
 struct sendv_item
@@ -57,7 +56,7 @@ struct socket_object
 	virtual void set_codec(codec_base* codec) { m_codec = codec; }
 	virtual void set_accept_callback(const std::function<void(int, eproto_type)>& cb) { }
 	virtual void set_connect_callback(const std::function<void(bool, const char*)>& cb) { }
-	virtual void set_package_callback(const std::function<int(slice*)>& cb) { }
+	virtual void set_package_callback(const std::function<void(slice*)>& cb) { }
 	virtual void set_error_callback(const std::function<void(const char*)>& cb) { }
 
 #ifdef _MSC_VER
@@ -106,7 +105,7 @@ public:
 
 	void set_accept_callback(uint32_t token, const std::function<void(uint32_t, eproto_type eproto_type)>& cb);
 	void set_connect_callback(uint32_t token, const std::function<void(bool, const char*)>& cb);
-	void set_package_callback(uint32_t token, const std::function<int(slice*)>& cb);
+	void set_package_callback(uint32_t token, const std::function<void(slice*)>& cb);
 	void set_error_callback(uint32_t token, const std::function<void(const char*)>& cb);
 
 	bool watch_listen(socket_t fd, socket_object* object);

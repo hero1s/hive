@@ -34,11 +34,8 @@ namespace lcodec {
 
     class httpcodec : public codec_base {
     public:
-        virtual const char* name() { 
-            return "http"; 
-        }
-
         virtual int load_packet(size_t data_len) {
+            if (!m_slice) return 0;
             return data_len;
         }
 
@@ -71,7 +68,8 @@ namespace lcodec {
             size_t osize = m_slice->size();
             string_view buf = m_slice->contents();
             parse_http_packet(L, buf);
-            m_slice->erase(osize - buf.size());
+            m_packet_len = osize - buf.size();
+            m_slice->erase(m_packet_len);
             return lua_gettop(L) - top;
         }
 

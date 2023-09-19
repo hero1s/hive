@@ -20,6 +20,10 @@ namespace luakit {
             return m_tail == m_head;
         }
 
+        slice clone() {
+            return slice(m_head, m_tail - m_head);
+        }
+
         void attach(uint8_t* data, size_t size) {
             m_head = data;
             m_tail = data + size;
@@ -33,22 +37,13 @@ namespace luakit {
             return nullptr;
         }
 
-        size_t erase(size_t erase_len) {
+        uint8_t* erase(size_t erase_len) {
+            uint8_t* data = m_head;
             if (m_head + erase_len <= m_tail) {
                 m_head += erase_len;
-                return erase_len;
+                return data;
             }
-            return 0;
-        }
-
-        int check(lua_State* L) {
-            size_t peek_len = lua_tointeger(L, 1);
-            size_t data_len = m_tail - m_head;
-            if (peek_len > 0 && data_len >= peek_len) {
-                lua_pushlstring(L, (const char*)m_head, peek_len);
-                return 1;
-            }
-            return 0;
+            return nullptr;
         }
 
         size_t pop(uint8_t* dest, size_t read_len) {
@@ -73,17 +68,6 @@ namespace luakit {
             return nullptr;
         }
 
-        int recv(lua_State* L) {
-            size_t data_len = m_tail - m_head;
-            size_t read_len = lua_tointeger(L, 1);
-            if (read_len > 0 && data_len >= read_len) {
-                lua_pushlstring(L, (const char*)m_head, read_len);
-                m_head += read_len;
-                return 1;
-            }
-            return 0;
-        }
-
         uint8_t* data(size_t* len) {
             *len = (size_t)(m_tail - m_head);
             return m_head;
@@ -96,6 +80,34 @@ namespace luakit {
         std::string_view contents() {
             size_t len = (size_t)(m_tail - m_head);
             return std::string_view((const char*)m_head, len);
+        }
+
+        std::string_view eof() {
+            uint8_t* head = m_head;
+            m_head = m_tail;
+            size_t len = (size_t)(m_tail - head);
+            return std::string_view((const char*)head, len);
+        }
+
+        int check(lua_State* L) {
+            size_t peek_len = lua_tointeger(L, 1);
+            size_t data_len = m_tail - m_head;
+            if (peek_len > 0 && data_len >= peek_len) {
+                lua_pushlstring(L, (const char*)m_head, peek_len);
+                return 1;
+            }
+            return 0;
+        }
+
+        int recv(lua_State* L) {
+            size_t data_len = m_tail - m_head;
+            size_t read_len = lua_tointeger(L, 1);
+            if (read_len > 0 && data_len >= read_len) {
+                lua_pushlstring(L, (const char*)m_head, read_len);
+                m_head += read_len;
+                return 1;
+            }
+            return 0;
         }
 
         int string(lua_State* L) {

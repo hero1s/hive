@@ -515,7 +515,8 @@ void socket_stream::dispatch_package(bool reset) {
 	}
 	m_need_dispatch_pkg = false;
 	while (m_link_status == elink_status::link_connected) {
-		size_t data_len = 0, package_size = 0;
+		size_t data_len = 0;
+		int32_t package_size = 0;
 		auto* data = m_recv_buffer.data(&data_len);
 		if (data_len == 0) break;
 		switch (m_proto_type) {
@@ -526,7 +527,7 @@ void socket_stream::dispatch_package(bool reset) {
 				if (ret < 0) {
 					on_error(fmt::format("handshake_rpc fail:{},ip:{}", ret,m_ip).c_str());
 				}
-				break;
+				return;
 			}
 			size_t header_len = sizeof(router_header);
 			if(!m_recv_buffer.peek_data(header_len))return;
@@ -534,7 +535,7 @@ void socket_stream::dispatch_package(bool reset) {
 			// 当前包长小于headlen, 关闭连接
 			if (header->len < header_len) {
 				on_error("package-length-err");
-				break;
+				return;
 			}
 			package_size = header->len;
 		}break;
@@ -561,47 +562,50 @@ void socket_stream::dispatch_package(bool reset) {
 #endif
 			m_fc_package++;
 			m_fc_bytes += header->len;
-
 			package_size = header->len;
 		}break;
-		case eproto_type::proto_codec: {
-			slice* slice = m_recv_buffer.get_slice();
-			m_codec->set_slice(slice);
-			//解析数据包头长度
-			auto len = m_codec->load_packet(data_len);
-			//当前包头长度解析失败, 关闭连接
-			if (len < 0) {
-				on_error("package-length-err");
-				break;
-			}
-			// 数据包还没有收完整
-			if (len == 0) break;
-			package_size = len;
+		case eproto_type::proto_text: {
+			if (m_codec) {
+				//解析数据包头长度
+				slice* slice = m_recv_buffer.get_slice();
+				m_codec->set_slice(slice);
+				package_size = m_codec->load_packet(data_len);
+				//当前包头长度解析失败, 关闭连接
+				if (package_size < 0) {
+					on_error("package-length-err");
+					return;
+				}
+				// 数据包还没有收完整
+				if (package_size == 0) return;
+			}else{
+				package_size = data_len;
+			}			
 		}break;
-		case eproto_type::proto_text: 
-			package_size = data_len;
-			break;
 		default: 
 			on_error(fmt::format("proto-type-not-suppert!:{},ip:{}", (int)m_proto_type,m_ip).c_str());
 			return;
 		}
-
 		// 数据包还没有收完整
 		if (data_len < package_size) break;
-		int read_size = m_package_cb(m_recv_buffer.get_slice(package_size));
+		m_package_cb(m_recv_buffer.get_slice(package_size));
+		//std::cout << "read_size:" << read_size << "package_size:" << package_size << "type:" << (int)m_proto_type << std::endl;
 		//数据包解析失败
-		if (m_proto_type == eproto_type::proto_codec && m_codec->failed()) {
-			on_error(m_codec->err());
-			break;
+		if (m_proto_type == eproto_type::proto_text && m_codec) {
+			if (m_codec->failed()) {
+				on_error(m_codec->err());
+				break;
+			}
+			size_t read_size = m_codec->get_packet_len();
+			// 数据包还没有收完整
+			if (read_size == 0) break;
+			// 接收缓冲读游标调整
+			m_recv_buffer.pop_size(read_size);
+		} else {
+			// 接收缓冲读游标调整
+			m_recv_buffer.pop_size(package_size);
+			m_recv_seq_id++;
 		}
-		// 数据包还没有收完整
-		if (read_size == 0) {
-			break;
-		}
-		// 接收缓冲读游标调整
-		m_recv_buffer.pop_size(read_size);
-		m_last_recv_time = steady_ms();
-		m_recv_seq_id++;
+		m_last_recv_time = steady_ms();		
 		// 防止单个连接处理太久
 		if ((m_last_recv_time - m_tick_dispatch_time) > max_process_time()) {
 			m_need_dispatch_pkg = true;

@@ -64,8 +64,7 @@ namespace luabus {
         lluabus.new_enum("eproto_type",
             "rpc", eproto_type::proto_rpc,
             "head", eproto_type::proto_head,
-            "text", eproto_type::proto_text,
-            "codec", eproto_type::proto_codec
+            "text", eproto_type::proto_text
         );
         kit_state.new_class<socket_udp>(
             "send", &socket_udp::send,

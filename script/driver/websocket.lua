@@ -47,15 +47,16 @@ function WebSocket:close()
     end
 end
 
-function WebSocket:listen(ip, port, ptype)
+function WebSocket:listen(ip, port)
     if self.listener then
         return true
     end
-    self.listener = luabus.listen(ip, port, ptype or eproto_type.codec)
+    self.listener = luabus.listen(ip, port, eproto_type.text)
     if not self.listener then
         log_err("[WebSocket][listen] failed to listen: %s:%d", ip, port)
         return false
     end
+    self.listener.set_codec(self.hcodec)
     self.ip, self.port = ip, port
     log_info("[WebSocket][listen] start listen at: %s:%d", ip, port)
     self.listener.on_accept = function(session)
@@ -115,8 +116,7 @@ function WebSocket:accept(session, ip, port)
     session.on_error     = function(stoken, err)
         self:on_socket_error(stoken, err)
     end
-    session.set_codec(self.hcodec)
-    self.ip, self.port = ip, port
+    self.ip, self.port   = ip, port
 end
 
 --握手协议

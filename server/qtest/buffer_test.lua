@@ -5,10 +5,10 @@ local lcrypt       = require("lcrypt")
 local log_debug    = logger.debug
 local log_dump     = logger.dump
 local lhex_encode  = lcrypt.hex_encode
-local lencode      = lcodec.encode
-local ldecode      = lcodec.decode
-local lserialize   = lcodec.serialize
-local lunserialize = lcodec.unserialize
+local lencode      = luakit.encode
+local ldecode      = luakit.decode
+local lserialize   = luakit.serialize
+local lunserialize = luakit.unserialize
 
 --serialize
 ----------------------------------------------------------------

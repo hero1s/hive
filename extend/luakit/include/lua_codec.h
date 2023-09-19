@@ -386,7 +386,6 @@ namespace luakit {
 
     class codec_base {
     public:
-        codec_base(){}
         virtual ~codec_base(){}
         virtual size_t decode(lua_State* L) = 0;
         virtual int load_packet(size_t data_len) = 0;
@@ -396,45 +395,40 @@ namespace luakit {
             m_slice = &mslice;
             return decode(L);
         }
-        virtual void reset() { 
-            m_err = "";
-            m_failed = false;
-        }
         virtual void error(const std::string& err) {
             m_err = err;
             m_failed = true;
         }
-        virtual void clean() {}
-        virtual bool failed() { return m_failed; } 
-        virtual const char* name() { return "codec_base"; }
+        virtual void set_slice(slice* slice) {
+            m_err = "";
+            m_slice = slice;
+            m_packet_len = 0;
+            m_failed = false;
+        }
+        virtual bool failed() { return m_failed; }
         virtual const char* err() { return m_err.c_str(); }
-
-        void set_buff(luabuf* buf) { m_buf = buf; }
-        void set_slice(slice* slice) { m_slice = slice; }
+        virtual size_t get_packet_len() { return m_packet_len; }
+        virtual void set_buff(luabuf* buf) { m_buf = buf; }
 
     protected:
         bool m_failed = false;
-        std::string m_err = "";
         luabuf* m_buf = nullptr;
         slice* m_slice = nullptr;
+        size_t m_packet_len = 0;
+        std::string m_err = "";
     };
-    static thread_local luakit::luabuf thread_buff;
+
     class luacodec : public codec_base {
     public:
-        luacodec() { set_buff(&thread_buff); }
-        virtual ~luacodec() {}
-        virtual const char* name() {
-            return "lua";
-        }
-
         virtual int load_packet(size_t data_len) {
             if (!m_slice) return 0;
             uint32_t* packet_len = (uint32_t*)m_slice->peek(sizeof(uint32_t));
             if (!packet_len) return 0;
-            if (*packet_len > 0xffffff) return -1;
-            if (*packet_len > data_len) return 0;
-            if (!m_slice->peek(*packet_len)) return 0;
-            return *packet_len;
+            m_packet_len = *packet_len;
+            if (m_packet_len > 0xffffff) return -1;
+            if (m_packet_len > data_len) return 0;
+            if (!m_slice->peek(m_packet_len)) return 0;
+            return m_packet_len;
         }
 
         virtual uint8_t* encode(lua_State* L, int index, size_t* len) {

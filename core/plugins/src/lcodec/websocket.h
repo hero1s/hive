@@ -9,10 +9,6 @@ namespace lcodec {
 
     class wsscodec : public codec_base {
     public:
-        virtual const char* name() { 
-            return "wss"; 
-        }
-
         virtual int load_packet(size_t data_len) {
             if (!m_slice) return 0;
             uint8_t* payload = (uint8_t*)m_slice->peek(sizeof(uint8_t), 1);
@@ -24,7 +20,8 @@ namespace lcodec {
             }
             size_t* length = (size_t*)m_slice->peek((payloadlen == 0x7f) ? 8 : 2, sizeof(uint16_t));
             if (!length) return 0;
-            return masklen + (*length) + sizeof(uint16_t);
+            m_packet_len = masklen + (*length) + sizeof(uint16_t);
+            return m_packet_len;
         }
 
         virtual uint8_t* encode(lua_State* L, int index, size_t* len) {
@@ -65,8 +62,7 @@ namespace lcodec {
             lua_pushinteger(L, opcode);
             if (mask) {
                 size_t data_len;
-                char* maskkey = (char*)m_slice->peek(4);
-                m_slice->erase(4);
+                char* maskkey = (char*)m_slice->erase(4);
                 char* data = (char*)m_slice->data(&data_len);
                 xor_byte(data, maskkey, data_len, 4);
             }

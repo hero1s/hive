@@ -54,10 +54,10 @@ public:
 	std::string m_ip;
 	uint32_t m_token = 0;
 private:
-	int on_recv(slice* slice);
-	int on_call_head(slice* slice);
-	int on_call_text(slice* slice);
-	int on_call_data(slice* slice);
+	void on_recv(slice* slice);
+	void on_call_head(slice* slice);
+	void on_call_text(slice* slice);
+	void on_call_data(slice* slice);
 	void on_call(router_header* header, slice* slice);
 	void on_forward_broadcast(router_header* header, size_t target_size);
 	void on_forward_error(router_header* header);

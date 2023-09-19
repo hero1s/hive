@@ -214,6 +214,8 @@ namespace ljson {
     class jsoncodec : public codec_base {
     public:
         virtual int load_packet(size_t data_len) {
+            if (!m_slice) return 0;
+            m_packet_len = data_len;
             return data_len;
         }
 
@@ -234,10 +236,6 @@ namespace ljson {
             m_json->decode_one(L, yyjson_doc_get_root(doc), true);
             yyjson_doc_free(doc);
             return lua_gettop(L) - otop;
-        }
-        
-        virtual const char* name() { 
-            return "json"; 
         }
 
         void set_json(yyjson* json) {

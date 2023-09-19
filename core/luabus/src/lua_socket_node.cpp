@@ -151,7 +151,7 @@ void lua_socket_node::close() {
 	}
 }
 
-int lua_socket_node::on_recv(slice* slice) {
+void lua_socket_node::on_recv(slice* slice) {
 	if (eproto_type::proto_head == m_proto_type) {
 		return on_call_head(slice);
 	}
@@ -204,7 +204,6 @@ int lua_socket_node::on_recv(slice* slice) {
 	default:
 		break;
 	}
-	return header->len;
 }
 
 void lua_socket_node::on_forward_error(router_header* header) {
@@ -224,32 +223,25 @@ void lua_socket_node::on_call(router_header* header, slice* slice) {
 	m_luakit->object_call(this, "on_call", nullptr, m_codec, std::tie(), slice->size(), header->session_id, header->rpc_flag, header->source_id);
 }
 
-int lua_socket_node::on_call_head(slice* slice) {
+void lua_socket_node::on_call_head(slice* slice) {
 	size_t header_len = sizeof(socket_header);
 	auto data = slice->peek(header_len);
 	socket_header* head = (socket_header*)data;
 	slice->erase(header_len);
 	m_luakit->object_call(this, "on_call_head",nullptr, std::tie(), slice->size(), head->cmd_id, head->flag, head->session_id, slice->contents());
-	return head->len;
 }
 
-int lua_socket_node::on_call_text(slice* slice) {
+void lua_socket_node::on_call_text(slice* slice) {
 	if (m_codec) {
-		bool success = true;
-		m_codec->set_slice(slice);
-		size_t buf_size = slice->size();
-		m_luakit->object_call(this, "on_call_data", [&](std::string_view) { success = false; }, m_codec, std::tie(), buf_size);
-		return success ? (buf_size - slice->size()) : -1;
+		return on_call_data(slice);
 	} else {
 		m_luakit->object_call(this, "on_call_text", nullptr, std::tie(), slice->size(), slice->contents());
-		return slice->size();
 	}
 }
 
-int lua_socket_node::on_call_data(slice* slice) {
+void lua_socket_node::on_call_data(slice* slice) {
 	m_codec->set_slice(slice);
 	size_t buf_size = slice->size();
 	m_luakit->object_call(this, "on_call_data", nullptr, m_codec, std::tie(), buf_size);
-	return buf_size;
 }
 

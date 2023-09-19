@@ -5,7 +5,7 @@
 namespace ljson {
     thread_local yyjson thread_json;
     
-    static jsoncodec* json_codec() {
+    static codec_base* json_codec() {
         jsoncodec* codec = new jsoncodec();
         codec->set_json(&thread_json);
         return codec;

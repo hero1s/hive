@@ -7,7 +7,7 @@ local tconcat     = table.concat
 local sgsub       = string.gsub
 local sformat     = string.format
 local ssplit      = string_ext.split
-local serialize   = codec.serialize
+local serialize   = luakit.serialize
 
 local http_client = hive.get("http_client")
 local WEEK_S      = hive.enum("PeriodTime", "WEEK_S")

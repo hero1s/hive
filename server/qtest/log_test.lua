@@ -36,4 +36,16 @@ for i = 1, 10 do
     log_debug("shuffle:%s", tmp)
 end
 
+local function test1()
+    local _<close> = hive.defer(function()
+        log_debug("defer call------------")
+    end)
+    local test2    = function()
+        log_debug("return call------------")
+    end
+    return test2()
+end
+
+test1()
+
 --os.exit()
