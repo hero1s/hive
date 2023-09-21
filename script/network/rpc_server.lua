@@ -3,7 +3,6 @@ local next        = next
 local pairs       = pairs
 local tunpack     = table.unpack
 local log_err     = logger.err
-local log_warn    = logger.warn
 local log_info    = logger.info
 local hxpcall     = hive.xpcall
 local signal_quit = signal.quit
@@ -64,8 +63,8 @@ function RpcServer:on_socket_rpc(client, rpc, session_id, rpc_flag, source, ...)
             local rpc_datas = event_mgr:notify_listener(rpc, client, ...)
             if session_id > 0 then
                 local cost_time = hive.clock_ms - btime
-                if cost_time > 3000 then
-                    log_warn("[RpcServer][on_socket_rpc] rpc:%s, session:%s,cost_time:%s", rpc, session_id, cost_time)
+                if cost_time > NetwkTime.RPC_PROCESS_TIMEOUT then
+                    log_err("[RpcServer][on_socket_rpc] rpc:%s, session:%s,cost_time:%s", rpc, session_id, cost_time)
                 end
                 client.call_rpc(session_id, FLAG_RES, rpc, tunpack(rpc_datas))
             end
@@ -188,8 +187,8 @@ end
 --rpc回执
 -----------------------------------------------------------------------------
 --服务器心跳协议
-function RpcServer:rpc_heartbeat(client, status_info)
-    self:send(client, "on_heartbeat", hive.id)
+function RpcServer:rpc_heartbeat(client, status_info, send_time)
+    self:send(client, "on_heartbeat", hive.id, send_time)
     if client.id then
         self.holder:on_client_beat(client, status_info)
     else

@@ -3,7 +3,6 @@ local jumphash       = codec.jumphash
 local tunpack        = table.unpack
 local tpack          = table.pack
 local log_err        = logger.err
-local log_warn       = logger.warn
 local log_info       = logger.info
 local hxpcall        = hive.xpcall
 
@@ -12,6 +11,7 @@ local thread_mgr     = hive.get("thread_mgr")
 local proxy_agent    = hive.get("proxy_agent")
 local timer_mgr      = hive.get("timer_mgr")
 local heval          = hive.eval
+local id2nick        = service.id2nick
 
 local FlagMask       = enum("FlagMask")
 local KernCode       = enum("KernCode")
@@ -67,7 +67,7 @@ function RpcClient:heartbeat()
     local status_info = { id       = hive.node_info.id,
                           is_ready = hive.node_info.is_ready,
                           status   = hive.node_info.status }
-    self:send("rpc_heartbeat", status_info)
+    self:send("rpc_heartbeat", status_info, hive.clock_ms)
 end
 
 function RpcClient:register(...)
@@ -162,7 +162,11 @@ function RpcClient:close()
 end
 
 --心跳回复
-function RpcClient:on_heartbeat(hid)
+function RpcClient:on_heartbeat(hid, send_time)
+    local netlag = hive.clock_ms - send_time
+    if netlag > SECOND_MS then
+        log_err("[RpcClient][on_heartbeat] (%s),netlag:%s ms", id2nick(hid), netlag)
+    end
 end
 
 --路由失败
@@ -186,8 +190,8 @@ function RpcClient:on_socket_rpc(socket, session_id, rpc_flag, source, rpc, ...)
             local rpc_datas = event_mgr:notify_listener(rpc, ...)
             if session_id > 0 then
                 local cost_time = hive.clock_ms - btime
-                if cost_time > 3000 then
-                    log_warn("[RpcClient][on_socket_rpc] rpc:%s, session:%s,cost_time:%s", rpc, session_id, cost_time)
+                if cost_time > NetwkTime.RPC_PROCESS_TIMEOUT then
+                    log_err("[RpcClient][on_socket_rpc] rpc:%s, session:%s,cost_time:%s", rpc, session_id, cost_time)
                 end
                 socket.callback_target(session_id, source, rpc, tunpack(rpc_datas))
             end
