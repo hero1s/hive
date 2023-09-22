@@ -6,19 +6,19 @@ local thread_mgr = hive.get("thread_mgr")
 if hive.index == 1 then
     local udp     = luabus.udp()
     local ok, err = udp.listen("127.0.0.1", 8600)
-    log_debug("udp-svr listen: %s, err: %s", ok, err)
+    log_debug("udp-svr listen: {}, err: {}", ok, err)
     thread_mgr:fork(function()
         local index = 0
         while true do
             local ok2, buf, ip, port = udp.recv()
             if ok2 then
                 index = index + 1
-                log_debug("udp-svr recv: %s from %s:%s", buf, ip, port)
+                log_debug("udp-svr recv: {} from {}:{}", buf, ip, port)
                 local buff = string.format("server send %s", index)
                 udp.send(buff, #buff, ip, port)
             else
                 if buf ~= "EWOULDBLOCK" then
-                    log_debug("udp-svr recv failed: %s", buf)
+                    log_debug("udp-svr recv failed: {}", buf)
                 end
             end
             thread_mgr:sleep(1000)
@@ -35,12 +35,12 @@ elseif hive.index == 2 then
             local ok, buf, ip, port = udp.recv()
             if ok then
                 index = index + 1
-                log_debug("udp-cli recv: %s from %s:%s", buf, ip, port)
+                log_debug("udp-cli recv: {} from {}:{}", buf, ip, port)
                 local buff = string.format("client send %s", index)
                 udp.send(buff, #buff, ip, port)
             else
                 if buf ~= "EWOULDBLOCK" then
-                    log_debug("udp-cli recv failed: %s", buf)
+                    log_debug("udp-cli recv failed: {}", buf)
                 end
             end
             thread_mgr:sleep(1000)

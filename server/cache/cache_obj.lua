@@ -53,7 +53,7 @@ function CacheObj:load()
     local query      = { [self.cache_key] = self.primary_value }
     local code, res  = mongo_mgr:find_one(self.db_name, self.cache_table, query, { _id = 0 })
     if check_failed(code) then
-        log_err("[CacheRow][load] failed: %s=> db: %s, table: %s", res, self.db_name, self.cache_table)
+        log_err("[CacheRow][load] failed: {}=> db: {}, table: {}", res, self.db_name, self.cache_table)
         return code
     end
     self.data    = res
@@ -122,7 +122,7 @@ function CacheObj:save_impl()
         if check_failed(code) then
             self.fail_cnt   = self.fail_cnt + 1
             self.retry_time = hive.now + self.fail_cnt * 60
-            log_err("[CacheObj][save_impl] failed: cnt:%s, %s=> db: %s, table: %s,data:%s", self.fail_cnt, res, self.db_name, self.cache_table, self.data)
+            log_err("[CacheObj][save_impl] failed: cnt:{}, {}=> db: {}, table: {},data:{}", self.fail_cnt, res, self.db_name, self.cache_table, self.data)
             self.dirty = true
             return code
         end
@@ -152,7 +152,7 @@ end
 
 function CacheObj:update_key(table_kvs, flush)
     if not self.data then
-        log_err("[CacheObj][update_key] cannot find record! cache:%s, table:%s", self.cache_name, self.cache_table)
+        log_err("[CacheObj][update_key] cannot find record! cache:{}, table:{}", self.cache_name, self.cache_table)
         return CacheCode.CACHE_KEY_IS_NOT_EXIST
     end
     self:active()

@@ -25,16 +25,16 @@ function RpcTest:setup()
         for n = 1, 200 do
             local ok, rn, rdata = router_mgr:call_target(hive.id, "on_echo", n, data)
             if ok then
-                log_debug("%s res: %s", rn, #rdata)
+                log_debug("{} res: {}", rn, #rdata)
             else
-                log_debug("%s err: %s", n, rn)
+                log_debug("{} err: {}", n, rn)
             end
         end
     end)
 end
 
 function RpcTest:on_echo(n, data)
-    log_debug("%s req: %s", n, #data)
+    log_debug("{} req: {}", n, #data)
     return n, data
 end
 

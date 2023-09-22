@@ -184,7 +184,7 @@ function UpdateMgr:check_service_status(scheduler)
         --停服
         if hive.status_stop() then
             if hive.safe_stop and event_mgr:fire_vote("vote_stop_service") then
-                log_warn("[UpdateMgr][check_service_stop] all vote agree,will stop service:%s", hive.name)
+                log_warn("[UpdateMgr][check_service_stop] all vote agree,will stop service:{}", hive.name)
                 event_mgr:notify_trigger("evt_service_shutdown")
                 signal_quit()
             end
@@ -234,7 +234,7 @@ end
 function UpdateMgr:check_new_day()
     if self.last_check_time > 0 and self.last_check_time < hive.now then
         if not is_same_day(self.last_check_time, hive.now) then
-            log_info("[UpdateMgr][check_new_day] notify [%s] this time is new day!!!", hive.name)
+            log_info("[UpdateMgr][check_new_day] notify [{}] this time is new day!!!", hive.name)
             thread_mgr:fork(function()
                 event_mgr:notify_trigger("evt_new_day")
             end)
@@ -246,7 +246,7 @@ end
 --添加对象到小时更新循环
 function UpdateMgr:attach_hour(obj)
     if not obj.on_hour then
-        log_warn("[UpdateMgr][attach_hour] obj(%s) isn't on_hour method!", obj:source())
+        log_warn("[UpdateMgr][attach_hour] obj({}) isn't on_hour method!", obj:source())
         return
     end
     self.hour_objs[obj] = true
@@ -259,7 +259,7 @@ end
 --添加对象到分更新循环
 function UpdateMgr:attach_minute(obj)
     if not obj.on_minute then
-        log_warn("[UpdateMgr][attach_minute] obj(%s) isn't on_minute method!", obj:source())
+        log_warn("[UpdateMgr][attach_minute] obj({}) isn't on_minute method!", obj:source())
         return
     end
     self.minute_objs[obj] = true
@@ -272,7 +272,7 @@ end
 --添加对象到秒更新循环
 function UpdateMgr:attach_second(obj)
     if not obj.on_second then
-        log_warn("[UpdateMgr][attach_second] obj(%s) isn't on_second method!", obj:source())
+        log_warn("[UpdateMgr][attach_second] obj({}) isn't on_second method!", obj:source())
         return
     end
     self.second_objs[obj] = guid_new()
@@ -285,7 +285,7 @@ end
 --添加对象到5秒更新循环
 function UpdateMgr:attach_second5(obj)
     if not obj.on_second5 then
-        log_warn("[UpdateMgr][attach_second5] obj(%s) isn't on_second5 method!", obj:source())
+        log_warn("[UpdateMgr][attach_second5] obj({}) isn't on_second5 method!", obj:source())
         return
     end
     self.second5_objs[obj] = guid_new()
@@ -298,7 +298,7 @@ end
 --添加对象到30秒更新循环
 function UpdateMgr:attach_second30(obj)
     if not obj.on_second30 then
-        log_warn("[UpdateMgr][attach_second30] obj(%s) isn't on_second30 method!", obj:source())
+        log_warn("[UpdateMgr][attach_second30] obj({}) isn't on_second30 method!", obj:source())
         return
     end
     self.second30_objs[obj] = guid_new()
@@ -311,7 +311,7 @@ end
 --添加对象到帧更新循环
 function UpdateMgr:attach_frame(obj)
     if not obj.on_frame then
-        log_warn("[UpdateMgr][attach_frame] obj(%s) isn't on_frame method!", obj:source())
+        log_warn("[UpdateMgr][attach_frame] obj({}) isn't on_frame method!", obj:source())
         return
     end
     self.frame_objs[obj] = guid_new()
@@ -324,7 +324,7 @@ end
 --添加对象到快帧更新循环
 function UpdateMgr:attach_fast(obj)
     if not obj.on_fast then
-        log_warn("[UpdateMgr][attach_fast] obj(%s) isn't on_fast method!", obj:source())
+        log_warn("[UpdateMgr][attach_fast] obj({}) isn't on_fast method!", obj:source())
         return
     end
     self.fast_objs[obj] = guid_new()
@@ -337,7 +337,7 @@ end
 --添加对象到程序退出通知列表
 function UpdateMgr:attach_quit(obj)
     if not obj.on_quit then
-        log_warn("[UpdateMgr][attach_quit] obj(%s) isn't on_quit method!", obj:source())
+        log_warn("[UpdateMgr][attach_quit] obj({}) isn't on_quit method!", obj:source())
         return
     end
     self.quit_objs[obj] = true

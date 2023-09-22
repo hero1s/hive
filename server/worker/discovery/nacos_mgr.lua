@@ -42,7 +42,7 @@ function NacosMgr:setup()
 end
 
 function NacosMgr:rpc_register_nacos(node)
-    log_debug("[NacosMgr][rpc_register_nacos] %s", node)
+    log_debug("[NacosMgr][rpc_register_nacos] {}", node)
     self.node = node
     if not self.nacos then
         log_warn("[NacosMgr][rpc_register_nacos] nacos is nil")
@@ -58,7 +58,7 @@ end
 
 function NacosMgr:rpc_watch_service(watch_services)
     self.watch_services = watch_services
-    log_debug("[NacosMgr][rpc_watch_service] watch:%s", self.watch_services)
+    log_debug("[NacosMgr][rpc_watch_service] watch:{}", self.watch_services)
 end
 
 function NacosMgr:on_nacos_ready()
@@ -82,7 +82,7 @@ function NacosMgr:register()
     if not self.status then
         local metadata = { id = self.node.id, name = self.node.name, is_ready = self.node.is_ready and 1 or 0, pid = self.node.pid }
         self.status    = self.nacos:regi_instance(self.node.service_name, self.node.host, self.node.port, nil, metadata)
-        log_debug("[NacosMgr][register] register:%s", self.status)
+        log_debug("[NacosMgr][register] register:{}", self.status)
     end
     return self.status
 end
@@ -91,7 +91,7 @@ function NacosMgr:unregister()
     if self.status and self.nacos:get_access_token() then
         local ret = self.nacos:del_instance(self.node.service_name, self.node.host, self.node.port)
         if ret then
-            log_debug("[NacosMgr][unregister] remove:%s", self.node)
+            log_debug("[NacosMgr][unregister] remove:{}", self.node)
             self.status = false
         end
     end
@@ -136,17 +136,17 @@ function NacosMgr:check_service(service_name)
         for id, node in pairs(old) do
             local cur_node = curr[id]
             if not cur_node or cur_node.is_ready ~= 1 then
-                log_debug("[NacosMgr][check_service] lose node:%s,%s", id2nick(id), curr[id])
+                log_debug("[NacosMgr][check_service] lose node:{},{}", id2nick(id), curr[id])
                 sdel[id] = node
             end
             if cur_node and cur_node.pid ~= node.pid then
-                log_err("[NacosMgr][check_service] the same service but not same pid!!!,%s --> %s", cur_node, node)
+                log_err("[NacosMgr][check_service] the same service but not same pid!!!,{} --> {}", cur_node, node)
             end
         end
         for id, node in pairs(curr) do
             if self:can_add_service(service_name) then
                 if node.is_ready == 1 and not old[id] then
-                    log_debug("[NacosMgr][check_service] add node:%s,%s", id2nick(id), node)
+                    log_debug("[NacosMgr][check_service] add node:{},{}", id2nick(id), node)
                     sadd[id] = node
                 end
             end
@@ -158,7 +158,7 @@ function NacosMgr:check_service(service_name)
             old[id] = nil
         end
         if next(sadd) or next(sdel) then
-            log_debug("[NacosMgr][check_service] sadd:%s, sdel: %s", sadd, sdel)
+            log_debug("[NacosMgr][check_service] sadd:{}, sdel: {}", sadd, sdel)
             hive.send_master("rpc_service_changed", service_name, sadd, sdel)
         end
     end

@@ -52,7 +52,7 @@ function RedisMgr:execute(db_name, primary_id, cmd, ...)
     if redisdb then
         local ok, res_oe = redisdb:execute(cmd, ...)
         if not ok then
-            log_err("[RedisMgr][execute] execute %s (%s) failed, because: %s", cmd, tpack(...), res_oe)
+            log_err("[RedisMgr][execute] execute {} ({}) failed, because: {}", cmd, tpack(...), res_oe)
         end
         return ok and SUCCESS or REDIS_FAILED, res_oe
     end

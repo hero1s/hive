@@ -35,7 +35,7 @@ function RedisAgent:set(key, value, etime)
     if check_success(code, ok) then
         return true
     end
-    log_err("[RedisAgent][set] ok:%s,code:%s,res:%s,ref:%s", ok, code, res, hive.where_call())
+    log_err("[RedisAgent][set] ok:{},code:{},res:{},ref:{}", ok, code, res, hive.where_call())
     return false
 end
 
@@ -47,7 +47,7 @@ function RedisAgent:get(key, is_table)
         end
         return true, res
     end
-    log_err("[RedisAgent][get] ok:%s,code:%s,res:%s,ref:%s", ok, code, res, hive.where_call())
+    log_err("[RedisAgent][get] ok:{},code:{},res:{},ref:{}", ok, code, res, hive.where_call())
     return false
 end
 
@@ -56,7 +56,7 @@ function RedisAgent:delete(key)
     if check_success(code, ok) then
         return true
     end
-    log_err("[RedisAgent][delete] ok:%s,code:%s,res:%s,ref:%s", ok, code, res, hive.where_call())
+    log_err("[RedisAgent][delete] ok:{},code:{},res:{},ref:{}", ok, code, res, hive.where_call())
     return false
 end
 
@@ -65,7 +65,7 @@ function RedisAgent:expire(key, seconds)
     if check_success(code, ok) then
         return true
     end
-    log_err("[RedisAgent][expire] ok:%s,code:%s,res:%s,ref:%s", ok, code, res, hive.where_call())
+    log_err("[RedisAgent][expire] ok:{},code:{},res:{},ref:{}", ok, code, res, hive.where_call())
     return false
 end
 

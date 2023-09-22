@@ -30,7 +30,7 @@ function Influx:__init(ip, port, org, bucket, token)
     self.query_addr     = sformat("http://%s:%s/api/v2/query", ip, port)
     self.bucket_addr    = sformat("http://%s:%s/api/v2/buckets", ip, port)
     self.common_headers = { ["Authorization"] = sformat("Token %s", token), ["Content-type"] = "application/json" }
-    log_info("[Influx] influx driver(%s:%s) setup success!", ip, port)
+    log_info("[Influx] influx driver({}:{}) setup success!", ip, port)
 end
 
 --line protocol
@@ -82,7 +82,7 @@ function Influx:find_bucket(bucket_name)
     local querys          = { name = bucket_name }
     local ok, status, res = http_client:call_get(self.bucket_addr, querys, self.common_headers)
     if not ok or status >= 300 then
-        log_err("[Influx][find_bucket] failed! status: %s, err: %s", status, ok and res or status)
+        log_err("[Influx][find_bucket] failed! status: {}, err: {}", status, ok and res or status)
         return false, ok and res or status
     end
     local response = json_decode(res)
@@ -103,7 +103,7 @@ function Influx:find_org(org_name)
     local querys          = { org = org_name }
     local ok, status, res = http_client:call_get(self.org_addr, querys, self.common_headers)
     if not ok or status >= 300 then
-        log_err("[Influx][find_org] failed! status: %s, err: %s", status, ok and res or status)
+        log_err("[Influx][find_org] failed! status: {}, err: {}", status, ok and res or status)
         return false, ok and res or status
     end
     local response = json_decode(res)
@@ -123,7 +123,7 @@ end
 function Influx:create_bucket(name, expire_time, description)
     local cur_org = self:find_org(self.org_name)
     if not cur_org then
-        log_err("[Influx][create_bucket] org(%s) config error", self.org_name)
+        log_err("[Influx][create_bucket] org({}) config error", self.org_name)
         return false, "org config error"
     end
     local data             = {
@@ -139,7 +139,7 @@ function Influx:create_bucket(name, expire_time, description)
     }
     local ok, status, res  = http_client:call_post(self.bucket_addr, data, self.common_headers)
     if not ok or status >= 300 then
-        log_err("[Influx][create_bucket] failed! status: %s, err: %s", status, ok and res or status)
+        log_err("[Influx][create_bucket] failed! status: {}, err: {}", status, ok and res or status)
         return false, ok and res or status
     end
     return true, json_decode(res)
@@ -150,7 +150,7 @@ function Influx:delete_bucket_by_id(bucket_id)
     local url             = sformat("%s/%s", self.bucket_addr, bucket_id)
     local ok, status, res = http_client:call_del(url, {}, self.common_headers)
     if not ok or status >= 300 then
-        log_err("[Influx][delete_bucket_by_id] failed! status: %s, err: %s", status, ok and res or status)
+        log_err("[Influx][delete_bucket_by_id] failed! status: {}, err: {}", status, ok and res or status)
         return false, ok and res or status
     end
     return true
@@ -160,13 +160,13 @@ end
 function Influx:delete_bucket(bucket_name)
     local bucket = self:find_bucket(bucket_name)
     if not bucket then
-        log_err("[Influx][delete_bucket] failed! bucket: %s not exist", bucket_name)
+        log_err("[Influx][delete_bucket] failed! bucket: {} not exist", bucket_name)
         return false, "bucket not exist"
     end
     local url             = sformat("%s/%s", self.bucket_addr, bucket.id)
     local ok, status, res = http_client:call_del(url, {}, self.common_headers)
     if not ok or status >= 300 then
-        log_err("[Influx][delete_bucket] failed! status: %s, err: %s", status, ok and res or status)
+        log_err("[Influx][delete_bucket] failed! status: {}, err: {}", status, ok and res or status)
         return false, ok and res or status
     end
     return true
@@ -185,7 +185,7 @@ function Influx:write(measurement, tags, fields)
     local querys          = { org = self.org, bucket = self.bucket }
     local ok, status, res = http_client:call_post(self.write_addr, line_protocol, headers, querys)
     if not ok or status >= 300 then
-        log_err("[Influx][write] failed! status: %s, err: %s", status, ok and res or status)
+        log_err("[Influx][write] failed! status: {}, err: {}", status, ok and res or status)
         return false, ok and res or status
     end
     return true
@@ -210,7 +210,7 @@ function Influx:batch(batch_datas)
     local querys          = { org = self.org, bucket = self.bucket }
     local ok, status, res = http_client:call_post(self.write_addr, line_protocol, headers, querys)
     if not ok or status >= 300 then
-        log_err("[Influx][batch] failed! status: %s, err: %s", status, ok and res or status)
+        log_err("[Influx][batch] failed! status: {}, err: {}", status, ok and res or status)
         return false, ok and res or status
     end
     return true
@@ -226,7 +226,7 @@ function Influx:query(script)
     local querys          = { org = self.org }
     local ok, status, res = http_client:call_post(self.query_addr, script, headers, querys)
     if not ok or status >= 300 then
-        log_err("[Influx][query] failed! status: %s, err: %s", status, ok and res or status)
+        log_err("[Influx][query] failed! status: {}, err: {}", status, ok and res or status)
         return false, ok and res or status
     end
     return true, self:parse_csv(res)

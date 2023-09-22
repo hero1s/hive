@@ -17,7 +17,7 @@ xml2lua.printable(people)
 print("\n------------------------------------------------------\n")
 
 print("XML Representation\n")
-log_debug("toXml:%s", xml2lua.toXml(people))
+log_debug("toXml:{}", xml2lua.toXml(people))
 
 local xml     = [[<?xml version="1.0" encoding="gbk"?>
 <req>
@@ -36,7 +36,7 @@ local parser  = xml2lua.parser(handler)
 parser:parse(xml)
 
 xml2lua.printable(handler.root)
-log_warn("----%s", handler.root)
+log_warn("----{}", handler.root)
 
 local param = {
     req = {
@@ -57,4 +57,4 @@ local param = {
     }
 }
 
-log_warn("table to xml:%s", xml2lua.toXml(param))
+log_warn("table to xml:{}", xml2lua.toXml(param))

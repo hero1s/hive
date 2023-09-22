@@ -14,14 +14,14 @@ local dtraceback = debug.traceback
 function hive.xpcall(func, format, ...)
     local ok, err = xpcall(func, dtraceback, ...)
     if not ok and format then
-        log_err(sformat(format, err))
+        log_err(format, err)
     end
 end
 
 function hive.xpcall_ret(func, format, ...)
     local result = tpack(xpcall(func, dtraceback, ...))
     if not result[1] and format then
-        log_err(sformat(format, result[2]))
+        log_err(format, result[2])
     end
     return tunpack(result)
 end
@@ -47,7 +47,7 @@ function hive.check_endless_loop()
     local debug_hook = function()
         local now = lclock_ms()
         if now - hive.clock_ms >= 10000 then
-            log_err(sformat("check_endless_loop:%s", dtraceback()))
+            log_err("check_endless_loop:{}", dtraceback())
         end
     end
     dsethook(debug_hook, "l")
@@ -58,7 +58,7 @@ local xpcall_ret = hive.xpcall_ret
 function hive.json_decode(json_str, result)
     local ok, res = xpcall_ret(json.decode, "[hive.json_decode] error:%s", json_str)
     if not ok then
-        log_err("[hive][json_decode] err json_str:[%s]", json_str)
+        log_err("[hive][json_decode] err json_str:[{}]", json_str)
     end
     if result then
         return ok, ok and res or nil
@@ -70,7 +70,7 @@ end
 function hive.try_json_decode(json_str, result)
     local ok, res = xpcall_ret(json.decode, nil, json_str)
     if not ok then
-        log_warn("[hive][try_json_decode] err json_str:[%s]", json_str)
+        log_warn("[hive][try_json_decode] err json_str:[{}]", json_str)
     end
     if result then
         return ok, ok and res or nil
@@ -82,7 +82,7 @@ end
 function hive.json_encode(body)
     local ok, jstr = xpcall_ret(json.encode, "[hive.json_encode] error:%s", body)
     if not ok then
-        log_err("[hive][json_encode] err body:[%s]", body)
+        log_err("[hive][json_encode] err body:[{}]", body)
     end
     return ok and jstr or ""
 end

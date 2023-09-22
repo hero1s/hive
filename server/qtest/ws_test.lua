@@ -4,7 +4,7 @@ local log_debug     = logger.debug
 
 local data = { aaa = 123 }
 local on_message = function(url, message)
-    log_debug("on_message: %s, %s", url, message)
+    log_debug("on_message: {}, {}", url, message)
     return data
 end
 local WSServer = import("network/ws_server.lua")

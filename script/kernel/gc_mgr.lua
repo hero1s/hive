@@ -75,7 +75,7 @@ function GcMgr:collect_gc()
     local lua_mem_s = self:lua_mem_size()
     collectgarbage("collect")
     local lua_mem_e = self:lua_mem_size()
-    log_info("[GcMgr][collect_gc] %s m,lua:%s m --> %s m,cost time:%s", mem, lua_mem_s, lua_mem_e, lclock_ms() - clock_ms)
+    log_info("[GcMgr][collect_gc] {} m,lua:{} m --> {} m,cost time:{}", mem, lua_mem_s, lua_mem_e, lclock_ms() - clock_ms)
     return lua_mem_e
 end
 
@@ -89,7 +89,7 @@ function GcMgr:update(threshold)
         collectgarbage("stop")
         self.gc_stop_mem = mfloor(collectgarbage("count"))
         self.gc_running  = false
-        log_info("gc stop autocollect, mem  curr count is %s", self.gc_stop_mem)
+        log_info("gc stop autocollect, mem  curr count is {}", self.gc_stop_mem)
     end
 
     --collectgarbage("collect")
@@ -129,7 +129,7 @@ function GcMgr:update(threshold)
         if costTime > 50 then
             self.gc_step_time50_cnt = self.gc_step_time50_cnt + 1
         end
-        --log_info("gc step, step_count:%s cost_time: %s", gc_step_count, costTime)
+        --log_info("gc step, step_count:{} cost_time: {}", gc_step_count, costTime)
 
         if not self.gc_running then
             self.gc_stop_mem     = mfloor(collectgarbage("count"))
@@ -147,13 +147,13 @@ end
 
 function GcMgr:log_gc_start()
     if self.step_value > GC_SLOW_STEP then
-        log_info("[GcMgr][log_gc_start] count is:%s,last mem is:%s,step value is:%s", self.gc_start_mem, self.gc_stop_mem, self.step_value)
+        log_info("[GcMgr][log_gc_start] count is:{},last mem is:{},step value is:{}", self.gc_start_mem, self.gc_stop_mem, self.step_value)
     end
 end
 
 function GcMgr:log_gc_end(gc_cycle, avg_time, old_step_value)
     if self.step_value > GC_SLOW_STEP then
-        log_info("[GcMgr][log_gc_end] step_count:%s,curr_mem:%s,last_mem:%s,cost_time:%s,cycle:%s,step_time_max:%s,step_time_avg:%s,free_time:%s,step_value:%s,step_time50_cnt:%s,mem_cost_speed:%s",
+        log_info("[GcMgr][log_gc_end] step_count:{},curr_mem:{},last_mem:{},cost_time:{},cycle:{},step_time_max:{},step_time_avg:{},free_time:{},step_value:{},step_time50_cnt:{},mem_cost_speed:{}",
                  self.gc_step_count, self.gc_stop_mem, self.gc_start_mem, self.gc_use_time, gc_cycle, self.gc_step_use_time_max, avg_time, self.gc_free_time, old_step_value, self.gc_step_time50_cnt, self.mem_cost_speed)
     end
 end

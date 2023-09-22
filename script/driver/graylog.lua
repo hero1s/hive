@@ -32,7 +32,7 @@ function GrayLog:__init()
     self.proto            = proto
     if proto == "http" then
         self.addr = sformat("http://%s:%s/gelf", ip, port)
-        log_info("[GrayLog][setup] setup http (%s) success!", self.addr)
+        log_info("[GrayLog][setup] setup http ({}) success!", self.addr)
         return
     end
     self.ip   = ip
@@ -40,11 +40,11 @@ function GrayLog:__init()
     if proto == "tcp" then
         self.tcp = Socket(self)
         update_mgr:attach_second(self)
-        log_info("[GrayLog][setup] setup tcp (%s:%s) success!", self.ip, self.port)
+        log_info("[GrayLog][setup] setup tcp ({}:{}) success!", self.ip, self.port)
         return
     end
     self.udp = luabus.udp()
-    log_info("[GrayLog][setup] setup udp (%s:%s) success!", self.ip, self.port)
+    log_info("[GrayLog][setup] setup udp ({}:{}) success!", self.ip, self.port)
 end
 
 function GrayLog:close()
@@ -56,10 +56,10 @@ end
 function GrayLog:on_second()
     if not self.tcp:is_alive() then
         if not self.tcp:connect(self.ip, self.port) then
-            log_err("[GrayLog][on_second] connect (%s:%s) failed!", self.ip, self.port, self.name)
+            log_err("[GrayLog][on_second] connect ({}:{}) failed!", self.ip, self.port, self.name)
             return
         end
-        log_info("[GrayLog][on_second] connect (%s:%s) success!", self.ip, self.port, self.name)
+        log_info("[GrayLog][on_second] connect ({}:{}) success!", self.ip, self.port, self.name)
     end
 end
 

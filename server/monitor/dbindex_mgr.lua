@@ -49,13 +49,13 @@ function DBIndexMgr:gm_check_db_index(build)
     end
     local ok, res = self:check_dbindexes()
     if not ok then
-        log_err("[DBIndexMgr][gm_check_db_index] not create dbindex:%s,please fast repair !!!", res)
+        log_err("[DBIndexMgr][gm_check_db_index] not create dbindex:{},please fast repair !!!", res)
     end
     return { code = ok, res = res }
 end
 
 function DBIndexMgr:build_index(rebuild)
-    log_info("[DBIndexMgr][build_index] %s", rebuild)
+    log_info("[DBIndexMgr][build_index] {}", rebuild)
     self:build_dbindex(rebuild)
     rmsg_agent:build_index(self.sharding)
 end
@@ -94,7 +94,7 @@ function DBIndexMgr:check_dbindexes()
 end
 
 function DBIndexMgr:build_dbindex(rebuild)
-    log_info("[DBIndexMgr][build_dbindex] %s", rebuild)
+    log_info("[DBIndexMgr][build_dbindex] {}", rebuild)
     local dbindex_db = config_mgr:init_table("dbindex", "db_name", "table_name", "name")
     for _, conf in dbindex_db:iterator() do
         if self.sharding and conf.sharding then
@@ -116,21 +116,21 @@ function DBIndexMgr:build_dbindex(rebuild)
         local query    = { table_name, { index } }
         local ok, code = mongo_agent:create_indexes(query, 1, db_name)
         if check_success(code, ok) then
-            log_info("[DBIndexMgr][build_index] db[%s],table[%s],key[%s] build index success", db_name, table_name, index.name)
+            log_info("[DBIndexMgr][build_index] db[{}],table[{}],key[{}] build index success", db_name, table_name, index.name)
         else
-            log_err("[DBIndexMgr][build_index] db[%s],table[%s] build index[%s] fail:%s", db_name, table_name, index, code)
+            log_err("[DBIndexMgr][build_index] db[{}],table[{}] build index[{}] fail:{}", db_name, table_name, index, code)
             if rebuild then
                 ok, code = mongo_agent:drop_indexes({ table_name, index.name }, 1, db_name)
                 if check_success(code, ok) then
-                    log_warn("[DBIndexMgr][build_index] db[%s],table[%s],key[%s] drop index success", db_name, table_name, index.name)
+                    log_warn("[DBIndexMgr][build_index] db[{}],table[{}],key[{}] drop index success", db_name, table_name, index.name)
                     ok, code = mongo_agent:create_indexes(query, 1, db_name)
                     if check_success(code, ok) then
-                        log_info("[DBIndexMgr][build_index] db[%s],table[%s],key[%s] drop and build index success", db_name, table_name, index.name)
+                        log_info("[DBIndexMgr][build_index] db[{}],table[{}],key[{}] drop and build index success", db_name, table_name, index.name)
                     else
-                        log_err("[DBIndexMgr][build_index] db[%s],table[%s] drop and build index[%s] fail:%s", db_name, table_name, index, code)
+                        log_err("[DBIndexMgr][build_index] db[{}],table[{}] drop and build index[{}] fail:{}", db_name, table_name, index, code)
                     end
                 else
-                    log_err("[DBIndexMgr][build_index] db[%s],table[%s],key[%s] drop index fail:%s", db_name, table_name, index.name, code)
+                    log_err("[DBIndexMgr][build_index] db[{}],table[{}],key[{}] drop index fail:{}", db_name, table_name, index.name, code)
                 end
             end
         end
@@ -140,7 +140,7 @@ end
 
 --db连接成功
 function DBIndexMgr:on_service_ready(id, service_name)
-    log_info("[DBIndexMgr][on_service_ready] %s", service.id2nick(id))
+    log_info("[DBIndexMgr][on_service_ready] {}", service.id2nick(id))
     if self.status > 0 then
         return
     end
@@ -153,7 +153,7 @@ function DBIndexMgr:on_service_ready(id, service_name)
     local ok, res = self:check_dbindexes()
     if not ok then
         thread_mgr:success_call(2000, function()
-            log_err("[DBIndexMgr][on_service_ready] not create dbindex:%s,please fast repair !!!", res)
+            log_err("[DBIndexMgr][on_service_ready] not create dbindex:{},please fast repair !!!", res)
             return false
         end)
     end

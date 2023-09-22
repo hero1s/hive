@@ -22,7 +22,7 @@ function CacheAgent:load(primary_key, cache_name, read_only)
     local req_data           = { cache_name, primary_key, cache_type }
     local ok, code, row_data = router_mgr:call_cachesvr_hash(primary_key, "rpc_cache_load", hive.id, req_data)
     if check_failed(code, ok) then
-        log_err("[CacheAgent][load] code=%s,res:%s,pkey=%s,cache=%s", code, row_data, primary_key, cache_name)
+        log_err("[CacheAgent][load] code={},res:{},pkey={},cache={}", code, row_data, primary_key, cache_name)
         return ok and code or RPC_FAILED
     end
     return code, row_data
@@ -33,7 +33,7 @@ function CacheAgent:update(primary_key, table_data, cache_name, flush)
     local req_data = { cache_name, primary_key, table_data, flush }
     local ok, code = router_mgr:call_cachesvr_hash(primary_key, "rpc_cache_update", hive.id, req_data)
     if check_failed(code, ok) then
-        log_err("[CacheAgent][update] faild: code=%s cache_name=%s,primary_key=%s", code, cache_name, primary_key)
+        log_err("[CacheAgent][update] faild: code={} cache_name={},primary_key={}", code, cache_name, primary_key)
         return ok and code or RPC_FAILED
     end
     return code
@@ -44,7 +44,7 @@ function CacheAgent:update_key(primary_key, table_kvs, cache_name, flush)
     local req_data = { cache_name, primary_key, table_kvs, flush }
     local ok, code = router_mgr:call_cachesvr_hash(primary_key, "rpc_cache_update_key", hive.id, req_data)
     if check_failed(code, ok) then
-        log_err("[CacheAgent][update_key] faild: code=%s,cache_name=%s,primary_key=%s", code, cache_name, primary_key)
+        log_err("[CacheAgent][update_key] faild: code={},cache_name={},primary_key={}", code, cache_name, primary_key)
         return ok and code or RPC_FAILED
     end
     return code
@@ -56,7 +56,7 @@ function CacheAgent:delete(primary_key, cache_name, sync)
     if sync then
         local ok, code = router_mgr:call_cachesvr_hash(primary_key, "rpc_cache_delete", hive.id, req_data)
         if check_failed(code, ok) then
-            log_err("[CacheAgent][delete] faild: code=%s,cache_name=%s,primary_key=%s", code, cache_name, primary_key)
+            log_err("[CacheAgent][delete] faild: code={},cache_name={},primary_key={}", code, cache_name, primary_key)
             return ok and code or RPC_FAILED
         end
         return code
@@ -71,7 +71,7 @@ function CacheAgent:flush(primary_key, cache_name, sync)
     if sync then
         local ok, code = router_mgr:call_cachesvr_hash(primary_key, "rpc_cache_flush", hive.id, req_data)
         if check_failed(code, ok) then
-            log_err("[CacheAgent][flush] faild: code=%s,cache_name=%s,primary_key=%s", code, cache_name, primary_key)
+            log_err("[CacheAgent][flush] faild: code={},cache_name={},primary_key={}", code, cache_name, primary_key)
             return ok and code or RPC_FAILED
         end
         return code
@@ -103,7 +103,7 @@ function CacheAgent:load_collect_by_cname(primary_key, cache_names, read_only)
             end
         end
     end
-    log_err("[CacheAgent][load_collect_by_cname] fail:%s,%s,%s", read_only, primary_key, cache_names)
+    log_err("[CacheAgent][load_collect_by_cname] fail:{},{},{}", read_only, primary_key, cache_names)
     return false, {}
 end
 
@@ -130,7 +130,7 @@ function CacheAgent:load_collect_by_key(primary_keys, cache_name, read_only)
             end
         end
     end
-    log_err("[CacheAgent][load_collect_by_key] fail:%s,%s,%s", read_only, cache_name, primary_keys)
+    log_err("[CacheAgent][load_collect_by_key] fail:{},{},{}", read_only, cache_name, primary_keys)
     return false, {}
 end
 

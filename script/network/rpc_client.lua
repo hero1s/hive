@@ -58,7 +58,7 @@ function RpcClient:on_call_router(rpc, send_len, ...)
         proxy_agent:statistics("on_rpc_send", rpc, send_len)
         return true, send_len
     end
-    log_err("[RpcClient][on_call_router] rpc %s call [%s] failed! code:%s", rpc, tpack(...), send_len)
+    log_err("[RpcClient][on_call_router] rpc {} call [{}] failed! code:{}", rpc, tpack(...), send_len)
     return false
 end
 
@@ -83,7 +83,7 @@ function RpcClient:connect()
     --开始连接
     local socket, cerr = luabus.connect(self.ip, self.port, NetwkTime.CONNECT_TIMEOUT)
     if not socket then
-        log_err("[RpcClient][connect] failed to connect: %s:%d err=%s", self.ip, self.port, cerr)
+        log_err("[RpcClient][connect] failed to connect: {}:{} err={}", self.ip, self.port, cerr)
         return false, cerr
     end
     socket.on_call          = function(recv_len, session_id, rpc_flag, source, rpc, ...)
@@ -149,7 +149,7 @@ end
 
 -- 主动关闭连接
 function RpcClient:close()
-    log_err("[RpcClient][close] socket %s:%s!", self.ip, self.port)
+    log_err("[RpcClient][close] socket {}:{}!", self.ip, self.port)
     if self.socket then
         self.socket.close()
         self.alive  = false
@@ -165,13 +165,13 @@ end
 function RpcClient:on_heartbeat(hid, send_time)
     local netlag = hive.clock_ms - send_time
     if netlag > SECOND_MS then
-        log_err("[RpcClient][on_heartbeat] (%s),netlag:%s ms", id2nick(hid), netlag)
+        log_err("[RpcClient][on_heartbeat] ({}),netlag:{} ms", id2nick(hid), netlag)
     end
 end
 
 --路由失败
 function RpcClient:on_forward_error(session_id, ...)
-    log_err("[RpcClient][on_forward_error] rpc:%s,resp:%s", thread_mgr:get_title(session_id), tpack(...))
+    log_err("[RpcClient][on_forward_error] rpc:{},resp:{}", thread_mgr:get_title(session_id), tpack(...))
     thread_mgr:response(session_id, ...)
 end
 
@@ -191,7 +191,7 @@ function RpcClient:on_socket_rpc(socket, session_id, rpc_flag, source, rpc, ...)
             if session_id > 0 then
                 local cost_time = hive.clock_ms - btime
                 if cost_time > NetwkTime.RPC_PROCESS_TIMEOUT then
-                    log_err("[RpcClient][on_socket_rpc] rpc:%s, session:%s,cost_time:%s", rpc, session_id, cost_time)
+                    log_err("[RpcClient][on_socket_rpc] rpc:{}, session:{},cost_time:{}", rpc, session_id, cost_time)
                 end
                 socket.callback_target(session_id, source, rpc, tunpack(rpc_datas))
             end
@@ -204,7 +204,7 @@ end
 
 --错误处理
 function RpcClient:on_socket_error(token, err)
-    log_info("[RpcClient][on_socket_error] socket %s:%s,token:%s,err:%s!", self.ip, self.port, token, err)
+    log_info("[RpcClient][on_socket_error] socket {}:{},token:{},err:{}!", self.ip, self.port, token, err)
     thread_mgr:fork(function()
         self.socket = nil
         self.alive  = false
@@ -219,7 +219,7 @@ end
 
 --连接成功
 function RpcClient:on_socket_connect(socket)
-    log_info("[RpcClient][on_socket_connect] connect to %s:%s success!", self.ip, self.port)
+    log_info("[RpcClient][on_socket_connect] connect to {}:{} success!", self.ip, self.port)
     thread_mgr:fork(function()
         self.alive = true
         self.holder:on_socket_connect(self)
@@ -235,7 +235,7 @@ function RpcClient:forward_socket(method, rpc, session_id, ...)
             end
             return true, SUCCESS
         end
-        log_err("[RpcClient][forward_socket] send failed:ip:%s,port:%s", self.ip, self.port)
+        log_err("[RpcClient][forward_socket] send failed:ip:{},port:{}", self.ip, self.port)
         return false, "socket send failed"
     end
     return false, "socket not connected"

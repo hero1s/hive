@@ -131,19 +131,19 @@ end
 function MysqlDB:login(socket)
     local id, ip, port = socket.id, socket.ip, socket.port
     if not socket:connect(ip, port) then
-        log_err("[MysqlDB][login] connect db(%s:%s:%s) failed!", ip, port, id)
+        log_err("[MysqlDB][login] connect db({}:{}:{}) failed!", ip, port, id)
         return false
     end
     local ok, res = self:auth(socket)
     if not ok then
         socket:close()
         self:delive(socket)
-        log_err("[MysqlDB][login] auth db(%s:%s:%s) auth failed! because: %s", ip, port, id, res)
+        log_err("[MysqlDB][login] auth db({}:{}:{}) auth failed! because: {}", ip, port, id, res)
         return false
     end
     self.connections[id] = nil
     tinsert(self.alives, socket)
-    log_info("[MysqlDB][login] login db(%s:%s:%s) success!", ip, port, id)
+    log_info("[MysqlDB][login] login db({}:{}:{}) success!", ip, port, id)
     return true, SUCCESS
 end
 

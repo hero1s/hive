@@ -218,9 +218,9 @@ local iv    = "1234567890abcdef"
 print("test_encrypt_cbc", string.len(key), string.len(iv))
 local aesobj = aes256.new(aes256.CBC, key, iv)
 local got    = aes256.encrypt(aesobj, input)
-logger.debug("encrypt:%s,len:%s", got, string.len(got))
+logger.debug("encrypt:{},len:{}", got, string.len(got))
 local  aesobj1 = aes256.new(aes256.CBC, key, iv)
 local out = aes256.decrypt(aesobj1, got)
-logger.debug("%s --> %s --> %s", input, got, out)
+logger.debug("{} --> {} --> {}", input, got, out)
 
 --main()

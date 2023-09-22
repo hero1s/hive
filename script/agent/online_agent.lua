@@ -99,7 +99,7 @@ function OnlineAgent:send_lobby_client(lobby_id, player_id, cmd_id, msg)
 end
 
 function OnlineAgent:encode_msg(player_id, cmd_id, msg)
-    log_debug("[S2C] player_id:%s,cmd_id:%s,cmd:%s,msg:%s", player_id, cmd_id, protobuf_mgr:msg_name(cmd_id), msg)
+    log_debug("[S2C] player_id:{},cmd_id:{},cmd:{},msg:{}", player_id, cmd_id, protobuf_mgr:msg_name(cmd_id), msg)
     return protobuf_mgr:encode(cmd_id, msg)
 end
 
@@ -119,7 +119,7 @@ end
 
 -- Online服务已经ready
 function OnlineAgent:on_service_ready(id, service_name)
-    log_info("[OnlineAgent][on_service_ready]->service_name:%s", service.id2nick(id))
+    log_info("[OnlineAgent][on_service_ready]->service_name:{}", service.id2nick(id))
     self:on_rebuild_online()
 end
 

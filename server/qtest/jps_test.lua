@@ -22,8 +22,8 @@ end
 local jps = ljps.new()
 --jps.enable_debug(false)
 local ret = jps.init(w, h, mapdata)
-logger.debug("ljps init ret:%s", ret)
+logger.debug("ljps init ret:{}", ret)
 
 local result = jps.find_path(sx, sy, ex, ey)
 
-logger.debug("%s,%s -->%s,%s result:%s", sx, sy, ex, ey, result)
+logger.debug("{},{} -->{},{} result:{}", sx, sy, ex, ey, result)

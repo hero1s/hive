@@ -167,13 +167,13 @@ function MongoDB:login(socket)
     local id, ip, port = socket.id, socket.ip, socket.port
     local ok, err      = socket:connect(ip, port)
     if not ok then
-        log_err("[MongoDB][login] connect db(%s:%s:%s:%s) failed: %s!", ip, port, self.name, id, err)
+        log_err("[MongoDB][login] connect db({}:{}:{}:{}) failed: {}!", ip, port, self.name, id, err)
         return false
     end
     if #self.user > 1 and #self.passwd > 1 then
         local aok, aerr = self:auth(socket, self.user, self.passwd)
         if not aok then
-            log_err("[MongoDB][login] auth db(%s:%s:%s:%s) failed! because: %s", ip, port, self.name, id, aerr)
+            log_err("[MongoDB][login] auth db({}:{}:{}:{}) failed! because: {}", ip, port, self.name, id, aerr)
             self:delive(socket)
             socket:close()
             return false
@@ -181,7 +181,7 @@ function MongoDB:login(socket)
     end
     self.connections[id] = nil
     tinsert(self.alives, socket)
-    log_info("[MongoDB][login] connect db(%s:%s:%s:%s) success!", ip, port, self.name, id)
+    log_info("[MongoDB][login] connect db({}:{}:{}:{}) success!", ip, port, self.name, id)
     return true, SUCCESS
 end
 
@@ -218,7 +218,7 @@ function MongoDB:sort_param(param)
             end
         end
     else
-        log_err("[MongoDB][sort_param]sort_param is not table:%s", param)
+        log_err("[MongoDB][sort_param]sort_param is not table:{}", param)
     end
     return bson_encode_o(tunpack(dst))
 end
@@ -296,7 +296,7 @@ function MongoDB:on_socket_error(sock, token, err)
         self:check_alive()
     end)
     for session_id, cmd in pairs(sock.sessions) do
-        log_warn("[MongoDB][on_socket_error] drop cmd %s-%s)!", cmd, session_id)
+        log_warn("[MongoDB][on_socket_error] drop cmd {}-{})!", cmd, session_id)
         thread_mgr:response(session_id, false, err)
     end
     sock.sessions = {}
@@ -353,7 +353,7 @@ function MongoDB:op_msg(sock, bson_cmd, cmd)
         sock.sessions[session_id] = nil
         local utime               = lclock_ms() - tick
         if utime > FAST_MS then
-            log_warn("[MongoDB][on_socket_recv] cmd (%s:%s) execute so big %s!", cmd, session_id, utime)
+            log_warn("[MongoDB][on_socket_recv] cmd ({}:{}) execute so big {}!", cmd, session_id, utime)
         end
     end)
     return thread_mgr:yield(session_id, sformat("mongo_op:%s", cmd), DB_TIMEOUT)
@@ -367,7 +367,7 @@ end
 function MongoDB:runCommand(cmd, cmd_v, ...)
     local ok, bson_cmd = xpcall_ret(bson_encode_o, "[mongo.bson] error:%s", cmd, cmd_v or 1, "$db", self.name, ...)
     if not ok then
-        log_err("[MongoDB][runCommand] bson:%s", tpack(...))
+        log_err("[MongoDB][runCommand] bson:{}", tpack(...))
         return false, "bson failed"
     end
     return self:op_msg(self.executer, bson_cmd, cmd)
@@ -380,7 +380,7 @@ function MongoDB:sendCommand(cmd, cmd_v, ...)
     end
     local ok, bson_cmd = xpcall_ret(bson_encode_o, "[mongo.bson] error:%s", cmd, cmd_v or 1, "$db", self.name, "writeConcern", { w = 0 }, ...)
     if not ok then
-        log_err("[MongoDB][sendCommand] bson:%s", tpack(...))
+        log_err("[MongoDB][sendCommand] bson:{}", tpack(...))
         return false, "bson failed"
     end
     local msg = mopmsg(0, 2, bson_cmd)

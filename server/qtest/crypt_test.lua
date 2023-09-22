@@ -26,40 +26,40 @@ local lhmac_sha512  = lcrypt.hmac_sha512
 local ran           = lrandomkey()
 local nonce         = lb64encode(ran)
 local dnonce        = lb64decode(nonce)
-log_info("b64encode-> ran: %s, nonce: %s, dnonce:%s", lhex_encode(ran), lhex_encode(nonce), lhex_encode(dnonce))
+log_info("b64encode-> ran: {}, nonce: {}, dnonce:{}", lhex_encode(ran), lhex_encode(nonce), lhex_encode(dnonce))
 
 --sha
 local value = "123456779"
 local sha1  = lhex_encode(lsha1(value))
-log_info("sha1: %s", sha1)
+log_info("sha1: {}", sha1)
 local sha224 = lhex_encode(lsha224(value))
-log_info("sha224: %s", sha224)
+log_info("sha224: {}", sha224)
 local sha256 = lhex_encode(lsha256(value))
-log_info("sha256: %s", sha256)
+log_info("sha256: {}", sha256)
 local sha384 = lhex_encode(lsha384(value))
-log_info("sha384: %s", sha384)
+log_info("sha384: {}", sha384)
 local sha512 = lhex_encode(lsha512(value))
-log_info("sha512: %s", sha512)
+log_info("sha512: {}", sha512)
 
 --md5
 local omd5 = lmd5(value)
 local nmd5 = lmd5(value, 1)
 local hmd5 = lhex_encode(omd5)
-log_info("md5: %s", nmd5)
-log_info("omd5: %s, hmd5: %s", omd5, hmd5)
+log_info("md5: {}", nmd5)
+log_info("omd5: {}, hmd5: {}", omd5, hmd5)
 
 --hmac_sha
 local key       = "1235456"
 local hmac_sha1 = lhex_encode(lhmac_sha1(key, value))
-log_info("hmac_sha1: %s", hmac_sha1)
+log_info("hmac_sha1: {}", hmac_sha1)
 local hmac_sha224 = lhex_encode(lhmac_sha224(key, value))
-log_info("hmac_sha224: %s", hmac_sha224)
+log_info("hmac_sha224: {}", hmac_sha224)
 local hmac_sha256 = lhex_encode(lhmac_sha256(key, value))
-log_info("hmac_sha256: %s", hmac_sha256)
+log_info("hmac_sha256: {}", hmac_sha256)
 local hmac_sha384 = lhex_encode(lhmac_sha384(key, value))
-log_info("hmac_sha384: %s", hmac_sha384)
+log_info("hmac_sha384: {}", hmac_sha384)
 local hmac_sha512 = lhex_encode(lhmac_sha512(key, value))
-log_info("hmac_sha512: %s", hmac_sha512)
+log_info("hmac_sha512: {}", hmac_sha512)
 
 --rsa
 local pem_pub     = [[
@@ -86,19 +86,19 @@ RfSHi27F/Ew6pENe4AwY2sfEV2TXrwEdrvfjNWFSPw==
 ]]
 
 local pub_pem_b64 = lb64decode(string.gsub(pem_pub, "\n", ""))
-log_info("pub_pem_b64: %s", lhex_encode(pub_pem_b64))
+log_info("pub_pem_b64: {}", lhex_encode(pub_pem_b64))
 local pri_pem_b64 = lb64decode(string.gsub(pem_pri, "\n", ""))
-log_info("pri_pem_b64: %s", lhex_encode(pri_pem_b64))
+log_info("pri_pem_b64: {}", lhex_encode(pri_pem_b64))
 
 local code1 = rsa_init_pkey(pub_pem_b64)
 local code2 = rsa_init_skey(pri_pem_b64)
-log_info("rsa_init: %s, %s", code1, code2)
+log_info("rsa_init: {}, {}", code1, code2)
 
 local rsav1 = lcrypt.rsa_pencode("xiyoo0812")
-log_info("rsa_pencode: %s, %s", #rsav1, lhex_encode(rsav1))
+log_info("rsa_pencode: {}, {}", #rsav1, lhex_encode(rsav1))
 local rsav2 = lcrypt.rsa_sdecode(rsav1)
-log_info("rsa_sdecode: %s", rsav2)
+log_info("rsa_sdecode: {}", rsav2)
 local rsav3 = lcrypt.rsa_sencode("xiyoo0812")
-log_info("rsa_sencode: %s, %s", #rsav3, lhex_encode(rsav3))
+log_info("rsa_sencode: {}, {}", #rsav3, lhex_encode(rsav3))
 local rsav4 = lcrypt.rsa_pdecode(rsav3)
-log_info("rsa_pdecode: %s", rsav4)
+log_info("rsa_pdecode: {}", rsav4)

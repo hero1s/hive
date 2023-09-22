@@ -21,7 +21,7 @@ function Listener:add_trigger(trigger, event, handler)
     local func_name     = handler or event
     local callback_func = trigger[func_name]
     if not callback_func or type(callback_func) ~= "function" then
-        log_err("[Listener][add_trigger] event(%s) handler is nil!", event)
+        log_err("[Listener][add_trigger] event({}) handler is nil!", event)
         return
     end
     local info     = { trigger, func_name }
@@ -55,13 +55,13 @@ end
 
 function Listener:add_listener(listener, event, handler)
     if self._listeners[event] then
-        log_err("[Listener][add_listener] event(%s) repeat!", event)
+        log_err("[Listener][add_listener] event({}) repeat!", event)
         return
     end
     local func_name     = handler or event
     local callback_func = listener[func_name]
     if not callback_func or type(callback_func) ~= "function" then
-        log_err("[Listener][add_listener] event(%s) callback is nil!", event)
+        log_err("[Listener][add_listener] event({}) callback is nil!", event)
         return
     end
     self._listeners[event] = { listener, func_name }
@@ -73,13 +73,13 @@ end
 
 function Listener:add_cmd_listener(listener, cmd, handler)
     if self._commands[cmd] then
-        log_err("[Listener][add_cmd_listener] cmd(%s) repeat!", cmd)
+        log_err("[Listener][add_cmd_listener] cmd({}) repeat!", cmd)
         return
     end
     local func_name     = handler
     local callback_func = listener[func_name]
     if not callback_func or type(callback_func) ~= "function" then
-        log_err("[Listener][add_cmd_listener] cmd(%s) handler is nil!", cmd)
+        log_err("[Listener][add_cmd_listener] cmd({}) handler is nil!", cmd)
         return
     end
     self._commands[cmd] = { listener, func_name }
@@ -93,7 +93,7 @@ function Listener:add_vote(trigger, event, handler)
     local func_name     = handler or event
     local callback_func = trigger[func_name]
     if not callback_func or type(callback_func) ~= "function" then
-        log_err("[Listener][add_vote] event(%s) handler is nil!", event)
+        log_err("[Listener][add_vote] event({}) handler is nil!", event)
         return
     end
     local info  = { trigger, func_name }
@@ -111,7 +111,7 @@ function Listener:notify_trigger(event, ...)
         local callback_func      = trigger[func_name]
         local ok, ret            = xpcall(callback_func, dtraceback, trigger, ...)
         if not ok then
-            log_err("[Listener][notify_trigger] xpcall [%s:%s] failed: %s!,call from:%s", trigger:source(), func_name, ret, hive.where_call())
+            log_err("[Listener][notify_trigger] xpcall [{}:{}] failed: {}!,call from:{}", trigger:source(), func_name, ret, hive.where_call())
         end
     end
 end
@@ -120,7 +120,7 @@ function Listener:notify_listener(event, ...)
     local listener_ctx = self._listeners[event]
     if not listener_ctx then
         if not self._ignores[event] then
-            log_warn("[Listener][notify_listener] event %s handler is nil!,call from:%s",
+            log_warn("[Listener][notify_listener] event {} handler is nil!,call from:{}",
                      event, hive.where_call())
             self._ignores[event] = true
         end
@@ -130,7 +130,7 @@ function Listener:notify_listener(event, ...)
     local callback_func       = listener[func_name]
     local result              = tpack(xpcall(callback_func, dtraceback, listener, ...))
     if not result[1] then
-        log_err("[Listener][notify_listener] xpcall [%s:%s] failed: %s,call from:%s", listener:source(), func_name, result[2], hive.where_call())
+        log_err("[Listener][notify_listener] xpcall [{}:{}] failed: {},call from:{}", listener:source(), func_name, result[2], hive.where_call())
     end
     return result
 end
@@ -139,7 +139,7 @@ function Listener:notify_command(cmd, ...)
     local listener_ctx = self._commands[cmd]
     if not listener_ctx then
         if not self._ignores[cmd] then
-            log_warn("[Listener][notify_command] command %s handler is nil!", cmd)
+            log_warn("[Listener][notify_command] command {} handler is nil!", cmd)
             self._ignores[cmd] = true
         end
         return tpack(false, "command handler is nil")
@@ -149,7 +149,7 @@ function Listener:notify_command(cmd, ...)
     local callback_func       = listener[func_name]
     local result              = tpack(xpcall(callback_func, dtraceback, listener, ...))
     if not result[1] then
-        log_err("[Listener][notify_command] xpcall [%s:%s] failed: %s!,call from:%s", listener:source(), func_name, result[2], hive.where_call())
+        log_err("[Listener][notify_command] xpcall [{}:{}] failed: {}!,call from:{}", listener:source(), func_name, result[2], hive.where_call())
     end
     return result
 end
@@ -160,10 +160,10 @@ function Listener:fire_vote(event, ...)
         local callback_func    = voter[func_name]
         local ok, ret          = xpcall(callback_func, dtraceback, voter, ...)
         if not ok then
-            log_err("[Listener][fire_vote] xpcall [%s:%s] failed: %s!,call from:%s", voter:source(), func_name, ret, hive.where_call())
+            log_err("[Listener][fire_vote] xpcall [{}:{}] failed: {}!,call from:{}", voter:source(), func_name, ret, hive.where_call())
         end
         if not ret then
-            log_warn("[Listener][fire_vote] vote down:[%s]", voter:source())
+            log_warn("[Listener][fire_vote] vote down:[{}]", voter:source())
             return false
         end
     end

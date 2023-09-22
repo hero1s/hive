@@ -32,10 +32,10 @@ end
 function Scheduler:startup(name, entry)
     local ok, err = pcall(hive.worker_startup, name, entry)
     if not ok then
-        log_err("[Scheduler][startup] startup failed: %s", err)
+        log_err("[Scheduler][startup] startup failed: {}", err)
         return ok
     end
-    log_info("[Scheduler][startup] startup %s: %s", name, entry)
+    log_info("[Scheduler][startup] startup {}: {}", name, entry)
     return ok
 end
 

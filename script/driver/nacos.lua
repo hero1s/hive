@@ -59,7 +59,7 @@ function Nacos:__init()
         self.instances_url = sformat("http://%s:%s/nacos/v1/ns/instance/list", ip, port)
         self.inst_beat_url = sformat("http://%s:%s/nacos/v1/ns/instance/beat", ip, port)
         self.namespace_url = sformat("http://%s:%s/nacos/v1/console/namespaces", ip, port)
-        log_info("[Nacos][setup] setup (%s:%s) success!", ip, port)
+        log_info("[Nacos][setup] setup ({}:{}) success!", ip, port)
     end
     --定时获取token
     self.timer_id = timer_mgr:register(0, SECOND_MS, -1, function()
@@ -82,12 +82,12 @@ function Nacos:auth()
     if user and pass then
         local ok, status, res = http_client:call_post(self.login_url, nil, nil, { username = user, password = pass })
         if not ok or status ~= 200 then
-            log_err("[Nacos][auth] failed! code: %s, err: %s", status, res)
+            log_err("[Nacos][auth] failed! code: {}, err: {}", status, res)
             return false, res
         end
         local resdata     = json_decode(res)
         self.access_token = resdata.accessToken
-        log_info("[Nacos][auth] auth success : %s", res)
+        log_info("[Nacos][auth] auth success : {}", res)
     else
         self.access_token = ""
     end
@@ -109,7 +109,7 @@ function Nacos:get_config(data_id, group)
     }
     local ok, status, res = http_client:call_get(self.config_url, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][get_config] failed! data_id: %s, code: %s, err: %s", data_id, status, res)
+        log_err("[Nacos][get_config] failed! data_id: {}, code: {}, err: {}", data_id, status, res)
         return nil, res
     end
     return res
@@ -126,7 +126,7 @@ function Nacos:modify_config(data_id, content, group)
     }
     local ok, status, res = http_client:call_post(self.config_url, nil, nil, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][modify_config] failed! data_id: %s, code: %s, err: %s", data_id, status, res)
+        log_err("[Nacos][modify_config] failed! data_id: {}, code: {}, err: {}", data_id, status, res)
         return false, res
     end
     return true
@@ -146,7 +146,7 @@ function Nacos:listen_config(data_id, group, md5, on_changed)
             local lisfmt          = sformat("Listening-Configs=%s%s", tconcat(datas, WORD_SEPARATOR), LINE_SEPARATOR)
             local ok, status, res = http_client:call_post(self.listen_url, lisfmt, headers, query, SECOND_30_MS + 1000)
             if not ok or status ~= 200 then
-                log_err("[Nacos][listen_config] failed! data_id: %s, code: %s, err: %s", data_id, status, res)
+                log_err("[Nacos][listen_config] failed! data_id: {}, code: {}, err: {}", data_id, status, res)
                 thread_mgr:sleep(2000)
                 goto contione
             end
@@ -172,7 +172,7 @@ function Nacos:del_config(data_id, group)
     }
     local ok, status, res = http_client:call_del(self.config_url, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][del_config] failed! data_id: %s, code: %s, err: %s", data_id, status, res)
+        log_err("[Nacos][del_config] failed! data_id: {}, code: {}, err: {}", data_id, status, res)
         return false, res
     end
     return true
@@ -185,7 +185,7 @@ function Nacos:query_namespaces()
     local query           = { accessToken = self.access_token }
     local ok, status, res = http_client:call_get(self.namespace_url, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][query_namespaces] failed! code: %s, err: %s", status, res)
+        log_err("[Nacos][query_namespaces] failed! code: {}, err: {}", status, res)
         return nil, res
     end
     local resdata = json_decode(res)
@@ -205,7 +205,7 @@ function Nacos:create_namespace(ns_id, ns_name, ns_desc)
     }
     local ok, status, res = http_client:call_post(self.namespace_url, nil, nil, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][create_namespace] failed! ns_name: %s, code: %s, err: %s", ns_name, status, res)
+        log_err("[Nacos][create_namespace] failed! ns_name: {}, code: {}, err: {}", ns_name, status, res)
         return false, res
     end
     return true
@@ -224,7 +224,7 @@ function Nacos:modify_namespace(ns_id, ns_name, ns_desc)
     }
     local ok, status, res = http_client:call_put(self.namespace_url, nil, nil, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][modify_namespace] failed! ns_name: %s, code: %s, err: %s", ns_name, status, res)
+        log_err("[Nacos][modify_namespace] failed! ns_name: {}, code: {}, err: {}", ns_name, status, res)
         return false, res
     end
     return true
@@ -238,7 +238,7 @@ function Nacos:del_namespace(ns_id)
     }
     local ok, status, res = http_client:call_del(self.namespace_url, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][del_namespace] failed! ns_id: %s, code: %s, err: %s", ns_id, status, res)
+        log_err("[Nacos][del_namespace] failed! ns_id: {}, code: {}, err: {}", ns_id, status, res)
         return false, res
     end
     return true
@@ -263,7 +263,7 @@ function Nacos:query_instances(service_name, group_name, healthyOnly)
     }
     local ok, status, res = http_client:call_get(self.instances_url, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][query_instances] failed! service_name:%s, code: %s, err: %s", service_name, status, res)
+        log_err("[Nacos][query_instances] failed! service_name:{}, code: {}, err: {}", service_name, status, res)
         return nil, res
     end
     local insts    = {}
@@ -303,7 +303,7 @@ function Nacos:query_instance(service_name, host, port, group_name)
     }
     local ok, status, res = http_client:call_get(self.instance_url, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][query_instance] failed! service_name:%s, code: %s, err: %s", service_name, status, res)
+        log_err("[Nacos][query_instance] failed! service_name:{}, code: {}, err: {}", service_name, status, res)
         return nil, res
     end
     return json_decode(res)
@@ -338,7 +338,7 @@ function Nacos:regi_instance(service_name, host, port, group_name, metadata)
     end
     local ok, status, res = http_client:call_post(self.instance_url, nil, nil, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][regi_instance] failed! service_name:%s, code: %s, err: %s", service_name, status, res)
+        log_err("[Nacos][regi_instance] failed! service_name:{}, code: {}, err: {}", service_name, status, res)
         return false, res
     end
     return true
@@ -366,7 +366,7 @@ function Nacos:sent_beat(service_name, host, port, group_name)
     }
     local ok, status, res = http_client:call_put(self.inst_beat_url, nil, nil, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][sent_beat] failed! service_name: %s, code: %s, err: %s", service_name, status, res)
+        log_err("[Nacos][sent_beat] failed! service_name: {}, code: {}, err: {}", service_name, status, res)
         return false, res
     end
     return true
@@ -396,7 +396,7 @@ function Nacos:modify_instance(service_name, host, port, group_name)
     }
     local ok, status, res = http_client:call_put(self.instance_url, nil, nil, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][modify_instance] failed! service_name:%s, code: %s, err: %s", service_name, status, res)
+        log_err("[Nacos][modify_instance] failed! service_name:{}, code: {}, err: {}", service_name, status, res)
         return false, res
     end
     return true
@@ -414,7 +414,7 @@ function Nacos:del_instance(service_name, host, port, group_name)
     }
     local ok, status, res = http_client:call_del(self.instance_url, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][del_instance] failed! service_name:%s, code: %s, err: %s", service_name, status, res)
+        log_err("[Nacos][del_instance] failed! service_name:{}, code: {}, err: {}", service_name, status, res)
         return false, res
     end
     return true
@@ -439,7 +439,7 @@ function Nacos:create_service(service_name, group_name)
     }
     local ok, status, res = http_client:call_post(self.service_url, nil, nil, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][create_service] failed! service_name: %s, code: %s, err: %s", service_name, status, res)
+        log_err("[Nacos][create_service] failed! service_name: {}, code: {}, err: {}", service_name, status, res)
         return false, res
     end
     return true
@@ -462,7 +462,7 @@ function Nacos:modify_service(service_name, group_name)
     }
     local ok, status, res = http_client:call_put(self.service_url, nil, nil, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][modify_service] failed! service_name: %s, code: %s, err: %s", service_name, status, res)
+        log_err("[Nacos][modify_service] failed! service_name: {}, code: {}, err: {}", service_name, status, res)
         return false, res
     end
     return true
@@ -478,7 +478,7 @@ function Nacos:del_service(service_name, group_name)
     }
     local ok, status, res = http_client:call_del(self.service_url, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][del_service] failed! service_name: %s, code: %s, err: %s", service_name, status, res)
+        log_err("[Nacos][del_service] failed! service_name: {}, code: {}, err: {}", service_name, status, res)
         return false, res
     end
     return true
@@ -494,7 +494,7 @@ function Nacos:query_service(service_name, group_name)
     }
     local ok, status, res = http_client:call_get(self.service_url, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][query_service] failed! service_name: %s, code: %s, err: %s", service_name, status, res)
+        log_err("[Nacos][query_service] failed! service_name: {}, code: {}, err: {}", service_name, status, res)
         return nil, res
     end
     return json_decode(res)
@@ -515,7 +515,7 @@ function Nacos:query_services(page, size, group_name)
     }
     local ok, status, res = http_client:call_get(self.services_url, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][query_services] failed! group_name: %s, code: %s, err: %s", group_name, status, res)
+        log_err("[Nacos][query_services] failed! group_name: {}, code: {}, err: {}", group_name, status, res)
         return false
     end
     local jdata = json_decode(res)
@@ -529,7 +529,7 @@ end
 function Nacos:query_switchs()
     local ok, status, res = http_client:call_get(self.switches_url, {})
     if not ok or status ~= 200 then
-        log_err("[Nacos][query_switchs] failed! code: %s, err: %s", status, res)
+        log_err("[Nacos][query_switchs] failed! code: {}, err: {}", status, res)
         return nil, res
     end
     return json_decode(res)
@@ -543,7 +543,7 @@ function Nacos:modify_switchs(entry, value)
     }
     local ok, status, res = http_client:call_put(self.switches_url, nil, nil, query)
     if not ok or status ~= 200 then
-        log_err("[Nacos][modify_switchs] failed! entry: %s, code: %s, err: %s", entry, status, res)
+        log_err("[Nacos][modify_switchs] failed! entry: {}, code: {}, err: {}", entry, status, res)
         return false, res
     end
     return true

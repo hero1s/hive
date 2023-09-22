@@ -86,7 +86,7 @@ end
 function ProtobufMgr:encode(cmd_id, data)
     local proto_name = self.pb_indexs[cmd_id]
     if not proto_name then
-        log_err("[ProtobufMgr][encode] find proto name failed! cmd_id:%s", cmd_id)
+        log_err("[ProtobufMgr][encode] find proto name failed! cmd_id:{}", cmd_id)
         return
     end
     local ok, pb_str = pcall(pb_encode, proto_name, data or {})
@@ -106,7 +106,7 @@ function ProtobufMgr:decode(cmd_id, pb_str)
     local proto_name = self.pb_indexs[cmd_id]
     if not proto_name then
         if type(cmd_id) ~= "string" then
-            log_err("[ProtobufMgr][decode] find proto name failed! cmd_id:%s", cmd_id)
+            log_err("[ProtobufMgr][decode] find proto name failed! cmd_id:{}", cmd_id)
             return
         end
         proto_name = cmd_id
@@ -121,7 +121,7 @@ local function pbenum(full_name)
     return function(_, enum_name)
         local enum_val = pb_enum_id(full_name, enum_name)
         if not enum_val then
-            log_err("[ProtobufMgr][pbenum] no enum %s.%s", full_name, enum_name)
+            log_err("[ProtobufMgr][pbenum] no enum {}.{}", full_name, enum_name)
         end
         return enum_val
     end
@@ -154,14 +154,14 @@ function ProtobufMgr:define_command(full_name, proto_name)
                 return
             end
         end
-        log_err("[ProtobufMgr][define_command] proto_name: [%s] can't find msg enum:[%s] !", proto_name, msg_name)
+        log_err("[ProtobufMgr][define_command] proto_name: [{}] can't find msg enum:[{}] !", proto_name, msg_name)
     end
 end
 
 function ProtobufMgr:register(doer, cmd_id, callback)
     local proto_name = self.pb_indexs[cmd_id]
     if not proto_name then
-        log_warn("[ProtobufMgr][register] proto_name: [%s] can't find!", cmd_id)
+        log_warn("[ProtobufMgr][register] proto_name: [{}] can't find!", cmd_id)
         return
     end
     event_mgr:add_cmd_listener(doer, cmd_id, callback)

@@ -91,14 +91,14 @@ local function delegate_one(class, mixin)
     end
     for name in pairs(mixin.__props) do
         if has_prop(class, name) then
-            log_err(sformat("the mixin:[%s] default ( %s ) has repeat defined.", mixin.__source, name))
+            log_err("the mixin:[{}] default ( {} ) has repeat defined.", mixin.__source, name)
         end
     end
     for method in pairs(mixin.__methods) do
         --下划线前缀方法不代理
         if ssub(method, 1, 1) ~= "_" then
             if class[method] then
-                log_err(sformat("the mixin:[%s] method ( %s ) has repeat defined.", mixin.__source, method))
+                log_err("the mixin:[{}] method ( {} ) has repeat defined.", mixin.__source, method)
             end
             --接口代理
             class[method] = function(...)

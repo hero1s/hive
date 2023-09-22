@@ -26,7 +26,7 @@ function WorkerAgent:send(rpc, ...)
     if TITLE ~= self.service then
         return send_worker(self.service, rpc, ...)
     end
-    log_err("[WorkerAgent][send] why send self:%s", rpc)
+    log_err("[WorkerAgent][send] why send self:{}", rpc)
     return false, "can't send self!"
 end
 
@@ -37,7 +37,7 @@ function WorkerAgent:call(rpc, ...)
     if TITLE ~= self.service then
         return call_worker(self.service, rpc, ...)
     end
-    log_err("[WorkerAgent][call] why call self:%s", rpc)
+    log_err("[WorkerAgent][call] why call self:{}", rpc)
     return false, "can't call self!"
 end
 

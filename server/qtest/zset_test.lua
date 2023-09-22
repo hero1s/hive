@@ -13,16 +13,16 @@ do
     assert(rank:size() == 3)
     local rsize = rank:size()
     for i = 1, rsize do
-        logger.debug("rank:%s,%s,%s", i, rank:rank(i*10))
-        logger.debug("key:%s,score:%s",rank:key_by_rank(i))
+        logger.debug("rank:{},{},{}", i, rank:rank(i*10))
+        logger.debug("key:{},score:{}",rank:key_by_rank(i))
     end
 
     local res = rank:range(1, 4)
     assert(#res == 3)
     local top4 = rank:range(1, 4)
-    logger.warn("top4:%s", top4)
+    logger.warn("top4:{}", top4)
     local r, score, t = rank:rank(2)
-    logger.debug("2 rank:%s,score:%s,t:%s", r, score, t)
+    logger.debug("2 rank:{},score:{},t:{}", r, score, t)
     rank:clear()
     assert(not rank:range(1, 4))
     logger.debug("zset test finish")
@@ -40,16 +40,16 @@ do
     assert(rank:size() == 3)
     local rsize = rank:size()
     for i = 1, rsize do
-        --logger.debug("rank:%s,%s,%s", i, rank:rank(10+i*10))
-        logger.debug("key:%s,score:%s",rank:key_by_rank(i))
+        --logger.debug("rank:{},{},{}", i, rank:rank(10+i*10))
+        logger.debug("key:{},score:{}",rank:key_by_rank(i))
     end
 
     local res = rank:range(1, 4)
     assert(#res == 3)
     local top4 = rank:range(1, 4)
-    logger.warn("top4:%s", top4)
+    logger.warn("top4:{}", top4)
     local r, score, t = rank:rank(2)
-    logger.debug("2 rank:%s,score:%s,t:%s", r, score, t)
+    logger.debug("2 rank:{},score:{},t:{}", r, score, t)
     rank:clear()
     assert(not rank:range(1, 4))
     logger.debug("zset test finish")

@@ -71,7 +71,7 @@ function MongoMgr:find(db_name, coll_name, selector, fields, sortor, limit, skip
     if mongodb then
         local ok, res_oe = mongodb:find(coll_name, selector, fields, sortor, limit, skip)
         if not ok then
-            log_err("[MongoMgr][find] execute %s failed, because: %s", tpack(coll_name, selector, fields, sortor, limit, skip), res_oe)
+            log_err("[MongoMgr][find] execute {} failed, because: {}", tpack(coll_name, selector, fields, sortor, limit, skip), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end
@@ -83,7 +83,7 @@ function MongoMgr:find_one(db_name, coll_name, selector, fields)
     if mongodb then
         local ok, res_oe = mongodb:find_one(coll_name, selector, fields)
         if not ok then
-            log_err("[MongoMgr][find_one] execute %s failed, because: %s", tpack(coll_name, selector, fields), res_oe)
+            log_err("[MongoMgr][find_one] execute {} failed, because: {}", tpack(coll_name, selector, fields), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end
@@ -95,7 +95,7 @@ function MongoMgr:insert(db_name, coll_name, obj)
     if mongodb then
         local ok, res_oe = mongodb:insert(coll_name, obj)
         if not ok then
-            log_err("[MongoMgr][insert] execute %s failed, because: %s", tpack(coll_name, obj), res_oe)
+            log_err("[MongoMgr][insert] execute {} failed, because: {}", tpack(coll_name, obj), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end
@@ -107,7 +107,7 @@ function MongoMgr:unsafe_insert(db_name, coll_name, obj)
     if mongodb then
         local ok, res_oe = mongodb:unsafe_insert(coll_name, obj)
         if not ok then
-            log_err("[MongoMgr][unsafe_insert] execute %s failed, because: %s", tpack(coll_name, obj), res_oe)
+            log_err("[MongoMgr][unsafe_insert] execute {} failed, because: {}", tpack(coll_name, obj), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end
@@ -119,7 +119,7 @@ function MongoMgr:update(db_name, coll_name, obj, selector, upsert, multi)
     if mongodb then
         local ok, res_oe = mongodb:update(coll_name, obj, selector, upsert, multi)
         if not ok then
-            log_err("[MongoMgr][update] execute %s failed, because: %s", tpack(coll_name, obj, selector, upsert, multi), res_oe)
+            log_err("[MongoMgr][update] execute {} failed, because: {}", tpack(coll_name, obj, selector, upsert, multi), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end
@@ -131,7 +131,7 @@ function MongoMgr:unsafe_update(db_name, coll_name, obj, selector, upsert, multi
     if mongodb then
         local ok, res_oe = mongodb:unsafe_update(coll_name, obj, selector, upsert, multi)
         if not ok then
-            log_err("[MongoMgr][unsafe_update] execute %s failed, because: %s", tpack(coll_name, obj, selector, upsert, multi), res_oe)
+            log_err("[MongoMgr][unsafe_update] execute {} failed, because: {}", tpack(coll_name, obj, selector, upsert, multi), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end
@@ -143,7 +143,7 @@ function MongoMgr:find_and_modify(db_name, coll_name, obj, selector, upsert, fie
     if mongodb then
         local ok, res_oe = mongodb:find_and_modify(coll_name, obj, selector, upsert, fields, new)
         if not ok then
-            log_err("[MongoMgr][find_and_modify] execute %s failed, because: %s", tpack(coll_name, obj, selector, upsert, fields, new), res_oe)
+            log_err("[MongoMgr][find_and_modify] execute {} failed, because: {}", tpack(coll_name, obj, selector, upsert, fields, new), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end
@@ -155,7 +155,7 @@ function MongoMgr:delete(db_name, coll_name, selector, onlyone)
     if mongodb then
         local ok, res_oe = mongodb:delete(coll_name, selector, onlyone)
         if not ok then
-            log_err("[MongoMgr][delete] execute %s failed, because: %s", tpack(coll_name, selector, onlyone), res_oe)
+            log_err("[MongoMgr][delete] execute {} failed, because: {}", tpack(coll_name, selector, onlyone), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end
@@ -167,7 +167,7 @@ function MongoMgr:unsafe_delete(db_name, coll_name, selector, onlyone)
     if mongodb then
         local ok, res_oe = mongodb:unsafe_delete(coll_name, selector, onlyone)
         if not ok then
-            log_err("[MongoMgr][unsafe_delete] execute %s failed, because: %s", tpack(coll_name, selector, onlyone), res_oe)
+            log_err("[MongoMgr][unsafe_delete] execute {} failed, because: {}", tpack(coll_name, selector, onlyone), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end
@@ -179,7 +179,7 @@ function MongoMgr:count(db_name, coll_name, selector, limit, skip)
     if mongodb then
         local ok, res_oe = mongodb:count(coll_name, selector, limit, skip)
         if not ok then
-            log_err("[MongoMgr][count] execute %s failed, because: %s", tpack(coll_name, selector, limit, skip), res_oe)
+            log_err("[MongoMgr][count] execute {} failed, because: {}", tpack(coll_name, selector, limit, skip), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end
@@ -191,7 +191,7 @@ function MongoMgr:get_indexes(db_name, coll_name)
     if mongodb then
         local ok, res_oe = mongodb:get_indexes(coll_name)
         if not ok then
-            log_err("[MongoMgr][get_indexes] execute %s failed, because: %s", coll_name, res_oe)
+            log_err("[MongoMgr][get_indexes] execute {} failed, because: {}", coll_name, res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end
@@ -203,7 +203,7 @@ function MongoMgr:create_indexes(db_name, coll_name, indexes)
     if mongodb then
         local ok, res_oe = mongodb:create_indexes(coll_name, indexes)
         if not ok then
-            log_err("[MongoMgr][create_indexes] execute %s failed, because: %s", tpack(coll_name, indexes), res_oe)
+            log_err("[MongoMgr][create_indexes] execute {} failed, because: {}", tpack(coll_name, indexes), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end
@@ -215,7 +215,7 @@ function MongoMgr:drop_indexes(db_name, coll_name, index_name)
     if mongodb then
         local ok, res_oe = mongodb:drop_indexes(coll_name, index_name)
         if not ok then
-            log_err("[MongoMgr][drop_indexes] execute %s failed, because: %s", tpack(coll_name, index_name), res_oe)
+            log_err("[MongoMgr][drop_indexes] execute {} failed, because: {}", tpack(coll_name, index_name), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end
@@ -227,7 +227,7 @@ function MongoMgr:execute(db_name, cmd, ...)
     if mongodb then
         local ok, res_oe = mongodb:runCommand(cmd, ...)
         if not ok then
-            log_err("[MongoMgr][execute] execute %s failed, because: %s", tpack(cmd, ...), res_oe)
+            log_err("[MongoMgr][execute] execute {} failed, because: {}", tpack(cmd, ...), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end

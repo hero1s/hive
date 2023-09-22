@@ -123,7 +123,7 @@ end
 
 -- 生成枚举lua文件
 function ConfigMgr:gen_enum_file(name, ename, enum_key, main_key, desc)
-    logger.debug("gen_enum_file:%s,ename:%s,enum_key:%s,main_key:%s,desc:%s", name, ename, enum_key, main_key, desc)
+    logger.debug("gen_enum_file:{},ename:{},enum_key:{},main_key:{},desc:{}", name, ename, enum_key, main_key, desc)
     local conf_tab    = self:load_table(name, main_key)
     local gen_objs    = {}
     local max_key_len = 20
@@ -151,7 +151,7 @@ function ConfigMgr:gen_enum_file(name, ename, enum_key, main_key, desc)
     local out_f    = sformat("../server/constant/enum_%s.lua", name)
     local out_file = iopen(out_f, "w")
     if not out_file then
-        log_err("[ConfigMgr][gen_enum_file] open out file (%s) failed!", out_f)
+        log_err("[ConfigMgr][gen_enum_file] open out file ({}) failed!", out_f)
         return
     end
     --移除空类型

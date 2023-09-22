@@ -74,14 +74,14 @@ end
 
 -- 通知执行GM指令
 function GMAgent:rpc_command_execute(cmd_name, ...)
-    log_debug("[GMAgent][rpc_command_execute]->cmd_name:%s,%s", cmd_name, { ... })
+    log_debug("[GMAgent][rpc_command_execute]->cmd_name:{},{}", cmd_name, { ... })
     local ok, res = tunpack(event_mgr:notify_listener(cmd_name, ...))
     return ok and SUCCESS or LOGIC_FAILED, res
 end
 
 -- GM服务已经ready
 function GMAgent:on_service_ready(id, service_name)
-    log_info("[GMAgent][on_service_ready]->id:%s, service_name:%s", id, service_name)
+    log_info("[GMAgent][on_service_ready]->id:{}, service_name:{}", id, service_name)
     -- 上报gm列表
     thread_mgr:success_call(PeriodTime.SECOND_10_MS, function()
         return self:report_command()

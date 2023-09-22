@@ -36,7 +36,7 @@ function ReliableMsg:build_index(sharding)
     local query    = { self.table_name, indexs }
     local ok, code = mongo_agent:create_indexes(query, nil, self.db_name)
     if check_success(code, ok) then
-        log_info("[ReliableMsg][build_index] rmsg table %s build due index success", self.table_name)
+        log_info("[ReliableMsg][build_index] rmsg table {} build due index success", self.table_name)
     end
 end
 
@@ -70,27 +70,27 @@ end
 
 -- 设置信息为已处理
 function ReliableMsg:deal_message(to, timestamp)
-    log_info("[ReliableMsg][deal_message] message:%s, %s,%s", self.table_name, to, timestamp)
+    log_info("[ReliableMsg][deal_message] message:{}, {},{}", self.table_name, to, timestamp)
     local selecter = { ["$and"] = { { to = to }, { time = { ["$lte"] = timestamp } } } }
     local query    = { self.table_name, { ["$set"] = { deal_time = hive.now } }, selecter }
     return mongo_agent:update(query, to, self.db_name)
 end
 
 function ReliableMsg:deal_message_by_uuid(uuid, to)
-    log_info("[ReliableMsg][deal_message_by_uuid] message:%s,%s", self.table_name, uuid)
+    log_info("[ReliableMsg][deal_message_by_uuid] message:{},{}", self.table_name, uuid)
     local query = { self.table_name, { ["$set"] = { deal_time = hive.now } }, { uuid = uuid, to = to } }
     return mongo_agent:update(query, hive.id, self.db_name)
 end
 
 -- 删除消息
 function ReliableMsg:delete_message(to, timestamp)
-    log_info("[ReliableMsg][delete_message] delete %s message: %s", self.table_name, to)
+    log_info("[ReliableMsg][delete_message] delete {} message: {}", self.table_name, to)
     local selecter = { ["$and"] = { { to = to }, { time = { ["$lte"] = timestamp } } } }
     return mongo_agent:delete({ self.table_name, selecter }, hive.id, self.db_name)
 end
 
 function ReliableMsg:delete_message_by_uuid(uuid, to)
-    log_info("[ReliableMsg][delete_message_by_uuid] delete message: %s", uuid)
+    log_info("[ReliableMsg][delete_message_by_uuid] delete message: {}", uuid)
     return mongo_agent:delete({ self.table_name, { uuid = uuid, to = to }, true }, hive.id, self.db_name)
 end
 
@@ -110,11 +110,11 @@ function ReliableMsg:send_message(from, to, body, typ, id)
     end
     local ok, code, res = mongo_agent:insert({ self.table_name, doc }, to, self.db_name)
     if check_failed(code, ok) then
-        log_err("[ReliableMsg][send_message] send message failed: uuid:%s, from:%s, to:%s, doc:%s,code:%s,res:%s",
+        log_err("[ReliableMsg][send_message] send message failed: uuid:{}, from:{}, to:{}, doc:{},code:{},res:{}",
                 uuid, from, to, doc, code, res)
         return false
     else
-        log_info("[ReliableMsg][send_message] send message succeed: uuid:%s, from:%s, to:%s, type:%s", uuid, from, to, typ)
+        log_info("[ReliableMsg][send_message] send message succeed: uuid:{}, from:{}, to:{}, type:{}", uuid, from, to, typ)
     end
     return true
 end

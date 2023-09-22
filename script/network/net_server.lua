@@ -56,19 +56,19 @@ end
 function NetServer:setup(ip, port, induce)
     -- 开启监听
     if not ip or not port then
-        log_err("[NetServer][setup] ip:%s or port:%s is nil", ip, port)
+        log_err("[NetServer][setup] ip:{} or port:{} is nil", ip, port)
         signal_quit()
         return
     end
     local real_port = induce and (port + hive.index - 1) or port
     self.listener   = luabus.listen(ip, real_port, self.proto_type)
     if not self.listener then
-        log_err("[NetServer][setup] failed to listen: %s:%d type=%d", ip, real_port, self.proto_type)
+        log_err("[NetServer][setup] failed to listen: {}:{} type={}", ip, real_port, self.proto_type)
         signal_quit()
         return
     end
     self.ip, self.port = ip, real_port
-    log_info("[NetServer][setup] start listen at: %s:%d type=%d", ip, real_port, self.proto_type)
+    log_info("[NetServer][setup] start listen at: {}:{} type={}", ip, real_port, self.proto_type)
     -- 安装回调
     self.listener.on_accept = function(session)
         thread_mgr:fork(function()
@@ -107,7 +107,7 @@ end
 function NetServer:write(session, cmd_id, data, session_id, flag)
     local body, pflag = self:encode(cmd_id, data, flag)
     if not body then
-        log_err("[NetServer][write] encode failed! cmd_id:%s,data:%s", cmd_id, data)
+        log_err("[NetServer][write] encode failed! cmd_id:{},data:{}", cmd_id, data)
         return false
     end
     -- call luabus
@@ -120,7 +120,7 @@ function NetServer:write(session, cmd_id, data, session_id, flag)
         return true
     end
     if send_len < 0 then
-        log_err("[NetServer][write] call_pack failed! code:%s,cmd_id:%s,len:%s", send_len, cmd_id, #body)
+        log_err("[NetServer][write] call_pack failed! code:{},cmd_id:{},len:{}", send_len, cmd_id, #body)
     end
     return false
 end
@@ -129,7 +129,7 @@ end
 function NetServer:broadcast(cmd_id, data, filter)
     local body, pflag = self:encode(cmd_id, data, FLAG_REQ)
     if not body then
-        log_err("[NetServer][broadcast] encode failed! cmd_id:%s,data:%s", cmd_id, data)
+        log_err("[NetServer][broadcast] encode failed! cmd_id:{},data:{}", cmd_id, data)
         return false
     end
     for _, session in pairs(self.sessions) do
@@ -138,7 +138,7 @@ function NetServer:broadcast(cmd_id, data, filter)
             if send_len > 0 then
                 proxy_agent:statistics("on_proto_send", cmd_id, send_len)
             elseif send_len < 0 then
-                log_err("[NetServer][broadcast] call_pack failed! code:%s,cmd_id:%s,len:%s", send_len, cmd_id, #body)
+                log_err("[NetServer][broadcast] call_pack failed! code:{},cmd_id:{},len:{}", send_len, cmd_id, #body)
             end
         end
     end
@@ -166,7 +166,7 @@ function NetServer:send_buff(session, cmd_id, data, session_id)
         return true
     end
     if send_len < 0 then
-        log_err("[NetServer][send_buff] call_pack failed! code:%s,cmd_id:%s,len:%s", send_len, cmd_id, #data)
+        log_err("[NetServer][send_buff] call_pack failed! code:{},cmd_id:{},len:{}", send_len, cmd_id, #data)
     end
 end
 
@@ -227,7 +227,7 @@ function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
     if cmd_cd_time > 0 then
         local command_times = session.command_times
         if command_times[cmd_id] and clock_ms - command_times[cmd_id] < cmd_cd_time then
-            log_warn("[NetServer][on_socket_recv] session(%s) trigger cmd(%s) cd ctrl, will be drop.", session.token, cmd_id)
+            log_warn("[NetServer][on_socket_recv] session({}) trigger cmd({}) cd ctrl, will be drop.", session.token, cmd_id)
             --协议CD
             return
         end
@@ -237,7 +237,7 @@ function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
     -- 解码
     local body, cmd_name = self:decode(cmd_id, data, flag)
     if not body then
-        log_warn("[NetServer][on_socket_recv] cmd(%s) parse failed.", cmd_id)
+        log_warn("[NetServer][on_socket_recv] cmd({}) parse failed.", cmd_id)
         return
     end
     if session_id == 0 or (flag & FLAG_REQ == FLAG_REQ) then
@@ -248,7 +248,7 @@ function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
             end
             local result = event_mgr:notify_listener("on_session_cmd", _session, cmd, bd, session_id)
             if not result[1] then
-                log_err("[NetServer][on_socket_recv] on_session_cmd failed! cmd_id:%s", cmd_id)
+                log_err("[NetServer][on_socket_recv] on_session_cmd failed! cmd_id:{}", cmd_id)
             end
         end
         thread_mgr:fork(dispatch_rpc_message, session, cmd_id, body)
@@ -288,7 +288,7 @@ function NetServer:add_session(session)
         self.sessions[token] = session
         self.session_count   = self.session_count + 1
         proxy_agent:statistics("on_conn_update", self.session_type, self.session_count)
-        log_info("[NetServer][add_session] session count:%s", self.session_count)
+        log_info("[NetServer][add_session] session count:{}", self.session_count)
     end
 end
 
@@ -299,7 +299,7 @@ function NetServer:remove_session(token)
         self.sessions[token] = nil
         self.session_count   = self.session_count - 1
         proxy_agent:statistics("on_conn_update", self.session_type, self.session_count)
-        log_info("[NetServer][remove_session] session count:%s", self.session_count)
+        log_info("[NetServer][remove_session] session count:{}", self.session_count)
         return session
     end
 end

@@ -99,7 +99,7 @@ function hive.init()
     environ.init()
     service.init()
     logger.init()
-    logger.info("hive init run version:[%s] \n", environ.get("COMMIT_VERSION"))
+    logger.info("hive init run version:[{}] \n", environ.get("COMMIT_VERSION"))
     --主循环
     init_coroutine()
     init_mainloop()
@@ -153,7 +153,7 @@ function hive.change_service_status(status)
     hive.service_status     = status
     hive.node_info.is_ready = hive.is_ready()
     hive.node_info.status   = hive.service_status
-    logger.warn("[hive][change_service_status] %s,service_status:%s,is_ready:%s", hive.name, status, hive.is_ready())
+    logger.warn("[hive][change_service_status] {},service_status:{},is_ready:{}", hive.name, status, hive.is_ready())
     event_mgr:notify_trigger("evt_change_service_status", hive.service_status)
 end
 
@@ -196,7 +196,7 @@ hive.run  = function()
     local work_ms = lclock_ms() - sclock_ms
     if work_ms > HALF_MS then
         local io_ms = clock_ms - sclock_ms
-        log_err("[hive][run] last frame[%s:%s] too long => all:%d, net:%d)!", hive.name, hive.frame, work_ms, io_ms)
+        log_err("[hive][run] last frame[{}:{}] too long => all:{}, net:{})!", hive.name, hive.frame, work_ms, io_ms)
     end
 end
 

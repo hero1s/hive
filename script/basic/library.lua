@@ -40,7 +40,7 @@ end
 --newindex
 local function _glib_newindex(o, k, v)
     if librarys[k] then
-        log.warn(sformat("[hive][library] try modify hive library [%s] namespace", k))
+        log.warn(sformat("[hive][library] try modify hive library [{}] namespace", k))
         return
     end
     rawset(o, k, v)

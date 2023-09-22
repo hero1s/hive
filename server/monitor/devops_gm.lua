@@ -58,7 +58,7 @@ end
 
 -- 设置日志等级
 function DevopsGmMgr:gm_set_log_level(svr_name, level)
-    log_warn("[DevopsGmMgr][gm_set_log_level] gm_set_log_level %s, %s", svr_name, level)
+    log_warn("[DevopsGmMgr][gm_set_log_level] gm_set_log_level {}, {}", svr_name, level)
     if level < 1 or level > 6 then
         return { code = 1, msg = "level not in ragne 1~6" }
     end
@@ -73,7 +73,7 @@ function DevopsGmMgr:gm_hotfix()
 end
 
 function DevopsGmMgr:gm_inject(service_name, index, file_name, code_content)
-    log_debug("[DevopsGmMgr][gm_inject] svr_name:%s:%s, file_name:%s, code_content:%s", service_name, index, file_name, code_content)
+    log_debug("[DevopsGmMgr][gm_inject] svr_name:{}:{}, file_name:{}, code_content:{}", service_name, index, file_name, code_content)
     local func = nil
     if file_name ~= "" then
         func = loadfile(file_name)
@@ -87,18 +87,18 @@ function DevopsGmMgr:gm_inject(service_name, index, file_name, code_content)
             return self:call_target_rpc(service_name, index, "rpc_inject", sdump(func))
         end
     end
-    log_err("[DevopsGmMgr][gm_inject] error file_name:%s, code_content:%s", file_name, code_content)
+    log_err("[DevopsGmMgr][gm_inject] error file_name:{}, code_content:{}", file_name, code_content)
     return { code = -1 }
 end
 
 function DevopsGmMgr:gm_set_env(key, value, service_name, index)
-    log_warn("[DevopsGmMgr][gm_set_env]:[%s:%s],service:%s,index:%s ",
+    log_warn("[DevopsGmMgr][gm_set_env]:[{}:{}],service:{},index:{} ",
              key, value, service_name, index)
     return self:call_service_index(service_name, index, "rpc_set_env", key, value)
 end
 
 function DevopsGmMgr:gm_set_server_status(status, delay, service_name, index)
-    log_warn("[DevopsGmMgr][gm_set_server_status]:%s,exe time:%s,service:%s,index:%s ",
+    log_warn("[DevopsGmMgr][gm_set_server_status]:{},exe time:{},service:{},index:{} ",
              status, time_str(hive.now + delay), service_name, index)
     if status < ServiceStatus.RUN or status > ServiceStatus.STOP then
         return { code = 1, msg = "status is more than" }
@@ -115,13 +115,13 @@ function DevopsGmMgr:gm_query_server_online(service_name)
 end
 
 function DevopsGmMgr:gm_hive_quit(reason)
-    log_warn("[DevopsGmMgr][gm_hive_quit] exit hive exe time:%s ", time_str(hive.now))
+    log_warn("[DevopsGmMgr][gm_hive_quit] exit hive exe time:{} ", time_str(hive.now))
     monitor_mgr:broadcast("rpc_hive_quit", 0, reason)
     return { code = 0 }
 end
 
 function DevopsGmMgr:gm_cfg_reload(is_remote)
-    log_debug("[DevopsGmMgr][gm_cfg_reload] is_remote:%s", is_remote)
+    log_debug("[DevopsGmMgr][gm_cfg_reload] is_remote:{}", is_remote)
     local flag = (is_remote == 1)
     if flag then
         if hive.is_publish then
@@ -192,7 +192,7 @@ function DevopsGmMgr:gm_log_format(data, swline)
 end
 
 function DevopsGmMgr:gm_db_get(db_name, table_name, key_name, key_value)
-    log_debug("[DevopsGmMgr][gm_db_get] db_name:%s, table_name:%s, key_name:%s, key_value:%s", db_name, table_name, key_name, key_value)
+    log_debug("[DevopsGmMgr][gm_db_get] db_name:{}, table_name:{}, key_name:{}, key_value:{}", db_name, table_name, key_name, key_value)
     local ok, result = mongo_agent:load_sheet(table_name, tonumber(key_value), key_name, nil, db_name)
     if not ok then
         return { code = -1 }
@@ -202,7 +202,7 @@ function DevopsGmMgr:gm_db_get(db_name, table_name, key_name, key_value)
 end
 
 function DevopsGmMgr:gm_db_set(db_name, table_name, key_name, key_value, json_str)
-    log_debug("[DevopsGmMgr][gm_db_set] db_name:%s, table_name:%s, key_name:%s key_value:%s, json_str:%s",
+    log_debug("[DevopsGmMgr][gm_db_set] db_name:{}, table_name:{}, key_name:{} key_value:{}, json_str:{}",
               db_name, table_name, key_name, key_value, json_str)
     local ok1, value = json_decode(json_str, true)
     if not ok1 then
@@ -218,9 +218,9 @@ function DevopsGmMgr:gm_redis_command(command_str)
     end
     local ok1, code, res = redis_agent:execute(command)
     if not check_success(code, ok) then
-        log_err("[DevopsGmMgr][gm_redis_command] execute redis command [%s] faild:%s,code:%s,res:%s", command, ok1, code, res)
+        log_err("[DevopsGmMgr][gm_redis_command] execute redis command [{}] faild:{},code:{},res:{}", command, ok1, code, res)
     else
-        log_warn("[DevopsGmMgr][gm_redis_command] execute redis command [%s],res:%s", command, res)
+        log_warn("[DevopsGmMgr][gm_redis_command] execute redis command [{}],res:{}", command, res)
     end
     return { code = code, res = res }
 end
@@ -243,7 +243,7 @@ function DevopsGmMgr:call_target_rpc(service_name, index, rpc, ...)
 end
 
 function DevopsGmMgr:call_service_index(service_name, index, rpc, ...)
-    log_debug("[DevopsGmMgr][call_service_index] call:%s,index:%s,rpc:%s", service_name, index, rpc)
+    log_debug("[DevopsGmMgr][call_service_index] call:{},index:{},rpc:{}", service_name, index, rpc)
     local service_id = 0
     if service_name ~= "" then
         service_id = sname2sid(service_name)

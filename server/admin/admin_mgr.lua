@@ -48,7 +48,7 @@ function AdminMgr:__init()
     end
     if next(ips) then
         self.http_server:set_limit_ips(ips)
-        log_debug("admin limit ips:%s", ips)
+        log_debug("admin limit ips:{}", ips)
     end
     --用户密码
     self.user = environ.get("HIVE_ADMIN_USER", "admin")
@@ -101,7 +101,7 @@ function AdminMgr:on_gm_page(url, querys, request)
             gm_page = gm_page:gsub("IE=edge,chrome=1", "upgrade-insecure-requests")
         end
         if not gm_page then
-            log_err("[AdminMgr][on_gm_page] load html faild:%s", html_path)
+            log_err("[AdminMgr][on_gm_page] load html faild:{}", html_path)
         end
     end
     local user = querys["user"]
@@ -119,13 +119,13 @@ end
 
 --后台GM调用，字符串格式
 function AdminMgr:on_command(url, body)
-    log_debug("[AdminMgr][on_command] body: %s", body)
+    log_debug("[AdminMgr][on_command] body: {}", body)
     return self:exec_command(body.data)
 end
 
 --后台GM调用，table格式
 function AdminMgr:on_message(url, body)
-    log_debug("[AdminMgr][on_message] body: %s", body)
+    log_debug("[AdminMgr][on_message] body: {}", body)
     return self:exec_message(body.data)
 end
 
@@ -165,7 +165,7 @@ end
 function AdminMgr:exec_global_cmd(service_id, cmd_name, ...)
     local ok, codeoe, res = router_mgr:call_hash(service_id, service_id, "rpc_command_execute", cmd_name, ...)
     if not ok then
-        log_err("[AdminMgr][exec_global_cmd] call_random(rpc_command_execute) failed! service_id=%s", service_id)
+        log_err("[AdminMgr][exec_global_cmd] call_random(rpc_command_execute) failed! service_id={}", service_id)
         return { code = 1, msg = codeoe }
     end
     return { code = codeoe, msg = res }
@@ -175,7 +175,7 @@ end
 function AdminMgr:exec_system_cmd(service_id, cmd_name, target_id, ...)
     local ok, code, res = router_mgr:collect(service_id, "rpc_command_execute", cmd_name, target_id, ...)
     if not ok then
-        log_err("[AdminMgr][exec_system_cmd] call_target(rpc_command_execute) failed! target_id=%s", target_id)
+        log_err("[AdminMgr][exec_system_cmd] call_target(rpc_command_execute) failed! target_id={}", target_id)
         return { code = 1, msg = code }
     end
     return { code = code, msg = res }
@@ -185,7 +185,7 @@ end
 function AdminMgr:exec_service_cmd(service_id, cmd_name, target_id, ...)
     local ok, codeoe, res = router_mgr:call_hash(service_id, target_id, "rpc_command_execute", cmd_name, target_id, ...)
     if not ok then
-        log_err("[AdminMgr][exec_service_cmd] call_target(rpc_command_execute) failed! target_id=%s", target_id)
+        log_err("[AdminMgr][exec_service_cmd] call_target(rpc_command_execute) failed! target_id={}", target_id)
         return { code = 1, msg = codeoe }
     end
     return { code = codeoe, msg = res }
@@ -196,7 +196,7 @@ function AdminMgr:exec_player_cmd(cmd_name, player_id, ...)
     if player_id == 0 then
         local ok, codeoe, res = router_mgr:call_lobby_hash(player_id, "rpc_command_execute", cmd_name, player_id, ...)
         if not ok then
-            log_err("[AdminMgr][exec_player_cmd] call_lobby_random(rpc_command_execute) failed! player_id=%s", player_id)
+            log_err("[AdminMgr][exec_player_cmd] call_lobby_random(rpc_command_execute) failed! player_id={}", player_id)
             return { code = 1, msg = codeoe }
         end
         return { code = codeoe, msg = res }
@@ -209,7 +209,7 @@ function AdminMgr:exec_player_cmd(cmd_name, player_id, ...)
     end
     local ok, codeoe, res = online_agent:call_lobby(player_id, "rpc_command_execute", cmd_name, player_id, ...)
     if not ok then
-        log_err("[AdminMgr][exec_player_cmd] rpc_call_lobby(rpc_command_execute) failed! player_id=%s", player_id)
+        log_err("[AdminMgr][exec_player_cmd] rpc_call_lobby(rpc_command_execute) failed! player_id={}", player_id)
         return { code = 1, msg = codeoe }
     end
     return { code = codeoe, msg = res }

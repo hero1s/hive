@@ -112,14 +112,14 @@ function MongoAgent:get_autoinc_id(id_key, inc_value, min_id, db_name)
     local update        = { ["$inc"] = { ["autoinc_id"] = inc_value or 1 } }
     local ok, code, res = self:find_and_modify({ AUTOINCCC, update, query, true, fields, true }, id_key, db_name)
     if check_failed(code, ok) then
-        log_err("[MongoAgent][get_autoinc_id] create %s failed! code: %s, res: %s", id_key, code, res)
+        log_err("[MongoAgent][get_autoinc_id] create {} failed! code: {}, res: {}", id_key, code, res)
         return 0
     end
     local id = res.value.autoinc_id
     if min_id and id < min_id then
         return self:get_autoinc_id(id_key, min_id - id, nil, db_name)
     end
-    log_info("[MongoAgent][get_autoinc_id] autoinc_id new %s:%s", id_key, id)
+    log_info("[MongoAgent][get_autoinc_id] autoinc_id new {}:{}", id_key, id)
     return id
 end
 
@@ -128,7 +128,7 @@ end
 function MongoAgent:load_sheet(sheet_name, primary_id, primary_key, filters, db_name)
     local ok, code, adata = self:find_one({ sheet_name, { [primary_key] = primary_id }, filters or { _id = 0 } }, primary_id, db_name)
     if check_failed(code, ok) then
-        log_err("[MongoAgent][load_mongo_%s] primary_id: %s find failed! code: %s, res: %s", sheet_name, primary_id, code, adata)
+        log_err("[MongoAgent][load_mongo_{}] primary_id: {} find failed! code: {}, res: {}", sheet_name, primary_id, code, adata)
         return false
     end
     return true, adata or {}
@@ -137,7 +137,7 @@ end
 function MongoAgent:delete_sheet(sheet_name, primary_id, primary_key, db_name)
     local ok, code, res = self:delete({ sheet_name, { [primary_key] = primary_id }, true }, primary_id, db_name)
     if check_failed(code, ok) then
-        log_err("[MongoAgent][delete_mongo_%s] delete failed primary_id(%s), code: %s, res: %s!", sheet_name, primary_id, code, res)
+        log_err("[MongoAgent][delete_mongo_{}] delete failed primary_id({}), code: {}, res: {}!", sheet_name, primary_id, code, res)
         return false
     end
     return true
@@ -147,7 +147,7 @@ function MongoAgent:update_sheet_fields(sheet_name, primary_id, primary_key, fie
     local udata         = { ["$set"] = field_datas }
     local ok, code, res = self:update({ sheet_name, udata, { [primary_key] = primary_id } }, primary_id, db_name)
     if check_failed(code, ok) then
-        log_err("[MongoAgent][update_mongo_field_%s] update (%s) failed! primary_id(%s), code(%s), res(%s)", sheet_name, field_datas, primary_id, code, res)
+        log_err("[MongoAgent][update_mongo_field_{}] update ({}) failed! primary_id({}), code({}), res({})", sheet_name, field_datas, primary_id, code, res)
         return false
     end
     return true
@@ -156,7 +156,7 @@ end
 function MongoAgent:update_sheet(sheet_name, primary_id, primary_key, udata, db_name)
     local ok, code, res = self:update({ sheet_name, udata, { [primary_key] = primary_id }, true }, primary_id, db_name)
     if check_failed(code, ok) then
-        log_err("[MongoAgent][update_mongo_%s] update (%s) failed! primary_id(%s), code(%s), res(%s)", sheet_name, udata, primary_id, code, res)
+        log_err("[MongoAgent][update_mongo_{}] update ({}) failed! primary_id({}), code({}), res({})", sheet_name, udata, primary_id, code, res)
         return false
     end
     return true
@@ -166,7 +166,7 @@ end
 function MongoAgent:check_indexes(key, co_name, db_name, only_key)
     local ok, code, indexs = self:get_indexes(co_name, db_name)
     if check_failed(code, ok) then
-        log_err("[MongoAgent][check_indexes] failed:%s,%s,ok:%s,code:%s,indexs:%s", co_name, db_name, ok, code, indexs)
+        log_err("[MongoAgent][check_indexes] failed:{},{},ok:{},code:{},indexs:{}", co_name, db_name, ok, code, indexs)
         return false
     end
     local cmp_func = only_key and tequal_keys or tequals
@@ -175,7 +175,7 @@ function MongoAgent:check_indexes(key, co_name, db_name, only_key)
             return true
         end
     end
-    log_warn("[MongoAgent][check_indexes] db:%s,table:%s,key:%s,is not exist indexes:%s", db_name, co_name, key, indexs)
+    log_warn("[MongoAgent][check_indexes] db:{},table:{},key:{},is not exist indexes:{}", db_name, co_name, key, indexs)
     return false
 end
 

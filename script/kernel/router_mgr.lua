@@ -42,12 +42,12 @@ end
 
 --服务关闭
 function RouterMgr:on_service_close(id, name)
-    log_debug("[RouterMgr][on_service_close] node: %s", id2nick(id))
+    log_debug("[RouterMgr][on_service_close] node: {}", id2nick(id))
 end
 
 --服务上线
 function RouterMgr:on_service_ready(id, name, info)
-    log_debug("[RouterMgr][on_service_ready] node: %s, info: %s", id2nick(id), info)
+    log_debug("[RouterMgr][on_service_ready] node: {}, info: {}", id2nick(id), info)
     self:add_router(info.id, info.ip, info.port)
 end
 
@@ -68,12 +68,12 @@ function RouterMgr:add_router(router_id, host, port)
         if router.ip ~= host or router.port ~= port then
             router:close()
             self.routers[router_id] = nil
-            log_err("[RouterMgr][add_router] replace new router:%s,%s,%s", id2nick(router_id), host, port)
+            log_err("[RouterMgr][add_router] replace new router:{},{},{}", id2nick(router_id), host, port)
         else
             return
         end
     end
-    log_debug("[RouterMgr][add_router] %s --> %s,%s:%s", hive.name, id2nick(router_id), host, port)
+    log_debug("[RouterMgr][add_router] {} --> {},{}:{}", hive.name, id2nick(router_id), host, port)
     local RpcClient         = import("network/rpc_client.lua")
     self.routers[router_id] = RpcClient(self, host, port)
 end
@@ -82,15 +82,15 @@ end
 function RouterMgr:on_socket_error(client, token, err)
     self:check_router()
     if hive.status_run() then
-        log_err("[RouterMgr][on_socket_error] router lost %s:%s,token:%s, err=%s", client.ip, client.port, token, err)
+        log_err("[RouterMgr][on_socket_error] router lost {}:{},token:{}, err={}", client.ip, client.port, token, err)
     else
-        log_info("[RouterMgr][on_socket_error] router lost %s:%s,token:%s, err=%s", client.ip, client.port, token, err)
+        log_info("[RouterMgr][on_socket_error] router lost {}:{},token:{}, err={}", client.ip, client.port, token, err)
     end
 end
 
 --连接成功
 function RouterMgr:on_socket_connect(client, res)
-    log_info("[RouterMgr][on_socket_connect] router %s:%s success!", client.ip, client.port)
+    log_info("[RouterMgr][on_socket_connect] router {}:{} success!", client.ip, client.port)
     self:check_router()
     client:register()
 end
@@ -126,7 +126,7 @@ function RouterMgr:hash_router(hash_key)
         local index = jumphash(hash_key, count)
         local node  = self.candidates[index]
         if node == nil then
-            log_err("[RouterMgr][hash_router] the hash node nil,hashkey:%s,index:%s", hash_key, index)
+            log_err("[RouterMgr][hash_router] the hash node nil,hashkey:{},index:{}", hash_key, index)
         end
         return node
     end
@@ -272,18 +272,18 @@ end
 
 --服务被踢下线
 function RouterMgr:rpc_service_kickout(router_id, reason)
-    log_err("[RouterMgr][rpc_service_kickout] reason:%s router_id:%s", reason, id2nick(router_id))
+    log_err("[RouterMgr][rpc_service_kickout] reason:{} router_id:{}", reason, id2nick(router_id))
     signal_quit()
 end
 
 --路由集群转发失败
 function RouterMgr:on_forward_error(session_id, error_msg, source_id)
-    log_err("[RouterMgr][on_forward_error] session_id:%s,from:%s,%s", session_id, id2nick(source_id), error_msg)
+    log_err("[RouterMgr][on_forward_error] session_id:{},from:{},{}", session_id, id2nick(source_id), error_msg)
     self:send_target(source_id, "reply_forward_error", session_id, error_msg)
 end
 
 function RouterMgr:reply_forward_error(session_id, error_msg)
-    log_err("[RouterMgr][reply_forward_error] %s,%s", thread_mgr:get_title(session_id), error_msg)
+    log_err("[RouterMgr][reply_forward_error] {},{}", thread_mgr:get_title(session_id), error_msg)
     thread_mgr:response(session_id, false, RPC_UNREACHABLE, error_msg)
 end
 

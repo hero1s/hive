@@ -84,11 +84,11 @@ function AoiModel:update_aoi_event(fn)
 end
 
 function AoiModel:enter_ev(watcher, marker)
-    log_debug("[AoiModel][enter_ev] watcher:%s,marker:%s", watcher, marker)
+    log_debug("[AoiModel][enter_ev] watcher:{},marker:{}", watcher, marker)
 end
 
 function AoiModel:leave_ev(watcher, marker)
-    log_debug("[AoiModel][leave_ev] watcher:%s,marker:%s", watcher, marker)
+    log_debug("[AoiModel][leave_ev] watcher:{},marker:{}", watcher, marker)
 end
 
 return AoiModel

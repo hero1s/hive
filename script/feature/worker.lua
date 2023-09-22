@@ -126,7 +126,7 @@ hive.run = function()
         local work_ms = lclock_ms() - sclock_ms
         if work_ms > HALF_MS then
             local io_ms = clock_ms - sclock_ms
-            log_err("[worker][run] last frame[%s:%s] too long => all:%d, net:%d)!", hive.name, hive.frame, work_ms, io_ms)
+            log_err("[worker][run] last frame[{}:{}] too long => all:{}, net:{})!", hive.name, hive.frame, work_ms, io_ms)
         end
     end)
 end
@@ -134,7 +134,7 @@ end
 --事件分发
 local function notify_rpc(session_id, title, rpc, ...)
     if rpc == "on_reload" then
-        log_info("[Worker][on_reload]worker:%s reload for signal !", TITLE)
+        log_info("[Worker][on_reload]worker:{} reload for signal !", TITLE)
         --重新加载脚本
         update_mgr:check_hotfix()
         --事件通知

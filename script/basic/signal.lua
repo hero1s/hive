@@ -79,7 +79,7 @@ signal.check      = function(signalv)
     signalv = signalv or get_signal()
     for sig, sig_name in pairs(EXIT_SIGNAL) do
         if signalv & (1 << sig) ~= 0 then
-            log_info("[signal][check] ->signal: %d, name:%s", sig, sig_name)
+            log_info("[signal][check] ->signal: {}, name:{}", sig, sig_name)
             return true
         end
     end

@@ -3,7 +3,6 @@ local guid_new  = codec.guid_new
 local hash_code = codec.hash_code
 local odate     = os.date
 local log_err   = logger.err
-local sformat   = string.format
 local dgetinfo  = debug.getinfo
 
 function hive.load(name)
@@ -14,7 +13,7 @@ function hive.get(name)
     local global_obj = hive[name]
     if not global_obj then
         local info = dgetinfo(2, "S")
-        log_err(sformat("[hive][get] %s not initial! source(%s:%s)", name, info.short_src, info.linedefined))
+        log_err("[hive][get] {} not initial! source({}:{})", name, info.short_src, info.linedefined)
         return
     end
     return global_obj
@@ -25,13 +24,13 @@ function hive.enum(ename, ekey)
     local eobj = enum(ename)
     if not eobj then
         local info = dgetinfo(2, "S")
-        log_err(sformat("[hive][enum] %s not initial! source(%s:%s)", ename, info.short_src, info.linedefined))
+        log_err("[hive][enum] {} not initial! source({}:{})", ename, info.short_src, info.linedefined)
         return
     end
     local eval = eobj[ekey]
     if not eval then
         local info = dgetinfo(2, "S")
-        log_err(sformat("[hive][enum] %s.%s not defined! source(%s:%s)", ename, ekey, info.short_src, info.linedefined))
+        log_err("[hive][enum] {}.{} not defined! source({}:{})", ename, ekey, info.short_src, info.linedefined)
         return
     end
     return eval

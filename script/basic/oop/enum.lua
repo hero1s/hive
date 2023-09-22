@@ -49,7 +49,7 @@ end
 local function enum_index(emobj, field)
     local value = emobj.__vlist[field]
     if not value then
-        log_err("the enum field is nil:%s.%s,from:%s", emobj.__name, field, hive.where_call())
+        log_err("the enum field is nil:{}.{},from:{}", emobj.__name, field, hive.where_call())
         return -1 --防止返回nil变0导致逻辑错误
     end
     return value
@@ -58,7 +58,7 @@ end
 local function enum_newindex(emobj, field, value)
     local vlist = emobj.__vlist
     if vlist[field] then
-        log_err("enum %s redefine field %s!", emobj.__name, field)
+        log_err("enum {} redefine field {}!", emobj.__name, field)
     end
     vlist[field] = value
     if type(value) == "number" then
@@ -100,7 +100,7 @@ local function new(ems, name, base, ...)
     local eobj   = lists[name]
     if eobj then
         if eobj.__source ~= source then
-            log_err("enum %s redefined! source:%s", name, source)
+            log_err("enum {} redefined! source:{}", name, source)
         end
     else
         eobj = { __name = name, __source = source }

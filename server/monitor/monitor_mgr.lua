@@ -44,7 +44,7 @@ function MonitorMgr:__init()
 end
 
 function MonitorMgr:on_client_accept(client)
-    log_info("[MonitorMgr][on_client_accept] token:%s,ip:%s", client.token, client.ip)
+    log_info("[MonitorMgr][on_client_accept] token:{},ip:{}", client.token, client.ip)
 end
 
 -- 心跳
@@ -68,7 +68,7 @@ end
 -- 会话信息
 function MonitorMgr:on_client_register(client, node_info, watch_services)
     client.watch_services = watch_services
-    log_debug("[MonitorMgr][on_client_register] node token:%s,%s,%s", client.token, id2nick(node_info.id), node_info)
+    log_debug("[MonitorMgr][on_client_register] node token:{},{},{}", client.token, id2nick(node_info.id), node_info)
     node_info.token                       = client.token
     self.monitor_nodes[client.token]      = node_info
     self.monitor_lost_nodes[node_info.id] = nil
@@ -82,12 +82,12 @@ end
 
 -- 会话关闭回调
 function MonitorMgr:on_client_error(client, token, err)
-    log_warn("[MonitorMgr][on_client_error] node name:%s, id:%s, token:%s,err:%s", id2nick(client.id), client.id, token, err)
+    log_warn("[MonitorMgr][on_client_error] node name:{}, id:{}, token:{},err:{}", id2nick(client.id), client.id, token, err)
     if client.id then
         local node_info = self.monitor_nodes[token]
         local lost_time = hive.now
         if node_info.status < ServiceStatus.HALT and hive.service_status < ServiceStatus.HALT then
-            log_err("[MonitorMgr][on_client_error] the run service lost:%s,please fast to repair!!!!!", node_info.name)
+            log_err("[MonitorMgr][on_client_error] the run service lost:{},please fast to repair!!!!!", node_info.name)
             self.monitor_lost_nodes[client.id] = node_info
             lost_time                          = hive.now + delay_time
         end
@@ -99,7 +99,7 @@ end
 -- 检测失活
 function MonitorMgr:check_lost_node()
     for _, v in pairs(self.monitor_lost_nodes) do
-        log_err("[MonitorMgr][check_lost_node] lost service:%s,please fast to repair!!!!!", v)
+        log_err("[MonitorMgr][check_lost_node] lost service:{},please fast to repair!!!!!", v)
     end
 end
 
@@ -112,9 +112,9 @@ function MonitorMgr:check_close_services()
         if services and services[id] then
             local pid = services[id].pid
             if pid == v.pid then
-                log_err("[MonitorMgr][check_close_services] the [%s] network maybe shake,please make sure!!!", id2nick(id))
+                log_err("[MonitorMgr][check_close_services] the [{}] network maybe shake,please make sure!!!", id2nick(id))
             else
-                log_err("[MonitorMgr][check_close_services] the [%s] has restart!!!", id2nick(id))
+                log_err("[MonitorMgr][check_close_services] the [{}] has restart!!!", id2nick(id))
                 self:broadcast_service_status(service_name, {}, { [id] = { id = id, pid = v.pid } })
             end
             self.close_services[id] = nil
@@ -186,14 +186,14 @@ end
 
 -- 添加服务
 function MonitorMgr:add_service(service_name, node)
-    log_debug("[MonitorMgr][add_service] %s,%s", id2nick(node.id), node)
+    log_debug("[MonitorMgr][add_service] {},{}", id2nick(node.id), node)
     local services   = self.services[service_name] or {}
     --检测ip唯一
     local service_id = service.name2sid(service_name)
     if service.sole_ip(service_id) then
         for id, v in pairs(services) do
             if v.ip == node.host and v.port == node.port and id ~= node.id then
-                log_err("[MonitorMgr][add_service] the service is repeat ip:%s,%s,ip:[%s:%s]", id2nick(id), id2nick(node.id), v.ip, v.port)
+                log_err("[MonitorMgr][add_service] the service is repeat ip:{},{},ip:[{}:{}]", id2nick(id), id2nick(node.id), v.ip, v.port)
             end
         end
     end
@@ -209,7 +209,7 @@ end
 
 -- 删除服务
 function MonitorMgr:remove_service(service_name, id, lost_time, pid)
-    log_info("[MonitorMgr][remove_service] %s", id2nick(id))
+    log_info("[MonitorMgr][remove_service] {}", id2nick(id))
     local services = self.services[service_name] or {}
     if services[id] then
         services[id]               = nil
@@ -226,7 +226,7 @@ function MonitorMgr:send_all_service_status(client)
     if self.open_nacos then
         return
     end
-    log_debug("[MonitorMgr][send_all_service_status] %s", client.name)
+    log_debug("[MonitorMgr][send_all_service_status] {}", client.name)
     local readys
     for service_name, curr_services in pairs(self.services) do
         if client.watch_services[service_name] then
@@ -247,7 +247,7 @@ function MonitorMgr:broadcast_service_status(service_name, readys, closes)
     if self.open_nacos then
         return
     end
-    log_debug("[MonitorMgr][broadcast_service_status] %s,%s,%s", service_name, readys, closes)
+    log_debug("[MonitorMgr][broadcast_service_status] {},{},{}", service_name, readys, closes)
     for _, client in self.rpc_server:iterator() do
         if client.id and client.watch_services[service_name] then
             self.rpc_server:send(client, "rpc_service_changed", service_name, readys, closes)
@@ -277,7 +277,7 @@ function MonitorMgr:show_change_services_info()
     if next(self.changes) then
         for service_name, _ in pairs(self.changes) do
             local sids = self:query_services(service_name)
-            log_debug("[MonitorMgr][show_services_info] [%s],count:%s,list:%s", service_name, #sids, sids)
+            log_debug("[MonitorMgr][show_services_info] [{}],count:{},list:{}", service_name, #sids, sids)
         end
         self.changes = {}
     end

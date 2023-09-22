@@ -121,7 +121,7 @@ end
 -- 统计proto协议接收(KB)
 function StatisMgr:on_proto_send(cmd_id, send_len)
     if send_len > MaxMessageLen then
-        log_err("[StatisMgr][on_proto_send] the msg is very long,cmd_id:%s,len:%s", cmd_id, send_len)
+        log_err("[StatisMgr][on_proto_send] the msg is very long,cmd_id:{},len:{}", cmd_id, send_len)
     end
     if self.statis_status then
         if self.influx then
@@ -247,7 +247,7 @@ function StatisMgr:report_msg_count()
             for i, msg in ipairs(msgs) do
                 tinsert(shows, { msg[1], msg[2].count, msg[2].len })
             end
-            log_warn("[TopMsg5min] %s %s,", name, shows)
+            log_warn("[TopMsg5min] {} {},", name, shows)
         end
         self.local_counts[name] = {}
     end

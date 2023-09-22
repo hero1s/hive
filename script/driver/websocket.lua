@@ -53,12 +53,12 @@ function WebSocket:listen(ip, port)
     end
     self.listener = luabus.listen(ip, port, eproto_type.text)
     if not self.listener then
-        log_err("[WebSocket][listen] failed to listen: %s:%d", ip, port)
+        log_err("[WebSocket][listen] failed to listen: {}:{}", ip, port)
         return false
     end
     self.listener.set_codec(self.hcodec)
     self.ip, self.port = ip, port
-    log_info("[WebSocket][listen] start listen at: %s:%d", ip, port)
+    log_info("[WebSocket][listen] start listen at: {}:{}", ip, port)
     self.listener.on_accept = function(session)
         xpcall(self.on_socket_accept, "on_socket_accept: %s", self, session, ip, port)
     end
@@ -76,7 +76,7 @@ function WebSocket:on_socket_error(token, err)
             self.token   = nil
             self.session = nil
             self.alive   = false
-            log_err("[WebSocket][on_socket_error] err: %s - %s!", err, token)
+            log_err("[WebSocket][on_socket_error] err: {} - {}!", err, token)
             self.host:on_socket_error(self, token, err)
         end
     end)
@@ -103,7 +103,7 @@ end
 
 --accept
 function WebSocket:accept(session, ip, port)
-    log_debug("[WebSocket][accept] ip, port: %s, %s", ip, port)
+    log_debug("[WebSocket][accept] ip, port: {}, {}", ip, port)
     local token = session.token
     session.set_timeout(NETWORK_TIMEOUT)
     session.on_call_data = function(recv_len, method, ...)
@@ -121,7 +121,7 @@ end
 
 --握手协议
 function WebSocket:on_handshake(session, token, url, params, headers, body)
-    log_debug("[WebSocket][on_handshake] recv: %s, %s, %s, %s!", url, params, headers, body)
+    log_debug("[WebSocket][on_handshake] recv: {}, {}, {}, {}!", url, params, headers, body)
     local upgrade = headers["Upgrade"]
     if not upgrade or upgrade ~= "websocket" then
         return self:send_data(400, nil, "can upgrade only to websocket!")

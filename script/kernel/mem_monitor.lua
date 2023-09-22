@@ -57,7 +57,7 @@ function MemMonitor:show_track(less_num)
     tsort(l, function(a, b)
         return a[2] > b[2]
     end)
-    log_debug("show track:%s", l)
+    log_debug("show track:{}", l)
     return l
 end
 

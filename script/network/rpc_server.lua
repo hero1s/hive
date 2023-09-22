@@ -30,20 +30,20 @@ prop:reader("holder", nil)                --持有者
 --induce：根据index推导port
 function RpcServer:__init(holder, ip, port, induce)
     if not ip or not port then
-        log_err("[RpcServer][setup] ip:%s or port:%s is nil", ip, port)
+        log_err("[RpcServer][setup] ip:{} or port:{} is nil", ip, port)
         signal_quit()
         return
     end
     local real_port = induce and (port + hive.index - 1) or port
     self.listener   = luabus.listen(ip, real_port)
     if not self.listener then
-        log_err("[RpcServer][setup] now listen %s:%s failed", ip, real_port)
+        log_err("[RpcServer][setup] now listen {}:{} failed", ip, real_port)
         signal_quit()
         return
     end
     self.holder        = holder
     self.ip, self.port = ip, real_port
-    log_info("[RpcServer][setup] now listen %s:%s success!", ip, real_port)
+    log_info("[RpcServer][setup] now listen {}:{} success!", ip, real_port)
     self.listener.on_accept = function(client)
         thread_mgr:fork(function()
             hxpcall(self.on_socket_accept, "on_socket_accept: %s", self, client)
@@ -64,7 +64,7 @@ function RpcServer:on_socket_rpc(client, rpc, session_id, rpc_flag, source, ...)
             if session_id > 0 then
                 local cost_time = hive.clock_ms - btime
                 if cost_time > NetwkTime.RPC_PROCESS_TIMEOUT then
-                    log_err("[RpcServer][on_socket_rpc] rpc:%s, session:%s,cost_time:%s", rpc, session_id, cost_time)
+                    log_err("[RpcServer][on_socket_rpc] rpc:{}, session:{},cost_time:{}", rpc, session_id, cost_time)
                 end
                 client.call_rpc(session_id, FLAG_RES, rpc, tunpack(rpc_datas))
             end
@@ -97,7 +97,7 @@ function RpcServer:on_socket_accept(client)
         local send_len = client.call(session_id, rpc_flag, 0, rpc, ...)
         if send_len < 0 then
             proxy_agent:statistics("on_rpc_send", rpc, send_len)
-            log_err("[RpcServer][call_rpc] call failed! code:%s", send_len)
+            log_err("[RpcServer][call_rpc] call failed! code:{}", send_len)
             return false
         end
         return true, SUCCESS
@@ -192,7 +192,7 @@ function RpcServer:rpc_heartbeat(client, status_info, send_time)
     if client.id then
         self.holder:on_client_beat(client, status_info)
     else
-        log_err("[RpcServer][rpc_heartbeat] not register,exception logic:%s", status_info)
+        log_err("[RpcServer][rpc_heartbeat] not register,exception logic:{}", status_info)
         self:disconnect(client)
     end
 end
@@ -203,7 +203,7 @@ function RpcServer:rpc_register(client, node, ...)
         local eclient = self:get_client_by_id(node.id)
         if eclient then
             local rpc_key = luabus.get_rpc_key()
-            log_err("[RpcServer][rpc_register] client(%s) be kickout, same service is run!,rpckey:%s", eclient.name, rpc_key)
+            log_err("[RpcServer][rpc_register] client({}) be kickout, same service is run!,rpckey:{}", eclient.name, rpc_key)
             self:send(client, "rpc_service_kickout", hive.id, "service replace")
             return
         end
@@ -216,7 +216,7 @@ function RpcServer:rpc_register(client, node, ...)
         client.pid          = node.pid
         self.holder:on_client_register(client, node, ...)
     else
-        log_err("[RpcServer][rpc_register] repeat register,exception logic:%s", node)
+        log_err("[RpcServer][rpc_register] repeat register,exception logic:{}", node)
         self:disconnect(client)
     end
 end

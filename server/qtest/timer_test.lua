@@ -6,15 +6,15 @@ local log_info  = logger.info
 --log.init("./newlog/", "qtest", 500000)
 
 local msec, sec = ltimer.time()
-log_info("time: sec:%s, msec:%s", sec, msec)
+log_info("time: sec:{}, msec:{}", sec, msec)
 --ltimer:sleep(2000)
 local now = ltimer.now()
 local now_ms = ltimer.now_ms()
-log_info("time: now:%s, now_ms:%s", now, now_ms)
+log_info("time: now:{}, now_ms:{}", now, now_ms)
 
 local clock = ltimer.clock()
 local clock_ms = ltimer.clock_ms()
-log_info("time: steady:%s, steady_ms:%s", clock, clock_ms)
+log_info("time: steady:{}, steady_ms:{}", clock, clock_ms)
 
 local timer_mgr = hive.get("timer_mgr")
 local thread_mgr = hive.get("thread_mgr")
@@ -22,36 +22,36 @@ local thread_mgr = hive.get("thread_mgr")
 thread_mgr:fork(function()
     log_info("once")
     timer_mgr:once(500, function(escape_ms)
-        log_info("once: %s", escape_ms)
+        log_info("once: {}", escape_ms)
     end, 3)
 
     log_info("loop")
     timer_mgr:loop(1000, function(escape_ms)
-        log_info("loop: %s", escape_ms)
+        log_info("loop: {}", escape_ms)
     end)
 
     log_info("register")
     timer_mgr:register(500, 1000, 5, function(escape_ms)
-        log_info("register: %s", escape_ms)
+        log_info("register: {}", escape_ms)
     end)
 
     logger.debug("once")
     timer_mgr:once(500, function(escape_ms)
-        logger.debug(sformat("once: %s", escape_ms))
+        logger.debug(sformat("once: {}", escape_ms))
     end)
 
     logger.debug("loop")
     timer_mgr:loop(1000, function(escape_ms)
-        logger.debug(sformat("loop: %s", escape_ms))
+        logger.debug(sformat("loop: {}", escape_ms))
     end)
 
     logger.debug("register")
     timer_mgr:register(500, 1000, 5, function(escape_ms)
-        logger.debug(sformat("register: %s", escape_ms))
+        logger.debug(sformat("register: {}", escape_ms))
     end)
     local cex            = "0 0 17 * * 1"
     local time, time_str = ltimer.cron_next(cex)
-    logger.debug("the cron: [%s] -->next on time:[%s],[%s]", cex, time, time_str)
+    logger.debug("the cron: [{}] -->next on time:[{}],[{}]", cex, time, time_str)
 
 end)
 

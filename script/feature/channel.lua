@@ -64,7 +64,7 @@ function Channel:execute(all_back)
             end
         end)
         if efailed and (not all_back) then
-            log_err("[Channel][execute] failed:%s,code:%s", self.title, code)
+            log_err("[Channel][execute] failed:{},code:{}", self.title, code)
             return false, code
         end
     end
@@ -75,14 +75,14 @@ function Channel:execute(all_back)
         if efailed then
             success = false
             if not all_back then
-                log_err("[Channel][execute] async failed:%s,code:%s,%s", self.title, sok, corerr)
+                log_err("[Channel][execute] async failed:{},code:{},{}", self.title, sok, corerr)
                 return false, code
             end
         end
     end
     local cost_time = lclock_ms() - btime
     if self.timeout and cost_time > self.timeout then
-        log_warn("[Channel][execute] timeout [%s] count:%s,timeout:%s --> %s", self.title, #self.executers, self.timeout, cost_time)
+        log_warn("[Channel][execute] timeout [{}] count:{},timeout:{} --> {}", self.title, #self.executers, self.timeout, cost_time)
     end
     return success, all_datas
 end

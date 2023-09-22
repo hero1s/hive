@@ -63,12 +63,12 @@ end
 ----------------------------------------------------------------------
 --客户端连上
 function Gateway:on_socket_accept(session)
-    log_debug("[Gateway][on_socket_accept] %s connected!", session.token)
+    log_debug("[Gateway][on_socket_accept] {} connected!", session.token)
 end
 
 --客户端连接断开
 function Gateway:on_session_error(session, token, err)
-    log_warn("[Gateway][on_session_error] session(%s) lost, because: %s!", token, err)
+    log_warn("[Gateway][on_session_error] session({}) lost, because: {}!", token, err)
     hive.send_master("on_session_error", token, err)
 end
 

@@ -40,7 +40,7 @@ function MysqlMgr:query(db_id, primary_id, sql)
     if mysqldb and mysqldb:set_executer(primary_id) then
         local ok, res_oe = mysqldb:query(sql)
         if not ok then
-            log_err("[MysqlMgr][query] query %s failed, because: %s", sql, res_oe)
+            log_err("[MysqlMgr][query] query {} failed, because: {}", sql, res_oe)
         end
         return ok and SUCCESS or MYSQL_FAILED, res_oe
     end
@@ -52,7 +52,7 @@ function MysqlMgr:execute(db_id, primary_id, stmt, ...)
     if mysqldb and mysqldb:set_executer(primary_id) then
         local ok, res_oe = mysqldb:execute(stmt, ...)
         if not ok then
-            log_err("[MysqlMgr][execute] execute %s failed, because: %s", stmt, res_oe)
+            log_err("[MysqlMgr][execute] execute {} failed, because: {}", stmt, res_oe)
         end
         return ok and SUCCESS or MYSQL_FAILED, res_oe
     end
@@ -64,7 +64,7 @@ function MysqlMgr:prepare(db_id, sql)
     if mysqldb and mysqldb:set_executer() then
         local ok, res_oe = mysqldb:prepare(sql)
         if not ok then
-            log_err("[MysqlMgr][prepare] prepare %s failed, because: %s", sql, res_oe)
+            log_err("[MysqlMgr][prepare] prepare {} failed, because: {}", sql, res_oe)
         end
         return ok and SUCCESS or MYSQL_FAILED, res_oe
     end

@@ -75,11 +75,11 @@ function HttpClient:on_respond(curl_handle, result)
         else
             tinsert(self.results, { session_id, false, code, err })
             if self.open_debug then
-                log_debug("[%s][http_debug: \n %s \n]", session_id, request.debug)
+                log_debug("[{}][http_debug: \n {} \n]", session_id, request.debug)
             end
         end
     else
-        log_err("[HttpClient][on_respond] the context remove:%s,%s", curl_handle, result)
+        log_err("[HttpClient][on_respond] the context remove:{},{}", curl_handle, result)
     end
 end
 
@@ -104,7 +104,7 @@ function HttpClient:send_request(url, timeout, querys, headers, method, datas)
     local fmt_url              = self:format_url(url, querys)
     local request, curl_handle = curlm_mgr.create_request(fmt_url, to - 1000, self.open_debug)
     if not request then
-        log_err("[HttpClient][send_request] failed : %s", curl_handle)
+        log_err("[HttpClient][send_request] failed : {}", curl_handle)
         return false
     end
 
@@ -131,7 +131,7 @@ function HttpClient:send_request(url, timeout, querys, headers, method, datas)
     end
     local ok, err = request[method](datas or "")
     if not ok then
-        log_err("[HttpClient][send_request] curl %s failed: %s!", method, err)
+        log_err("[HttpClient][send_request] curl {} failed: {}!", method, err)
         return false
     end
     self.contexts[curl_handle] = {

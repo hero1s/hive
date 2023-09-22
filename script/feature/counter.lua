@@ -55,13 +55,13 @@ function Counter:on_minute()
     if self.time > 0 then
         if self.total > 0 then
             local avg = cut_tail(self.total / self.time, 1)
-            log_info("[Counter][on_minute] last minute %s count => total:%s, avg:%s range:%s-%s!", self.title, self.total, avg, self.min, self.max)
+            log_info("[Counter][on_minute] last minute {} count => total:{}, avg:{} range:{}-{}!", self.title, self.total, avg, self.min, self.max)
             self.total = 0
             self.max   = 0
             self.min   = 0
         end
     else
-        log_info("[Counter][on_minute] last minute %s count => cur:%s range:%s-%s!", self.title, self.count, self.min, self.max)
+        log_info("[Counter][on_minute] last minute {} count => cur:{} range:{}-{}!", self.title, self.count, self.min, self.max)
         self.max = self.count
         self.min = self.count
     end

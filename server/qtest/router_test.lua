@@ -15,7 +15,7 @@ function RouterTest:start()
             msg = msg .. "6"
         end
         local ok, res = router_mgr:call_target(917505, "rpc_log_feishu", msg)
-        log_info("RouterTest:start: ok=%s,res=%s", ok, res)
+        log_info("RouterTest:start: ok={},res={}", ok, res)
     end
 end
 

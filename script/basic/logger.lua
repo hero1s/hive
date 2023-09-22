@@ -3,14 +3,10 @@
 local pcall       = pcall
 local pairs       = pairs
 local sformat     = string.format
-local sfind       = string.find
-local ssub        = string.sub
 local dgetinfo    = debug.getinfo
-local tpack       = table.pack
 local tunpack     = table.unpack
 local fsstem      = stdfs.stem
-local serialize   = luakit.serialize
-local lwarn       = log.warn
+local lprint      = log.print
 local lfilter     = log.filter
 
 local LOG_LEVEL   = log.LOG_LEVEL
@@ -19,8 +15,6 @@ logger            = {}
 logfeature        = {}
 local title       = hive.title
 local monitors    = _ENV.monitors or {}
-local dispatching = false
-local logshow     = 0
 local log_lvl     = 1
 
 function logger.init()
@@ -30,7 +24,6 @@ function logger.init()
     local rolltype            = environ.number("HIVE_LOG_ROLL", 0)
     local log_size            = environ.number("HIVE_LOG_SIZE", 50 * 1024 * 1024)
     local maxdays             = environ.number("HIVE_LOG_DAYS", 7)
-    logshow                   = environ.number("HIVE_LOG_SHOW", 0)
     log_lvl                   = environ.number("HIVE_LOG_LVL", 1)
 
     log.set_max_logsize(log_size)
@@ -59,78 +52,57 @@ function logger.filter(level)
     end
 end
 
-local function logger_output(feature, notify, lvl, lvl_name, fmt, log_conf, ...)
-    if lvl < log_lvl then
-        return false
+local function logger_format(flag, feature, lvl, lvl_name, fmt, ...)
+    local ok, msg = pcall(sformat, fmt, ...)
+    if not ok then
+        local info = dgetinfo(4, "S")
+        local wfmt = "[logger][{}] format failed: {}, source({}:{})"
+        lprint(LOG_LEVEL.WARN, 0, title, feature, wfmt, lvl_name, msg, info.short_src, info.linedefined)
+        return
     end
-    local content
-    local lvl_func, extend, swline = tunpack(log_conf)
-    if extend then
-        local args = tpack(...)
-        for i, arg in pairs(args) do
-            if type(arg) == "table" then
-                args[i] = serialize(arg, swline and 1 or 0)
-            end
-        end
-        content = sformat(fmt, tunpack(args, 1, args.n))
-    else
-        content = sformat(fmt, ...)
-    end
-    lvl_func(content, title, feature)
-    if notify and not dispatching then
-        --防止重入
-        dispatching = true
-        for monitor, mlvl in pairs(monitors) do
-            if lvl >= mlvl then
-                monitor:dispatch_log(content, lvl_name)
-            end
-        end
-        dispatching = false
-    end
+    lprint(lvl, flag, title, feature, msg)
 end
 
-local function trim_src(short_src)
-    if short_src == nil then
-        return ""
+local function logger_output(flag, feature, lvl, lvl_name, fmt, ...)
+    if lvl < log_lvl then
+        return
     end
-
-    local _, j = sfind(short_src, "%.%./")
-    if j == nil then
-        return short_src
+    if not fmt:find("{") then
+        return logger_format(flag, feature, lvl, lvl_name, fmt, ...)
     end
-
-    return ssub(short_src, j + 1)
+    local ok, msg = pcall(lprint, lvl, flag, title, feature, fmt, ...)
+    if not ok then
+        local info = dgetinfo(3, "S")
+        local wfmt = "[logger][{}] format failed: {}, source({}:{})"
+        lprint(LOG_LEVEL.WARN, 0, title, feature, wfmt, lvl_name, msg, info.short_src, info.linedefined)
+        return
+    end
+    return msg
 end
 
 local LOG_LEVEL_OPTIONS = {
-    --lvl_func,    extend,  swline
-    [LOG_LEVEL.TRACE] = { "trace", { log.trace, true, false } },
-    [LOG_LEVEL.DEBUG] = { "debug", { log.debug, true, false } },
-    [LOG_LEVEL.INFO]  = { "info", { log.info, false, false } },
-    [LOG_LEVEL.WARN]  = { "warn", { log.warn, true, false } },
-    [LOG_LEVEL.ERROR] = { "err", { log.error, true, false } },
-    [LOG_LEVEL.FATAL] = { "fatal", { log.fatal, true, true } }
+    [LOG_LEVEL.TRACE] = { "trace", 0x01 },
+    [LOG_LEVEL.DEBUG] = { "debug", 0x01 },
+    [LOG_LEVEL.INFO]  = { "info", 0x00 },
+    [LOG_LEVEL.WARN]  = { "warn", 0x01 },
+    [LOG_LEVEL.ERROR] = { "err", 0x01 },
+    [LOG_LEVEL.FATAL] = { "fatal", 0x01 | 0x02 }
 }
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
-    local lvl_name, log_conf = tunpack(conf)
-    logger[lvl_name]         = function(fmt, ...)
-        if logshow == 1 then
-            local info = dgetinfo(2, "nSl")
-            fmt        = sformat("[%s:%d(%s)]", trim_src(info.short_src), info.currentline or 0, info.name or "") .. fmt
+    local lvl_name, flag = tunpack(conf)
+    logger[lvl_name]     = function(fmt, ...)
+        local msg = logger_output(flag, "", lvl, lvl_name, fmt, ...)
+        if msg then
+            for monitor in pairs(monitors) do
+                monitor:dispatch_log(msg, lvl_name)
+            end
         end
-        local ok, res = pcall(logger_output, "", true, lvl, lvl_name, fmt, log_conf, ...)
-        if not ok then
-            local info = dgetinfo(2, "S")
-            lwarn(sformat("[logger][%s] format failed: %s, source(%s:%s)", lvl_name, res, info.short_src, info.linedefined))
-            return false
-        end
-        return res
     end
 end
 
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
-    local lvl_name, log_conf = tunpack(conf)
-    logfeature[lvl_name]     = function(feature, path, prefix, def)
+    local lvl_name, flag = tunpack(conf)
+    logfeature[lvl_name] = function(feature, path, prefix, def)
         if not feature then
             local info = dgetinfo(2, "S")
             feature    = fsstem(info.short_src)
@@ -139,13 +111,7 @@ for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
         log.ignore_prefix(feature, prefix)
         log.ignore_def(feature, def)
         return function(fmt, ...)
-            local ok, res = pcall(logger_output, feature, false, lvl, lvl_name, fmt, log_conf, ...)
-            if not ok then
-                local info = dgetinfo(2, "S")
-                lwarn(sformat("[logger][%s] format failed: %s, source(%s:%s)", lvl_name, res, info.short_src, info.linedefined))
-                return false
-            end
-            return res
+            logger_output(flag, feature, lvl, lvl_name, fmt, ...)
         end
     end
 end

@@ -21,32 +21,32 @@ function WSServer:setup(ws_addr)
     self.ip, self.port = saddr(ws_addr)
     local socket       = WebSocket(self)
     if not socket:listen(self.ip, self.port) then
-        log_info("[WSServer][setup] now listen %s failed", ws_addr)
+        log_info("[WSServer][setup] now listen {} failed", ws_addr)
         signalquit(1)
         return
     end
-    log_info("[WSServer][setup] listen(%s:%s) success!", self.ip, self.port)
+    log_info("[WSServer][setup] listen({}:{}) success!", self.ip, self.port)
     self.listener = socket
 end
 
 function WSServer:on_socket_error(socket, token, err)
     if socket == self.listener then
-        log_info("[WSServer][on_socket_error] listener(%s:%s) close!", self.ip, self.port)
+        log_info("[WSServer][on_socket_error] listener({}:{}) close!", self.ip, self.port)
         self.listener = nil
         return
     end
-    log_debug("[WSServer][on_socket_error] client(token:%s) close!", token)
+    log_debug("[WSServer][on_socket_error] client(token:{}) close!", token)
     self.clients[token] = nil
 end
 
 function WSServer:on_socket_accept(socket, token)
-    log_debug("[WSServer][on_socket_accept] client(token:%s) connected!", token)
+    log_debug("[WSServer][on_socket_accept] client(token:{}) connected!", token)
     self.clients[token] = socket
 end
 
 --回调
 function WSServer:on_socket_recv(socket, token, message)
-    log_debug("[WSServer][on_socket_recv] client(token:%s) msg:%s!", token, message)
+    log_debug("[WSServer][on_socket_recv] client(token:{}) msg:{}!", token, message)
     socket:send_frame(message)
 end
 

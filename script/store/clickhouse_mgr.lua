@@ -40,7 +40,7 @@ function ClickHouseMgr:query(db_id, primary_id, sql)
     if clickhouse_db and clickhouse_db:set_executer(primary_id) then
         local ok, res_oe = clickhouse_db:query(sql)
         if not ok then
-            log_err("[ClickHouseMgr][query] query %s failed, because: %s", sql, res_oe)
+            log_err("[ClickHouseMgr][query] query {} failed, because: {}", sql, res_oe)
         end
         return ok and SUCCESS or MYSQL_FAILED, res_oe
     end
@@ -52,7 +52,7 @@ function ClickHouseMgr:execute(db_id, primary_id, stmt, ...)
     if clickhouse_db and clickhouse_db:set_executer(primary_id) then
         local ok, res_oe = clickhouse_db:execute(stmt, ...)
         if not ok then
-            log_err("[ClickHouseMgr][execute] execute %s failed, because: %s", stmt, res_oe)
+            log_err("[ClickHouseMgr][execute] execute {} failed, because: {}", stmt, res_oe)
         end
         return ok and SUCCESS or MYSQL_FAILED, res_oe
     end
@@ -64,7 +64,7 @@ function ClickHouseMgr:prepare(db_id, sql)
     if clickhouse_db and clickhouse_db:set_executer() then
         local ok, res_oe = clickhouse_db:prepare(sql)
         if not ok then
-            log_err("[ClickHouseMgr][prepare] prepare %s failed, because: %s", sql, res_oe)
+            log_err("[ClickHouseMgr][prepare] prepare {} failed, because: {}", sql, res_oe)
         end
         return ok and SUCCESS or MYSQL_FAILED, res_oe
     end

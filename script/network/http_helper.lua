@@ -58,7 +58,7 @@ end
 
 function http_helper.http_success(ok, code, res)
     if not ok or 200 ~= code then
-        log_err("[http_failed] call failed:ok=%s,code=%s,res=%s,from:[%s]", ok, code, res, hive.where_call())
+        log_err("[http_failed] call failed:ok={},code={},res={},from:[{}]", ok, code, res, hive.where_call())
         return false
     end
     return true

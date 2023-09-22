@@ -33,11 +33,11 @@ end
 function ConfigTable:set_records(file_name)
     local records = import(file_name)
     if records == nil then
-        log_err("[ConfigTable][set_records] config is not exist:%s", file_name)
+        log_err("[ConfigTable][set_records] config is not exist:{}", file_name)
         return
     end
     if type(records) ~= "table" then
-        log_err("[ConfigTable][set_records] config is not correct:%s", file_name)
+        log_err("[ConfigTable][set_records] config is not correct:{}", file_name)
         return
     end
     self:check_index(records)
@@ -61,7 +61,7 @@ function ConfigTable:setup(name, ...)
         return false
     end
     if self.load_time > 0 then
-        log_info("[ConfigTable][setup] reload config %s", file_name)
+        log_info("[ConfigTable][setup] reload config {}", file_name)
     end
     if self:setup_nil(name, ...) then
         self:set_records(file_name)
@@ -76,7 +76,7 @@ function ConfigTable:setup_nil(name, ...)
         self.indexs = { ... }
         return true
     else
-        log_err("[ConfigTable][__init] keys len illegal. name=%s, size=%s", name, size)
+        log_err("[ConfigTable][__init] keys len illegal. name={}, size={}", name, size)
     end
     return false
 end
@@ -101,13 +101,13 @@ function ConfigTable:check_index(records)
         end
         local row_index = self:build_index(tunpack(row_indexs))
         if not row_index then
-            log_err("[ConfigTable][check_index] row_index is nil:%s", self.name)
+            log_err("[ConfigTable][check_index] row_index is nil:{}", self.name)
             return false
         end
         if not tmp_indexs[row_index] then
             tmp_indexs[row_index] = true
         else
-            log_err("[ConfigTable][check_index] %s row_index is not unique row:%s", self.name, v)
+            log_err("[ConfigTable][check_index] {} row_index is not unique row:{}", self.name, v)
             return false
         end
     end
@@ -124,7 +124,7 @@ function ConfigTable:upsert(row)
         row_indexs[#row_indexs + 1] = row[index]
     end
     if #row_indexs ~= #self.indexs then
-        log_err("[ConfigTable][upsert] row data index lost. row=%s, indexs=%s", row, self.indexs)
+        log_err("[ConfigTable][upsert] row data index lost. row={}, indexs={}", row, self.indexs)
         return
     end
     local row_index = self:build_index(tunpack(row_indexs))
@@ -150,7 +150,7 @@ function ConfigTable:init_group(key_name)
             group_keys[#group_keys + 1] = row[index]
         end
         if #group_keys ~= #keys then
-            log_err("[ConfigTable][upsert_group] row data index lost. row=%s, group_keys=%s", row, keys)
+            log_err("[ConfigTable][upsert_group] row data index lost. row={}, group_keys={}", row, keys)
             return
         end
         local group_index = self:build_index(tunpack(group_keys))
@@ -170,12 +170,12 @@ end
 function ConfigTable:find_one(...)
     local row_index = self:build_index(...)
     if not row_index then
-        log_err("[ConfigTable][find_one] table %s row index is nil.", self.name)
+        log_err("[ConfigTable][find_one] table {} row index is nil.", self.name)
         return
     end
     local row = self.rows[row_index]
     if not row then
-        log_err("[ConfigTable][find_one] table=%s row data not found. index=%s,ref:%s", self.name, row_index, hive.where_call())
+        log_err("[ConfigTable][find_one] table={} row data not found. index={},ref:{}", self.name, row_index, hive.where_call())
     end
     return row
 end
@@ -222,7 +222,7 @@ function ConfigTable:create_group_index(key_name, ...)
         self:init_group(key_name)
         return true
     else
-        log_err("[ConfigTable][create_group_index] keys len illegal. group_index=%s", { ... })
+        log_err("[ConfigTable][create_group_index] keys len illegal. group_index={}", { ... })
     end
     return false
 end
@@ -231,17 +231,17 @@ end
 function ConfigTable:find_group(key_name, ...)
     local group_index = self:build_index(...)
     if not group_index then
-        log_err("[ConfigTable][find_group] table %s row group_index is nil.[%s]", self.name, { ... })
+        log_err("[ConfigTable][find_group] table {} row group_index is nil.[{}]", self.name, { ... })
         return
     end
     local groups = self.groups[key_name]
     if not groups then
-        log_err("[ConfigTable][find_group] the group key is not init:%s", key_name)
+        log_err("[ConfigTable][find_group] the group key is not init:{}", key_name)
         return
     end
     local group = groups[group_index]
     if not group then
-        log_info("[ConfigTable][find_group] table=%s row group not found. index=%s", self.name, group_index)
+        log_info("[ConfigTable][find_group] table={} row group not found. index={}", self.name, group_index)
     end
     return group
 end

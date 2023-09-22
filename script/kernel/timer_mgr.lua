@@ -72,10 +72,10 @@ end
 function TimerMgr:cron(cex, cb, ...)
     local time, time_str = lcron_next(cex)
     if time < 0 then
-        log_err("[TimerMgr][cron] the cron is error:[%s],[%s]", cex, time_str)
+        log_err("[TimerMgr][cron] the cron is error:[{}],[{}]", cex, time_str)
         return
     end
-    log_info("[TimerMgr][cron] the cron next start:[%s],[%s]", cex, time_str)
+    log_info("[TimerMgr][cron] the cron next start:[{}],[{}]", cex, time_str)
     self:once((time - hive.now) * 1000, cb, ...)
 end
 

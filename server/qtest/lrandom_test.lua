@@ -3,15 +3,15 @@ local log_debug = logger.debug
 
 for i = 1, 10 do
     -------------------------[min,max]
-    log_debug("rand_range:%i:%s", i, random.rand_range(1, 10))
+    log_debug("rand_range:%i:{}", i, random.rand_range(1, 10))
 end
 
 for i = 1, 10 do
     -------------------------[min,max]
-    log_debug("rand_range_some:%i:%s",i, random.rand_range_some(1, 10, 2))
+    log_debug("rand_range_some:%i:{}",i, random.rand_range_some(1, 10, 2))
 end
 
-log_debug("rand_range_some[1-100]:%s", random.rand_range_some(1, 100, 10))
+log_debug("rand_range_some[1-100]:{}", random.rand_range_some(1, 100, 10))
 
 local res = {}
 for i = 1, 10000 do
@@ -23,7 +23,7 @@ for i = 1, 10000 do
     end
 end
 
-log_debug("rand_weight:%s", res)
+log_debug("rand_weight:{}", res)
 
 res = {}
 for i = 1, 10000 do
@@ -37,7 +37,7 @@ for i = 1, 10000 do
     end
 end
 
-log_debug("rand_weight_some:%s", res)
+log_debug("rand_weight_some:{}", res)
 
 res = {}
 for i = 1, 100000 do
@@ -49,9 +49,9 @@ for i = 1, 100000 do
     end
 end
 
-log_debug("rand_weight:%s", res)
+log_debug("rand_weight:{}", res)
 
-log_debug("%s", (res[1] / 100000 - res[2] / 100000))
+log_debug("{}", (res[1] / 100000 - res[2] / 100000))
 assert(math.abs(res[1] / 100000 - res[2] / 100000) < 0.01)
 
 local succcount = 0
@@ -61,4 +61,4 @@ for i = 1, 100000 do
     end
 end
 
-log_debug("randf_percent:%s", succcount / 100000)
+log_debug("randf_percent:{}", succcount / 100000)

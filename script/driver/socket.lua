@@ -50,11 +50,11 @@ function Socket:listen(ip, port, ptype)
     end
     self.listener = luabus.listen(ip, port, ptype or proto_text)
     if not self.listener then
-        log_err("[Socket][listen] failed to listen: %s:%d type=%d", ip, port, ptype)
+        log_err("[Socket][listen] failed to listen: {}:{} type={}", ip, port, ptype)
         return false
     end
     self.ip, self.port = ip, port
-    log_info("[Socket][listen] start listen at: %s:%d type=%d", ip, port, ptype)
+    log_info("[Socket][listen] start listen at: {}:{} type={}", ip, port, ptype)
     self.listener.on_accept = function(session)
         hxpcall(self.on_socket_accept, "on_socket_accept: %s", self, session, ip, port)
     end
@@ -81,7 +81,7 @@ function Socket:connect(ip, port, ptype)
     end
     local session, cerr = luabus.connect(ip, port, CONNECT_TIMEOUT, ptype or proto_text)
     if not session then
-        log_err("[Socket][connect] failed to connect: %s:%d type=%d, err=%s", ip, port, ptype, cerr)
+        log_err("[Socket][connect] failed to connect: {}:{} type={}, err={}", ip, port, ptype, cerr)
         return false, cerr
     end
     --设置阻塞id

@@ -149,7 +149,7 @@ end
 function ThreadMgr:response(session_id, ...)
     local context = self.coroutine_yields[session_id]
     if not context then
-        log_err("[ThreadMgr][response][%s] unknown session_id(%s) response!,[%s],from:[%s]", hive.frame, session_id, tpack(...), hive.where_call())
+        log_err("[ThreadMgr][response][{}] unknown session_id({}) response!,[{}],from:[{}]", hive.frame, session_id, tpack(...), hive.where_call())
         return
     end
     self.coroutine_yields[session_id] = nil
@@ -188,7 +188,7 @@ function ThreadMgr:on_second(clock_ms)
         local head = queue:head()
         if head and head.timeout <= clock_ms then
             self:unlock(key, true)
-            log_err("[ThreadMgr][on_second] the lock is timeout:%s,count:%s,cost:%s,queue:%s",
+            log_err("[ThreadMgr][on_second] the lock is timeout:{},count:{},cost:{},queue:{}",
                     head.key, head.count, head:cost_time(clock_ms), queue:size())
         end
     end
@@ -209,7 +209,7 @@ function ThreadMgr:on_second(clock_ms)
             local session_id                  = context.session_id
             self.coroutine_yields[session_id] = nil
             if context.title then
-                log_err("[ThreadMgr][on_second][%s] session_id(%s:%s) timeout:%s !", hive.frame, session_id, context.title, clock_ms - context.stime)
+                log_err("[ThreadMgr][on_second][{}] session_id({}:{}) timeout:{} !", hive.frame, session_id, context.title, clock_ms - context.stime)
             end
             self:resume(context.co, false, sformat("%s timeout", context.title), session_id)
         end

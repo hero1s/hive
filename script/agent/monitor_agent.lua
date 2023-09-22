@@ -54,10 +54,10 @@ function MonitorAgent:vote_stop_service()
     end
     for _, name in ipairs(hive.pre_services or {}) do
         if self:exist_service(name) then
-            log_warn("[MonitorAgent][vote_stop_service] pre service [%s] has runing,wait next check", name)
+            log_warn("[MonitorAgent][vote_stop_service] pre service [{}] has runing,wait next check", name)
             return false
         end
-        log_debug("[MonitorAgent][vote_stop_service] pre service [%s] has stop", name)
+        log_debug("[MonitorAgent][vote_stop_service] pre service [{}] has stop", name)
     end
     return true
 end
@@ -110,12 +110,12 @@ end
 
 -- 连接关闭回调
 function MonitorAgent:on_socket_error(client, token, err)
-    log_info("[MonitorAgent][on_socket_error] disconnect monitor fail!:[%s:%s],err:%s", self.client.ip, self.client.port, err)
+    log_info("[MonitorAgent][on_socket_error] disconnect monitor fail!:[{}:{}],err:{}", self.client.ip, self.client.port, err)
 end
 
 -- 连接成回调
 function MonitorAgent:on_socket_connect(client)
-    log_info("[MonitorAgent][on_socket_connect]: connect monitor success!:[%s:%s]", self.client.ip, self.client.port)
+    log_info("[MonitorAgent][on_socket_connect]: connect monitor success!:[{}:{}]", self.client.ip, self.client.port)
     client:register(self:watch_services())
 end
 
@@ -135,7 +135,7 @@ end
 
 --服务改变
 function MonitorAgent:rpc_service_changed(service_name, readys, closes)
-    log_debug("[MonitorAgent][rpc_service_changed] %s,%s,%s", service_name, readys, closes)
+    log_debug("[MonitorAgent][rpc_service_changed] {},{},{}", service_name, readys, closes)
     for id, info in pairs(readys) do
         if not self.services[service_name] then
             self.services[service_name] = {}
@@ -143,7 +143,7 @@ function MonitorAgent:rpc_service_changed(service_name, readys, closes)
         local pid = self.services[service_name][id]
         if not pid or pid ~= info.pid then
             if pid and pid ~= info.pid then
-                log_warn("[MonitorAgent][rpc_service_changed] ready service [%s] replace", id2nick(id))
+                log_warn("[MonitorAgent][rpc_service_changed] ready service [{}] replace", id2nick(id))
             end
             self.services[service_name][id] = info.pid
             self:notify_service_event(self.ready_watchers[service_name], service_name, id, info, true)
@@ -156,7 +156,7 @@ function MonitorAgent:rpc_service_changed(service_name, readys, closes)
                 self:notify_service_event(self.close_watchers[service_name], service_name, id, {}, false)
                 self.services[service_name][id] = nil
             else
-                log_warn("[MonitorAgent][rpc_service_changed] close service [%s] has replace", id2nick(id))
+                log_warn("[MonitorAgent][rpc_service_changed] close service [{}] has replace", id2nick(id))
             end
         end
     end
@@ -169,7 +169,7 @@ function MonitorAgent:on_remote_message(data, message)
     end
     local ok, code, res = tunpack(event_mgr:notify_listener(message, data))
     if check_failed(code, ok) then
-        log_err("[MonitorAgent][on_remote_message] web_rpc faild: ok=%s, ec=%s", ok, code)
+        log_err("[MonitorAgent][on_remote_message] web_rpc faild: ok={}, ec={}", ok, code)
         return { code = ok and code or RPC_FAILED, msg = ok and "" or code }
     end
     return { code = 0, data = res }
@@ -194,7 +194,7 @@ end
 
 function MonitorAgent:rpc_count_lua_obj(less_num)
     local obj_counts = show_class_track(less_num)
-    log_warn("rpc_count_lua_obj:%s", obj_counts)
+    log_warn("rpc_count_lua_obj:{}", obj_counts)
     return { objs = obj_counts, lua_mem = gc_mgr:lua_mem_size(), mem = gc_mgr:mem_size() }
 end
 
@@ -206,13 +206,13 @@ end
 function MonitorAgent:rpc_set_env(key, value)
     local old = environ.get(key)
     environ.set(key, value)
-    log_debug("[MonitorAgent][rpc_set_env] %s:%s,old:%s --> new:%s", key, value, old, environ.get(key))
+    log_debug("[MonitorAgent][rpc_set_env] {}:{},old:{} --> new:{}", key, value, old, environ.get(key))
     event_mgr:notify_trigger("evt_change_env", key)
 end
 
 function MonitorAgent:rpc_set_server_status(status)
     if hive.status_stop() then
-        log_err("[MonitorAgent][rpc_set_server_status] change status irreversible: %s --> %s ", status, hive.service_status)
+        log_err("[MonitorAgent][rpc_set_server_status] change status irreversible: {} --> {} ", status, hive.service_status)
         return
     end
     hive.change_service_status(status)
@@ -225,7 +225,7 @@ function MonitorAgent:rpc_hive_quit(reason)
 end
 
 function MonitorAgent:rpc_set_log_level(level)
-    log_info("[MonitorAgent][rpc_set_log_level] level:%s", level)
+    log_info("[MonitorAgent][rpc_set_log_level] level:{}", level)
     logger.filter(level)
 end
 

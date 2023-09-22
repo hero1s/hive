@@ -43,7 +43,7 @@ function NetClient:connect(block)
     end
     local socket, cerr = luabus.connect(self.ip, self.port, NetwkTime.CONNECT_TIMEOUT, self.proto_type)
     if not socket then
-        log_err("[NetClient][connect] failed to connect: %s:%d type=%d, err=%s", self.ip, self.port, self.proto_type, cerr)
+        log_err("[NetClient][connect] failed to connect: {}:{} type={}, err={}", self.ip, self.port, self.proto_type, cerr)
         return false, cerr
     end
     --设置阻塞id
@@ -127,7 +127,7 @@ function NetClient:on_socket_rpc(socket, cmd_id, flag, session_id, data)
     self.alive_time      = hive.clock_ms
     local body, cmd_name = self:decode(cmd_id, data, flag)
     if not body then
-        log_err("[NetClient][on_socket_rpc] decode failed! cmd_id:%s，data:%s", cmd_id, data)
+        log_err("[NetClient][on_socket_rpc] decode failed! cmd_id:{}，data:{}", cmd_id, data)
         return
     end
     if session_id == 0 or (flag & FlagMask.REQ == FlagMask.REQ) then
@@ -160,18 +160,18 @@ end
 
 function NetClient:write(cmd_id, data, session_id, flag)
     if not self.alive then
-        log_err("[NetClient][write] the socket is not alive! cmd_id:%s", cmd_id)
+        log_err("[NetClient][write] the socket is not alive! cmd_id:{}", cmd_id)
         return false
     end
     local body, pflag = self:encode(cmd_id, data, flag)
     if not body then
-        log_err("[NetClient][write] encode failed! cmd_id:%s,data:%s", cmd_id, data)
+        log_err("[NetClient][write] encode failed! cmd_id:{},data:{}", cmd_id, data)
         return false
     end
     -- call luabus
     local send_len = self.socket.call_head(cmd_id, pflag, session_id or 0, body)
     if send_len < 0 then
-        log_err("[NetClient][write] call_pack failed! code:%s,cmd_id:%s,len:%s", send_len, cmd_id, #body)
+        log_err("[NetClient][write] call_pack failed! code:{},cmd_id:{},len:{}", send_len, cmd_id, #body)
         return false
     end
     return true
