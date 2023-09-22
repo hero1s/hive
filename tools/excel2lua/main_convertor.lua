@@ -29,6 +29,7 @@ local tinsert       = table.insert
 local tunpack       = table.unpack
 local mtointeger    = math.tointeger
 local slower        = string.lower
+local ssub          = string.sub
 
 local version       = 10000
 
@@ -79,6 +80,9 @@ end
 --根据fmt_code和fmt_id解析自定义格式
 local function cell_value_fmt_parse(cell)
     if cell.type == "date" then
+        if cell.value == "" then
+            return 0
+        end
         if cell.fmt_id == 14 then
             return 86400 * (cell.value - 25569) - 28800
         end
@@ -158,6 +162,8 @@ local function get_sheet_value(sheet, row, col, field_type, header)
         else
             return convert_value(value, field_type)
         end
+    elseif cell and cell.type == "blank" and field_type == "date" then
+        return 0
     end
 end
 
@@ -366,7 +372,7 @@ local function export_sheet_to_table(sheet, output, title, is_server)
                 end)
                 for i, v in ipairs(tmp) do
                     local pos, value = tunpack(v)
-                    --转换默认值 toney
+                    --转换默认值
                     value[2]         = convert_value("", value[3])
                     tinsert(record, pos, value)
                 end
@@ -464,17 +470,26 @@ local function export_excel(input, output, recursion, is_server)
     end
 end
 
+local function split(str, token)
+    local pos, t = 0, {}
+    if #str > 0 then
+        for st, sp in function() return sfind(str, token, pos, true) end do
+            if st > 1 then
+                t[#t + 1] = ssub(str, pos, st - 1)
+            end
+            pos = sp + 1
+        end
+        if pos <= #str then
+            t[#t + 1] = ssub(str, pos)
+        end
+    end
+    return t
+end
+
 --检查配置
 local function export_config()
     local input     = lcurdir()
     local output    = lcurdir()
-    local env_input = hgetenv("HIVE_INPUT")
-    if not env_input or #env_input == 0 then
-        print("input dir not config!")
-        input = input
-    else
-        input = lappend(input, env_input)
-    end
     local env_output = hgetenv("HIVE_OUTPUT")
     if not env_output or #env_output == 0 then
         print("output dir not config!")
@@ -502,7 +517,21 @@ local function export_config()
     if env_format and env_format == "struct" then
         export_method = export_records_to_struct
     end
-    return input, output, recursion, target
+
+    local export_list = {}
+    local env_input = hgetenv("HIVE_INPUT")
+    if not env_input or #env_input == 0 then
+        print("input dir not config!")
+        input = input
+    else
+        local input_arr = split(env_input, ";")
+        for i, v in ipairs(input_arr) do
+            local input = lappend(input, v)
+            tinsert(export_list, table.pack(input, output, recursion, target))
+        end
+    end
+
+    return export_list
 end
 
 --挂载表格校验逻辑
@@ -534,20 +563,23 @@ print("begin export excels to lua!")
 GenCfgProto = require("gen_cfg_proto")
 GenCfgProto:init()
 
-local input, output, recursion, target = export_config()
-local ok, err                          = pcall(export_excel, input, output, recursion, target == "server")
-if not ok then
-    print("export excel to lua failed:", err)
-else
-    if hive.check_cfg then
-        local ret, err = check_valid:check_by_multi_table()
-        if not ret then
-            error(sformat([[
-    ========================================================================
-    export  error:%s!
-    ========================================================================]], err))
-        else
-            print("export excel to lua success")
+local export_list = export_config()
+for i, v in ipairs(export_list) do
+    local input, output, recursion, target = table.unpack(v)
+    local ok, err = pcall(export_excel, input, output, recursion, target == "server")
+    if not ok then
+        print("export excel to lua failed:", err)
+    else
+        if hive.check_cfg then
+            local ret, err = check_valid:check_by_multi_table()
+            if not ret then
+                print(sformat([[
+========================================================================
+export  error:%s!
+========================================================================]], err))
+            else
+                print("export excel to lua success")
+            end
         end
     end
 end

@@ -17,6 +17,7 @@ FLAGS = {
     "Wno-unused-variable",
     "Wno-unused-parameter",
     "Wno-unknown-pragmas",
+    "Wno-unused-but-set-variable",
     "Wno-unused-but-set-parameter",
     "Wno-unused-function",
     "Wno-unused-result",

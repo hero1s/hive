@@ -65,7 +65,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">
     <ClCompile>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <AdditionalIncludeDirectories>mimalloc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;MI_SHARED_LIB;MI_SHARED_LIB_EXPORT;MI_MALLOC_OVERRIDE;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>

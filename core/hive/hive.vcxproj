@@ -50,7 +50,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">
     <ClCompile>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <AdditionalIncludeDirectories>..\..\extend\lua\lua;..\..\extend\fmt\include;..\..\extend\luakit\include;..\..\extend\utility;..\plugins\src;$(SolutionDir)extend\mimalloc\mimalloc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;FMT_HEADER_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
