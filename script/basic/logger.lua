@@ -96,7 +96,7 @@ for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
         if msg and not dispatching then
             dispatching = true
             for monitor, mlvl in pairs(monitors) do
-                if lvl > mlvl then
+                if lvl >= mlvl then
                     monitor:dispatch_log(msg, lvl_name)
                 end
             end

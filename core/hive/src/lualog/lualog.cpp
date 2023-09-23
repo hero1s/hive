@@ -34,7 +34,7 @@ namespace logger {
 
     int zformat(lua_State* L, log_level lvl, vstring tag, vstring feature, vstring msg) {
         log_service::instance()->output(lvl, msg, tag, feature);
-        if (lvl == log_level::LOG_LEVEL_FATAL) {
+        if (lvl > log_level::LOG_LEVEL_WARN) {
             lua_pushlstring(L, msg.data(), msg.size());
             return 1;
         }
