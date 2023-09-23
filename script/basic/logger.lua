@@ -68,9 +68,6 @@ local function logger_output(flag, feature, lvl, lvl_name, fmt, ...)
     if lvl < log_lvl then
         return
     end
-    if not fmt:find("{") then
-        return logger_format(flag, feature, lvl, lvl_name, fmt, ...)
-    end
     local ok, msg = pcall(lprint, lvl, flag, title, feature, fmt, ...)
     if not ok then
         local info = dgetinfo(3, "S")
