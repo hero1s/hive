@@ -43,7 +43,7 @@ namespace logger {
     }
 
     template<size_t... integers>
-    int tformat(lua_State* L, log_level lvl, cstring& tag, cstring& feature, int flag, cstring& vfmt, std::index_sequence<integers...>&&) {
+    int tformat(lua_State* L, log_level lvl, cstring& tag, cstring& feature, int flag, vstring vfmt, std::index_sequence<integers...>&&) {
         try {
             auto msg = fmt::format(vfmt, read_args(L, flag, integers + 6)...);
             return zformat(L, lvl, tag, feature, msg);
@@ -55,12 +55,13 @@ namespace logger {
     }
 
 #ifdef SUPPORT_FORMAT_LUA
-    void replace_fmt(sstring& vfmt) {
+    void replace_fmt(vstring vfmt) {
+        char* pfmt = const_cast<char*>(vfmt.data());
         if (vfmt.size() > 1) {
             for (auto i = 0; i < vfmt.size() - 1; ++i) {
-                if (vfmt[i] == '%') {
-                    vfmt[i] = '{';
-                    vfmt[i + 1] = '}';
+                if (pfmt[i] == '%') {
+                    pfmt[i] = '{';
+                    pfmt[i + 1] = '}';
                 }
             }
         }
@@ -86,13 +87,13 @@ namespace logger {
             size_t flag = lua_tointeger(L, 2);
             sstring tag = lua_to_native<sstring>(L, 3);
             sstring feature = lua_to_native<sstring>(L, 4);
-            sstring vfmt = lua_to_native<sstring>(L, 5);
+            vstring vfmt = lua_to_native<vstring>(L, 5);
 #ifdef SUPPORT_FORMAT_LUA
             replace_fmt(vfmt);
 #endif // SUPPORT_FORMAT_LUA            
             int arg_num = lua_gettop(L) - 5;
             switch (arg_num) {
-            case 0: return zformat(L, lvl, tag, feature, vfmt);
+            case 0: return zformat(L, lvl, tag, feature, string(vfmt.data(), vfmt.size()));
             case 1: return tformat(L, lvl, tag, feature, flag, vfmt, make_index_sequence<1>{});
             case 2: return tformat(L, lvl, tag, feature, flag, vfmt, make_index_sequence<2>{});
             case 3: return tformat(L, lvl, tag, feature, flag, vfmt, make_index_sequence<3>{});

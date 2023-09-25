@@ -18,19 +18,20 @@ local ldir        = stdfs.dir
 local lfilename   = stdfs.filename
 local lextension  = stdfs.extension
 local is_dir      = stdfs.is_directory
-local log_info    = log.warn
-local log_err     = log.error
+local lprint      = log.print
 
 local load_files  = {}
 local load_codes  = {}
 local search_path = {}
 
+local LOG_LEVEL   = log.LOG_LEVEL
+
 local TITLE       = hive.title
 local log_error = function(content)
-    log_err(content, TITLE, FEATURE)
+    lprint(LOG_LEVEL.ERROR, 0, TITLE, "", content)
 end
 local log_output = function(content)
-    log_info(content, TITLE)
+    lprint(LOG_LEVEL.INFO, 0, TITLE, "", content)
 end
 
 local function ssplit(str, token)

@@ -98,8 +98,8 @@ void hive_app::setup(int argc, const char* argv[]) {
 	}
 }
 
-void hive_app::exception_handler(const std::string_view msg, std::string_view err) {
-	LOG_FATAL(fmt::format(msg, err));
+void hive_app::exception_handler(const std::string& err_msg) {
+	LOG_FATAL(err_msg);
 	log_service::instance()->stop();
 #if WIN32
 	_getch();
@@ -201,11 +201,11 @@ void hive_app::run() {
 	//end worker接口
 
 	lua.run_script(g_sandbox, [&](std::string_view err) {
-		exception_handler("load sandbox err: ", err);
+		exception_handler(fmt::format("load sandbox err:{}", err));
 		});
 	
 	lua.run_script(fmt::format("require '{}'", getenv("HIVE_ENTRY")), [&](std::string_view err) {
-		exception_handler(fmt::format("load entry [{}] err: ", getenv("HIVE_ENTRY")), err);
+		exception_handler(fmt::format("load entry [{}] err:{}", getenv("HIVE_ENTRY"), err));
 		});
 	while (hive.get_function("run")) {
 		hive.call([&](std::string_view err) {

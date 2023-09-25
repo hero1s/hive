@@ -17,7 +17,7 @@ public:
 	void set_signal(uint32_t n, bool b = true);
 protected:
 	std::string get_environ_def(const std::string_view key, const std::string_view def) { auto value = getenv(key.data()); return value ? value : def.data(); };
-	void exception_handler(const std::string_view msg, std::string_view err);
+	void exception_handler(const std::string& err_msg);
 
 private:
 	uint64_t m_signal = 0;
