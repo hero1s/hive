@@ -53,7 +53,8 @@ namespace logger {
         }
         return 0;
     }
-    //todo delete
+
+#ifdef SUPPORT_FORMAT_LUA
     void replace_fmt(sstring& vfmt) {
         if (vfmt.size() > 1) {
             for (auto i = 0; i < vfmt.size() - 1; ++i) {
@@ -64,6 +65,7 @@ namespace logger {
             }
         }
     }
+#endif // SUPPORT_FORMAT_LUA
 
     luakit::lua_table open_lualog(lua_State* L) {
         luakit::kit_state kit_state(L);
@@ -85,7 +87,9 @@ namespace logger {
             sstring tag = lua_to_native<sstring>(L, 3);
             sstring feature = lua_to_native<sstring>(L, 4);
             sstring vfmt = lua_to_native<sstring>(L, 5);
-            replace_fmt(vfmt);//todo delete
+#ifdef SUPPORT_FORMAT_LUA
+            replace_fmt(vfmt);
+#endif // SUPPORT_FORMAT_LUA            
             int arg_num = lua_gettop(L) - 5;
             switch (arg_num) {
             case 0: return zformat(L, lvl, tag, feature, vfmt);

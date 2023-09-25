@@ -14,7 +14,7 @@ EX_FLAGS = {
 
 --需要定义的选项
 DEFINES = {
-	"FMT_HEADER_ONLY"
+	"FMT_HEADER_ONLY","SUPPORT_FORMAT_LUA"
 }
 
 --需要的include目录
