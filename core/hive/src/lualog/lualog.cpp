@@ -20,7 +20,7 @@ namespace logger {
             if ((flag & 0x01) == 0x01) {
                 buf.clean();
                 serialize_one(L, &buf, index, 1, (flag & 0x02) == 0x02);
-                return string((char*)buf.head(),buf.size());
+                return string((char*)buf.head(), buf.size());
             }
             return luaL_tolstring(L, index, nullptr);
         case LUA_TNUMBER:
@@ -32,17 +32,18 @@ namespace logger {
         return "unsuppert data type";
     }
 
-    int zformat(lua_State* L, log_level lvl, vstring tag, vstring feature, vstring msg) {
-        log_service::instance()->output(lvl, msg, tag, feature);
+    int zformat(lua_State* L, log_level lvl, cstring& tag, cstring& feature, cstring& msg) {
         if (lvl > log_level::LOG_LEVEL_WARN) {
-            lua_pushlstring(L, msg.data(), msg.size());
+            lua_pushlstring(L, msg.c_str(), msg.size());
+            log_service::instance()->output(lvl, msg, tag, feature);
             return 1;
         }
+        log_service::instance()->output(lvl, msg, tag, feature);
         return 0;
     }
 
     template<size_t... integers>
-    int tformat(lua_State* L, log_level lvl, vstring tag, vstring feature, int flag, vstring vfmt, std::index_sequence<integers...>&&) {
+    int tformat(lua_State* L, log_level lvl, cstring& tag, cstring& feature, int flag, cstring& vfmt, std::index_sequence<integers...>&&) {
         try {
             auto msg = fmt::format(vfmt, read_args(L, flag, integers + 6)...);
             return zformat(L, lvl, tag, feature, msg);
@@ -53,12 +54,13 @@ namespace logger {
         return 0;
     }
     //todo delete
-    void replace_fmt(vstring vfmt) {
-        char* fmt = const_cast<char*>(vfmt.data());
-        for (auto i = 0; i < vfmt.size() - 1; ++i) {
-            if (fmt[i] == '%') {
-                fmt[i] = '{';
-                fmt[i + 1] = '}';
+    void replace_fmt(sstring& vfmt) {
+        if (vfmt.size() > 1) {
+            for (auto i = 0; i < vfmt.size() - 1; ++i) {
+                if (vfmt[i] == '%') {
+                    vfmt[i] = '{';
+                    vfmt[i + 1] = '}';
+                }
             }
         }
     }
@@ -80,9 +82,9 @@ namespace logger {
             log_level lvl = (log_level)lua_tointeger(L, 1);
             if (log_service::instance()->is_filter(lvl)) return 0;
             size_t flag = lua_tointeger(L, 2);
-            vstring tag = lua_to_native<vstring>(L, 3);
-            vstring feature = lua_to_native<vstring>(L, 4);
-            vstring vfmt = lua_to_native<vstring>(L, 5);
+            sstring tag = lua_to_native<sstring>(L, 3);
+            sstring feature = lua_to_native<sstring>(L, 4);
+            sstring vfmt = lua_to_native<sstring>(L, 5);
             replace_fmt(vfmt);//todo delete
             int arg_num = lua_gettop(L) - 5;
             switch (arg_num) {

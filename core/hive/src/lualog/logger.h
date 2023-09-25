@@ -125,14 +125,14 @@ namespace logger {
         vstring source() const { return source_; }
         vstring feature() const { return feature_; }
         const log_time& get_log_time()const { return log_time_; }
-        void option(log_level level, vstring msg, vstring tag, vstring feature, vstring source, int line) {
+        void option(log_level level, cstring& msg, cstring& tag, cstring& feature, cstring& source, int line) {
             log_time_ = log_time::now();
-            feature_ = feature;
-            source_ = source;
+            feature_ = std::move(feature);
+            source_ = std::move(source);
             level_ = level;
             line_ = line;
-            msg_ = msg;
-            tag_ = tag;
+            msg_ = std::move(msg);
+            tag_ = std::move(tag);
         }
 
     private:
@@ -525,7 +525,7 @@ namespace logger {
             return &service;
         }
 
-        void output(log_level level, vstring msg, vstring tag, vstring feature, vstring source = "", int line = 0) {
+        void output(log_level level, cstring& msg, cstring& tag, cstring& feature, cstring& source = "", int line = 0) {
             if (!log_filter_.is_filter(level)) {
                 auto logmsg_ = message_pool_->allocate();
                 logmsg_->option(level, msg, tag, feature, source, line);
