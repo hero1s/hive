@@ -6,14 +6,20 @@
 using namespace std::chrono;
 
 namespace ltimer {
+	inline static std::time_t offset_ = 0;
+
+	inline void offset(std::time_t v) {
+		offset_ = v;
+	}
+
 	inline uint64_t now() {
 		system_clock::duration dur = system_clock::now().time_since_epoch();
-		return duration_cast<seconds>(dur).count();
+		return duration_cast<seconds>(dur).count() + offset_;
 	}
 
 	inline uint64_t now_ms() {
 		system_clock::duration dur = system_clock::now().time_since_epoch();
-		return duration_cast<milliseconds>(dur).count();
+		return duration_cast<milliseconds>(dur).count() + offset_*1000;
 	}
 
 	inline uint64_t steady() {

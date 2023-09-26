@@ -31,6 +31,7 @@ end
 function DevopsGmMgr:register_gm()
     local cmd_list = {
         { gm_type = GMType.DEV_OPS, name = "gm_set_log_level", desc = "设置日志等级", comment = "(all/全部,日志等级debug[1]-fatal[6])", args = "svr_name|string level|integer" },
+        { gm_type = GMType.DEV_OPS, name = "gm_offset_time", desc = "服务器时间偏移(秒)", args = "offset|integer" },
         { gm_type = GMType.DEV_OPS, name = "gm_hotfix", desc = "代码热更新", args = "" },
         { gm_type = GMType.DEV_OPS, name = "gm_inject", desc = "代码注入",
           args    = "service_name|string index|integer file_name|string code_content|string" },
@@ -63,6 +64,15 @@ function DevopsGmMgr:gm_set_log_level(svr_name, level)
         return { code = 1, msg = "level not in ragne 1~6" }
     end
     return monitor_mgr:broadcast("rpc_set_log_level", svr_name, level)
+end
+
+-- 服务器时间偏移
+function DevopsGmMgr:gm_offset_time(offset)
+    log_warn("[DevopsGmMgr][gm_offset_time] %s", offset)
+    monitor_mgr:broadcast("rpc_offset_time", 0, offset)
+    timer.offset(offset)
+    thread_mgr:sleep(100)
+    return { code = 0, time = time_str(hive.now) }
 end
 
 -- 热更新

@@ -2,7 +2,6 @@
 --logger功能支持
 local pcall       = pcall
 local pairs       = pairs
-local sformat     = string.format
 local dgetinfo    = debug.getinfo
 local tunpack     = table.unpack
 local fsstem      = stdfs.stem
@@ -51,17 +50,6 @@ function logger.filter(level)
         --log.filter(level, on/off)
         lfilter(lvl, lvl >= level)
     end
-end
-
-local function logger_format(flag, feature, lvl, lvl_name, fmt, ...)
-    local ok, msg = pcall(sformat, fmt, ...)
-    if not ok then
-        local info = dgetinfo(4, "S")
-        local wfmt = "[logger][{}] format failed: {}, source({}:{})"
-        lprint(LOG_LEVEL.WARN, 0, title, feature, wfmt, lvl_name, msg, info.short_src, info.linedefined)
-        return
-    end
-    lprint(lvl, flag, title, feature, msg)
 end
 
 local function logger_output(flag, feature, lvl, lvl_name, fmt, ...)

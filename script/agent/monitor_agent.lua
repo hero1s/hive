@@ -1,6 +1,5 @@
 --monitor_agent.lua
 local RpcClient     = import("network/rpc_client.lua")
-
 local tunpack       = table.unpack
 local env_addr      = environ.addr
 local log_err       = logger.err
@@ -10,6 +9,7 @@ local log_debug     = logger.debug
 local check_failed  = hive.failed
 local smake_id      = service.make_id
 local id2nick       = service.id2nick
+local time_str      = datetime_ext.time_str
 
 local event_mgr     = hive.get("event_mgr")
 local gc_mgr        = hive.get("gc_mgr")
@@ -34,6 +34,7 @@ function MonitorAgent:__init()
     event_mgr:add_vote(self, "vote_stop_service")
     event_mgr:add_listener(self, "rpc_service_changed")
     event_mgr:add_listener(self, "on_remote_message")
+    event_mgr:add_listener(self, "rpc_offset_time")
     event_mgr:add_listener(self, "rpc_reload")
     event_mgr:add_listener(self, "rpc_inject")
     event_mgr:add_listener(self, "rpc_set_env")
@@ -173,6 +174,12 @@ function MonitorAgent:on_remote_message(data, message)
         return { code = ok and code or RPC_FAILED, msg = ok and "" or code }
     end
     return { code = 0, data = res }
+end
+
+function MonitorAgent:rpc_offset_time(offset)
+    timer.offset(offset)
+    thread_mgr:sleep(100)
+    log_info("[MonitorAgent][rpc_offset_time] %s", time_str(hive.now))
 end
 
 function MonitorAgent:rpc_reload()

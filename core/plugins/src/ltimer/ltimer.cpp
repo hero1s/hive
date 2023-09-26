@@ -142,6 +142,7 @@ namespace ltimer {
 		luatimer.set_function("clock", []() { return steady(); });
 		luatimer.set_function("clock_ms", []() { return steady_ms(); });
 		luatimer.set_function("sleep", [](uint64_t ms) { return sleep(ms); });
+		luatimer.set_function("offset", [](int64_t v) { offset(v); });
 		luatimer.set_function("cron_next", cron_next);
 		return luatimer;
 	}

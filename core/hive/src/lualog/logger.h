@@ -50,7 +50,7 @@ namespace logger {
     }; //rolling_type
 
     const size_t QUEUE_MINI      = 10;
-    const size_t QUEUE_SIZE      = 3000;
+    const size_t QUEUE_SIZE      = 300;
     const size_t MAX_LOG_SIZE    = 50*1024*1024;//50M
     const size_t CLEAN_TIME      = 7 * 24 * 3600;
 
@@ -127,12 +127,12 @@ namespace logger {
         const log_time& get_log_time()const { return log_time_; }
         void option(log_level level, cstring& msg, cstring& tag, cstring& feature, cstring& source, int line) {
             log_time_ = log_time::now();
+            msg_ = std::move(msg);
+            tag_ = std::move(tag);
             feature_ = std::move(feature);
             source_ = std::move(source);
             level_ = level;
             line_ = line;
-            msg_ = std::move(msg);
-            tag_ = std::move(tag);
         }
 
     private:
