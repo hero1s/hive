@@ -580,7 +580,7 @@ namespace logger {
         sptr<log_message> stop_msg_ = nullptr;
         sptr<log_message_queue> logmsgque_ = nullptr;
         sptr<log_message_pool> message_pool_ = nullptr;
-        std::map<log_level, sptr<log_dest>,std::less<>> dest_lvls_;
+        std::map<log_level, sptr<log_dest>> dest_lvls_;
         std::map<sstring, sptr<log_dest>,std::less<>> dest_features_;
         size_t max_logsize_ = MAX_LOG_SIZE, clean_time_ = CLEAN_TIME;
         bool log_daemon_ = false;

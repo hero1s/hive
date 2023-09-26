@@ -32,16 +32,16 @@ namespace lcodec {
         return codec;
     }
 
-    static std::string utf8_gbk(std::string str) {
+    static std::string utf8_gbk(std::string_view str) {
         char pOut[1024];
         memset(pOut, 0, sizeof(pOut));
-        utf8_to_gb(str.c_str(), pOut, sizeof(pOut));        
+        utf8_to_gb(str.data(), pOut, sizeof(pOut));        
         return pOut;
     }
-    static std::string gbk_utf8(std::string str) {
+    static std::string gbk_utf8(std::string_view str) {
         char pOut[1024];
         memset(pOut, 0, sizeof(pOut));
-        gb_to_utf8(str.c_str(), pOut, sizeof(pOut));
+        gb_to_utf8(str.data(), pOut, sizeof(pOut));
         return pOut;
     }
 
