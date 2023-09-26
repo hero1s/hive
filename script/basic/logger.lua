@@ -90,13 +90,15 @@ for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl_name, flag = tunpack(conf)
     logger[lvl_name]     = function(fmt, ...)
         local msg = logger_output(flag, "", lvl, lvl_name, fmt, ...)
-        if msg and not dispatching then
+        if msg and (not dispatching) then
             dispatching = true
-            for monitor, mlvl in pairs(monitors) do
-                if lvl >= mlvl then
-                    monitor:dispatch_log(msg, lvl_name)
+            pcall(function()
+                for monitor, mlvl in pairs(monitors) do
+                    if lvl >= mlvl then
+                        monitor:dispatch_log(msg, lvl_name)
+                    end
                 end
-            end
+            end)
             dispatching = false
         end
     end
