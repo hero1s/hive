@@ -33,13 +33,13 @@ namespace lcodec {
     }
 
     static std::string utf8_gbk(std::string_view str) {
-        char pOut[1024];
+        char pOut[4096];
         memset(pOut, 0, sizeof(pOut));
         utf8_to_gb(str.data(), pOut, sizeof(pOut));        
         return pOut;
     }
     static std::string gbk_utf8(std::string_view str) {
-        char pOut[1024];
+        char pOut[4096];
         memset(pOut, 0, sizeof(pOut));
         gb_to_utf8(str.data(), pOut, sizeof(pOut));
         return pOut;
