@@ -179,7 +179,7 @@ end
 function MonitorAgent:rpc_offset_time(offset)
     timer.offset(offset)
     thread_mgr:sleep(100)
-    log_info("[MonitorAgent][rpc_offset_time] %s", time_str(hive.now))
+    log_info("[MonitorAgent][rpc_offset_time] {}", time_str(hive.now))
 end
 
 function MonitorAgent:rpc_reload()

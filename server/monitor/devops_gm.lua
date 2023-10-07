@@ -68,7 +68,7 @@ end
 
 -- 服务器时间偏移
 function DevopsGmMgr:gm_offset_time(offset)
-    log_warn("[DevopsGmMgr][gm_offset_time] %s", offset)
+    log_warn("[DevopsGmMgr][gm_offset_time] {}", offset)
     monitor_mgr:broadcast("rpc_offset_time", 0, offset)
     timer.offset(offset)
     thread_mgr:sleep(100)
