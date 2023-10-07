@@ -1,6 +1,5 @@
 --kernel.lua
 import("basic/basic.lua")
-import("kernel/mem_monitor.lua")
 
 local tpack         = table.pack
 local tunpack       = table.unpack
@@ -35,6 +34,12 @@ local function init_network()
     local rpc_key  = environ.get("HIVE_RPC_KEY", "hive2022")
     luabus.init_socket_mgr(max_conn)
     luabus.set_rpc_key(rpc_key)
+end
+
+--初始化统计
+local function init_statis()
+    import("agent/proxy_agent.lua")
+    import("kernel/perfeval_mgr.lua")
 end
 
 --初始化路由
@@ -83,12 +88,6 @@ local function init_mainloop()
     event_mgr  = hive.get("event_mgr")
     update_mgr = hive.get("update_mgr")
     scheduler  = hive.get("scheduler")
-end
-
---初始化统计
-local function init_statis()
-    import("agent/proxy_agent.lua")
-    import("kernel/perfeval_mgr.lua")
 end
 
 function hive.init()

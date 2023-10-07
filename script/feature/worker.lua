@@ -1,7 +1,5 @@
 --worker.lua
 import("basic/basic.lua")
-import("kernel/mem_monitor.lua")
-import("kernel/config_mgr.lua")
 
 local hxpcall            = hive.xpcall
 local log_info           = logger.info

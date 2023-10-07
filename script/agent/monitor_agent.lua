@@ -13,7 +13,6 @@ local time_str      = datetime_ext.time_str
 
 local event_mgr     = hive.get("event_mgr")
 local gc_mgr        = hive.get("gc_mgr")
-local mem_monitor   = hive.get("mem_monitor")
 local thread_mgr    = hive.get("thread_mgr")
 
 local RPC_FAILED    = hive.enum("KernCode", "RPC_FAILED")
@@ -192,6 +191,8 @@ function MonitorAgent:rpc_collect_gc()
 end
 
 function MonitorAgent:rpc_snapshot(snap)
+    import("kernel/mem_monitor.lua")
+    local mem_monitor = hive.get("mem_monitor")
     if snap == 0 then
         return mem_monitor:start()
     else

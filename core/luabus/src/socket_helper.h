@@ -11,6 +11,7 @@ constexpr int SOCKET_RECV_LEN		= 16*1024;
 constexpr int IO_BUFFER_SEND		= 8*1024;
 constexpr int SOCKET_PACKET_MAX		= 1024 * 1024 * 16; //16m
 
+#pragma pack(1)
 struct socket_header {
 	uint16_t    len;            // 整个包的长度
 	uint8_t     flag;           // 标志位
@@ -18,6 +19,7 @@ struct socket_header {
 	uint32_t    cmd_id;         // 协议ID
 	uint32_t    session_id;     // sessionId
 };
+#pragma pack()
 
 #if defined(__linux) || defined(__APPLE__)
 #include <errno.h>
