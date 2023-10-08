@@ -3,8 +3,6 @@ local tunpack       = table.unpack
 local mrandom       = math_ext.random
 local check_success = hive.success
 local log_err       = logger.err
-local json_decode   = hive.json_decode
-local json_encode   = hive.json_encode
 
 local KernCode      = enum("KernCode")
 local router_mgr    = hive.load("router_mgr")
@@ -28,9 +26,6 @@ function RedisAgent:redis_lock(lock_key, lock_time)
 end
 
 function RedisAgent:set(key, value, etime)
-    if type(value) == "table" then
-        value = json_encode(value)
-    end
     local ok, code, res = self:execute({ "set", key, value, "ex", etime or 0xFFFFFFFF }, key)
     if check_success(code, ok) then
         return true
@@ -39,12 +34,9 @@ function RedisAgent:set(key, value, etime)
     return false
 end
 
-function RedisAgent:get(key, is_table)
+function RedisAgent:get(key)
     local ok, code, res = self:execute({ "get", key }, key)
     if check_success(code, ok) then
-        if is_table and res then
-            return json_decode(res, true)
-        end
         return true, res
     end
     log_err("[RedisAgent][get] ok:{},code:{},res:{},ref:{}", ok, code, res, hive.where_call())

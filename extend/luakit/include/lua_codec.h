@@ -56,6 +56,10 @@ namespace luakit {
             if (!lua_isinteger(L, -2)) {
                 return false;
             }
+            size_t key = lua_tointeger(L, -2);
+            if (key <= 0 || key > raw_len) {
+                return false;
+            }
             cur_len++;
             lua_pop(L, 1);
         }
