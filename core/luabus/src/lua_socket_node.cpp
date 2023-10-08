@@ -240,7 +240,6 @@ void lua_socket_node::on_call_text(slice* slice) {
 }
 
 void lua_socket_node::on_call_data(slice* slice) {
-	m_codec->set_slice(slice);
 	size_t buf_size = slice->size();
 	m_luakit->object_call(this, "on_call_data", nullptr, m_codec, std::tie(), buf_size);
 }

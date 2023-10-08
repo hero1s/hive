@@ -111,7 +111,7 @@ function DBIndexMgr:build_dbindex(rebuild)
             index.expireAfterSeconds = conf.expireAfterSeconds
         end
         for _, v in ipairs(conf.keys) do
-            tinsert(index.key, { [v] = 1 })
+            index.key[v] = 1
         end
         local query    = { table_name, { index } }
         local ok, code = mongo_agent:create_indexes(query, 1, db_name)

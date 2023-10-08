@@ -13,7 +13,7 @@ local librarys = {
     --json库
     json   = require("ljson"),
     --bson库
-    bson   = require("bson"),
+    bson   = require("lbson"),
     --编码库
     codec  = require("lcodec"),
     --加密解密库

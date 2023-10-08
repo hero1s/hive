@@ -577,31 +577,34 @@ void socket_stream::dispatch_package(bool reset) {
 				}
 				// 数据包还没有收完整
 				if (package_size == 0) return;
+				// 数据回调
+				slice->attach(data, package_size);
+				m_package_cb(slice);				
+				// 数据包解析失败
+				if (m_codec->failed()) {
+					on_error(m_codec->err());
+					return;
+				}
+				size_t read_size = m_codec->get_packet_len();
+				// 数据包还没有收完整
+				if (read_size == 0) {
+					std::cout << "read_size is 0,package_size:" << package_size << std::endl;
+					return;
+				}					
+				// 接收缓冲读游标调整
+				m_recv_buffer.pop_size(read_size);
 			}else{
 				package_size = data_len;
-			}			
+			}
 		}break;
 		default: 
 			on_error(fmt::format("proto-type-not-suppert!:{},ip:{}", (int)m_proto_type,m_ip).c_str());
 			return;
 		}
 		// 数据包还没有收完整
-		if (data_len < package_size) break;
-		m_package_cb(m_recv_buffer.get_slice(package_size));
-		//std::cout << "read_size:" << read_size << "package_size:" << package_size << "type:" << (int)m_proto_type << std::endl;
-		//数据包解析失败
-		if (m_proto_type == eproto_type::proto_text && m_codec) {
-			if (m_codec->failed()) {
-				on_error(m_codec->err());
-				break;
-			}
-			size_t read_size = m_codec->get_packet_len();
-			// 数据包还没有收完整
-			if (read_size == 0) break;
-			// 接收缓冲读游标调整
-			m_recv_buffer.pop_size(read_size);
-		} else {
-			// 接收缓冲读游标调整
+		if (m_proto_type != eproto_type::proto_text || !m_codec) {
+			if (data_len < package_size) break;
+			m_package_cb(m_recv_buffer.get_slice(package_size));
 			m_recv_buffer.pop_size(package_size);
 			m_recv_seq_id++;
 		}

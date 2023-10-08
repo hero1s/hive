@@ -142,11 +142,6 @@ OBJS += $(patsubst $(SRC_DIR)/lzset/%.m, $(INT_DIR)/lzset/%.o, $(filter-out $(EX
 OBJS += $(patsubst $(SRC_DIR)/lzset/%.cc, $(INT_DIR)/lzset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lzset/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/lzset/%.cpp, $(INT_DIR)/lzset/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lzset/*.cpp)))
 #子目录
-OBJS += $(patsubst $(SRC_DIR)/mongo/%.c, $(INT_DIR)/mongo/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/mongo/*.c)))
-OBJS += $(patsubst $(SRC_DIR)/mongo/%.m, $(INT_DIR)/mongo/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/mongo/*.m)))
-OBJS += $(patsubst $(SRC_DIR)/mongo/%.cc, $(INT_DIR)/mongo/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/mongo/*.cc)))
-OBJS += $(patsubst $(SRC_DIR)/mongo/%.cpp, $(INT_DIR)/mongo/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/mongo/*.cpp)))
-#子目录
 OBJS += $(patsubst $(SRC_DIR)/protobuf/%.c, $(INT_DIR)/protobuf/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/protobuf/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/protobuf/%.m, $(INT_DIR)/protobuf/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/protobuf/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/protobuf/%.cc, $(INT_DIR)/protobuf/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/protobuf/*.cc)))
@@ -196,7 +191,6 @@ pre_build:
 	mkdir -p $(INT_DIR)/lstdfs
 	mkdir -p $(INT_DIR)/ltimer
 	mkdir -p $(INT_DIR)/lzset
-	mkdir -p $(INT_DIR)/mongo
 	mkdir -p $(INT_DIR)/protobuf
 	mkdir -p $(INT_DIR)/tools
 
