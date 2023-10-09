@@ -10,12 +10,6 @@ namespace lbson {
     static int decode(lua_State* L) {
         return thread_bson.decode(L);
     }
-    static slice* encode_slice(lua_State* L) {
-        return thread_bson.encode_slice(L);
-    }
-    static int decode_slice(lua_State* L, slice* slice) {
-        return thread_bson.decode_slice(L, slice);
-    }
     static bson_value* int32(int32_t value) {
         return new bson_value(bson_type::BSON_INT64, value);
     }
@@ -48,8 +42,6 @@ namespace lbson {
         auto llbson = kit_state.new_table();
         llbson.set_function("encode", encode);
         llbson.set_function("decode", decode);
-        llbson.set_function("encode_slice", encode_slice);
-        llbson.set_function("decode_slice", decode_slice);
         llbson.set_function("mongocodec", mongo_codec);
         llbson.set_function("timestamp", timestamp);
         llbson.set_function("int32", int32);

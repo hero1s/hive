@@ -11,6 +11,7 @@ local httpcodec       = codec.httpcodec
 local xpcall          = hive.xpcall
 
 local eproto_type     = luabus.eproto_type
+local event_mgr       = hive.get("event_mgr")
 local thread_mgr      = hive.get("thread_mgr")
 
 local NETWORK_TIMEOUT = hive.enum("NetwkTime", "NETWORK_TIMEOUT")
@@ -152,7 +153,9 @@ function WebSocket:on_handshake(session, token, url, params, headers, body)
     self.session = session
     self:send_data(101, cbheaders, "")
     self.host:on_socket_accept(self, token)
-    self.session.set_codec(self.wcodec)
+    event_mgr:fire_frame(function()
+        session.set_codec(self.wcodec)
+    end)
     return true
 end
 

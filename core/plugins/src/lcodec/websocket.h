@@ -16,7 +16,8 @@ namespace lcodec {
             uint8_t masklen = (((*payload) & 0x80) == 0x80) ? 4 : 0;
             uint8_t payloadlen = (*payload) & 0x7f;
             if (payloadlen < 0x7e) {
-                return masklen + payloadlen + sizeof(uint16_t);
+                m_packet_len = masklen + payloadlen + sizeof(uint16_t);
+                return m_packet_len;
             }
             size_t* length = (size_t*)m_slice->peek((payloadlen == 0x7f) ? 8 : 2, sizeof(uint16_t));
             if (!length) return 0;
