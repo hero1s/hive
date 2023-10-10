@@ -92,15 +92,12 @@ GMType.GLOBAL                     = 0       -- 全局相关
 GMType.PLAYER                     = 1       -- 玩家相关,ID为玩家的ID
 GMType.SERVICE                    = 2       -- 服务相关,ID按hash分发
 GMType.SYSTEM                     = 3       -- 系统相关,全服务分发
-GMType.DEV_OPS                    = 4       -- 开发运维相关
-GMType.TOOLS                      = 5       -- 工具相关
 
 --Cache权限
 local CacheType                   = enum("CacheType", 0)
 CacheType.READ                    = 1     -- 读
 CacheType.WRITE                   = 2     -- 写
 CacheType.BOTH                    = 3     -- 读写
-
 
 --Cache错误码
 local CacheCode                   = enum("CacheCode", 0)

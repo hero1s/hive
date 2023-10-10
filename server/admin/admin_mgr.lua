@@ -67,7 +67,7 @@ function AdminMgr:rpc_register_command(command_list, service_id)
         return SUCCESS
     end
     for _, cmd in pairs(command_list) do
-        cmdline:register_command(cmd.name, cmd.args, cmd.desc, cmd.comment or "", cmd.gm_type, service_id, service.sid2name(service_id))
+        cmdline:register_command(cmd.name, cmd.args, cmd.desc, cmd.comment or "", cmd.gm_type, service_id, service.sid2name(service_id), cmd.group)
     end
     self.services[service_id] = true
     return SUCCESS
@@ -151,7 +151,7 @@ end
 
 --分发command
 function AdminMgr:dispatch_command(cmd_args, gm_type, service)
-    if gm_type == GMType.GLOBAL or gm_type == GMType.DEV_OPS or gm_type == GMType.TOOLS then
+    if gm_type == GMType.GLOBAL then
         return self:exec_global_cmd(service, tunpack(cmd_args))
     elseif gm_type == GMType.SYSTEM then
         return self:exec_system_cmd(service, tunpack(cmd_args))

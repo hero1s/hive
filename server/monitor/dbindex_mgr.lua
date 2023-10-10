@@ -37,7 +37,7 @@ end
 
 function DBIndexMgr:register_gm()
     local cmd_list = {
-        { gm_type = GMType.DEV_OPS, name = "gm_check_db_index", desc = "检测db索引", comment = "检测db索引(1先构建)", args = "build|integer" },
+        { group = "运维", gm_type = GMType.GLOBAL, name = "gm_check_db_index", desc = "检测db索引", comment = "检测db索引(1先构建)", args = "build|integer" },
     }
     gm_agent:insert_command(cmd_list, self)
 end

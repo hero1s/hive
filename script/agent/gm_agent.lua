@@ -13,6 +13,7 @@ local thread_mgr    = hive.get("thread_mgr")
 local SUCCESS       = hive.enum("KernCode", "SUCCESS")
 local LOGIC_FAILED  = hive.enum("KernCode", "LOGIC_FAILED")
 local PeriodTime    = enum("PeriodTime")
+local GMType        = enum("GMType")
 
 local GMAgent       = singleton()
 local prop          = property(GMAgent)
@@ -32,7 +33,14 @@ function GMAgent:insert_command(cmd_list, listener)
             event_mgr:add_listener(listener, v.name)
         end
     end
+    local default_groups = { "全局未分组", "玩家未分组", "服务未分组", "业务未分组"}
     for _, cmd in pairs(cmd_list) do
+        if not cmd.gm_type then
+            cmd.gm_type = GMType.PLAYER
+        end
+        if not cmd.group then
+            cmd.group = default_groups[cmd.gm_type + 1]
+        end
         self.command_list[cmd.name] = cmd
     end
 end

@@ -121,32 +121,7 @@
             var treeNodes = [
                 {
                     text : "GM指令",
-                    nodes : [
-                        {
-                            "text" : "全局相关",
-                            nodes : [],
-                        },
-                        {
-                            "text" : "玩家相关",
-                            nodes : [],
-                        },
-                        {
-                            "text" : "服务相关",
-                            nodes : [],
-                        },
-                        {
-                            "text" : "业务相关",
-                            nodes : [],
-                        },
-                        {
-                            "text" : "运维相关",
-                            nodes : [],
-                        },
-                        {
-                            "text" : "工具相关",
-                            nodes : [],
-                        },
-                    ],
+                    nodes : [],
                 }
             ];
 
@@ -157,45 +132,28 @@
                 dataType: "json",
                 contentType: "utf-8",
                 success: function (res) {
-                    var nodes = [[],[],[],[],[],[]];
                     that.cmdlist = res;
-                    var cmd_names = [[],[],[],[],[],[]];
+                    var nodes = [];
+                    var cmd_names = {};
                     for (var cmd_name in res) {
                         var cmd_data = res[cmd_name];
-                        var cmd_title = cmd_data.desc;
                         if(cmd_data) {
-                            var gm_type = parseInt(cmd_data.type);
-                            switch(gm_type) {
-                                case 0 :
-                                    cmd_names[0].push(cmd_title);
-                                    break;
-                                case 2 :
-                                    cmd_names[2].push(cmd_title);
-                                    break;
-                                case 3 :
-                                    cmd_names[3].push(cmd_title);
-                                    break;
-                                case 4 :
-                                    cmd_names[4].push(cmd_title);
-                                    break;
-                                case 5 :
-                                    cmd_names[5].push(cmd_title);
-                                    break;
-                                default :
-                                    cmd_names[1].push(cmd_title);
+                            var cmd_title = cmd_data.desc;
+                            var group = cmd_data.group;
+                            var groups = cmd_names[group]
+                            if (groups){
+                                groups.push({ text : cmd_title,tag : "gm" })
+                            }else{
+                                cmd_names[group] = [{ text : cmd_title,tag : "gm" }]
                             }
                         }
                     };
-                    for(i = 0; i < cmd_names.length; i++) {
-                        cmd_names[i].sort();
-
-                        for(j = 0; j < cmd_names[i].length; j++) {
-                            nodes[i].push({ text : cmd_names[i][j], tag : "gm" });
-                        }
-
-                        treeNodes[0].nodes[i].nodes = nodes[i];
-                    };
-
+                    for(var group in cmd_names){
+                        var groups = cmd_names[group];
+                        groups.sort();
+                        treeNodes[0].nodes.push({ text : group,nodes : groups });
+                    }
+                    treeNodes[0].nodes.sort();
                     that._showConsole(treeNodes);
                 },
                 error: function(status) {
