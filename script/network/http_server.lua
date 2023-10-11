@@ -77,7 +77,7 @@ function HttpServer:on_socket_accept(socket, token)
 end
 
 function HttpServer:on_socket_recv(socket, method, url, params, headers, body)
-    log_debug("[HttpServer][on_socket_recv] recv:[{}][{}],params:{},headers:{},body:{}", method, url, params, headers, body)
+    log_debug("[HttpServer][on_socket_recv] recv:[{}][{}],params:{},body:{}", method, url, params, body)
     local handlers = self.handlers[method]
     if not handlers then
         self:response(socket, 404, "this http method hasn't suppert!")

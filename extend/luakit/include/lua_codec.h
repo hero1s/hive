@@ -270,8 +270,8 @@ namespace luakit {
     inline void serialize_crcn(luabuf* buff, int count, int line) {
         if (line > 0) {
             serialize_value(buff, "\n");
-            for (int i = 0; i < count; ++i) {
-                serialize_value(buff, "\t");
+            for (int i = 1; i < count; ++i) {
+                serialize_value(buff, "    ");
             }
         }
     }
@@ -293,43 +293,80 @@ namespace luakit {
 
         int size = 0;
         serialize_value(buff, "{");
-        serialize_crcn(buff, depth, line);
         if (barray) {
             for (int i = 1; i <= rawlen; ++i){
                 if (size++ > 0) {
                     serialize_value(buff, ",");
-                    serialize_crcn(buff, depth, line);
                 }
+                serialize_crcn(buff, depth, line);
                 lua_geti(L, index, i);
                 serialize_one(L, buff, -1, depth, line);
                 lua_pop(L, 1);
             }
         }
         else {
-            lua_pushnil(L);
-            while (lua_next(L, index) != 0) {
-                if (size++ > 0) {
-                    serialize_value(buff, ",");
-                    serialize_crcn(buff, depth, line);
+            if (lua_type(L, 3) == LUA_TFUNCTION) {
+                lua_guard g(L);
+                lua_pushvalue(L, 3);
+                lua_pushvalue(L, index);
+                if (lua_pcall(L, 1, 1, -2)) {
+                    luaL_error(L, lua_tostring(L, -1));
+                    return;
                 }
-                if (lua_isnumber(L, -2)) {
-                    lua_pushvalue(L, -2);
-                    serialize_quote(buff, lua_tostring(L, -1), "[", "]=");
+                index = lua_absindex(L, -1);
+                lua_pushnil(L);
+                while (lua_next(L, index) != 0) {
+                    if (size++ > 0) {
+                        serialize_value(buff, ",");
+                    }
+                    lua_geti(L, -1, 1);
+                    lua_geti(L, -2, 2);
+                    serialize_crcn(buff, depth, line);
+                    if (lua_type(L, -2) == LUA_TNUMBER) {
+                        lua_pushvalue(L, -2);
+                        serialize_quote(buff, lua_tostring(L, -1), "[", "]=");
+                        lua_pop(L, 1);
+                    }
+                    else if (lua_type(L, -2) == LUA_TSTRING) {
+                        serialize_value(buff, lua_tostring(L, -2));
+                        serialize_value(buff, "=");
+                    }
+                    else {
+                        serialize_one(L, buff, -2, depth, line);
+                        serialize_value(buff, "=");
+                    }
+                    serialize_one(L, buff, -1, depth, line);
+                    lua_pop(L, 3);
+                }
+            }
+            else {
+                lua_pushnil(L);
+                while (lua_next(L, index) != 0) {
+                    if (size++ > 0) {
+                        serialize_value(buff, ",");
+                    }
+                    serialize_crcn(buff, depth, line);
+                    if (lua_type(L, -2) == LUA_TNUMBER) {
+                        lua_pushvalue(L, -2);
+                        serialize_quote(buff, lua_tostring(L, -1), "[", "]=");
+                        lua_pop(L, 1);
+                    }
+                    else if (lua_type(L, -2) == LUA_TSTRING) {
+                        serialize_value(buff, lua_tostring(L, -2));
+                        serialize_value(buff, "=");
+                    }
+                    else {
+                        serialize_one(L, buff, -2, depth, line);
+                        serialize_value(buff, "=");
+                    }
+                    serialize_one(L, buff, -1, depth, line);
                     lua_pop(L, 1);
                 }
-                else if (lua_type(L, -2) == LUA_TSTRING) {
-                    serialize_value(buff, lua_tostring(L, -2));
-                    serialize_value(buff, "=");
-                }
-                else {
-                    serialize_one(L, buff, -2, depth, line);
-                    serialize_value(buff, "=");
-                }
-                serialize_one(L, buff, -1, depth, line);
-                lua_pop(L, 1);
             }
         }
-        serialize_crcn(buff, depth - 1, line);
+        if (size > 0) {
+            serialize_crcn(buff, depth - 1, line);
+        }
         serialize_value(buff, "}");
     }
 
