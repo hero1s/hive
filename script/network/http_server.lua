@@ -24,16 +24,14 @@ prop:reader("hcodec", nil)          --codec
 prop:reader("jcodec", nil)          --codec
 prop:reader("listener", nil)        --网络连接对象
 prop:reader("clients", {})          --clients
-prop:reader("get_handlers", {})     --get_handlers
-prop:reader("put_handlers", {})     --put_handlers
-prop:reader("del_handlers", {})     --del_handlers
-prop:reader("post_handlers", {})    --post_handlers
+prop:reader("handlers", {})         --handlers
 prop:accessor("limit_ips", nil)
 prop:reader("qps_counter", nil)
 
 function HttpServer:__init(http_addr, induce)
-    self.jcodec = jsoncodec()
-    self.hcodec = httpcodec(self.jcodec)
+    self.jcodec   = jsoncodec()
+    self.hcodec   = httpcodec(self.jcodec)
+    self.handlers = { GET = {}, POST = {}, PUT = {}, DELETE = {} }
     self:setup(http_addr, induce)
 end
 
@@ -80,42 +78,36 @@ end
 
 function HttpServer:on_socket_recv(socket, method, url, params, headers, body)
     log_debug("[HttpServer][on_socket_recv] recv:[{}][{}],params:{},headers:{},body:{}", method, url, params, headers, body)
-    if method == "GET" then
-        return self:on_http_request(self.get_handlers, socket, url, params, headers)
+    local handlers = self.handlers[method]
+    if not handlers then
+        self:response(socket, 404, "this http method hasn't suppert!")
+        return
     end
-    if method == "POST" then
-        return self:on_http_request(self.post_handlers, socket, url, body, params, headers)
-    end
-    if method == "PUT" then
-        return self:on_http_request(self.put_handlers, socket, url, body, params, headers)
-    end
-    if method == "DELETE" then
-        return self:on_http_request(self.del_handlers, socket, url, params, headers)
-    end
+    self:on_http_request(handlers, socket, url, body, params, headers)
 end
 
 --注册get回调
 function HttpServer:register_get(url, handler, target)
     log_debug("[HttpServer][register_get] url: {}", url)
-    self.get_handlers[url] = { handler, target }
+    self.handlers.GET[url] = { handler, target }
 end
 
 --注册post回调
 function HttpServer:register_post(url, handler, target)
     log_debug("[HttpServer][register_post] url: {}", url)
-    self.post_handlers[url] = { handler, target }
+    self.handlers.POST[url] = { handler, target }
 end
 
 --注册put回调
 function HttpServer:register_put(url, handler, target)
     log_debug("[HttpServer][register_put] url: {}", url)
-    self.put_handlers[url] = { handler, target }
+    self.handlers.PUT[url] = { handler, target }
 end
 
 --注册del回调
 function HttpServer:register_del(url, handler, target)
     log_debug("[HttpServer][register_del] url: {}", url)
-    self.del_handlers[url] = { handler, target }
+    self.handlers.DELETE[url] = { handler, target }
 end
 
 --http post 回调
@@ -170,10 +162,10 @@ end
 
 --取消url
 function HttpServer:unregister(url)
-    self.get_handlers[url]  = nil
-    self.put_handlers[url]  = nil
-    self.del_handlers[url]  = nil
-    self.post_handlers[url] = nil
+    self.handlers.GET[url]    = nil
+    self.handlers.PUT[url]    = nil
+    self.handlers.POST[url]   = nil
+    self.handlers.DELETE[url] = nil
 end
 
 return HttpServer

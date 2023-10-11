@@ -92,7 +92,7 @@ end
 --http 回调
 ----------------------------------------------------------------------
 --gm_page
-function AdminMgr:on_gm_page(url, querys, request)
+function AdminMgr:on_gm_page(url, body, querys, headers)
     if not gm_page then
         local html_path = hive.import_file_dir("admin/admin_mgr.lua") .. "/gm_page.html"
         gm_page         = readfile(html_path)
@@ -113,18 +113,18 @@ function AdminMgr:on_gm_page(url, querys, request)
 end
 
 --gm列表
-function AdminMgr:on_gmlist(url, querys)
+function AdminMgr:on_gmlist(url, body, querys, headers)
     return cmdline:get_command_defines()
 end
 
 --后台GM调用，字符串格式
-function AdminMgr:on_command(url, body)
+function AdminMgr:on_command(url, body, querys, headers)
     log_debug("[AdminMgr][on_command] body: {}", body)
     return self:exec_command(body.data)
 end
 
 --后台GM调用，table格式
-function AdminMgr:on_message(url, body)
+function AdminMgr:on_message(url, body, querys, headers)
     log_debug("[AdminMgr][on_message] body: {}", body)
     return self:exec_message(body.data)
 end

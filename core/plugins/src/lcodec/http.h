@@ -214,12 +214,17 @@ namespace lcodec {
 
         void parse_http_packet(lua_State* L, string_view& buf) {
             size_t pos = buf.find(CRLF2);
-            if (pos == string_view::npos) throw length_error("http text not full");
+            if (pos == string_view::npos) {
+                throw length_error("http text not full");
+            }
             string_view header = buf.substr(0, pos);
             buf.remove_prefix(pos + LCRLF2);
             auto begining = read_line(header);
             vector<string_view> parts;
             split(begining, " ", parts);
+            if (parts.size() < 2) {
+                throw invalid_argument("invalid http healder");
+            }
             //method
             lua_pushlstring(L, parts[0].data(), parts[0].size());
             //url + params
