@@ -150,10 +150,14 @@
                     };
                     for(var group in cmd_names){
                         var groups = cmd_names[group];
-                        groups.sort();
+                        groups.sort((a,b) => {
+                            return a.text.localeCompare(b.text, 'zh-Hans-CN', { numeric: true })
+                         });
                         treeNodes[0].nodes.push({ text : group,nodes : groups });
                     }
-                    treeNodes[0].nodes.sort();
+                    treeNodes[0].nodes.sort((a,b) => {
+                            return a.text.localeCompare(b.text, 'zh-Hans-CN', { numeric: true })
+                        });
                     that._showConsole(treeNodes);
                 },
                 error: function(status) {
