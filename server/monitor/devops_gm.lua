@@ -31,7 +31,7 @@ end
 function DevopsGmMgr:register_gm()
     local cmd_list = {
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_set_log_level", desc = "设置日志等级", comment = "(all/全部,日志等级debug[1]-fatal[6])", args = "svr_name|string level|integer" },
-        { group = "运维", gm_type = GMType.GLOBAL, name = "gm_offset_time", desc = "服务器时间偏移(秒)", args = "offset|integer" },
+        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_offset_time", desc = "服务器时间偏移(秒)", args = "offset|integer" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_hotfix", desc = "代码热更新", args = "" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_inject", desc = "代码注入",
           args  = "service_name|string index|integer file_name|string code_content|string" },
@@ -42,9 +42,9 @@ function DevopsGmMgr:register_gm()
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_query_server_online", desc = "查询在线服务", comment = "", args = "service_name|string" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_hive_quit", desc = "关闭服务器", comment = "强踢玩家并停服", args = "reason|integer" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_cfg_reload", desc = "配置表热更新", comment = "(0 本地 1 远程)", args = "is_remote|integer" },
-        { group = "运维", gm_type = GMType.GLOBAL, name = "gm_collect_gc", desc = "lua全量gc", comment = "", args = "" },
-        { group = "运维", gm_type = GMType.GLOBAL, name = "gm_snapshot", desc = "lua内存快照", comment = "0开始1结束,服务/index", args = "snap|integer service_name|string index|integer" },
-        { group = "运维", gm_type = GMType.GLOBAL, name = "gm_count_obj", desc = "lua对象计数", comment = "最小个数,服务/index", args = "less_num|integer service_name|string index|integer" },
+        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_collect_gc", desc = "lua全量gc", comment = "", args = "" },
+        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_snapshot", desc = "lua内存快照", comment = "0开始1结束,服务/index", args = "snap|integer service_name|string index|integer" },
+        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_count_obj", desc = "lua对象计数", comment = "最小个数,服务/index", args = "less_num|integer service_name|string index|integer" },
         --工具
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_guid_view", desc = "guid信息", comment = "(拆解guid)", args = "guid|integer" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_log_format", desc = "日志格式", comment = "0压缩,1格式化", args = "data|string swline|integer" },

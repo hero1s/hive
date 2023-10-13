@@ -1,4 +1,3 @@
---proxy_mgr.lua
 import("feature/worker.lua")
 
 --启动worker

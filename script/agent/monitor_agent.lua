@@ -178,6 +178,7 @@ end
 function MonitorAgent:rpc_offset_time(offset)
     timer.offset(offset)
     thread_mgr:sleep(100)
+    event_mgr:notify_trigger("evt_offset_time")
     log_info("[MonitorAgent][rpc_offset_time] {}", time_str(hive.now))
 end
 
