@@ -8,6 +8,7 @@ local tinsert          = table.insert
 local tunpack          = table.unpack
 local tointeger        = math.tointeger
 local tonumber         = tonumber
+local tsort            = table.sort
 local log_err          = logger.err
 local log_info         = logger.info
 local trandom_array    = table_ext.random_array
@@ -281,6 +282,35 @@ function ConfigTable:iterator()
         index = next(rows, index)
         if index then
             return index, rows[index]
+        end
+    end
+    return iter
+end
+
+-- 顺序迭代器
+-- @param cmp 比较函数
+function ConfigTable:siterator(cmp)
+    local sort_keys = {}
+    for _, v in pairs(self.rows) do
+        sort_keys[#sort_keys + 1] = v
+    end
+    local sortfunc
+    if cmp then
+        sortfunc = function(a, b)
+            return cmp(a, b)
+        end
+    else
+        sortfunc = function(a, b)
+            return a < b
+        end
+    end
+    tsort(sort_keys, sortfunc)
+
+    local index = nil
+    local function iter()
+        index = next(sort_keys, index)
+        if index then
+            return index, sort_keys[index]
         end
     end
     return iter
