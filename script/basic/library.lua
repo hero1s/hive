@@ -23,7 +23,7 @@ local librarys = {
 }
 
 --特定模块
-if hgetenv("HIVE_MODE") then
+if hgetenv("HIVE_SERVICE") then
     --Curl库
     librarys.curl = require("lcurl")
 end

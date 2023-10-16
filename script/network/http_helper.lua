@@ -1,12 +1,11 @@
-﻿local lcurl    = require("lcurl")
-local log_err  = logger.err
+﻿local log_err  = logger.err
 local pairs    = pairs
 local tconcat  = table.concat
 local tinsert  = table.insert
 local sformat  = string.format
 local sfind    = string.find
 local ssub     = string.sub
-local luencode = lcurl.url_encode
+local luencode = curl.url_encode
 local tmapsort = table_ext.mapsort
 
 http_helper    = {}

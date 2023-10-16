@@ -1,6 +1,5 @@
 --httpClient.lua
-local lcurl             = require("lcurl")
-local luencode          = lcurl.url_encode
+local luencode          = curl.url_encode
 local pairs             = pairs
 local log_err           = logger.err
 local log_debug         = logger.debug
@@ -12,7 +11,7 @@ local hxpcall           = hive.xpcall
 local json_encode       = hive.json_encode
 local env_get           = environ.get
 
-local curlm_mgr         = lcurl.curlm_mgr
+local curlm_mgr         = curl.curlm_mgr
 local thread_mgr        = hive.get("thread_mgr")
 local update_mgr        = hive.get("update_mgr")
 
