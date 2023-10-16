@@ -47,6 +47,15 @@ function RmsgAgent:list_message(rmsg_type, to)
     return self.rmsgs[rmsg_type]:list_message(to)
 end
 
+function RmsgAgent:safe_do_message(rmsg_type, to, do_func)
+    local _lock<close> = self:lock_msg(rmsg_type, to)
+    local records      = self:list_message(rmsg_type, to)
+    for _, record in ipairs(records) do
+        do_func(record)
+        self:delete_message_by_uuid(rmsg_type, record.uuid, record.to)
+    end
+end
+
 function RmsgAgent:send_message(rmsg_type, from, to, body, typ, id)
     return self.rmsgs[rmsg_type]:send_message(from, to, body, typ or rmsg_type, id)
 end
