@@ -59,7 +59,7 @@ namespace logger {
         char* pfmt = const_cast<char*>(vfmt.data());
         if (vfmt.size() > 1) {
             for (auto i = 0; i < vfmt.size() - 1; ++i) {
-                if (pfmt[i] == '%') {
+                if (pfmt[i] == '%' && (pfmt[i+1] == 's' || pfmt[i+1] == 'd')) {
                     pfmt[i] = '{';
                     pfmt[i + 1] = '}';
                 }
