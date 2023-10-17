@@ -73,6 +73,12 @@
     <ClInclude Include="src\lcrypt\xxtea.h">
       <Filter>lcrypt</Filter>
     </ClInclude>
+    <ClInclude Include="src\ljson\ljson.h">
+      <Filter>ljson</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ljson\yyjson.h">
+      <Filter>ljson</Filter>
+    </ClInclude>
     <ClInclude Include="src\lrandom\random.hpp">
       <Filter>lrandom</Filter>
     </ClInclude>
@@ -141,6 +147,12 @@
     <ClCompile Include="src\lcrypt\xxtea.c">
       <Filter>lcrypt</Filter>
     </ClCompile>
+    <ClCompile Include="src\ljson\ljson.cpp">
+      <Filter>ljson</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ljson\yyjson.c">
+      <Filter>ljson</Filter>
+    </ClCompile>
     <ClCompile Include="src\lrandom\lrandom.cpp">
       <Filter>lrandom</Filter>
     </ClCompile>
@@ -175,6 +187,9 @@
     </Filter>
     <Filter Include="lcrypt">
       <UniqueIdentifier>{6779B38A-0EC6-088E-3974-E2A164AE1520}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ljson">
+      <UniqueIdentifier>{D2FD53CE-5F95-C3EC-13A1-11D91B9A412C}</UniqueIdentifier>
     </Filter>
     <Filter Include="lrandom">
       <UniqueIdentifier>{3FF84F4B-3548-31CF-586F-ADCF4C5716CF}</UniqueIdentifier>

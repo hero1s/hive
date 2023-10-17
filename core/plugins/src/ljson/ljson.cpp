@@ -1,5 +1,3 @@
-#define LUA_LIB
-
 #include "ljson.h"
 
 namespace ljson {

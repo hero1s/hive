@@ -58,6 +58,15 @@ function ReliableMsg:check_indexes(sharding)
     return success, miss
 end
 
+function ReliableMsg:len_message(to)
+    local query            = { self.table_name, { to = to } }
+    local ok, code, result = mongo_agent:count(query, to, self.db_name)
+    if check_success(code, ok) then
+        return result
+    end
+    return 0
+end
+
 -- 查询未处理消息列表
 function ReliableMsg:list_message(to)
     local query            = { self.table_name, { to = to, deal_time = 0 }, { _id = 0, ttl = 0 }, { time = 1 } }
