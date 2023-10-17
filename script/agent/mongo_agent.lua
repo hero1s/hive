@@ -153,6 +153,17 @@ function MongoAgent:update_sheet_fields(sheet_name, primary_id, primary_key, fie
     return true
 end
 
+--fields = { a=1,b=1}
+function MongoAgent:remove_sheet_fields(sheet_name, primary_id, primary_key, fields, db_name)
+    local udata         = { ["$unset"] = fields }
+    local ok, code, res = self:update({ sheet_name, udata, { [primary_key] = primary_id }, true }, primary_id, db_name)
+    if check_failed(code, ok) then
+        log_err("[MongoAgent][remove_sheet_field] {} remove ({}) failed primary_id({}), code: {}, res: {}!", sheet_name, fields, primary_id, code, res)
+        return false
+    end
+    return true
+end
+
 function MongoAgent:update_sheet(sheet_name, primary_id, primary_key, udata, db_name)
     local ok, code, res = self:update({ sheet_name, udata, { [primary_key] = primary_id }, true }, primary_id, db_name)
     if check_failed(code, ok) then
