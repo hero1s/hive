@@ -55,7 +55,7 @@ function DBIndexMgr:gm_check_db_index(build)
 end
 
 function DBIndexMgr:build_index(rebuild)
-    log_info("[DBIndexMgr][build_index] {}", rebuild)
+    log_info("[DBIndexMgr][build_index] rebuild:{}", rebuild)
     self:build_dbindex(rebuild)
     rmsg_agent:build_index(self.sharding)
 end

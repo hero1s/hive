@@ -47,7 +47,7 @@ function ConfigTable:set_records(file_name)
     end
     self.load_time = import_file_time(file_name)
     --重构组索引
-    for key_name, _ in ipairs(self.group_keys) do
+    for key_name, _ in pairs(self.group_keys) do
         self:init_group(key_name)
     end
 end

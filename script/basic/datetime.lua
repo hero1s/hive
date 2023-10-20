@@ -200,3 +200,13 @@ function datetime_ext.make_time(tm)
     }
     return os.time(tm)
 end
+
+-- 获取当前是星期几，其中星期天为7
+function datetime_ext.week_day(tm)
+    tm = tm or hive.now
+    local week_day = tonumber(os.date("%w", tm))
+    if week_day == 0 then
+        week_day = 7
+    end
+    return week_day
+end

@@ -54,13 +54,6 @@ for _, path in ipairs(ssplit(package.path, ";")) do
     search_path[#search_path + 1] = path:sub(1, path:find("?") - 1)
 end
 
-local function can_reload(fullpath)
-    if sfind(fullpath, "/hive/script/basic/oop") then
-        return false
-    end
-    return true
-end
-
 local function search_load(node)
     local load_path = node.fullpath
     if load_path then
@@ -75,7 +68,6 @@ local function search_load(node)
             file:close()
             node.fullpath   = fullpath
             node.time       = file_time(fullpath)
-            node.can_reload = can_reload(fullpath)
             return loadfile(fullpath)
         end
     end
@@ -161,20 +153,18 @@ end
 function hive.reload()
     local count = 0
     for _, node in ipairs(load_files) do
-        if node.can_reload then
-            local filetime, err = file_time(node.fullpath)
-            if filetime == 0 then
-                log_error(sformat("[hive][reload] %s get_time failed(%s)", node.fullpath, err))
-                goto continue
+        local filetime, err = file_time(node.fullpath)
+        if filetime == 0 then
+            log_error(sformat("[hive][reload] %s get_time failed(%s)", node.fullpath, err))
+            goto continue
+        end
+        if node.time then
+            if mabs(node.time - filetime) > 1 then
+                try_load(node, true)
+                count = count + 1
             end
-            if node.time then
-                if mabs(node.time - filetime) > 1 then
-                    try_load(node, true)
-                    count = count + 1
-                end
-            else
-                log_error(sformat("[hive][reload] error file:%s", node.filename))
-            end
+        else
+            log_error(sformat("[hive][reload] error file:%s", node.filename))
         end
         :: continue ::
     end
