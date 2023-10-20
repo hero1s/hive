@@ -153,6 +153,9 @@ end
 function hive.reload()
     local count = 0
     for _, node in ipairs(load_files) do
+        if not node.fullpath then
+            goto continue
+        end
         local filetime, err = file_time(node.fullpath)
         if filetime == 0 then
             log_error(sformat("[hive][reload] %s get_time failed(%s)", node.fullpath, err))

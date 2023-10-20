@@ -56,7 +56,6 @@ public:
 private:
 	void on_recv(slice* slice);
 	void on_call_head(slice* slice);
-	void on_call_text(slice* slice);
 	void on_call_data(slice* slice);
 	void on_call(router_header* header, slice* slice);
 	void on_forward_broadcast(router_header* header, size_t target_size);

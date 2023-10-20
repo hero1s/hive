@@ -95,11 +95,8 @@ function Socket:connect(ip, port, ptype)
         end
         thread_mgr:response(block_id, success, res)
     end
-    session.on_call_text = function(recv_len, data)
-        self:on_socket_recv_text(session, data)
-    end
     session.on_call_data = function(recv_len, ...)
-        self:on_socket_recv_data(session, ...)
+        self:on_socket_recv(session, ...)
     end
     session.on_error     = function(token, err)
         self:on_socket_error(token, err)
@@ -117,14 +114,7 @@ function Socket:on_socket_accept(session)
     socket:accept(session, session.ip, self.port)
 end
 
-function Socket:on_socket_recv_text(session, data)
-    thread_mgr:fork(function()
-        self.recvbuf = self.recvbuf .. data
-        self.host:on_socket_recv(self, self.token)
-    end)
-end
-
-function Socket:on_socket_recv_data(session, ...)
+function Socket:on_socket_recv(session, ...)
     thread_mgr:fork(function(...)
         self.host:on_socket_recv(self, ...)
     end, ...)
@@ -143,11 +133,8 @@ end
 
 function Socket:accept(session, ip, port)
     session.set_timeout(self.timeout)
-    session.on_call_text = function(recv_len, data)
-        self:on_socket_recv_text(session, data)
-    end
     session.on_call_data = function(recv_len, ...)
-        self:on_socket_recv_data(session, ...)
+        self:on_socket_recv(session, ...)
     end
     session.on_error     = function(token, err)
         self:on_socket_error(token, err)
