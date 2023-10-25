@@ -1,12 +1,12 @@
 --mysql_mgr.lua
 local log_err      = logger.err
+local mrandom      = math_ext.random
 
 local event_mgr    = hive.get("event_mgr")
+local config_mgr   = hive.get("config_mgr")
 
 local SUCCESS      = hive.enum("KernCode", "SUCCESS")
 local MYSQL_FAILED = hive.enum("KernCode", "MYSQL_FAILED")
-
-local MAIN_DBID    = environ.number("HIVE_DB_MAIN_ID")
 
 local MysqlMgr     = singleton()
 local prop         = property(MysqlMgr)
@@ -22,22 +22,40 @@ end
 
 --初始化
 function MysqlMgr:setup()
-    local MysqlDB = import("driver/mysql.lua")
-    local drivers = environ.driver("HIVE_MYSQL_URLS")
-    for i, conf in ipairs(drivers) do
-        local mysql_db    = MysqlDB(conf, i)
-        self.mysql_dbs[i] = mysql_db
+    local MysqlDB  = import("driver/mysql.lua")
+    local database = config_mgr:init_table("database", "name")
+    for _, conf in database:iterator() do
+        local drivers = environ.driver(conf.url)
+        if drivers and #drivers > 0 then
+            local dconf = drivers[1]
+            if dconf.driver == "mysql" then
+                local mysql_db            = MysqlDB(dconf)
+                self.mysql_dbs[conf.name] = mysql_db
+                if conf.default then
+                    self.default_db = mysql_db
+                end
+            end
+        end
     end
 end
 
 --查找mysql db
-function MysqlMgr:get_db(db_id)
-    return self.mysql_dbs[db_id or MAIN_DBID]
+function MysqlMgr:get_db(db_name, hash_key)
+    local mysqldb
+    if not db_name or db_name == "default" then
+        mysqldb = self.default_db
+    else
+        mysqldb = self.mysql_dbs[db_name]
+    end
+    if mysqldb and mysqldb:set_executer(hash_key or mrandom()) then
+        return mysqldb
+    end
+    return nil
 end
 
-function MysqlMgr:query(db_id, primary_id, sql)
-    local mysqldb = self:get_db(db_id)
-    if mysqldb and mysqldb:set_executer(primary_id) then
+function MysqlMgr:query(db_name, primary_id, sql)
+    local mysqldb = self:get_db(db_name, primary_id)
+    if mysqldb then
         local ok, res_oe = mysqldb:query(sql)
         if not ok then
             log_err("[MysqlMgr][query] query {} failed, because: {}", sql, res_oe)
@@ -47,9 +65,9 @@ function MysqlMgr:query(db_id, primary_id, sql)
     return MYSQL_FAILED, "mysql db not exist"
 end
 
-function MysqlMgr:execute(db_id, primary_id, stmt, ...)
-    local mysqldb = self:get_db(db_id)
-    if mysqldb and mysqldb:set_executer(primary_id) then
+function MysqlMgr:execute(db_name, primary_id, stmt, ...)
+    local mysqldb = self:get_db(db_name, primary_id)
+    if mysqldb then
         local ok, res_oe = mysqldb:execute(stmt, ...)
         if not ok then
             log_err("[MysqlMgr][execute] execute {} failed, because: {}", stmt, res_oe)
@@ -59,9 +77,9 @@ function MysqlMgr:execute(db_id, primary_id, stmt, ...)
     return MYSQL_FAILED, "mysql db not exist"
 end
 
-function MysqlMgr:prepare(db_id, sql)
-    local mysqldb = self:get_db(db_id)
-    if mysqldb and mysqldb:set_executer() then
+function MysqlMgr:prepare(db_name, primary_id, sql)
+    local mysqldb = self:get_db(db_name, primary_id)
+    if mysqldb then
         local ok, res_oe = mysqldb:prepare(sql)
         if not ok then
             log_err("[MysqlMgr][prepare] prepare {} failed, because: {}", sql, res_oe)
