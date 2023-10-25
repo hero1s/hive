@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="src\detour.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\detour\DetourAlloc.h">
+      <Filter>detour</Filter>
+    </ClInclude>
+    <ClInclude Include="src\detour\DetourAssert.h">
+      <Filter>detour</Filter>
+    </ClInclude>
+    <ClInclude Include="src\detour\DetourCommon.h">
+      <Filter>detour</Filter>
+    </ClInclude>
+    <ClInclude Include="src\detour\DetourMath.h">
+      <Filter>detour</Filter>
+    </ClInclude>
+    <ClInclude Include="src\detour\DetourNavMesh.h">
+      <Filter>detour</Filter>
+    </ClInclude>
+    <ClInclude Include="src\detour\DetourNavMeshBuilder.h">
+      <Filter>detour</Filter>
+    </ClInclude>
+    <ClInclude Include="src\detour\DetourNavMeshQuery.h">
+      <Filter>detour</Filter>
+    </ClInclude>
+    <ClInclude Include="src\detour\DetourNode.h">
+      <Filter>detour</Filter>
+    </ClInclude>
+    <ClInclude Include="src\detour\DetourStatus.h">
+      <Filter>detour</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\detour.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\detour\DetourAlloc.cpp">
+      <Filter>detour</Filter>
+    </ClCompile>
+    <ClCompile Include="src\detour\DetourAssert.cpp">
+      <Filter>detour</Filter>
+    </ClCompile>
+    <ClCompile Include="src\detour\DetourCommon.cpp">
+      <Filter>detour</Filter>
+    </ClCompile>
+    <ClCompile Include="src\detour\DetourNavMesh.cpp">
+      <Filter>detour</Filter>
+    </ClCompile>
+    <ClCompile Include="src\detour\DetourNavMeshBuilder.cpp">
+      <Filter>detour</Filter>
+    </ClCompile>
+    <ClCompile Include="src\detour\DetourNavMeshQuery.cpp">
+      <Filter>detour</Filter>
+    </ClCompile>
+    <ClCompile Include="src\detour\DetourNode.cpp">
+      <Filter>detour</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ldetor.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="detour">
+      <UniqueIdentifier>{5B5D3B00-AE0E-BE9F-AA15-2BBC0E9A59BE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="inc">
+      <UniqueIdentifier>{CF9F3FDE-7326-F1D8-E642-05F0E07A3695}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{25D902C2-4283-AB8C-FBAC-54DFA101AD31}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
