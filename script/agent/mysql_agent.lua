@@ -88,7 +88,7 @@ function MysqlAgent:update(db_name, table_name, columns, conditions)
         return false, PARAM_ERROR
     end
     local sql = sformat("update `%s` set %s where %s;", table_name, self:gen_update_values_str(columns), self:gen_condition_str(conditions))
-    return self:execute(sql, db_name)
+    return self:query(sql, db_name)
 end
 
 -- 增量更新
@@ -97,7 +97,7 @@ function MysqlAgent:inc_update(db_name, table_name, columns, conditions)
         return false, PARAM_ERROR
     end
     local sql = sformat("update `%s` set %s where %s;", table_name, self:gen_update_values_str(columns, true), self:gen_condition_str(conditions))
-    return self:execute(sql, db_name)
+    return self:query(sql, db_name)
 end
 
 -- 插入
@@ -106,7 +106,7 @@ function MysqlAgent:insert(db_name, table_name, columns)
         return false, PARAM_ERROR
     end
     local sql = sformat("insert into `%s` %s;", table_name, self:gen_insert_str(columns))
-    return self:execute(sql, db_name)
+    return self:query(sql, db_name)
 end
 
 -- 重复插入(存在则更新，不存在则插入)
@@ -115,7 +115,7 @@ function MysqlAgent:insert_or_update(db_name, table_name, columns)
         return false, PARAM_ERROR
     end
     local sql = sformat("insert into `%s` %s on duplicate key update %s;", table_name, self:gen_insert_str(columns), self:gen_update_values_str(columns))
-    return self:execute(sql, db_name)
+    return self:query(sql, db_name)
 end
 
 -- 替换
@@ -124,7 +124,7 @@ function MysqlAgent:replace(db_name, table_name, columns)
         return false, PARAM_ERROR
     end
     local sql = sformat("replace into `%s` %s;", table_name, self:gen_insert_str(columns))
-    return self:execute(sql, db_name)
+    return self:query(sql, db_name)
 end
 
 -- 查询
@@ -156,11 +156,11 @@ function MysqlAgent:query(db_name, table_name, conditions, fields, group_by_key,
             end
         end
 
-        return self:execute(sql, db_name)
+        return self:query(sql, db_name)
     else
         -- 不带条件查询
         local sql = sformat("select %s from `%s`;", query_field_str, table_name)
-        return self:execute(sql, db_name)
+        return self:query(sql, db_name)
     end
 end
 
@@ -168,7 +168,7 @@ end
 function MysqlAgent:delete(db_name, table_name, conditions)
     assert(next(conditions) ~= nil)
     local sql = sformat("delete from `%s` where %s;", table_name, self:gen_condition_str(conditions))
-    return self:execute(sql, db_name)
+    return self:query(sql, db_name)
 end
 
 -- 清空整张表
@@ -177,34 +177,34 @@ function MysqlAgent:truncate(db_name, table_name)
         return false, PARAM_ERROR
     end
     local sql = sformat("truncate table `%s`;", table_name)
-    return self:execute(sql, db_name)
+    return self:query(sql, db_name)
 end
 
 -- 根据旧表建新表
 function MysqlAgent:create_table(db_name, new_table_name, old_table_name)
     local sql = sformat("create table %s like %s", new_table_name, old_table_name)
-    return self:execute(sql, db_name)
+    return self:query(sql, db_name)
 end
 
 -- 删表
 function MysqlAgent:drop_table(db_name, table_name)
     local sql = sformat("drop table if exists %s", table_name)
-    return self:execute(sql, db_name)
+    return self:query(sql, db_name)
 end
 
 -- 执行sql文件
 function MysqlAgent:execute_sql_file(db_name, file_name)
     local sql = readfile(file_name)
-    return self:execute(sql, db_name)
+    return self:query(sql, db_name)
 end
 
 --发送数据库请求
-function MysqlAgent:execute(sql, db_name, hash_key)
+function MysqlAgent:query(sql, db_name, hash_key)
     if self.local_run then
-        return scheduler:call(self.service, "mysql_execute", db_name or "default", sql)
+        return scheduler:call(self.service, "rpc_mysql_query", db_name or "default", hash_key, sql)
     end
     if router_mgr then
-        return router_mgr:call_dbsvr_hash(hash_key or mrandom(), "mysql_execute", db_name or "default", sql)
+        return router_mgr:call_dbsvr_hash(hash_key or mrandom(), "rpc_mysql_query", db_name or "default", hash_key, sql)
     end
     return false, KernCode.FAILED, "init not right"
 end

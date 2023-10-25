@@ -7,6 +7,26 @@ using namespace luakit;
 
 namespace lcodec {
 
+    inline uint64_t byteswap8(uint64_t const net) {
+        uint8_t data[8] = {};
+        memcpy(&data, &net, sizeof(data));
+        return ((uint64_t)data[7] << 0)
+            | ((uint64_t)data[6] << 8)
+            | ((uint64_t)data[5] << 16)
+            | ((uint64_t)data[4] << 24)
+            | ((uint64_t)data[3] << 32)
+            | ((uint64_t)data[2] << 40)
+            | ((uint64_t)data[1] << 48)
+            | ((uint64_t)data[0] << 56);
+    }
+
+    inline uint16_t byteswap2(uint16_t const net) {
+        uint8_t data[2] = {};
+        memcpy(&data, &net, sizeof(data));
+        return ((uint16_t)data[1] << 0)
+            | ((uint16_t)data[0] << 8);
+    }
+
     class wsscodec : public codec_base {
     public:
         virtual int load_packet(size_t data_len) {
@@ -19,9 +39,12 @@ namespace lcodec {
                 m_packet_len = masklen + payloadlen + sizeof(uint16_t);
                 return m_packet_len;
             }
-            size_t* length = (size_t*)m_slice->peek((payloadlen == 0x7f) ? 8 : 2, sizeof(uint16_t));
-            if (!length) return 0;
-            m_packet_len = masklen + (*length) + sizeof(uint16_t);
+            size_t ext_len = (payloadlen == 0x7f) ? 8 : 2;
+            uint8_t* data = m_slice->peek(ext_len, sizeof(uint16_t));
+            if (!data) return 0;
+            size_t length = (payloadlen == 0x7f) ? byteswap8(*(uint64_t*)data) : byteswap2(*(uint16_t*)data);
+            m_packet_len = masklen + ext_len + length + sizeof(uint16_t);
+            if (m_packet_len > m_slice->size()) return 0;
             return m_packet_len;
         }
 
@@ -39,10 +62,10 @@ namespace lcodec {
                 m_buf->write<uint8_t>(*len);
             } else if (*len < 0xffff) {
                 m_buf->write<uint8_t>(126);
-                m_buf->write<uint16_t>(*len);
+                m_buf->write<uint16_t>(byteswap2(*len));
             } else {
                 m_buf->write<uint8_t>(127);
-                m_buf->write<uint64_t>(*len);
+                m_buf->write<uint64_t>(byteswap8(*len));
             }
             m_buf->push_data(body, *len);
             return m_buf->data(len);
