@@ -15,7 +15,8 @@ namespace lcodec {
     const uint8_t COM_STMT_CLOSE            = 0x19;
 
     // constants
-    inline uint32_t CLIENT_FLAG             = 260047;   //0011 1111 0111 1100 1111
+    //inline uint32_t CLIENT_FLAG             = 260047;   //0000 0011 1111 0111 1100 1111
+    inline uint32_t CLIENT_FLAG             = 17037263; //1 0000 0011 1111 0111 1100 1111
     inline uint32_t MAX_PACKET_SIZE         = 0xffffff;
     inline uint32_t CLIENT_PLUGIN_AUTH      = 1 << 19;
     inline uint32_t CLIENT_DEPRECATE_EOF    = 1 << 24;
@@ -383,7 +384,7 @@ namespace lcodec {
             uint16_t status_flags = *(uint16_t*)m_packet.read<uint16_t>();
             //2 byte capability_flags_2
             uint16_t capability_flag_2 = *(uint16_t*)m_packet.read<uint16_t>();
-            m_capability = capability_flag_2 << 16 | capability_flag_1;
+            m_capability = CLIENT_FLAG & (capability_flag_2 << 16 | capability_flag_1);
             //1 byte character_set
             uint8_t auth_plugin_data_len = *(uint8_t*)m_packet.read<uint8_t>();
             //10 byte reserved (all 0)

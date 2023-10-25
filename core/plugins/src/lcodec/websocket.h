@@ -7,9 +7,8 @@ using namespace luakit;
 
 namespace lcodec {
 
-    inline uint64_t byteswap8(uint64_t const net) {
-        uint8_t data[8] = {};
-        memcpy(&data, &net, sizeof(data));
+    inline uint64_t byteswap8(uint64_t const u64) {
+        uint8_t* data = (uint8_t*) &u64;
         return ((uint64_t)data[7] << 0)
             | ((uint64_t)data[6] << 8)
             | ((uint64_t)data[5] << 16)
@@ -20,9 +19,8 @@ namespace lcodec {
             | ((uint64_t)data[0] << 56);
     }
 
-    inline uint16_t byteswap2(uint16_t const net) {
-        uint8_t data[2] = {};
-        memcpy(&data, &net, sizeof(data));
+    inline uint16_t byteswap2(uint16_t const u16) {
+        uint8_t* data = (uint8_t*)&u16;
         return ((uint16_t)data[1] << 0)
             | ((uint16_t)data[0] << 8);
     }
