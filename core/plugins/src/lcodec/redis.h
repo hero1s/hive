@@ -191,7 +191,7 @@ namespace lcodec {
                 string_encode(L, idx);
                 break;
             case LUA_TBOOLEAN: 
-                integer_encode(lua_tointeger(L, idx));
+                integer_encode(lua_toboolean(L, idx) ? 1 : 0);
                 break;
             case LUA_TNUMBER:
                 lua_isinteger(L, idx) ? integer_encode(lua_tointeger(L, idx)) : number_encode(lua_tonumber(L, idx));
