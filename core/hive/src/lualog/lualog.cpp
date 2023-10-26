@@ -15,7 +15,7 @@ namespace logger {
         case LUA_TUSERDATA:  return "userdata";
         case LUA_TLIGHTUSERDATA: return "userdata";
         case LUA_TSTRING: return lua_tostring(L, index);
-        case LUA_TBOOLEAN: return (lua_tointeger(L, index) == 1) ? "true" : "false";
+        case LUA_TBOOLEAN: return lua_toboolean(L, index) ? "true" : "false";
         case LUA_TTABLE:
             if ((flag & 0x01) == 0x01) {
                 buf.clean();

@@ -457,7 +457,7 @@ namespace lcodec {
         void encode_args_value(lua_State* L, int index) {
             switch (lua_type(L, index)) {
             case LUA_TBOOLEAN:
-                m_buf->write<double>(lua_tointeger(L, index));
+                m_buf->write<uint8_t>(lua_toboolean(L, index) ? 1 : 0);
                 break;
             case LUA_TNUMBER:
                 lua_isinteger(L, index) ? m_buf->write<uint64_t>(lua_tointeger(L, index)) : m_buf->write<double>(lua_tonumber(L, index));
