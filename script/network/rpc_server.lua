@@ -9,9 +9,9 @@ local signal_quit = signal.quit
 
 local FLAG_REQ    = hive.enum("FlagMask", "REQ")
 local FLAG_RES    = hive.enum("FlagMask", "RES")
-local KernCode    = enum("KernCode")
+local SUCCESS     = hive.enum("KernCode", "SUCCESS")
+
 local NetwkTime   = enum("NetwkTime")
-local SUCCESS     = KernCode.SUCCESS
 
 local event_mgr   = hive.get("event_mgr")
 local thread_mgr  = hive.get("thread_mgr")
@@ -26,6 +26,7 @@ prop:reader("port", 0)                    --监听端口
 prop:reader("clients", {})
 prop:reader("listener", nil)
 prop:reader("holder", nil)                --持有者
+prop:reader("indexes", {})                --id索引
 
 --induce：根据index推导port
 function RpcServer:__init(holder, ip, port, induce)
@@ -81,6 +82,7 @@ function RpcServer:on_socket_error(token, err)
     if client then
         self.clients[token] = nil
         if client.id then
+            self.indexes[client.id] = nil
             thread_mgr:fork(function()
                 self.holder:on_client_error(client, token, err)
             end)
@@ -115,7 +117,6 @@ function RpcServer:on_socket_accept(client)
     self.holder:on_client_accept(client)
 end
 
---send接口
 function RpcServer:call(client, rpc, ...)
     local session_id = thread_mgr:build_session_id()
     if client.call_rpc(session_id, FLAG_REQ, rpc, ...) then
@@ -124,9 +125,24 @@ function RpcServer:call(client, rpc, ...)
     return false, "rpc server send failed"
 end
 
---send接口
 function RpcServer:send(client, rpc, ...)
     return client.call_rpc(0, FLAG_REQ, rpc, ...)
+end
+
+function RpcServer:call_sid(id, rpc, ...)
+    local client = self.indexes[id]
+    if client then
+        return self:call(client, rpc, ...)
+    end
+    return false, "service is not exist"
+end
+
+function RpcServer:send_sid(id, rpc, ...)
+    local client = self.indexes[id]
+    if client then
+        return self:send(client, rpc, ...)
+    end
+    return false, "service is not exist"
 end
 
 --broadcast接口
@@ -164,11 +180,7 @@ end
 
 --获取client
 function RpcServer:get_client_by_id(hive_id)
-    for _, client in pairs(self.clients) do
-        if client.id == hive_id then
-            return client
-        end
-    end
+    return self.indexes[hive_id]
 end
 
 --迭代器
@@ -200,7 +212,7 @@ end
 function RpcServer:rpc_register(client, node, ...)
     if not client.id then
         -- 检查重复注册
-        local eclient = self:get_client_by_id(node.id)
+        local eclient = self.indexes[node.id]
         if eclient then
             local rpc_key = luabus.get_rpc_key()
             log_err("[RpcServer][rpc_register] client({}) be kickout, same service is run!,rpckey:{}", eclient.name, rpc_key)
@@ -215,6 +227,7 @@ function RpcServer:rpc_register(client, node, ...)
         client.name         = node.name
         client.pid          = node.pid
         self.holder:on_client_register(client, node, ...)
+        self.indexes[client.id] = client
     else
         log_err("[RpcServer][rpc_register] repeat register,exception logic:{}", node)
         self:disconnect(client)

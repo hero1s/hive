@@ -75,3 +75,13 @@ const std::string lua_socket_mgr::get_rpc_key() {
 	return m_mgr->get_handshake_verify();
 }
 
+//Íæ¼ÒÂ·ÓÉ
+void lua_socket_mgr::set_player_service(uint32_t player_id, uint32_t sid, uint8_t login) {
+	m_router->set_player_service(player_id, sid, login);
+}
+uint32_t lua_socket_mgr::find_player_sid(uint32_t player_id, uint16_t service_id) {
+	return m_router->find_player_sid(player_id, service_id);
+}
+void lua_socket_mgr::clean_player_sid(uint32_t sid) {
+	m_router->clean_player_sid(sid);
+}

@@ -13,6 +13,7 @@ enum class rpc_type : uint8_t {
 	forward_broadcast,
 	forward_hash,
 	forward_router,
+	forward_player,
 };
 
 const int MAX_SERVICE_GROUP = (UCHAR_MAX + 1);
@@ -46,7 +47,8 @@ struct router_header {
 	uint32_t len		= 0;
 	uint32_t source_id  = 0;
 	uint32_t session_id = 0;
-	uint32_t target_id  = 0;
+	uint32_t target_sid = 0;
+	uint32_t target_pid = 0;
 };
 #pragma pack()
 
@@ -75,6 +77,31 @@ struct service_list {
 	}
 };
 
+struct player_list
+{
+	std::unordered_map<uint32_t, uint32_t> mp_player_sid;
+	inline void set_player_service(uint32_t player_id, uint32_t sid) {
+		if (sid > 0) {
+			mp_player_sid[player_id] = sid;
+		} else {
+			mp_player_sid.erase(player_id);
+		}
+	}
+	inline uint32_t find_player_sid(uint32_t player_id) {
+		auto it = mp_player_sid.find(player_id);
+		return it != mp_player_sid.end() ? it->second : 0;
+	}
+	inline void clean_sid(uint32_t sid) {
+		for (auto it = mp_player_sid.begin(); it != mp_player_sid.end();) {
+			if (it->second == sid) {
+				mp_player_sid.erase(it);
+			} else {
+				++it;
+			}
+		}
+	}
+};
+
 class socket_router
 {
 public:
@@ -89,11 +116,17 @@ public:
 	void flush_hash_node(uint32_t service_id);
 
 	bool do_forward_target(router_header* header, char* data, size_t data_len, std::string& error, bool router);
+	bool do_forward_player(router_header* header, char* data, size_t data_len, std::string& error, bool router);
 	bool do_forward_master(router_header* header, char* data, size_t data_len, std::string& error, bool router);
 	bool do_forward_broadcast(router_header* header, int source, char* data, size_t data_len, size_t& broadcast_num);
-	bool do_forward_hash(router_header* header, char* data, size_t data_len, std::string& error, bool router);
+	bool do_forward_hash(router_header* header, char* data, size_t data_len, std::string& error, bool router);	
 
 	bool do_forward_router(router_header* header, char* data, size_t data_len, std::string& error, rpc_type msgid,uint64_t target_id, uint16_t service_id);
+
+	//玩家路由
+	void set_player_service(uint32_t player_id, uint32_t sid, uint8_t login);
+	uint32_t find_player_sid(uint32_t player_id, uint16_t service_id);
+	void clean_player_sid(uint32_t sid);
 
 protected:
 	uint32_t find_transfer_router(uint32_t target_id, uint16_t service_id);
@@ -105,6 +138,7 @@ private:
 	stdsptr<socket_mgr> m_mgr;
 	std::unordered_map<uint32_t, std::string> m_service_names;
 	std::array<service_list, MAX_SERVICE_GROUP> m_services;
+	std::array<player_list, MAX_SERVICE_GROUP> m_players;
 	std::unordered_map<uint32_t, stdsptr<router_node>> m_routers;
 	std::unordered_map<uint32_t, stdsptr<router_node>>::iterator m_router_iter = m_routers.begin();
 	int16_t m_router_idx = -1;

@@ -114,11 +114,6 @@ function RouterMgr:is_ready()
     return #self.candidates > 0
 end
 
---查找指定router
-function RouterMgr:get_router(router_id)
-    return self.routers[router_id]
-end
-
 --查找hash router
 function RouterMgr:hash_router(hash_key)
     local count = #self.candidates
@@ -133,7 +128,7 @@ function RouterMgr:hash_router(hash_key)
 end
 
 --通过router发送点对点消息
-function RouterMgr:forward_client(router, method, rpc, session_id, ...)
+function RouterMgr:forward_target(router, method, rpc, session_id, ...)
     if router then
         return router:forward_socket(method, rpc, session_id, ...)
     end
@@ -144,7 +139,7 @@ end
 function RouterMgr:collect(service_id, rpc, ...)
     local collect_res          = {}
     local session_id           = thread_mgr:build_session_id()
-    local ok, code, target_cnt = self:forward_client(self:hash_router(session_id), "call_broadcast", rpc, session_id, service_id, rpc, ...)
+    local ok, code, target_cnt = self:forward_target(self:hash_router(session_id), "call_broadcast", rpc, session_id, service_id, rpc, ...)
     if check_success(code, ok) then
         while target_cnt > 0 do
             target_cnt              = target_cnt - 1
@@ -159,7 +154,7 @@ end
 
 --通过router传递广播
 function RouterMgr:broadcast(service_id, rpc, ...)
-    return self:forward_client(self:hash_router(service_id + hive.id), "call_broadcast", rpc, 0, service_id, rpc, ...)
+    return self:forward_target(self:hash_router(service_id + hive.id), "call_broadcast", rpc, 0, service_id, rpc, ...)
 end
 
 --发送给指定目标
@@ -169,7 +164,7 @@ function RouterMgr:call_target(target, rpc, ...)
         return tunpack(res)
     end
     local session_id = thread_mgr:build_session_id()
-    return self:forward_client(self:hash_router(target + hive.id), "call_target", rpc, session_id, target, rpc, ...)
+    return self:forward_target(self:hash_router(target + hive.id), "call_target", rpc, session_id, target, rpc, ...)
 end
 
 --发送给指定目标
@@ -178,42 +173,79 @@ function RouterMgr:send_target(target, rpc, ...)
         event_mgr:notify_listener(rpc, ...)
         return true
     end
-    return self:forward_client(self:hash_router(target + hive.id), "call_target", rpc, 0, target, rpc, ...)
+    return self:forward_target(self:hash_router(target + hive.id), "call_target", rpc, 0, target, rpc, ...)
 end
 
---指定路由发送给指定目标
-function RouterMgr:router_call(router_id, target, rpc, ...)
-    local router     = self:get_router(router_id)
-    local session_id = thread_mgr:build_session_id()
-    return self:forward_client(router, "call_target", rpc, session_id, target, rpc, ...)
+--发送给指定目标
+function RouterMgr:send_target_hash(target, hash_key, rpc, ...)
+    if target == hive.id then
+        event_mgr:notify_listener(rpc, ...)
+        return true
+    end
+    return self:forward_target(self:hash_router(hash_key), "call_target", rpc, 0, target, ...)
 end
 
---指定路由发送给指定目标
-function RouterMgr:router_send(router_id, target, rpc, ...)
-    local router = self:get_router(router_id)
-    return self:forward_client(router, "call_target", rpc, 0, target, rpc, ...)
+--发送给路由
+function RouterMgr:call_router(router_id, rpc, ...)
+    local router
+    if router_id then
+        router = self.routers[router_id]
+    else
+        router = self:hash_router(mrandom())
+    end
+    if router then
+        return router:call(rpc, ...)
+    end
+end
+
+--发送给路由
+function RouterMgr:send_router(router_id, rpc, ...)
+    local router
+    if router_id then
+        router = self.routers[router_id]
+    else
+        router = self:hash_router(mrandom())
+    end
+    if router then
+        return router:send(rpc, ...)
+    end
+end
+
+function RouterMgr:broadcast_router(rpc, ...)
+    for _, node in pairs(self.candidates) do
+        node:send(rpc, ...)
+    end
 end
 
 --发送给指定service的hash
 function RouterMgr:call_hash(service_id, hash_key, rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    return self:forward_client(self:hash_router(hash_key), "call_hash", rpc, session_id, service_id, hash_key, rpc, ...)
+    return self:forward_target(self:hash_router(hash_key), "call_hash", rpc, session_id, service_id, hash_key, rpc, ...)
 end
 
 --发送给指定service的hash
 function RouterMgr:send_hash(service_id, hash_key, rpc, ...)
-    return self:forward_client(self:hash_router(hash_key), "call_hash", rpc, 0, service_id, hash_key, rpc, ...)
+    return self:forward_target(self:hash_router(hash_key), "call_hash", rpc, 0, service_id, hash_key, rpc, ...)
 end
 
 --发送给指定service的master
 function RouterMgr:call_master(service_id, rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    return self:forward_client(self:hash_router(service_id + hive.id), "call_master", rpc, session_id, service_id, rpc, ...)
+    return self:forward_target(self:hash_router(service_id + hive.id), "call_master", rpc, session_id, service_id, rpc, ...)
 end
 
 --发送给指定service的master
 function RouterMgr:send_master(service_id, rpc, ...)
-    return self:forward_client(self:hash_router(service_id + hive.id), "call_master", rpc, 0, service_id, rpc, ...)
+    return self:forward_target(self:hash_router(service_id + hive.id), "call_master", rpc, 0, service_id, rpc, ...)
+end
+
+function RouterMgr:call_player(service_id, player_id, rpc, ...)
+    local session_id = thread_mgr:build_session_id()
+    return self:forward_target(self:hash_router(player_id), "call_player", rpc, session_id, service_id, player_id, rpc, ...)
+end
+
+function RouterMgr:send_player(service_id, player_id, rpc, ...)
+    return self:forward_target(self:hash_router(player_id), "call_player", rpc, 0, service_id, player_id, rpc, ...)
 end
 
 --生成针对服务的访问接口
@@ -224,6 +256,12 @@ function RouterMgr:build_service_method(service, service_id)
         end,
         ["send_%s_hash"]     = function(obj, hash_key, rpc, ...)
             return obj:send_hash(service_id, hash_key, rpc, ...)
+        end,
+        ["call_%s_player"]   = function(obj, player_id, rpc, ...)
+            return obj:call_hash(service_id, player_id, rpc, ...)
+        end,
+        ["send_%s_player"]   = function(obj, player_id, rpc, ...)
+            return obj:send_hash(service_id, player_id, rpc, ...)
         end,
         ["call_%s_random"]   = function(obj, rpc, ...)
             return obj:call_hash(service_id, mrandom(), rpc, ...)

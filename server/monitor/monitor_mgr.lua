@@ -150,21 +150,15 @@ function MonitorMgr:call_by_token(token, rpc, ...)
 end
 
 function MonitorMgr:call_by_sid(sid, rpc, ...)
-    local client = self.rpc_server:get_client_by_id(sid)
-    if client then
-        local ok, code, res = self.rpc_server:call(client, rpc, ...)
-        if not ok then
-            return { code = 1, msg = "call moniotor node failed!" }
-        end
-        return { code = code, msg = res }
+    local ok, code, res = self.rpc_server:call_sid(sid, rpc, ...)
+    if not ok then
+        return { code = 1, msg = "call moniotor node failed!" }
     end
-    return { code = 1, msg = "target is nil" }
+    return { code = code, msg = res }
 end
 
 function MonitorMgr:send_by_sid(sid, rpc, ...)
-    local client = self.rpc_server:get_client_by_id(sid)
-    if client then
-        self.rpc_server:send(client, rpc, ...)
+    if self.rpc_server:send_sid(sid, rpc, ...) then
         return { code = 0, msg = "send target success" }
     end
     return { code = 1, msg = "target is nil" }

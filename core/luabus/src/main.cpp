@@ -60,6 +60,9 @@ namespace luabus {
         lluabus.set_function("set_rpc_key", [](std::string key) { return socket_mgr.set_rpc_key(key); });
         lluabus.set_function("get_rpc_key", []() { return socket_mgr.get_rpc_key(); });
         lluabus.set_function("set_service_name", [](uint32_t service_id, std::string service_name) { return socket_mgr.set_service_name(service_id,service_name); });
+        lluabus.set_function("set_player_service", [](uint32_t player_id, uint32_t sid, uint8_t login) { return socket_mgr.set_player_service(player_id, sid,login); });
+        lluabus.set_function("find_player_sid", [](uint32_t player_id, uint16_t service_id) { return socket_mgr.find_player_sid(player_id, service_id); });
+        lluabus.set_function("clean_player_sid", [](uint32_t sid) { return socket_mgr.clean_player_sid(sid); });
 
         lluabus.new_enum("eproto_type",
             "rpc", eproto_type::proto_rpc,

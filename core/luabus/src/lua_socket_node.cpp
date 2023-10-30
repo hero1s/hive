@@ -113,7 +113,28 @@ int lua_socket_node::forward_target(lua_State* L, uint32_t session_id, uint8_t f
 		header.rpc_flag = flag;
 		header.source_id = source_id;
 		header.msg_id = (uint8_t)rpc_type::forward_target;
-		header.target_id = target;
+		header.target_sid = target;
+		header.len = data_len + sizeof(router_header);
+		sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
+		auto send_len = m_mgr->sendv(m_token, items, _countof(items));
+		lua_pushinteger(L, send_len);
+		return 1;
+	}
+	lua_pushinteger(L, 0);
+	return 1;
+}
+
+int lua_socket_node::forward_player(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id, uint16_t service_id, uint32_t player_id) {
+	size_t data_len = 0;
+	void* data = m_codec->encode(L, 6, &data_len);
+	if (data_len <= SOCKET_PACKET_MAX) {
+		router_header header;
+		header.session_id = session_id;
+		header.rpc_flag = flag;
+		header.source_id = source_id;
+		header.msg_id = (uint8_t)rpc_type::forward_player;
+		header.target_sid = service_id;
+		header.target_pid = player_id;
 		header.len = data_len + sizeof(router_header);
 		sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
 		auto send_len = m_mgr->sendv(m_token, items, _countof(items));
@@ -133,7 +154,8 @@ int lua_socket_node::forward_hash(lua_State* L, uint32_t session_id, uint8_t fla
 		header.rpc_flag = flag;
 		header.source_id = source_id;
 		header.msg_id = (uint8_t)rpc_type::forward_hash;
-		header.target_id = service_id << 16 | hash;
+		header.target_sid = service_id;
+		header.target_pid = hash;
 		header.len = data_len + sizeof(router_header);
 		sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
 		auto send_len = m_mgr->sendv(m_token, items, _countof(items));
@@ -186,6 +208,10 @@ void lua_socket_node::on_recv(slice* slice) {
 		break;
 	case rpc_type::forward_hash:
 		if (!m_router->do_forward_hash(header, data, data_len, m_error_msg,is_router))
+			on_forward_error(header);
+		break;
+	case rpc_type::forward_player:
+		if (!m_router->do_forward_player(header, data, data_len, m_error_msg, is_router))
 			on_forward_error(header);
 		break;
 	case rpc_type::forward_broadcast:

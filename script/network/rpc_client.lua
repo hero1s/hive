@@ -13,14 +13,13 @@ local timer_mgr      = hive.get("timer_mgr")
 local heval          = hive.eval
 local id2nick        = service.id2nick
 
-local FlagMask       = enum("FlagMask")
-local KernCode       = enum("KernCode")
+local FLAG_REQ       = hive.enum("FlagMask", "REQ")
+local FLAG_RES       = hive.enum("FlagMask", "RES")
+local SUCCESS        = hive.enum("KernCode", "SUCCESS")
 local NetwkTime      = enum("NetwkTime")
 
 local SECOND_MS      = hive.enum("PeriodTime", "SECOND_MS")
 local HEARTBEAT_TIME = hive.enum("NetwkTime", "HEARTBEAT_TIME")
-
-local SUCCESS        = KernCode.SUCCESS
 
 local RpcClient      = class()
 local prop           = property(RpcClient)
@@ -95,33 +94,37 @@ function RpcClient:connect()
         return self:on_call_router(rpc, send_len, ...)
     end
     socket.call_target      = function(session_id, target, rpc, ...)
-        local send_len = socket.forward_target(session_id, FlagMask.REQ, hive.id, target, rpc, ...)
+        local send_len = socket.forward_target(session_id, FLAG_REQ, hive.id, target, rpc, ...)
+        return self:on_call_router(rpc, send_len, ...)
+    end
+    socket.call_player      = function(session_id, service_id, player_id, rpc, ...)
+        local send_len = socket.forward_player(session_id, FLAG_REQ, hive.id, service_id, player_id, rpc, ...)
         return self:on_call_router(rpc, send_len, ...)
     end
     socket.callback_target  = function(session_id, target, rpc, ...)
         if target == 0 then
-            local send_len = socket.call(session_id, FlagMask.RES, hive.id, rpc, ...)
+            local send_len = socket.call(session_id, FLAG_RES, hive.id, rpc, ...)
             return self:on_call_router(rpc, send_len, ...)
         else
-            local send_len = socket.forward_target(session_id, FlagMask.RES, hive.id, target, rpc, ...)
+            local send_len = socket.forward_target(session_id, FLAG_RES, hive.id, target, rpc, ...)
             return self:on_call_router(rpc, send_len, ...)
         end
     end
     socket.call_hash        = function(session_id, service_id, hash_key, rpc, ...)
         local hash_value = jumphash(hash_key, 0xffff)
-        local send_len   = socket.forward_hash(session_id, FlagMask.REQ, hive.id, service_id, hash_value, rpc, ...)
+        local send_len   = socket.forward_hash(session_id, FLAG_REQ, hive.id, service_id, hash_value, rpc, ...)
         return self:on_call_router(rpc, send_len, ...)
     end
     socket.call_master      = function(session_id, service_id, rpc, ...)
-        local send_len = socket.forward_master(session_id, FlagMask.REQ, hive.id, service_id, rpc, ...)
+        local send_len = socket.forward_master(session_id, FLAG_REQ, hive.id, service_id, rpc, ...)
         return self:on_call_router(rpc, send_len, ...)
     end
     socket.call_broadcast   = function(session_id, service_id, rpc, ...)
-        local send_len = socket.forward_broadcast(session_id, FlagMask.REQ, hive.id, service_id, rpc, ...)
+        local send_len = socket.forward_broadcast(session_id, FLAG_REQ, hive.id, service_id, rpc, ...)
         return self:on_call_router(rpc, send_len, ...)
     end
     socket.call_collect     = function(session_id, service_id, rpc, ...)
-        local send_len = socket.forward_broadcast(session_id, FlagMask.REQ, hive.id, service_id, rpc, ...)
+        local send_len = socket.forward_broadcast(session_id, FLAG_REQ, hive.id, service_id, rpc, ...)
         return self:on_call_router(rpc, send_len, ...)
     end
     socket.on_error         = function(token, err)
@@ -183,7 +186,7 @@ function RpcClient:on_socket_rpc(socket, session_id, rpc_flag, source, rpc, ...)
     if rpc == "on_forward_error" then
         return self:on_forward_error(session_id, ...)
     end
-    if session_id == 0 or rpc_flag == FlagMask.REQ then
+    if session_id == 0 or rpc_flag == FLAG_REQ then
         local btime = hive.clock_ms
         local function dispatch_rpc_message(...)
             local _<close>  = heval(rpc)
@@ -244,7 +247,7 @@ end
 --直接发送接口
 function RpcClient:send(rpc, ...)
     if self.alive then
-        self.socket.call_rpc(0, FlagMask.REQ, rpc, ...)
+        self.socket.call_rpc(0, FLAG_REQ, rpc, ...)
         return true
     end
     return false, "socket not connected"
@@ -254,7 +257,7 @@ end
 function RpcClient:call(rpc, ...)
     if self.alive then
         local session_id = thread_mgr:build_session_id()
-        if self.socket.call_rpc(session_id, FlagMask.REQ, rpc, ...) then
+        if self.socket.call_rpc(session_id, FLAG_REQ, rpc, ...) then
             return thread_mgr:yield(session_id, rpc, NetwkTime.RPC_CALL_TIMEOUT)
         end
     end
