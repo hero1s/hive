@@ -113,6 +113,11 @@ function DBIndexMgr:build_dbindex(rebuild)
         for _, v in ipairs(conf.keys) do
             index.key[v] = 1
         end
+        --检测是否创建过索引
+        if mongo_agent:check_indexes(index.key, table_name, db_name, false) then
+            log_info("[DBIndexMgr][build_index] db[{}],table[{}],key[{}] is exist index", db_name, table_name, index.name)
+            goto continue
+        end
         local query    = { table_name, { index } }
         local ok, code = mongo_agent:create_indexes(query, 1, db_name)
         if check_success(code, ok) then

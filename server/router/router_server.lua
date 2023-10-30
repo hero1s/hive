@@ -115,7 +115,7 @@ function RouterServer:rpc_set_player_service(client, player_id, sid, login)
     luabus.set_player_service(player_id, sid, login)
 end
 
-function RpcServer:rpc_query_player_service(client, player_id, service_id)
+function RouterServer:rpc_query_player_service(client, player_id, service_id)
     return luabus.find_player_sid(player_id, service_id)
 end
 
