@@ -27,6 +27,7 @@ struct lua_socket_node final
 	bool can_send() { return m_mgr->can_send(m_token); }
 
 	int forward_target(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id,uint32_t target);
+	int forward_player(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id, uint16_t service_id, uint32_t player_id);
 	int forward_hash(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id, uint16_t service_id,uint16_t hash);
 
 	template <rpc_type forward_method>
@@ -39,7 +40,7 @@ struct lua_socket_node final
 			header.rpc_flag = flag;
 			header.source_id = source_id;
 			header.msg_id = (uint8_t)forward_method;
-			header.target_id = service_id;
+			header.target_sid = service_id;
 			header.len = data_len + sizeof(router_header);
 			sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
 			auto send_len = m_mgr->sendv(m_token, items, _countof(items));

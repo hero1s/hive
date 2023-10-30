@@ -21,6 +21,10 @@ public:
 	void set_rpc_key(std::string key);
 	const std::string get_rpc_key();
 
+	//Íæ¼ÒÂ·ÓÉ
+	void set_player_service(uint32_t player_id, uint32_t sid, uint8_t login);
+	uint32_t find_player_sid(uint32_t player_id, uint16_t service_id);
+	void clean_player_sid(uint32_t sid);
 private:
 	stdsptr<kit_state> m_luakit = nullptr;
 	stdsptr<socket_mgr> m_mgr;

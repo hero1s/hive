@@ -56,13 +56,13 @@ namespace lcodec {
                 body = (uint8_t*)lua_tolstring(L, index + 1, len);
             }
             m_buf->write<uint8_t>((0x80 | opcode));
-            if (*len < 126) {
+            if (*len < 0x7e) {
                 m_buf->write<uint8_t>(*len);
-            } else if (*len < 0xffff) {
-                m_buf->write<uint8_t>(126);
+            } else if (*len <= 0xffff) {
+                m_buf->write<uint8_t>(0x7e);
                 m_buf->write<uint16_t>(byteswap2(*len));
             } else {
-                m_buf->write<uint8_t>(127);
+                m_buf->write<uint8_t>(0x7f);
                 m_buf->write<uint64_t>(byteswap8(*len));
             }
             m_buf->push_data(body, *len);

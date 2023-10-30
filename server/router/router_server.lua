@@ -22,6 +22,8 @@ prop:accessor("change", false)
 function RouterServer:__init()
     self:setup()
     event_mgr:add_listener(self, "rpc_sync_router_info")
+    event_mgr:add_listener(self, "rpc_set_player_service")
+    event_mgr:add_listener(self, "rpc_query_player_service")
 
     timer_mgr:loop(PeriodTime.MINUTE_MS, function()
         self:sync_all_node_info()
@@ -46,6 +48,7 @@ function RouterServer:on_client_error(client, client_token, err)
     local master_id = luabus.map_token(client.id, 0)
     self:update_router_node_info(client, 0)
     log_info("[RouterServer][on_client_error] {} lost: {},master:{}", client.name, err, id2nick(master_id))
+    luabus.clean_player_sid(client.id)
 end
 
 --accept事件
@@ -105,6 +108,15 @@ function RouterServer:rpc_sync_router_info(router_id, target_ids, status)
     for _, id in pairs(target_ids) do
         luabus.map_router_node(router_id, id, status)
     end
+end
+
+function RouterServer:rpc_set_player_service(client, player_id, sid, login)
+    log_info("[RpcServer][rpc_set_player_service] player_id:{},sid:{},login:{}", player_id, sid, login)
+    luabus.set_player_service(player_id, sid, login)
+end
+
+function RpcServer:rpc_query_player_service(client, player_id, service_id)
+    return luabus.find_player_sid(player_id, service_id)
 end
 
 -- 会话信息

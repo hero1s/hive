@@ -120,7 +120,7 @@ void socket_router::flush_hash_node(uint32_t service_id) {
 }
 
 bool socket_router::do_forward_target(router_header* header, char* data, size_t data_len, std::string& error, bool router) {
-	uint64_t target_id = header->target_id;
+	uint64_t target_id = header->target_sid;
 	uint32_t service_id = get_service_id(target_id);
 	auto& services = m_services[service_id];
 	auto pTarget = services.get_target(target_id);
@@ -134,8 +134,24 @@ bool socket_router::do_forward_target(router_header* header, char* data, size_t 
 	return true;
 }
 
+bool socket_router::do_forward_player(router_header* header, char* data, size_t data_len, std::string& error, bool router) {
+	uint32_t service_id = header->target_sid;
+	uint32_t player_id = header->target_pid;
+	uint32_t target_id = find_player_sid(player_id, service_id);
+	auto& services = m_services[service_id];
+	auto pTarget = services.get_target(target_id);
+	if (pTarget == nullptr) {
+		error = fmt::format("router[{}] forward-player not find,target:{}", cur_index(), get_service_nick(target_id));
+		return router ? false : do_forward_router(header, data, data_len, error, rpc_type::forward_target, target_id, 0);
+	}
+	header->msg_id = (uint8_t)rpc_type::remote_call;
+	sendv_item items[] = { {header, sizeof(router_header)}, {data, data_len} };
+	m_mgr->sendv(pTarget->token, items, _countof(items));
+	return true;
+}
+
 bool socket_router::do_forward_master(router_header* header, char* data, size_t data_len, std::string& error, bool router) {
-	uint32_t service_id = header->target_id;
+	uint32_t service_id = header->target_sid;
 	if (service_id >= m_services.size()) {
 		error = fmt::format("router[{}] forward-master not decode", cur_index());
 		return false;
@@ -152,7 +168,7 @@ bool socket_router::do_forward_master(router_header* header, char* data, size_t 
 }
 
 bool socket_router::do_forward_broadcast(router_header* header, int source, char* data, size_t data_len, size_t& broadcast_num) {
-	uint32_t service_id = header->target_id;
+	uint32_t service_id = header->target_sid;
 	if (service_id >= m_services.size())
 		return false;
 
@@ -170,8 +186,8 @@ bool socket_router::do_forward_broadcast(router_header* header, int source, char
 }
 
 bool socket_router::do_forward_hash(router_header* header, char* data, size_t data_len, std::string& error, bool router) {
-	uint16_t hash = header->target_id & 0xffff;
-	uint16_t service_id = header->target_id >> 16 & 0xffff;
+	uint16_t hash = header->target_pid;
+	uint16_t service_id = header->target_sid;
 	if (service_id >= m_services.size()) {
 		error = fmt::format("router[{}] forward-hash not decode group", cur_index());
 		return false;
@@ -210,6 +226,35 @@ bool socket_router::do_forward_router(router_header* header, char* data, size_t 
 	}
 	error += fmt::format(" | all router is disconnect");
 	return false;
+}
+
+//玩家路由
+void socket_router::set_player_service(uint32_t player_id, uint32_t sid, uint8_t login) {
+	auto service_id = get_service_id(sid);
+	if (service_id >= m_players.size()) {		
+		return;
+	}
+	auto& players = m_players[service_id];
+	if (login == 0) {
+		players.set_player_service(player_id, 0);
+	} else {
+		players.set_player_service(player_id, sid);
+	}	
+}
+uint32_t socket_router::find_player_sid(uint32_t player_id, uint16_t service_id) {
+	if (service_id >= m_players.size()) {
+		return 0;
+	}
+	auto& players = m_players[service_id];
+	return players.find_player_sid(player_id);
+}
+void socket_router::clean_player_sid(uint32_t sid) {
+	auto service_id = get_service_id(sid);
+	if (service_id >= m_players.size()) {
+		return;
+	}
+	auto& players = m_players[service_id];
+	players.clean_sid(sid);
 }
 
 //轮流负载转发
