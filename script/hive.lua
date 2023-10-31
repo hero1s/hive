@@ -138,3 +138,9 @@ function hive.make_channel(title, timeout)
     local Channel = import("feature/channel.lua")
     return Channel(title, timeout or 1000)
 end
+
+--注册消息
+function hive.register_cmd_listener(doer, cmd_id, callback)
+    local protobuf_mgr = hive.get("protobuf_mgr")
+    protobuf_mgr:register(doer, cmd_id, callback)
+end

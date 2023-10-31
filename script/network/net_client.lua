@@ -1,24 +1,25 @@
-local log_err      = logger.err
-local hxpcall      = hive.xpcall
-local b64_encode   = crypt.b64_encode
-local b64_decode   = crypt.b64_decode
-local lz4_encode   = crypt.lz4_encode
-local lz4_decode   = crypt.lz4_decode
-local eproto_type  = luabus.eproto_type
+local log_err          = logger.err
+local hxpcall          = hive.xpcall
+local b64_encode       = crypt.b64_encode
+local b64_decode       = crypt.b64_decode
+local lz4_encode       = crypt.lz4_encode
+local lz4_decode       = crypt.lz4_decode
+local eproto_type      = luabus.eproto_type
 
-local proxy_agent  = hive.get("proxy_agent")
-local thread_mgr   = hive.get("thread_mgr")
-local protobuf_mgr = hive.get("protobuf_mgr")
-local heval        = hive.eval
+local proxy_agent      = hive.get("proxy_agent")
+local thread_mgr       = hive.get("thread_mgr")
+local protobuf_mgr     = hive.get("protobuf_mgr")
+local heval            = hive.eval
 
-local FlagMask     = enum("FlagMask")
-local NetwkTime    = enum("NetwkTime")
+local FlagMask         = enum("FlagMask")
+local CONNECT_TIMEOUT  = hive.enum("NetwkTime", "CONNECT_TIMEOUT")
+local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 
-local out_press    = environ.status("HIVE_OUT_PRESS")
-local out_encrypt  = environ.status("HIVE_OUT_ENCRYPT")
+local out_press        = environ.status("HIVE_OUT_PRESS")
+local out_encrypt      = environ.status("HIVE_OUT_ENCRYPT")
 
-local NetClient    = class()
-local prop         = property(NetClient)
+local NetClient        = class()
+local prop             = property(NetClient)
 prop:reader("ip", nil)
 prop:reader("port", nil)
 prop:reader("alive", false)
@@ -41,7 +42,7 @@ function NetClient:connect(block)
     if self.socket then
         return true
     end
-    local socket, cerr = luabus.connect(self.ip, self.port, NetwkTime.CONNECT_TIMEOUT, self.proto_type)
+    local socket, cerr = luabus.connect(self.ip, self.port, CONNECT_TIMEOUT, self.proto_type)
     if not socket then
         log_err("[NetClient][connect] failed to connect: {}:{} type={}, err={}", self.ip, self.port, self.proto_type, cerr)
         return false, cerr
@@ -77,7 +78,7 @@ function NetClient:connect(block)
     self.socket         = socket
     --阻塞模式挂起
     if block_id then
-        return thread_mgr:yield(block_id, "connect", NetwkTime.CONNECT_TIMEOUT)
+        return thread_mgr:yield(block_id, "connect", CONNECT_TIMEOUT)
     end
     return true
 end
@@ -189,7 +190,7 @@ function NetClient:call_pack(cmd_id, data)
     if not self:write(cmd_id, data, session_id, FlagMask.REQ) then
         return false
     end
-    return thread_mgr:yield(session_id, cmd_id, NetwkTime.RPC_CALL_TIMEOUT)
+    return thread_mgr:yield(session_id, cmd_id, RPC_CALL_TIMEOUT)
 end
 
 -- 等待远程调用

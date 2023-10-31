@@ -161,7 +161,7 @@ end
 function ProtobufMgr:register(doer, cmd_id, callback)
     local proto_name = self.pb_indexs[cmd_id]
     if not proto_name then
-        log_warn("[ProtobufMgr][register] proto_name: [{}] can't find!", cmd_id)
+        log_err("[ProtobufMgr][register] proto_name: [{}] can't find!", cmd_id)
         return
     end
     event_mgr:add_cmd_listener(doer, cmd_id, callback)

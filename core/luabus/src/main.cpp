@@ -92,6 +92,7 @@ namespace luabus {
             "call_text",&lua_socket_node::call_text,
             "call_data", &lua_socket_node::call_data,
             "forward_hash", &lua_socket_node::forward_hash,
+            "forward_player",&lua_socket_node::forward_player,
             "forward_target", &lua_socket_node::forward_target,
             "forward_master", &lua_socket_node::forward_by_group<rpc_type::forward_master>,
             "forward_broadcast", &lua_socket_node::forward_by_group < rpc_type::forward_broadcast>,

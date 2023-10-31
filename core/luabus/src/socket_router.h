@@ -12,8 +12,8 @@ enum class rpc_type : uint8_t {
 	forward_master,
 	forward_broadcast,
 	forward_hash,
-	forward_router,
 	forward_player,
+	forward_router,//must be max 	
 };
 
 const int MAX_SERVICE_GROUP = (UCHAR_MAX + 1);

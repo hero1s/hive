@@ -1,26 +1,27 @@
 --rpc_server.lua
-local next        = next
-local pairs       = pairs
-local tunpack     = table.unpack
-local log_err     = logger.err
-local log_info    = logger.info
-local hxpcall     = hive.xpcall
-local signal_quit = signal.quit
+local next                = next
+local pairs               = pairs
+local tunpack             = table.unpack
+local log_err             = logger.err
+local log_info            = logger.info
+local hxpcall             = hive.xpcall
+local signal_quit         = signal.quit
 
-local FLAG_REQ    = hive.enum("FlagMask", "REQ")
-local FLAG_RES    = hive.enum("FlagMask", "RES")
-local SUCCESS     = hive.enum("KernCode", "SUCCESS")
+local FLAG_REQ            = hive.enum("FlagMask", "REQ")
+local FLAG_RES            = hive.enum("FlagMask", "RES")
+local SUCCESS             = hive.enum("KernCode", "SUCCESS")
+local RPC_CALL_TIMEOUT    = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
+local RPCLINK_TIMEOUT     = hive.enum("NetwkTime", "RPCLINK_TIMEOUT")
+local RPC_PROCESS_TIMEOUT = hive.enum("NetwkTime", "RPC_PROCESS_TIMEOUT")
 
-local NetwkTime   = enum("NetwkTime")
+local event_mgr           = hive.get("event_mgr")
+local thread_mgr          = hive.get("thread_mgr")
+local proxy_agent         = hive.get("proxy_agent")
+local heval               = hive.eval
 
-local event_mgr   = hive.get("event_mgr")
-local thread_mgr  = hive.get("thread_mgr")
-local proxy_agent = hive.get("proxy_agent")
-local heval       = hive.eval
+local RpcServer           = singleton()
 
-local RpcServer   = singleton()
-
-local prop        = property(RpcServer)
+local prop                = property(RpcServer)
 prop:reader("ip", "")                     --监听ip
 prop:reader("port", 0)                    --监听端口
 prop:reader("clients", {})
@@ -64,7 +65,7 @@ function RpcServer:on_socket_rpc(client, rpc, session_id, rpc_flag, source, ...)
             local rpc_datas = event_mgr:notify_listener(rpc, client, ...)
             if session_id > 0 then
                 local cost_time = hive.clock_ms - btime
-                if cost_time > NetwkTime.RPC_PROCESS_TIMEOUT then
+                if cost_time > RPC_PROCESS_TIMEOUT then
                     log_err("[RpcServer][on_socket_rpc] rpc:{}, session:{},cost_time:{}", rpc, session_id, cost_time)
                 end
                 client.call_rpc(session_id, FLAG_RES, rpc, tunpack(rpc_datas))
@@ -92,7 +93,7 @@ end
 
 --accept事件
 function RpcServer:on_socket_accept(client)
-    client.set_timeout(NetwkTime.RPCLINK_TIMEOUT)
+    client.set_timeout(RPCLINK_TIMEOUT)
     self.clients[client.token] = client
 
     client.call_rpc            = function(session_id, rpc_flag, rpc, ...)
@@ -120,7 +121,7 @@ end
 function RpcServer:call(client, rpc, ...)
     local session_id = thread_mgr:build_session_id()
     if client.call_rpc(session_id, FLAG_REQ, rpc, ...) then
-        return thread_mgr:yield(session_id, rpc, NetwkTime.RPC_CALL_TIMEOUT)
+        return thread_mgr:yield(session_id, rpc, RPC_CALL_TIMEOUT)
     end
     return false, "rpc server send failed"
 end

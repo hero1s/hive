@@ -258,10 +258,10 @@ function RouterMgr:build_service_method(service, service_id)
             return obj:send_hash(service_id, hash_key, rpc, ...)
         end,
         ["call_%s_player"]   = function(obj, player_id, rpc, ...)
-            return obj:call_hash(service_id, player_id, rpc, ...)
+            return obj:call_player(service_id, player_id, rpc, ...)
         end,
         ["send_%s_player"]   = function(obj, player_id, rpc, ...)
-            return obj:send_hash(service_id, player_id, rpc, ...)
+            return obj:send_player(service_id, player_id, rpc, ...)
         end,
         ["call_%s_random"]   = function(obj, rpc, ...)
             return obj:call_hash(service_id, mrandom(), rpc, ...)

@@ -1,28 +1,29 @@
 -- rpc_client.lua
-local jumphash       = codec.jumphash
-local tunpack        = table.unpack
-local tpack          = table.pack
-local log_err        = logger.err
-local log_info       = logger.info
-local hxpcall        = hive.xpcall
+local jumphash            = codec.jumphash
+local tunpack             = table.unpack
+local tpack               = table.pack
+local log_err             = logger.err
+local log_info            = logger.info
+local hxpcall             = hive.xpcall
 
-local event_mgr      = hive.get("event_mgr")
-local thread_mgr     = hive.get("thread_mgr")
-local proxy_agent    = hive.get("proxy_agent")
-local timer_mgr      = hive.get("timer_mgr")
-local heval          = hive.eval
-local id2nick        = service.id2nick
+local event_mgr           = hive.get("event_mgr")
+local thread_mgr          = hive.get("thread_mgr")
+local proxy_agent         = hive.get("proxy_agent")
+local timer_mgr           = hive.get("timer_mgr")
+local heval               = hive.eval
+local id2nick             = service.id2nick
 
-local FLAG_REQ       = hive.enum("FlagMask", "REQ")
-local FLAG_RES       = hive.enum("FlagMask", "RES")
-local SUCCESS        = hive.enum("KernCode", "SUCCESS")
-local NetwkTime      = enum("NetwkTime")
+local FLAG_REQ            = hive.enum("FlagMask", "REQ")
+local FLAG_RES            = hive.enum("FlagMask", "RES")
+local SUCCESS             = hive.enum("KernCode", "SUCCESS")
+local SECOND_MS           = hive.enum("PeriodTime", "SECOND_MS")
+local HEARTBEAT_TIME      = hive.enum("NetwkTime", "HEARTBEAT_TIME")
+local RPC_CALL_TIMEOUT    = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
+local CONNECT_TIMEOUT     = hive.enum("NetwkTime", "CONNECT_TIMEOUT")
+local RPC_PROCESS_TIMEOUT = hive.enum("NetwkTime", "RPC_PROCESS_TIMEOUT")
 
-local SECOND_MS      = hive.enum("PeriodTime", "SECOND_MS")
-local HEARTBEAT_TIME = hive.enum("NetwkTime", "HEARTBEAT_TIME")
-
-local RpcClient      = class()
-local prop           = property(RpcClient)
+local RpcClient           = class()
+local prop                = property(RpcClient)
 prop:reader("ip", nil)
 prop:reader("port", nil)
 prop:reader("alive", false)
@@ -80,7 +81,7 @@ function RpcClient:connect()
         return true
     end
     --开始连接
-    local socket, cerr = luabus.connect(self.ip, self.port, NetwkTime.CONNECT_TIMEOUT)
+    local socket, cerr = luabus.connect(self.ip, self.port, CONNECT_TIMEOUT)
     if not socket then
         log_err("[RpcClient][connect] failed to connect: {}:{} err={}", self.ip, self.port, cerr)
         return false, cerr
@@ -193,7 +194,7 @@ function RpcClient:on_socket_rpc(socket, session_id, rpc_flag, source, rpc, ...)
             local rpc_datas = event_mgr:notify_listener(rpc, ...)
             if session_id > 0 then
                 local cost_time = hive.clock_ms - btime
-                if cost_time > NetwkTime.RPC_PROCESS_TIMEOUT then
+                if cost_time > RPC_PROCESS_TIMEOUT then
                     log_err("[RpcClient][on_socket_rpc] rpc:{}, session:{},cost_time:{}", rpc, session_id, cost_time)
                 end
                 socket.callback_target(session_id, source, rpc, tunpack(rpc_datas))
@@ -234,7 +235,7 @@ function RpcClient:forward_socket(method, rpc, session_id, ...)
     if self.alive then
         if self.socket[method](session_id, ...) then
             if session_id > 0 then
-                return thread_mgr:yield(session_id, rpc, NetwkTime.RPC_CALL_TIMEOUT)
+                return thread_mgr:yield(session_id, rpc, RPC_CALL_TIMEOUT)
             end
             return true, SUCCESS
         end
@@ -258,7 +259,7 @@ function RpcClient:call(rpc, ...)
     if self.alive then
         local session_id = thread_mgr:build_session_id()
         if self.socket.call_rpc(session_id, FLAG_REQ, rpc, ...) then
-            return thread_mgr:yield(session_id, rpc, NetwkTime.RPC_CALL_TIMEOUT)
+            return thread_mgr:yield(session_id, rpc, RPC_CALL_TIMEOUT)
         end
     end
     return false, "socket not connected"
