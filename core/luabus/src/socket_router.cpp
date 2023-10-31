@@ -138,6 +138,10 @@ bool socket_router::do_forward_player(router_header* header, char* data, size_t 
 	uint32_t service_id = header->target_sid;
 	uint32_t player_id = header->target_pid;
 	uint32_t target_id = find_player_sid(player_id, service_id);
+	if (target_id == 0) {
+		error = fmt::format("router[{}] forward-player not find player:{} service:{}", cur_index(), player_id, get_service_name(service_id));
+		return false;
+	}
 	auto& services = m_services[service_id];
 	auto pTarget = services.get_target(target_id);
 	if (pTarget == nullptr) {
