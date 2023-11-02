@@ -91,6 +91,22 @@ namespace lbson {
             return lua_gettop(L);
         }
 
+        int pairs(lua_State* L) {
+            m_buffer.clean();
+            size_t data_len = 0;
+            bson_value* value = lua_to_object<bson_value*>(L, -1);
+            if (value == nullptr) {
+                char* data = (char*)encode_pairs(L, &data_len);
+                value = new bson_value(bson_type::BSON_DOCUMENT, data, data_len);
+            } else {
+                lua_pop(L, 1);
+                char* data = (char*)encode_pairs(L, &data_len);
+                value->str = string(data, data_len);
+            }
+            lua_push_object(L, value);
+            return 1;
+        }
+
         uint8_t* encode_pairs(lua_State* L, size_t* data_len) {
             int n = lua_gettop(L);
             if (n < 2 || n % 2 != 0) {
