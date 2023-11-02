@@ -1,43 +1,45 @@
 --mongo.lua
-local Socket        = import("driver/socket.lua")
-local log_warn      = logger.warn
-local log_err       = logger.err
-local log_info      = logger.info
-local qhash         = hive.hash
-local hdefer        = hive.defer
-local makechan      = hive.make_channel
-local tinsert       = table.insert
-local tdelete       = table_ext.delete
-local tjoin         = table_ext.join
-local mrandom       = math_ext.random
-local ssub          = string.sub
-local sgsub         = string.gsub
-local sformat       = string.format
-local sgmatch       = string.gmatch
-local mtointeger    = math.tointeger
-local lmd5          = crypt.md5
-local lsha1         = crypt.sha1
-local lrandomkey    = crypt.randomkey
-local lb64encode    = crypt.b64_encode
-local lb64decode    = crypt.b64_decode
-local lhmac_sha1    = crypt.hmac_sha1
-local lxor_byte     = crypt.xor_byte
-local lclock_ms     = timer.clock_ms
+local Socket       = import("driver/socket.lua")
+local log_warn     = logger.warn
+local log_err      = logger.err
+local log_info     = logger.info
+local qhash        = hive.hash
+local hdefer       = hive.defer
+local makechan     = hive.make_channel
+local tinsert      = table.insert
+local tunpack      = table.unpack
+local tdelete      = table_ext.delete
+local tjoin        = table_ext.join
+local mrandom      = math_ext.random
+local ssub         = string.sub
+local sgsub        = string.gsub
+local sformat      = string.format
+local sgmatch      = string.gmatch
+local mtointeger   = math.tointeger
+local lmd5         = crypt.md5
+local lsha1        = crypt.sha1
+local bsonpairs    = bson.pairs
+local lrandomkey   = crypt.randomkey
+local lb64encode   = crypt.b64_encode
+local lb64decode   = crypt.b64_decode
+local lhmac_sha1   = crypt.hmac_sha1
+local lxor_byte    = crypt.xor_byte
+local lclock_ms    = timer.clock_ms
 
-local timer_mgr     = hive.get("timer_mgr")
-local event_mgr     = hive.get("event_mgr")
-local update_mgr    = hive.get("update_mgr")
-local thread_mgr    = hive.get("thread_mgr")
+local timer_mgr    = hive.get("timer_mgr")
+local event_mgr    = hive.get("event_mgr")
+local update_mgr   = hive.get("update_mgr")
+local thread_mgr   = hive.get("thread_mgr")
 
-local SUCCESS       = hive.enum("KernCode", "SUCCESS")
-local FAST_MS       = hive.enum("PeriodTime", "FAST_MS")
-local SECOND_MS     = hive.enum("PeriodTime", "SECOND_MS")
-local SECOND_10_MS  = hive.enum("PeriodTime", "SECOND_10_MS")
-local DB_TIMEOUT    = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
-local POOL_COUNT    = environ.number("HIVE_DB_POOL_COUNT", 3)
+local SUCCESS      = hive.enum("KernCode", "SUCCESS")
+local FAST_MS      = hive.enum("PeriodTime", "FAST_MS")
+local SECOND_MS    = hive.enum("PeriodTime", "SECOND_MS")
+local SECOND_10_MS = hive.enum("PeriodTime", "SECOND_10_MS")
+local DB_TIMEOUT   = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
+local POOL_COUNT   = environ.number("HIVE_DB_POOL_COUNT", 3)
 
-local MongoDB       = class()
-local prop          = property(MongoDB)
+local MongoDB      = class()
+local prop         = property(MongoDB)
 prop:reader("name", "")         --dbname
 prop:reader("user", nil)        --user
 prop:reader("passwd", nil)      --passwd
@@ -45,6 +47,7 @@ prop:reader("salted_pass", nil) --salted_pass
 prop:reader("executer", nil)    --执行者
 prop:reader("timer_id", nil)    --timer_id
 prop:reader("cursor_id", nil)   --cursor_id
+prop:reader("sort_doc", nil)    --sort_doc
 prop:reader("connections", {})  --connections
 prop:reader("sessions", {})     --sessions
 prop:reader("readpref", { mode = "primary" })    --readPreference
@@ -57,6 +60,7 @@ function MongoDB:__init(conf)
     self.user      = conf.user
     self.passwd    = conf.passwd
     self.name      = conf.db
+    self.sort_doc  = bson.doc()
     self.cursor_id = bson.int64(0)
     self.codec     = bson.mongocodec()
     self:set_options(conf.opts)
@@ -341,8 +345,12 @@ function MongoDB:get_indexes(co_name)
 end
 
 -- 参数说明
--- indexes={{key={open_id=1,platform_id=1},name="open_id-platform_id",unique=true}, }
+-- indexes: {{key={open_id=1}, name="open_id", unique=true} }
+-- indexes: {{key={open_id,1,platform_id,1}, name="open_id-platform_id", unique=true} }
 function MongoDB:create_indexes(co_name, indexes)
+    for _, index in pairs(indexes) do
+        index.key = self:format_pairs(index.key)
+    end
     local succ, doc = self:runCommand("createIndexes", co_name, "indexes", indexes)
     if not succ then
         return succ, doc
@@ -408,9 +416,24 @@ function MongoDB:find_one(co_name, query, projection)
     return succ
 end
 
+function MongoDB:format_pairs(args, doc)
+    if args then
+        if type(next(args)) == "string" then
+            return args
+        end
+        if doc then
+            tinsert(args, doc)
+        end
+        return bsonpairs(tunpack(args))
+    end
+end
+
+-- 参数说明
+--sort: {k1=1} / {k1,1,k2,-1,k3,-1}
 function MongoDB:find(co_name, query, projection, sortor, limit, skip)
-    local succ, reply = self:runCommand("find", co_name, "$readPreference", self.readpref, "filter",
-                                        query, "projection", projection or {}, "sort", sortor or {}, "limit", limit or 100, "skip", skip or 0)
+    local fsortor     = self:format_pairs(sortor, self.sort_doc)
+    local succ, reply = self:runCommand("find", co_name, "$readPreference", self.readpref, "filter", query,
+                                        "projection", projection or {}, "sort", fsortor or {}, "limit", limit or 100, "skip", skip or 0)
     if not succ then
         return succ, reply
     end

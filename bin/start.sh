@@ -16,5 +16,4 @@ fi
 ./hive ./conf/monitor.conf     --index=1  --host_ip=%hostIp%
 ./hive ./conf/dbsvr.conf       --index=1
 ./hive ./conf/cachesvr.conf    --index=1
-./hive ./conf/online.conf      --index=1
 ./hive ./conf/admin.conf       --index=1

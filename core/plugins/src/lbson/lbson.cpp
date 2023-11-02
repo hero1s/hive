@@ -10,6 +10,12 @@ namespace lbson {
     static int decode(lua_State* L) {
         return thread_bson.decode(L);
     }
+    static int pairs(lua_State* L) {
+        return thread_bson.pairs(L);
+    }
+    static bson_value* doc() {
+        return new bson_value(bson_type::BSON_DOCUMENT, "");
+    }
     static bson_value* int32(int32_t value) {
         return new bson_value(bson_type::BSON_INT64, value);
     }
@@ -46,7 +52,9 @@ namespace lbson {
         llbson.set_function("timestamp", timestamp);
         llbson.set_function("int32", int32);
         llbson.set_function("int64", int64);
+        llbson.set_function("pairs", pairs);
         llbson.set_function("date", date);
+        llbson.set_function("doc", doc);
         kit_state.new_class<bson_value>(
             "val", &bson_value::val,
             "str", &bson_value::str,

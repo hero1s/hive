@@ -1,33 +1,35 @@
 -- mongo_test.lua
-local log_debug     = logger.debug
+local log_debug = logger.debug
 
-local timer_mgr     = hive.get("timer_mgr")
+local timer_mgr = hive.get("timer_mgr")
 
-local MongoMgr      = import("store/mongo_mgr.lua")
-local mongo_mgr     = MongoMgr()
+local MongoMgr  = import("store/mongo_mgr.lua")
+local mongo_mgr = MongoMgr()
 
 timer_mgr:once(2000, function()
-    local code, count = mongo_mgr:count("default", "test_mongo_1", {pid = 123456})
+    local code, count = mongo_mgr:count("default", "test_mongo_1", { pid = 123456, uid = 1 })
     log_debug("db count code: {}, count = {}", code, count)
-    local icode, ierr = mongo_mgr:insert("default", "test_mongo_1", {pid = 123456, data = {a =1, b=2}})
+    local icode, ierr = mongo_mgr:insert("default", "test_mongo_1", { pid = 123456, uid = 2, data = { a = 1, b = 2 } })
     log_debug("db insert code: {}, err = {}", icode, ierr)
-    icode, ierr = mongo_mgr:insert("default", "test_mongo_1", {pid = 123457, data = {a =1, b=2}})
+    icode, ierr = mongo_mgr:insert("default", "test_mongo_1", { pid = 123457, uid = 0, data = { a = 1, b = 2 } })
     log_debug("db insert code: {}, err = {}", icode, ierr)
-    local fcode, res = mongo_mgr:find("default", "test_mongo_1", {}, {_id = 0})
+    local fcode, res = mongo_mgr:find("default", "test_mongo_1", {}, { _id = 0 })
     log_debug("db find code: {}, res = {}", fcode, res)
-    local f1code, f1res = mongo_mgr:find_one("default", "test_mongo_1", {pid = 123456}, {_id = 0})
+    local f1code, f1res = mongo_mgr:find_one("default", "test_mongo_1", { pid = 123456 }, { _id = 0 })
     log_debug("db find code: {}, res = {}", f1code, f1res)
-    local ucode, uerr = mongo_mgr:update("default", "test_mongo_1", {pid = 123458, data = {a =1, b=4}}, {pid = 123457})
+    local ucode, uerr = mongo_mgr:update("default", "test_mongo_1", { pid = 123458, data = { a = 1, b = 4 } }, { pid = 123457 })
     log_debug("db update code: {}, err = {}", ucode, uerr)
-    code, count = mongo_mgr:count("default", "test_mongo_1", {pid = 123456})
+    code, count = mongo_mgr:count("default", "test_mongo_1", { pid = 123456 })
     log_debug("db count code: {}, count = {}", code, count)
-    icode, ierr = mongo_mgr:create_indexes("default", "test_mongo_2", {{key={userid=1},name="test_uid", unique = true}})
+    icode, ierr = mongo_mgr:create_indexes("default", "test_mongo_2", { { key = { userid = 1 }, name = "test_uid", unique = true } })
     log_debug("db create_indexes code: {}, err = {}", icode, ierr)
+    icode, ierr = mongo_mgr:create_indexes("default", "test_mongo_2", { { key = { "userid", 1, "pid", -1 }, name = "test_uid2", unique = true } })
+    log_debug("db create_indexes2 code: {}, err = {}", icode, ierr)
     icode, ierr = mongo_mgr:execute("default", "listIndexes", "test_mongo_2")
     log_debug("db listIndexes code: {}, err = {}", icode, ierr)
     icode, ierr = mongo_mgr:drop_indexes("default", "test_mongo_2", "test_uid")
     log_debug("db drop_indexes code: {}, err = {}", icode, ierr)
-    fcode, res = mongo_mgr:find("default", "test_mongo_1", {}, {_id = 0}, {pid = 1})
+    fcode, res = mongo_mgr:find("default", "test_mongo_1", {}, { _id = 0 }, { "uid", -1, "pid", 1, })
     for _, v in pairs(res) do
         log_debug("db find sort code: {}, v = {}", fcode, v)
     end

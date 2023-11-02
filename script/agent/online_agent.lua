@@ -57,7 +57,11 @@ end
 
 function OnlineAgent:query_player(player_id)
     local service_id = service.name2sid("lobby")
-    return router_mgr:call_router(nil, "rpc_query_player_service", player_id, service_id)
+    local router     = router_mgr:hash_router(player_id)
+    if router then
+        return router:call("rpc_query_player_service", player_id, service_id)
+    end
+    return false, "router not connected"
 end
 
 --有序

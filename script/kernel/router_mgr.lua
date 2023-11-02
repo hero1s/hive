@@ -196,6 +196,7 @@ function RouterMgr:call_router(router_id, rpc, ...)
     if router then
         return router:call(rpc, ...)
     end
+    return false, "router not connected"
 end
 
 --发送给路由
