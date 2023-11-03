@@ -17,7 +17,7 @@ local GMType        = enum("GMType")
 
 local GMAgent       = singleton()
 local prop          = property(GMAgent)
-prop:accessor("command_list", {})
+prop:reader("command_list", {})
 
 function GMAgent:__init()
     --注册gm事件分发
@@ -33,7 +33,7 @@ function GMAgent:insert_command(cmd_list, listener)
             event_mgr:add_listener(listener, v.name)
         end
     end
-    local default_groups = { "全局未分组", "玩家未分组", "服务未分组", "业务未分组"}
+    local default_groups = { "全局未分组", "玩家未分组", "服务未分组", "业务未分组" }
     for _, cmd in pairs(cmd_list) do
         if not cmd.gm_type then
             cmd.gm_type = GMType.PLAYER
@@ -42,6 +42,10 @@ function GMAgent:insert_command(cmd_list, listener)
             cmd.group = default_groups[cmd.gm_type + 1]
         end
         self.command_list[cmd.name] = cmd
+    end
+
+    if monitor:exist_service("admin") then
+        self:report_command()
     end
 end
 

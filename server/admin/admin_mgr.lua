@@ -24,7 +24,6 @@ local AdminMgr      = singleton()
 local prop          = property(AdminMgr)
 prop:reader("http_server", nil)
 prop:reader("deploy", "local")
-prop:reader("services", {})
 
 function AdminMgr:__init()
     --监听事件
@@ -62,14 +61,9 @@ end
 ---------------------------------------------------------------------
 --注册GM
 function AdminMgr:rpc_register_command(command_list, service_id)
-    --同服务只执行一次
-    if self.services[service_id] then
-        return SUCCESS
-    end
     for _, cmd in pairs(command_list) do
         cmdline:register_command(cmd.name, cmd.args, cmd.desc, cmd.comment or "", cmd.gm_type, service_id, service.sid2name(service_id), cmd.group)
     end
-    self.services[service_id] = true
     return SUCCESS
 end
 
