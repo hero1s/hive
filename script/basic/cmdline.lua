@@ -78,7 +78,6 @@ end
 --command = "player_id|integer aa|table bb|string dd|number"
 function Cmdline:register_command(name, command, desc, comment, cmd_type, service, service_name, group)
     if self.command_defines[name] then
-        log_warn("[Cmdline][register_command] command ({}) repeat registered!,from:{}", name, service_name)
         return false
     end
     local def_args   = {}
