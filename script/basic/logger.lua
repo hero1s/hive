@@ -25,10 +25,11 @@ function logger.init()
     local log_size            = environ.number("HIVE_LOG_SIZE", 50 * 1024 * 1024)
     local maxdays             = environ.number("HIVE_LOG_DAYS", 7)
     log_lvl                   = environ.number("HIVE_LOG_LVL", 1)
+    local wlvl                = environ.number("HIVE_WEBHOOK_LVL", LOG_LEVEL.ERROR)
 
     log.set_max_logsize(log_size)
     log.set_clean_time(maxdays * 24 * 3600)
-    log.option(path, service_name, index, rolltype);
+    log.option(path, service_name, index, rolltype, wlvl);
     --设置日志过滤
     logger.filter(log_lvl)
     --添加输出目标

@@ -33,7 +33,7 @@ namespace logger {
     }
 
     int zformat(lua_State* L, log_level lvl, cstring& tag, cstring& feature, cstring& msg) {
-        if (lvl > log_level::LOG_LEVEL_WARN) {
+        if (log_service::instance()->need_hook(lvl) ) {
             lua_pushlstring(L, msg.c_str(), msg.size());
             log_service::instance()->output(lvl, msg, tag, feature);
             return 1;
@@ -119,8 +119,8 @@ namespace logger {
         lualog.set_function("ignore_prefix", [](vstring feature, bool prefix) { log_service::instance()->ignore_prefix(feature, prefix); });
         lualog.set_function("ignore_suffix", [](vstring feature, bool suffix) { log_service::instance()->ignore_suffix(feature, suffix); });
         lualog.set_function("ignore_def", [](vstring feature, bool def) { log_service::instance()->ignore_def(feature, def); });
-        lualog.set_function("option", [](vstring log_path, vstring service, vstring index, rolling_type type){
-            log_service::instance()->option(log_path, service, index, type);
+        lualog.set_function("option", [](vstring log_path, vstring service, vstring index, rolling_type type, log_level hook_lv){
+            log_service::instance()->option(log_path, service, index, type, hook_lv);
         });
         return lualog;
     }

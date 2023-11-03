@@ -35,7 +35,7 @@ template <class T>
 using sptr = std::shared_ptr<T>;
 
 namespace logger {
-    enum class log_level {
+    enum class log_level : uint8_t {
         LOG_LEVEL_TRACE = 1,
         LOG_LEVEL_DEBUG,
         LOG_LEVEL_INFO,
@@ -353,8 +353,8 @@ namespace logger {
     public:
         ~log_service() { stop(); }
         void daemon(bool status) { log_daemon_ = status; }
-        void option(vstring log_path, vstring service, vstring index, rolling_type type) {
-            log_path_ = log_path, service_ = service; rolling_type_ = type;
+        void option(vstring log_path, vstring service, vstring index, rolling_type type, log_level hook_lv) {
+            log_path_ = log_path, service_ = service; rolling_type_ = type; hook_lv_ = hook_lv > log_level::LOG_LEVEL_INFO ? hook_lv_ : log_level::LOG_LEVEL_ERROR;
             log_path_.append(fmt::format("{}-{}", service, index));
         }
 
@@ -374,6 +374,7 @@ namespace logger {
 
         void set_max_logsize(size_t max_logsize) { max_logsize_ = max_logsize; }
         void set_clean_time(size_t clean_time) { clean_time_ = clean_time; }
+        bool need_hook(log_level lvl) { return lvl >= hook_lv_; }
 
         bool add_dest(vstring feature, vstring log_path) {
             std::unique_lock<spin_mutex> lock(mutex_);
@@ -573,6 +574,7 @@ namespace logger {
         spin_mutex      mutex_;
         log_filter      log_filter_;
         rolling_type    rolling_type_;
+        log_level       hook_lv_ = log_level::LOG_LEVEL_ERROR;
         std::thread     thread_;
         sstring         service_;
         sptr<log_dest>  std_dest_ = nullptr;
