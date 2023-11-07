@@ -170,6 +170,12 @@ function CacheMgr:delete(cache_obj, delay_time)
     cache_obj:set_expire_time(delay_time or mrandom(1000, 60000))
 end
 
+function CacheMgr:clear_obj(cache_obj)
+    self:set_dirty(cache_obj, false)
+    local cache_list = self.cache_lists[cache_obj.cache_name]
+    cache_list:set(cache_obj:get_primary_value(), nil)
+end
+
 function CacheMgr:save_cache(cache_obj, remove)
     thread_mgr:fork(function()
         self:set_dirty(cache_obj, false)
@@ -306,7 +312,13 @@ function CacheMgr:rpc_cache_delete(hive_id, req_data)
         log_err("[CacheMgr][rpc_cache_delete] cache obj not find! cache_name={},primary={}", cache_name, primary_key)
         return code
     end
-    self:delete(cache_obj)
+    local code = cache_obj:destory()
+    if check_failed(code) then
+        log_err("[CacheMgr][rpc_cache_delete] delete failed! cache_name={}, primary={}", cache_name, primary_key)
+        return CacheCode.CACHE_DELETE_FAILD
+    end
+    log_info("[CacheMgr][rpc_cache_delete] cache_name={}, primary={}", cache_name, primary_key)
+    self:clear_obj(cache_obj)
     return SUCCESS
 end
 
@@ -323,7 +335,7 @@ function CacheMgr:rpc_cache_flush(hive_id, req_data)
         log_err("[CacheMgr][rpc_cache_flush] cache obj not find! cache_name={},primary={}", cache_name, primary_key)
         return code
     end
-    self:delete(cache_obj, PeriodTime.MINUTE_30_MS)
+    self:delete(cache_obj, PeriodTime.MINUTE_MS)
     return SUCCESS
 end
 

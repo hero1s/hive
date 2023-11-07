@@ -53,7 +53,7 @@ function CacheObj:load()
     local query      = { [self.cache_key] = self.primary_value }
     local code, res  = mongo_mgr:find_one(self.db_name, self.cache_table, query, { _id = 0 })
     if check_failed(code) then
-        log_err("[CacheRow][load] failed: {}=> db: {}, table: {}", res, self.db_name, self.cache_table)
+        log_err("[CacheObj][load] failed: {}=> db: {}, table: {}", res, self.db_name, self.cache_table)
         return code
     end
     self.data    = res
@@ -133,6 +133,20 @@ function CacheObj:save_impl()
         self.active_tick  = hive.clock_ms
         return code
     end
+    return SUCCESS
+end
+
+--删除数据
+function CacheObj:destory()
+    local query     = { [self.cache_key] = self.primary_value }
+    local code, res = mongo_mgr:delete(self.db_name, self.cache_table, query, true)
+    if check_failed(code) then
+        log_err("[CacheObj][destory] failed: %s=> db: %s, table: %s", res, self.db_name, self.cache_table)
+        return code
+    end
+    self.data    = {}
+    self.holding = true
+    self.dirty   = false
     return SUCCESS
 end
 
