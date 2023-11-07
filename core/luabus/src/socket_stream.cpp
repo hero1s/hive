@@ -590,8 +590,7 @@ void socket_stream::dispatch_package(bool reset) {
 			}
 			size_t read_size = m_codec->get_packet_len();
 			// 数据包还没有收完整
-			if (read_size == 0) {
-				std::cout << "read_size is 0,package_size:" << package_size << std::endl;
+			if (read_size == 0) {				
 				return;
 			}					
 			// 接收缓冲读游标调整

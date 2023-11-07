@@ -403,7 +403,7 @@ function MongoDB:count(co_name, query, limit, skip)
 end
 
 function MongoDB:find_one(co_name, query, projection)
-    local succ, reply = self:runCommand("find", co_name, "$readPreference", self.readpref, "filter", query, "projection" or {}, projection, "limit", 1)
+    local succ, reply = self:runCommand("find", co_name, "filter", query, "projection" or {}, projection, "limit", 1)
     if not succ then
         return succ, reply
     end
@@ -432,7 +432,7 @@ end
 --sort: {k1=1} / {k1,1,k2,-1,k3,-1}
 function MongoDB:find(co_name, query, projection, sortor, limit, skip)
     local fsortor     = self:format_pairs(sortor, self.sort_doc)
-    local succ, reply = self:runCommand("find", co_name, "$readPreference", self.readpref, "filter", query,
+    local succ, reply = self:runCommand("find", co_name, "filter", query,
                                         "projection", projection or {}, "sort", fsortor or {}, "limit", limit or 100, "skip", skip or 0)
     if not succ then
         return succ, reply

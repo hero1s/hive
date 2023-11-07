@@ -71,6 +71,7 @@ function CacheMgr:setup()
         self.dirty_maps[cache_name]  = WheelMap(100, mrandom(1, 100))
     end
     self.save_limit = env_number("HIVE_SAVE_LIMIT", 100)
+    self.rwlock     = environ.status("HIVE_OPEN_RWLOCK")
 end
 
 function CacheMgr:vote_stop_service()
