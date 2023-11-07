@@ -225,7 +225,7 @@ bool socket_router::do_forward_router(router_header* header, char* data, size_t 
 	sendv_item items[] = { {header, sizeof(router_header)}, {data, data_len} };
 	if (ptarget->token != 0) {
 		m_mgr->sendv(ptarget->token, items, _countof(items));
-		std::cout << fmt::format("forward router:{} msg:{},{},data_len:{}",ptarget->index,get_service_nick(target_id),get_service_name(service_id),data_len) << std::endl;
+		//std::cout << fmt::format("forward router:{} msg:{},{},data_len:{}",ptarget->index,get_service_nick(target_id),get_service_name(service_id),data_len) << std::endl;
 		return true;
 	}
 	error += fmt::format(" | all router is disconnect");

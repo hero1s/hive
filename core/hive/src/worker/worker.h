@@ -74,9 +74,6 @@ namespace lworker {
             size_t data_len;
             std::unique_lock<spin_mutex> lock(m_mutex);
             uint8_t* data = m_codec->encode(L, 2, &data_len);
-            if (data == nullptr) {
-                return false;
-            }
             uint8_t* target = m_write_buf->peek_space(data_len + sizeof(uint32_t));
             if (target) {
                 m_write_buf->write<uint32_t>(data_len);
