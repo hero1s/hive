@@ -304,7 +304,7 @@ function CacheMgr:rpc_cache_delete(hive_id, req_data)
     self.req_counter:count_increase()
     local cache_name, primary_key = tunpack(req_data)
     local _<close>                = thread_mgr:lock(cache_name .. primary_key)
-    local code, cache_obj         = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.WRITE)
+    local code, cache_obj         = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.BOTH)
     if SUCCESS ~= code then
         if code == CacheCode.CACHE_IS_NOT_EXIST then
             return SUCCESS
