@@ -249,14 +249,14 @@ local function export_records_to_table(output, title, records)
     --检测表格合法性
     local data, err = loadfile(filename)
     if err then
-        error(sformat([[
+        print(sformat([[
 ========================================================================
 export %s error:%s!
 ========================================================================]], table_name, err))
     else
         local ret, err = check_valid:check(table_name, dofile(filename))
         if not ret then
-            error(sformat([[
+            print(sformat([[
 ========================================================================
 export %s error:%s!
 ========================================================================]], table_name, err))
@@ -473,7 +473,9 @@ end
 local function split(str, token)
     local pos, t = 0, {}
     if #str > 0 then
-        for st, sp in function() return sfind(str, token, pos, true) end do
+        for st, sp in function()
+            return sfind(str, token, pos, true)
+        end do
             if st > 1 then
                 t[#t + 1] = ssub(str, pos, st - 1)
             end
@@ -488,8 +490,8 @@ end
 
 --检查配置
 local function export_config()
-    local input     = lcurdir()
-    local output    = lcurdir()
+    local input      = lcurdir()
+    local output     = lcurdir()
     local env_output = hgetenv("HIVE_OUTPUT")
     if not env_output or #env_output == 0 then
         print("output dir not config!")
@@ -519,7 +521,7 @@ local function export_config()
     end
 
     local export_list = {}
-    local env_input = hgetenv("HIVE_INPUT")
+    local env_input   = hgetenv("HIVE_INPUT")
     if not env_input or #env_input == 0 then
         print("input dir not config!")
         input = input
@@ -563,25 +565,29 @@ print("begin export excels to lua!")
 GenCfgProto = require("gen_cfg_proto")
 GenCfgProto:init()
 
-local export_list = export_config()
+local export_list    = export_config()
+local export_success = true
 for i, v in ipairs(export_list) do
     local input, output, recursion, target = table.unpack(v)
-    local ok, err = pcall(export_excel, input, output, recursion, target == "server")
+    local ok, err                          = pcall(export_excel, input, output, recursion, target == "server")
     if not ok then
         print("export excel to lua failed:", err)
-    else
-        if hive.check_cfg then
-            local ret, err = check_valid:check_by_multi_table()
-            if not ret then
-                print(sformat([[
+        export_success = false
+    end
+end
+
+if export_success and hive.check_cfg then
+    local ret, err = check_valid:check_by_multi_table()
+    if not ret then
+        print(sformat([[
 ========================================================================
 export  error:%s!
 ========================================================================]], err))
-            else
-                print("export excel to lua success")
-            end
-        end
+    else
+        print("export excel to lua success")
     end
+    -- 检测外键
+    check_valid:check_foreign_keys()
 end
 
 -- 只能用于最终是否生成协议文件
