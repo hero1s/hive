@@ -44,6 +44,7 @@ Distributed game server framework based on CPP 17 && LUA 5.4
   
 ## Documents
   - [在线文档](https://github.com/hero1s/hive/wiki)
+  - [工程示例](https://github.com/hero1s/hive_demo)
   
 ## ![img.png](doc/img.jpg)
 
