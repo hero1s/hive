@@ -18,6 +18,7 @@ local PeriodTime   = enum("PeriodTime")
 local SUCCESS      = KernCode.SUCCESS
 local CAREAD       = CacheType.READ
 local CAWRITE      = CacheType.WRITE
+local CABOTH       = CacheType.BOTH
 
 local thread_mgr   = hive.get("thread_mgr")
 local event_mgr    = hive.get("event_mgr")
@@ -255,7 +256,7 @@ function CacheMgr:rpc_cache_load(hive_id, req_data)
     self.req_counter:count_increase()
     local cache_name, primary_key, cache_type = tunpack(req_data)
     local _<close>                            = thread_mgr:lock(cache_name .. primary_key)
-    local code, cache_obj                     = self:get_cache_obj(hive_id, cache_name, primary_key, cache_type or CacheType.READ)
+    local code, cache_obj                     = self:get_cache_obj(hive_id, cache_name, primary_key, cache_type or CAREAD)
     if SUCCESS ~= code then
         log_err("[CacheMgr][rpc_cache_load] cache obj not find! cache_name={},primary={},cache_type={}", cache_name, primary_key, cache_type)
         return code
@@ -268,7 +269,7 @@ function CacheMgr:rpc_cache_update(hive_id, req_data)
     self.req_counter:count_increase()
     local cache_name, primary_key, table_data, flush = tunpack(req_data)
     local _<close>                                   = thread_mgr:lock(cache_name .. primary_key)
-    local code, cache_obj                            = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.BOTH)
+    local code, cache_obj                            = self:get_cache_obj(hive_id, cache_name, primary_key, CABOTH)
     if SUCCESS ~= code then
         log_err("[CacheMgr][rpc_cache_update] cache obj not find! cache_name={},primary={}", cache_name, primary_key)
         return code
@@ -286,7 +287,7 @@ function CacheMgr:rpc_cache_update_key(hive_id, req_data)
     self.req_counter:count_increase()
     local cache_name, primary_key, table_kvs, flush = tunpack(req_data)
     local _<close>                                  = thread_mgr:lock(cache_name .. primary_key)
-    local code, cache_obj                           = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.BOTH)
+    local code, cache_obj                           = self:get_cache_obj(hive_id, cache_name, primary_key, CABOTH)
     if SUCCESS ~= code then
         log_err("[CacheMgr][rpc_cache_update_key] cache obj not find! cache_name={},primary={}", cache_name, primary_key)
         return code
@@ -304,7 +305,7 @@ function CacheMgr:rpc_cache_delete(hive_id, req_data)
     self.req_counter:count_increase()
     local cache_name, primary_key = tunpack(req_data)
     local _<close>                = thread_mgr:lock(cache_name .. primary_key)
-    local code, cache_obj         = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.BOTH)
+    local code, cache_obj         = self:get_cache_obj(hive_id, cache_name, primary_key, CABOTH)
     if SUCCESS ~= code then
         if code == CacheCode.CACHE_IS_NOT_EXIST then
             return SUCCESS
@@ -327,7 +328,7 @@ function CacheMgr:rpc_cache_flush(hive_id, req_data)
     self.req_counter:count_increase()
     local cache_name, primary_key = tunpack(req_data)
     local _<close>                = thread_mgr:lock(cache_name .. primary_key)
-    local code, cache_obj         = self:get_cache_obj(hive_id, cache_name, primary_key, CacheType.WRITE)
+    local code, cache_obj         = self:get_cache_obj(hive_id, cache_name, primary_key, CAWRITE)
     if SUCCESS ~= code then
         if code == CacheCode.CACHE_IS_NOT_EXIST then
             return SUCCESS
