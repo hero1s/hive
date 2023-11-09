@@ -190,6 +190,20 @@ function MongoAgent:check_indexes(key, co_name, db_name, only_key)
     return false
 end
 
+--不存在则插入
+function MongoAgent:insert_no_exist(doc, selector, co_name, db_name)
+    local query            = { co_name, { ["$setOnInsert"] = doc }, selector, true }
+    local ok, code, result = self:update(query, co_name, db_name)
+    if check_failed(code, ok) then
+        log_err("[MongoAgent][insert_no_exist] insert error ec={},result:{}, doc:{},selector:{}", code, result, doc, selector)
+        return false, code
+    end
+    if result.upserted then
+        return true, KernCode.SUCCESS
+    end
+    return false, KernCode.DATA_EXIST
+end
+
 hive.mongo_agent = MongoAgent()
 
 return MongoAgent
