@@ -62,6 +62,11 @@ function MongoAgent:find_and_modify(db_query, hash_key, db_name)
     return self:execute("mongo_find_and_modify", db_query, hash_key, db_name)
 end
 
+--db_query:{coll_name,pipeline,options}
+function MongoAgent:aggregate(db_query, hash_key, db_name)
+    return self:execute("mongo_aggregate", db_query, hash_key, db_name)
+end
+
 --db_query: {coll_name, obj}
 function MongoAgent:insert(db_query, hash_key, db_name)
     return self:execute("mongo_insert", db_query, hash_key, db_name)

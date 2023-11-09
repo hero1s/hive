@@ -462,4 +462,18 @@ function MongoDB:find_and_modify(co_name, update, selector, upsert, fields, new)
     return self:runCommand("findAndModify", co_name, "query", selector, "update", update, "fields", fields, "upsert", upsert, "new", new)
 end
 
+-- https://docs.mongodb.com/manual/reference/command/aggregate/
+-- collection:aggregate({ { ["$project"] = {tags = 1} } }, {cursor={}})
+-- @param pipeline: array
+-- @param options: map
+-- @return
+function MongoDB:aggregate(co_name, pipeline, options)
+    local cmd = { "aggregate", co_name, "pipeline", pipeline }
+    for k, v in pairs(options) do
+        tinsert(cmd, k)
+        tinsert(cmd, v)
+    end
+    return self:runCommand(tunpack(cmd))
+end
+
 return MongoDB

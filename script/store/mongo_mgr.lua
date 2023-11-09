@@ -31,6 +31,7 @@ function MongoMgr:__init()
     event_mgr:add_listener(self, "mongo_drop_indexes", "drop_indexes")
     event_mgr:add_listener(self, "mongo_create_indexes", "create_indexes")
     event_mgr:add_listener(self, "mongo_get_indexes", "get_indexes")
+    event_mgr:add_listener(self, "mongo_aggregate", "aggregate")
 end
 
 --初始化
@@ -216,6 +217,18 @@ function MongoMgr:drop_indexes(db_name, coll_name, index_name)
         local ok, res_oe = mongodb:drop_indexes(coll_name, index_name)
         if not ok then
             log_err("[MongoMgr][drop_indexes] execute {} failed, because: {}", tpack(coll_name, index_name), res_oe)
+        end
+        return ok and SUCCESS or MONGO_FAILED, res_oe
+    end
+    return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
+end
+
+function MongoMgr:aggregate(db_name, coll_name, pipeline, options)
+    local mongodb = self:get_db(db_name)
+    if mongodb then
+        local ok, res_oe = mongodb:aggregate(coll_name, pipeline, options)
+        if not ok then
+            log_err("[MongoMgr][aggregate] execute {} failed, because: {}", tpack(coll_name, pipeline, options), res_oe)
         end
         return ok and SUCCESS or MONGO_FAILED, res_oe
     end

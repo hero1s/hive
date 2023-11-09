@@ -35,4 +35,9 @@ timer_mgr:once(2000, function()
     for _, v in pairs(res) do
         log_debug("db find sort code: {}, v = {}", fcode, v)
     end
+    icode, ierr = mongo_mgr:aggregate("default", "test_mongo_1", {
+        { ["$match"] = { pid = 123456 } },
+        { ["$group"] = { _id = "date", count = { ["$sum"] = 1 } } }
+    }, { cursor = {} })
+    log_debug("aggregate:{},{}", icode, ierr)
 end)
