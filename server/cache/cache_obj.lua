@@ -51,7 +51,7 @@ function CacheObj:load()
     self.active_tick = hive.clock_ms
     self.update_time = hive.clock_ms
     local query      = { [self.cache_key] = self.primary_value }
-    local code, res  = mongo_mgr:find_one(self.db_name, self.cache_table, query, { _id = 0 })
+    local code, res  = mongo_mgr:find_one(self.db_name, self.primary_value, self.cache_table, query, { _id = 0 })
     if check_failed(code) then
         log_err("[CacheObj][load] failed: {}=> db: {}, table: {}", res, self.db_name, self.cache_table)
         return code
@@ -118,7 +118,7 @@ function CacheObj:save_impl()
         end
         local selector  = { [self.cache_key] = self.primary_value }
         self.dirty      = false
-        local code, res = mongo_mgr:update(self.db_name, self.cache_table, self.data, selector, true)
+        local code, res = mongo_mgr:update(self.db_name, self.primary_value, self.cache_table, self.data, selector, true)
         if check_failed(code) then
             self.fail_cnt   = self.fail_cnt + 1
             self.retry_time = hive.now + self.fail_cnt * 60
@@ -139,7 +139,7 @@ end
 --删除数据
 function CacheObj:destory()
     local query     = { [self.cache_key] = self.primary_value }
-    local code, res = mongo_mgr:delete(self.db_name, self.cache_table, query, true)
+    local code, res = mongo_mgr:delete(self.db_name, self.primary_value, self.cache_table, query, true)
     if check_failed(code) then
         log_err("[CacheObj][destory] failed: %s=> db: %s, table: %s", res, self.db_name, self.cache_table)
         return code

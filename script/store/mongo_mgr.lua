@@ -67,8 +67,8 @@ function MongoMgr:get_db(db_name, hash_key)
     return nil
 end
 
-function MongoMgr:find(db_name, coll_name, selector, fields, sortor, limit, skip)
-    local mongodb = self:get_db(db_name)
+function MongoMgr:find(db_name, hash_key, coll_name, selector, fields, sortor, limit, skip)
+    local mongodb = self:get_db(db_name, hash_key)
     if mongodb then
         local ok, res_oe = mongodb:find(coll_name, selector, fields, sortor, limit, skip)
         if not ok then
@@ -79,8 +79,8 @@ function MongoMgr:find(db_name, coll_name, selector, fields, sortor, limit, skip
     return MONGO_FAILED, "mongo db not exist"
 end
 
-function MongoMgr:find_one(db_name, coll_name, selector, fields)
-    local mongodb = self:get_db(db_name)
+function MongoMgr:find_one(db_name, hash_key, coll_name, selector, fields)
+    local mongodb = self:get_db(db_name, hash_key)
     if mongodb then
         local ok, res_oe = mongodb:find_one(coll_name, selector, fields)
         if not ok then
@@ -91,8 +91,8 @@ function MongoMgr:find_one(db_name, coll_name, selector, fields)
     return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
 end
 
-function MongoMgr:insert(db_name, coll_name, obj)
-    local mongodb = self:get_db(db_name)
+function MongoMgr:insert(db_name, hash_key, coll_name, obj)
+    local mongodb = self:get_db(db_name, hash_key)
     if mongodb then
         local ok, res_oe = mongodb:insert(coll_name, obj)
         if not ok then
@@ -103,8 +103,8 @@ function MongoMgr:insert(db_name, coll_name, obj)
     return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
 end
 
-function MongoMgr:unsafe_insert(db_name, coll_name, obj)
-    local mongodb = self:get_db(db_name)
+function MongoMgr:unsafe_insert(db_name, hash_key, coll_name, obj)
+    local mongodb = self:get_db(db_name, hash_key)
     if mongodb then
         local ok, res_oe = mongodb:unsafe_insert(coll_name, obj)
         if not ok then
@@ -115,8 +115,8 @@ function MongoMgr:unsafe_insert(db_name, coll_name, obj)
     return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
 end
 
-function MongoMgr:update(db_name, coll_name, obj, selector, upsert, multi)
-    local mongodb = self:get_db(db_name)
+function MongoMgr:update(db_name, hash_key, coll_name, obj, selector, upsert, multi)
+    local mongodb = self:get_db(db_name, hash_key)
     if mongodb then
         local ok, res_oe = mongodb:update(coll_name, obj, selector, upsert, multi)
         if not ok then
@@ -127,8 +127,8 @@ function MongoMgr:update(db_name, coll_name, obj, selector, upsert, multi)
     return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
 end
 
-function MongoMgr:unsafe_update(db_name, coll_name, obj, selector, upsert, multi)
-    local mongodb = self:get_db(db_name)
+function MongoMgr:unsafe_update(db_name, hash_key, coll_name, obj, selector, upsert, multi)
+    local mongodb = self:get_db(db_name, hash_key)
     if mongodb then
         local ok, res_oe = mongodb:unsafe_update(coll_name, obj, selector, upsert, multi)
         if not ok then
@@ -139,8 +139,8 @@ function MongoMgr:unsafe_update(db_name, coll_name, obj, selector, upsert, multi
     return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
 end
 
-function MongoMgr:find_and_modify(db_name, coll_name, obj, selector, upsert, fields, new)
-    local mongodb = self:get_db(db_name)
+function MongoMgr:find_and_modify(db_name, hash_key, coll_name, obj, selector, upsert, fields, new)
+    local mongodb = self:get_db(db_name, hash_key)
     if mongodb then
         local ok, res_oe = mongodb:find_and_modify(coll_name, obj, selector, upsert, fields, new)
         if not ok then
@@ -151,8 +151,8 @@ function MongoMgr:find_and_modify(db_name, coll_name, obj, selector, upsert, fie
     return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
 end
 
-function MongoMgr:delete(db_name, coll_name, selector, onlyone)
-    local mongodb = self:get_db(db_name)
+function MongoMgr:delete(db_name, hash_key, coll_name, selector, onlyone)
+    local mongodb = self:get_db(db_name, hash_key)
     if mongodb then
         local ok, res_oe = mongodb:delete(coll_name, selector, onlyone)
         if not ok then
@@ -163,8 +163,8 @@ function MongoMgr:delete(db_name, coll_name, selector, onlyone)
     return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
 end
 
-function MongoMgr:unsafe_delete(db_name, coll_name, selector, onlyone)
-    local mongodb = self:get_db(db_name)
+function MongoMgr:unsafe_delete(db_name, hash_key, coll_name, selector, onlyone)
+    local mongodb = self:get_db(db_name, hash_key)
     if mongodb then
         local ok, res_oe = mongodb:unsafe_delete(coll_name, selector, onlyone)
         if not ok then
@@ -175,8 +175,8 @@ function MongoMgr:unsafe_delete(db_name, coll_name, selector, onlyone)
     return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
 end
 
-function MongoMgr:count(db_name, coll_name, selector, limit, skip)
-    local mongodb = self:get_db(db_name)
+function MongoMgr:count(db_name, hash_key, coll_name, selector, limit, skip)
+    local mongodb = self:get_db(db_name, hash_key)
     if mongodb then
         local ok, res_oe = mongodb:count(coll_name, selector, limit, skip)
         if not ok then
@@ -187,8 +187,8 @@ function MongoMgr:count(db_name, coll_name, selector, limit, skip)
     return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
 end
 
-function MongoMgr:get_indexes(db_name, coll_name)
-    local mongodb = self:get_db(db_name)
+function MongoMgr:get_indexes(db_name, hash_key, coll_name)
+    local mongodb = self:get_db(db_name, hash_key)
     if mongodb then
         local ok, res_oe = mongodb:get_indexes(coll_name)
         if not ok then
@@ -199,8 +199,8 @@ function MongoMgr:get_indexes(db_name, coll_name)
     return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
 end
 
-function MongoMgr:create_indexes(db_name, coll_name, indexes)
-    local mongodb = self:get_db(db_name)
+function MongoMgr:create_indexes(db_name, hash_key, coll_name, indexes)
+    local mongodb = self:get_db(db_name, hash_key)
     if mongodb then
         local ok, res_oe = mongodb:create_indexes(coll_name, indexes)
         if not ok then
@@ -211,8 +211,8 @@ function MongoMgr:create_indexes(db_name, coll_name, indexes)
     return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
 end
 
-function MongoMgr:drop_indexes(db_name, coll_name, index_name)
-    local mongodb = self:get_db(db_name)
+function MongoMgr:drop_indexes(db_name, hash_key, coll_name, index_name)
+    local mongodb = self:get_db(db_name, hash_key)
     if mongodb then
         local ok, res_oe = mongodb:drop_indexes(coll_name, index_name)
         if not ok then
@@ -235,8 +235,8 @@ function MongoMgr:aggregate(db_name, coll_name, pipeline, options)
     return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
 end
 
-function MongoMgr:execute(db_name, cmd, ...)
-    local mongodb = self:get_db(db_name)
+function MongoMgr:execute(db_name, hash_key, cmd, ...)
+    local mongodb = self:get_db(db_name, hash_key)
     if mongodb then
         local ok, res_oe = mongodb:runCommand(cmd, ...)
         if not ok then

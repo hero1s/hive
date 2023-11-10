@@ -97,16 +97,17 @@ function MongoAgent:drop_indexes(db_query, hash_key, db_name)
 end
 
 --db_query: {cmd, ...}
-function MongoAgent:rum_command(db_query, hash_key, db_name)
+function MongoAgent:run_command(db_query, hash_key, db_name)
     return self:execute("mongo_execute", db_query, hash_key, db_name)
 end
 
 function MongoAgent:execute(rpc, db_query, hash_key, db_name)
+    hash_key = hash_key or mrandom()
     if self.local_run then
-        return scheduler:call(self.service, rpc, db_name or "default", tunpack(db_query))
+        return scheduler:call(self.service, rpc, db_name or "default", hash_key, tunpack(db_query))
     end
     if router_mgr then
-        return router_mgr:call_dbsvr_hash(hash_key or mrandom(), rpc, db_name or "default", tunpack(db_query))
+        return router_mgr:call_dbsvr_hash(hash_key, rpc, db_name or "default", hash_key, tunpack(db_query))
     end
     return false, KernCode.FAILED, "init not right"
 end
