@@ -75,6 +75,10 @@ function RmsgAgent:delete_message_by_uuid(rmsg_type, uuid, to)
     return self.rmsgs[rmsg_type]:delete_message_by_uuid(uuid, to)
 end
 
+function RmsgAgent:delete_message_from_to(rmsg_type, from, to)
+    return self.rmsgs[rmsg_type]:delete_message_from_to(from, to)
+end
+
 -- export
 hive.rmsg_agent = RmsgAgent()
 
