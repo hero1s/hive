@@ -223,8 +223,8 @@ function MongoMgr:drop_indexes(db_name, hash_key, coll_name, index_name)
     return MONGO_FAILED, sformat("mongo db:%s not exist", db_name)
 end
 
-function MongoMgr:aggregate(db_name, coll_name, pipeline, options)
-    local mongodb = self:get_db(db_name)
+function MongoMgr:aggregate(db_name, hash_key, coll_name, pipeline, options)
+    local mongodb = self:get_db(db_name, hash_key)
     if mongodb then
         local ok, res_oe = mongodb:aggregate(coll_name, pipeline, options)
         if not ok then
