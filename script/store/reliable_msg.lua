@@ -103,6 +103,11 @@ function ReliableMsg:delete_message_by_uuid(uuid, to)
     return mongo_agent:delete({ self.table_name, { uuid = uuid, to = to }, true }, hive.id, self.db_name)
 end
 
+function ReliableMsg:delete_message_from_to(from, to)
+    log_info("[ReliableMsg][delete_message_from_to] delete message from:{},to:{}", from, to)
+    return mongo_agent:delete({ self.table_name, { from = from, to = to } }, hive.id, self.db_name)
+end
+
 -- 发送消息
 function ReliableMsg:send_message(from, to, body, typ, id)
     local uuid = id or hive.new_guid()
