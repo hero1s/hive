@@ -8,6 +8,7 @@ local signal_quit      = signal.quit
 local tunpack          = table.unpack
 local sformat          = string.format
 local id2nick          = service.id2nick
+local id2group         = service.id2group
 local check_success    = hive.success
 local mrandom          = math_ext.random
 local tshuffle         = table_ext.shuffle
@@ -56,13 +57,11 @@ function RouterMgr:add_router(router_id, host, port)
     if router_id == hive.id then
         return
     end
-    --test by toney
-    --[[    if service.id2name(hive.id) ~= "router" and table_ext.size(self.routers) > 0 then
-            if hive.index ~= service.id2index(router_id) then
-                return
-            end
-        end]]
-
+    local group = id2group(router_id)
+    --不同组的只连router服
+    if group ~= hive.group and hive.service_name ~= "router" then
+        --return
+    end
     local router = self.routers[router_id]
     if router then
         if router.ip ~= host or router.port ~= port then
@@ -316,13 +315,13 @@ function RouterMgr:rpc_service_kickout(router_id, reason)
 end
 
 --路由集群转发失败
-function RouterMgr:on_forward_error(session_id, error_msg, source_id)
-    log_err("[RouterMgr][on_forward_error] session_id:{},from:{},{}", session_id, id2nick(source_id), error_msg)
-    self:send_target(source_id, "reply_forward_error", session_id, error_msg)
+function RouterMgr:on_forward_error(session_id, error_msg, source_id, msg_type)
+    log_err("[RouterMgr][on_forward_error] session_id:{},from:{},{},msg_type:{}", session_id, id2nick(source_id), error_msg, msg_type)
+    self:send_target(source_id, "reply_forward_error", session_id, error_msg, msg_type)
 end
 
-function RouterMgr:reply_forward_error(session_id, error_msg)
-    log_err("[RouterMgr][reply_forward_error] {},{}", thread_mgr:get_title(session_id), error_msg)
+function RouterMgr:reply_forward_error(session_id, error_msg, msg_type)
+    log_err("[RouterMgr][reply_forward_error] {},{},{}", thread_mgr:get_title(session_id), error_msg, msg_type)
     thread_mgr:response(session_id, false, RPC_UNREACHABLE, error_msg)
 end
 

@@ -229,11 +229,11 @@ void lua_socket_node::on_recv(slice* slice) {
 		break;
 	case rpc_type::forward_broadcast:
 		{
-		size_t broadcast_num = 0;
-		if (m_router->do_forward_broadcast(header, m_token, data, data_len, broadcast_num))
-			on_forward_broadcast(header, broadcast_num);
-		else
-			on_forward_error(header);
+			size_t broadcast_num = 0;
+			if (m_router->do_forward_broadcast(header, m_token, data, data_len, broadcast_num))
+				on_forward_broadcast(header, broadcast_num);
+			else
+				on_forward_error(header);
 		}
 		break;
 	default:
@@ -243,7 +243,7 @@ void lua_socket_node::on_recv(slice* slice) {
 
 void lua_socket_node::on_forward_error(router_header* header) {
 	if (header->session_id > 0) {
-		m_luakit->object_call(this, "on_forward_error", nullptr, std::tie(), header->session_id, m_error_msg, header->source_id);
+		m_luakit->object_call(this, "on_forward_error", nullptr, std::tie(), header->session_id, m_error_msg, header->source_id, header->msg_id);
 	}
 }
 
