@@ -7,7 +7,8 @@
 #include "socket_router.h"
 
 uint32_t socket_router::map_token(uint32_t node_id, uint32_t token, uint16_t hash) {
-	uint32_t service_id = get_service_id(node_id);
+	auto service_id = get_service_id(node_id);
+	auto group = get_node_group(node_id);
 	auto& services = m_services[service_id];
 	if (services.hash < hash) {
 		//启动hash模式
@@ -23,7 +24,7 @@ uint32_t socket_router::map_token(uint32_t node_id, uint32_t token, uint16_t has
 		node->index = get_node_index(node_id);
 		services.mp_nodes[node_id] = node;
 	}
-	flush_hash_node(service_id);
+	flush_hash_node(group, service_id);
 	//掉线路由节点
 	if (service_id == m_router_idx && token == 0) {
 		map_router_node(node_id, 0, 0);
@@ -32,12 +33,13 @@ uint32_t socket_router::map_token(uint32_t node_id, uint32_t token, uint16_t has
 }
 
 uint32_t socket_router::set_node_status(uint32_t node_id, uint8_t status) {
-	uint32_t service_id = get_service_id(node_id);
+	auto service_id = get_service_id(node_id);
+	auto group = get_node_group(node_id);
 	auto& services = m_services[service_id];
 	auto pTarget = services.get_target(node_id);
 	if (pTarget != nullptr && pTarget->status != status) {		
 		pTarget->status = status;
-		flush_hash_node(service_id);
+		flush_hash_node(group, service_id);
 		return choose_master(service_id);		
 	}
 	return 0;
@@ -99,13 +101,13 @@ uint32_t socket_router::choose_master(uint32_t service_id) {
 	return 0;
 }
 
-void socket_router::flush_hash_node(uint32_t service_id) {
+void socket_router::flush_hash_node(uint16_t group, uint32_t service_id) {
 	if (service_id < m_services.size()) {
 		auto& services = m_services[service_id];
 		if (services.hash > 0) {//固定hash
 			services.hash_ids.resize(services.hash);
 			for (uint16_t i = 0; i < services.hash; ++i) {
-				services.hash_ids[i] = build_service_id(service_id, i + 1);
+				services.hash_ids[i] = build_service_id(group, service_id, i + 1);
 			}
 		} else {
 			services.hash_ids.clear();
@@ -120,8 +122,8 @@ void socket_router::flush_hash_node(uint32_t service_id) {
 }
 
 bool socket_router::do_forward_target(router_header* header, char* data, size_t data_len, std::string& error, bool router) {
-	uint64_t target_id = header->target_sid;
-	uint32_t service_id = get_service_id(target_id);
+	auto target_id = header->target_sid;
+	auto service_id = get_service_id(target_id);
 	auto& services = m_services[service_id];
 	auto pTarget = services.get_target(target_id);
 	if (pTarget == nullptr) {
@@ -309,6 +311,7 @@ std::string socket_router::get_service_name(uint32_t service_id) {
 }
 std::string socket_router::get_service_nick(uint32_t target_id) {
 	auto service_id = get_service_id(target_id);
+	auto group = get_node_group(target_id);
 	auto index = get_node_index(target_id);
-	return fmt::format("{}_{}", get_service_name(service_id), index);
+	return fmt::format("{}_{}_{}", get_service_name(service_id), group, index);
 }

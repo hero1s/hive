@@ -17,9 +17,10 @@ enum class rpc_type : uint8_t {
 };
 
 const int MAX_SERVICE_GROUP = (UCHAR_MAX + 1);
-inline uint32_t get_service_id(uint32_t node_id) { return  (node_id >> 16) & 0xff; }
-inline uint32_t get_node_index(uint32_t node_id) { return node_id & 0xfff; }
-inline uint32_t build_service_id(uint16_t service_id, uint16_t index) { return (service_id & 0xff) << 16 | index; }
+inline uint16_t get_service_id(uint32_t node_id) { return  (node_id >> 16) & 0xff; }
+inline uint16_t get_node_group(uint32_t node_id) { return node_id >> 26; }
+inline uint16_t get_node_index(uint32_t node_id) { return node_id & 0xfff; }
+inline uint32_t build_service_id(uint16_t group, uint16_t service_id, uint16_t index) { return group << 26 | (service_id & 0xff) << 16 | index; }
 
 struct service_node {
 	uint32_t id		= 0;
@@ -113,7 +114,7 @@ public:
 	void map_router_node(uint32_t router_id, uint32_t target_id, uint8_t status);	
 	void set_router_id(uint32_t node_id);
 	uint32_t choose_master(uint32_t service_id);
-	void flush_hash_node(uint32_t service_id);
+	void flush_hash_node(uint16_t group, uint32_t service_id);
 
 	bool do_forward_target(router_header* header, char* data, size_t data_len, std::string& error, bool router);
 	bool do_forward_player(router_header* header, char* data, size_t data_len, std::string& error, bool router);

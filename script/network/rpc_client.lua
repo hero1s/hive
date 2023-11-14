@@ -143,9 +143,9 @@ function RpcClient:connect()
         end)
     end
     --集群转发失败后回调
-    socket.on_forward_error = function(session_id, error_msg, source_id)
+    socket.on_forward_error = function(session_id, error_msg, source_id, msg_type)
         thread_mgr:fork(function()
-            event_mgr:notify_listener("on_forward_error", session_id, error_msg, source_id)
+            event_mgr:notify_listener("on_forward_error", session_id, error_msg, source_id, msg_type)
         end)
     end
     self.socket             = socket
@@ -174,9 +174,12 @@ function RpcClient:on_heartbeat(hid, send_time)
 end
 
 --路由失败
-function RpcClient:on_forward_error(session_id, ...)
-    log_err("[RpcClient][on_forward_error] rpc:{},resp:{}", thread_mgr:get_title(session_id), tpack(...))
-    thread_mgr:response(session_id, ...)
+function RpcClient:on_forward_error(session_id, code, error_msg, msg_type)
+    if msg_type ~= 5 then
+        log_err("[RpcClient][on_forward_error] rpc:{},code:{},error_msg:{},msg_type:{}",
+                thread_mgr:get_title(session_id), code, error_msg, msg_type)
+    end
+    thread_mgr:response(session_id, false, code, error_msg, msg_type)
 end
 
 --rpc事件
