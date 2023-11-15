@@ -43,12 +43,12 @@ function OnlineAgent:rm_dispatch_lobby(open_id)
 end
 
 function OnlineAgent:login_player(player_id)
-    router_mgr:broadcast_router("rpc_set_player_service", player_id, hive.id, 1)
+    router_mgr:call_router(player_id, "rpc_set_player_service", player_id, hive.id, 1)
     return true, SUCCESS
 end
 
 function OnlineAgent:logout_player(player_id)
-    router_mgr:broadcast_router("rpc_set_player_service", player_id, hive.id, 0)
+    router_mgr:call_router(player_id, "rpc_set_player_service", player_id, hive.id, 0)
 end
 
 function OnlineAgent:query_openid(open_id)
@@ -133,7 +133,7 @@ function OnlineAgent:on_rebuild_online(id, service_name)
         end
     else
         for player_id, _ in pairs(self.player_ids) do
-            router_mgr:send_router(id, "rpc_set_player_service", player_id, hive.id, 1)
+            router_mgr:send_router(player_id, "rpc_set_player_service", player_id, hive.id, 1)
         end
     end
 end

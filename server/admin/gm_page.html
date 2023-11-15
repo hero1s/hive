@@ -241,14 +241,14 @@
                         select_cmd_info = {};
                         select_cmd_info.name = cmd_name;
 
-                        for(i=0;i<10;i++){
-                             var container = document.getElementById('inputForm');
-                             var divi = document.getElementById('div'+i);
-                             if(divi) {
-                                 container.removeChild(divi);
-                             }
+                        var container = document.getElementById('inputForm');
+                        for(i=0;i<that.max_param;i++){
+                          var divi = document.getElementById('div'+i);
+                          if(divi) {
+                             container.removeChild(divi);
+                          }
                         }
-
+                        that.max_param = 0
                         if(cmd_data.command.length > 0) {
                             var params = cmd_data.command.split(' ');
                             var len = params.length;
@@ -259,6 +259,7 @@
                                 that._addInputItem("inputForm", field_name, field_type, "", i);
                                 select_cmd_info[field_name] = field_name
                             }
+                            that.max_param = len
                         }
                     }
                 } else if (data.tag == "log") {

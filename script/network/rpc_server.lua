@@ -222,6 +222,7 @@ function RpcServer:rpc_register(client, node, ...)
         end
         -- 通知注册
         client.id           = node.id
+        client.group        = node.group
         client.index        = node.index
         client.service_id   = node.service_id
         client.service_name = node.service_name

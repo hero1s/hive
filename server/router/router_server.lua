@@ -22,6 +22,7 @@ prop:accessor("change", false)
 function RouterServer:__init()
     self:setup()
     event_mgr:add_listener(self, "rpc_sync_router_info")
+    event_mgr:add_listener(self, "rpc_sync_player_service")
     event_mgr:add_listener(self, "rpc_set_player_service")
     event_mgr:add_listener(self, "rpc_query_player_service")
 
@@ -110,9 +111,15 @@ function RouterServer:rpc_sync_router_info(router_id, target_ids, status)
     end
 end
 
+function RouterServer:rpc_sync_player_service(player_id, sid, login)
+    log_info("[RpcServer][rpc_sync_player_service] player_id:{},sid:{},login:{}", player_id, sid, login)
+    luabus.set_player_service(player_id, sid, login)
+end
+
 function RouterServer:rpc_set_player_service(client, player_id, sid, login)
     log_info("[RpcServer][rpc_set_player_service] player_id:{},sid:{},login:{}", player_id, sid, login)
     luabus.set_player_service(player_id, sid, login)
+    self:broadcast_router("rpc_sync_player_service", player_id, sid, login)
 end
 
 function RouterServer:rpc_query_player_service(client, player_id, service_id)
