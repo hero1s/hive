@@ -175,23 +175,9 @@ function RouterMgr:send_target(target, rpc, ...)
     return self:forward_target(self:hash_router(target + hive.id), "call_target", rpc, 0, target, rpc, ...)
 end
 
---发送给指定目标
-function RouterMgr:send_target_hash(target, hash_key, rpc, ...)
-    if target == hive.id then
-        event_mgr:notify_listener(rpc, ...)
-        return true
-    end
-    return self:forward_target(self:hash_router(hash_key), "call_target", rpc, 0, target, ...)
-end
-
 --发送给路由
-function RouterMgr:call_router(router_id, rpc, ...)
-    local router
-    if router_id then
-        router = self.routers[router_id]
-    else
-        router = self:hash_router(mrandom())
-    end
+function RouterMgr:call_router(hash_key, rpc, ...)
+    local router = self:hash_router(hash_key)
     if router then
         return router:call(rpc, ...)
     end
@@ -199,13 +185,8 @@ function RouterMgr:call_router(router_id, rpc, ...)
 end
 
 --发送给路由
-function RouterMgr:send_router(router_id, rpc, ...)
-    local router
-    if router_id then
-        router = self.routers[router_id]
-    else
-        router = self:hash_router(mrandom())
-    end
+function RouterMgr:send_router(hash_key, rpc, ...)
+    local router = self:hash_router(hash_key)
     if router then
         return router:send(rpc, ...)
     end
