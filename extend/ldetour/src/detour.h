@@ -86,6 +86,11 @@ namespace ldetour {
         // [out]   pos           The valid location.
         int find_valid_point(lua_State* L, int32_t sx, int32_t sy, int32_t sz, int32_t ex, int32_t ey, int32_t ez, bool is_along_surface);
 
+        // 查找点所在的地面点
+        // [in]    pos        position to find, must be valid. [(x, y, z)]
+        // [in]    y_offset   y axis offset. max: 32 * qscale
+        int find_ground_point(lua_State *L, int32_t s, int32_t y, int32_t z, int32_t y_offset);
+
     private:
         int32_t pformat(float v);
 

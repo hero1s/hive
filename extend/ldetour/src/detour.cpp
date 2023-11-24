@@ -104,8 +104,7 @@ namespace ldetour {
 
     // 多边形是否合法
     bool nav_query::poly_valid(dtPolyRef* poly_ref) {
-        unsigned short flags;
-        return dtStatusSucceed(mesh_ref->getPolyFlags(*poly_ref, &flags));
+        return mesh_ref->isValidPolyRef(*poly_ref);
     }
 
     nav_query::~nav_query() {
@@ -221,10 +220,11 @@ namespace ldetour {
         // filter.setIncludeFlags(SAMPLE_POLYFLAGS_ALL);
         nav_point pos;
         dtPolyRef ref;
-        nvquery->findRandomPoint(&filter, frand, &ref, pos);
-
-        //luakit::kit_state state(L);
+        dtStatus status = nvquery->findRandomPoint(&filter, frand, &ref, pos);
+        if (dtStatusSucceed(status)) {
         return luakit::variadic_return(L, pformat(pos[0]), pformat(pos[1]), pformat(pos[2]));
+        }
+        return luakit::variadic_return(L, false);
     }
 
     int nav_query::around_point(lua_State* L, int32_t x, int32_t y, int32_t z, int32_t radius) {
@@ -321,5 +321,21 @@ namespace ldetour {
         }
         pos[1] = height;
         return luakit::variadic_return(L, true, pformat(pos[0]), pformat(pos[1]), pformat(pos[2]));
+    }
+
+    int nav_query::find_ground_point(lua_State* L, int32_t x, int32_t y, int32_t z, int32_t y_offset) {
+        dtPolyRef ref;           // 点所在的多边形
+        float half_extents[3] = { 2, y_offset / qscale, 2 };    // 沿着每个轴的搜索长度
+        if (half_extents[1] > 32) {
+            half_extents[1] = 32; // y轴向搜索最大值为 32m
+        }
+
+        nav_point pos = { x / qscale, y / qscale, z / qscale };
+        nav_point point;
+        dtStatus status = nvquery->findNearestPoly(pos, half_extents, &filter, &ref, point);
+        if (dtStatusSucceed(status) && ref) {
+            return luakit::variadic_return(L, pformat(point[0]), pformat(point[1]), pformat(point[2]));
+        }
+        return luakit::variadic_return(L, false);
     }
 }

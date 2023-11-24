@@ -21,7 +21,8 @@ namespace ldetour {
             "random_point", &nav_query::random_point,
             "point_valid", &nav_query::point_valid,
             "around_point", &nav_query::around_point,
-            "find_valid_point", &nav_query::find_valid_point
+            "find_valid_point", &nav_query::find_valid_point,
+            "find_ground_point", &nav_query::find_ground_point
             );
         kit_state.new_class<nav_mesh>(
             "create_query", &nav_mesh::create_query,
