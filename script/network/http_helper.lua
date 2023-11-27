@@ -6,7 +6,9 @@ local sformat  = string.format
 local sfind    = string.find
 local ssub     = string.sub
 local luencode = curl.url_encode
+local lmd5     = crypt.md5
 local tmapsort = table_ext.mapsort
+local tmerge   = table_ext.merge
 
 http_helper    = {}
 
@@ -62,3 +64,38 @@ function http_helper.http_success(ok, code, res)
     end
     return true
 end
+
+--[[
+securet:md5签名秘钥
+headKeys:head里面需要校验的字段
+1:Sign 字段为签名字段,Ts 为时间戳,放head
+2:取出head 指定字段headKeys的参数以及get参数,存入map[string]string
+3:对map的key排序后拼接字符串str += key + values
+4:sign = md5(str + bodystr + securet + ts)
+--]]
+
+function http_helper.check_param(securet, headKeys, querys, body, head)
+    local cli_sign = head["sign"]
+    if not cli_sign then
+        return false, "not exist sign param"
+    end
+    local ts     = head["ts"]
+    local params = {}
+    for _, v in pairs(headKeys) do
+        params[v] = head[v]
+    end
+    tmerge(querys, params)
+    local params  = tmapsort(params)
+    local cal_str = ""
+    for _, value in pairs(params) do
+        cal_str = cal_str .. value[1] .. value[2]
+    end
+    cal_str        = cal_str .. body .. securet .. ts
+    local svr_sign = lmd5(cal_str, 1)
+    if svr_sign ~= cli_sign then
+        return false, sformat("%s,sign:%s --> cli:%s", cal_str, svr_sign, cli_sign)
+    end
+    return true
+end
+
+
