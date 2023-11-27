@@ -24,6 +24,7 @@ struct lua_socket_node final
 		m_mgr->set_codec(m_token, codec);
 	}
 	void set_flow_ctrl(int ctrl_package, int ctrl_bytes) { m_mgr->set_flow_ctrl(m_token, ctrl_package, ctrl_bytes); }
+	void set_check_seq(bool bOpen) { m_mgr->set_check_seq(m_token, bOpen); }
 	bool can_send() { return m_mgr->can_send(m_token); }
 
 	int forward_target(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id,uint32_t target);

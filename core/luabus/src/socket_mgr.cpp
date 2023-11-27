@@ -250,6 +250,13 @@ void socket_mgr::set_flow_ctrl(uint32_t token, int ctrl_package, int ctrl_bytes)
 	}
 }
 
+void socket_mgr::set_check_seq(uint32_t token, bool bOpen) {
+	auto node = get_object(token);
+	if (node) {
+		node->set_check_seq(bOpen);
+	}
+}
+
 bool socket_mgr::can_send(uint32_t token) {
 	auto node = get_object(token);
 	if (node) {

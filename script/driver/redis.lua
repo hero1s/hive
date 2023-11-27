@@ -89,7 +89,6 @@ local rconvertors = {
 
 local RedisDB     = class()
 local prop        = property(RedisDB)
-prop:reader("id", nil)              --id
 prop:reader("passwd", nil)          --passwd
 prop:reader("jcodec", nil)          --jcodec
 prop:reader("timer_id", nil)        --timer_id
@@ -102,8 +101,7 @@ prop:reader("res_counter", nil)
 prop:reader("subscrible", false)
 prop:reader("cluster", false)       --cluster
 
-function RedisDB:__init(conf, id)
-    self.id     = id
+function RedisDB:__init(conf)
     self.passwd = conf.passwd
     self:set_options(conf.opts)
     --attach_hour
@@ -134,8 +132,8 @@ function RedisDB:setup(conf)
     self.timer_id    = timer_mgr:register(0, SECOND_MS, -1, function()
         self:check_alive()
     end)
-    self.req_counter = hive.make_sampling(sformat("redis %s req", self.id))
-    self.res_counter = hive.make_sampling(sformat("redis %s res", self.id))
+    self.req_counter = hive.make_sampling(sformat("redis %s req", conf.db))
+    self.res_counter = hive.make_sampling(sformat("redis %s res", conf.db))
 end
 
 function RedisDB:setup_pool(hosts)
