@@ -51,6 +51,7 @@ struct socket_object
 	virtual void set_timeout(int duration) { }
 	virtual void set_nodelay(int flag) { }
 	virtual void set_flow_ctrl(int ctrl_package, int ctrl_bytes){ }
+	virtual void set_check_seq(bool bOpen) { }
 	virtual int  send(const void* data, size_t data_len) { return 0; }
 	virtual int  sendv(const sendv_item items[], int count) { return 0; };
 	virtual void set_codec(codec_base* codec) { m_codec = codec; }
@@ -96,6 +97,7 @@ public:
 	void set_timeout(uint32_t token, int duration);
 	void set_nodelay(uint32_t token, int flag);
 	void set_flow_ctrl(uint32_t token, int ctrl_package, int ctrl_bytes);
+	void set_check_seq(uint32_t token, bool bOpen);
 	bool can_send(uint32_t token);
 	int  send(uint32_t token, const void* data, size_t data_len);
 	int  sendv(uint32_t token, const sendv_item items[], int count);

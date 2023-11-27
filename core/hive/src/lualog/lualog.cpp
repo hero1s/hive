@@ -62,6 +62,7 @@ namespace logger {
                 if (pfmt[i] == '%' && (pfmt[i+1] == 's' || pfmt[i+1] == 'd')) {
                     pfmt[i] = '{';
                     pfmt[i + 1] = '}';
+                    ++i;
                 }
             }
         }

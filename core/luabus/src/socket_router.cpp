@@ -22,6 +22,7 @@ uint32_t socket_router::map_token(uint32_t node_id, uint32_t token, uint16_t has
 		node->id = node_id;
 		node->token = token;
 		node->index = get_node_index(node_id);
+		node->group = get_node_group(node_id);
 		services.mp_nodes[node_id] = node;
 	}
 	flush_hash_node(group, service_id);

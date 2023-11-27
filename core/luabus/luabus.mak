@@ -41,7 +41,6 @@ MYCFLAGS += -I../../extend/luakit/include
 #需要定义的选项
 MYCFLAGS += -DFMT_HEADER_ONLY
 MYCFLAGS += -DDELAY_SEND
-MYCFLAGS += -DCHECK_SEQ
 
 #LDFLAGS
 LDFLAGS =

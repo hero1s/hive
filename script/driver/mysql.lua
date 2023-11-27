@@ -36,7 +36,6 @@ local COM_STMT_RESET   = 0x1a
 
 local MysqlDB          = class()
 local prop             = property(MysqlDB)
-prop:reader("id", nil)          --id
 prop:reader("name", "")         --dbname
 prop:reader("user", nil)        --user
 prop:reader("passwd", nil)      --passwd
@@ -45,8 +44,7 @@ prop:reader("timer_id", nil)    --timer_id
 prop:reader("connections", {})  --connections
 prop:reader("alives", {})       --alives
 
-function MysqlDB:__init(conf, id)
-    self.id     = id
+function MysqlDB:__init(conf)
     self.name   = conf.db
     self.user   = conf.user
     self.passwd = conf.passwd

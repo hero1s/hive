@@ -553,13 +553,13 @@ void socket_stream::dispatch_package(bool reset) {
 				on_error(fmt::format("package-parse-large:{},ip:{}", header->len,m_ip).c_str());
 				return;
 			}
-#ifdef CHECK_SEQ
-			// 当前包序号错误
-			if (header->seq_id != m_recv_seq_id) {
-				on_error(fmt::format("seq_id not eq,ip:{},recv:{}--cur:{},cmd:{},len:{}", m_ip, header->seq_id, m_recv_seq_id, header->cmd_id, header->len).c_str());
-				return;
+			if (m_check_seq_id) {
+				// 当前包序号错误
+				if (header->seq_id != m_recv_seq_id) {
+					on_error(fmt::format("seq_id not eq,ip:{},recv:{}--cur:{},cmd:{},len:{}", m_ip, header->seq_id, m_recv_seq_id, header->cmd_id, header->len).c_str());
+					break;
+				}
 			}
-#endif
 			m_fc_package++;
 			m_fc_bytes += header->len;
 			package_size = header->len;

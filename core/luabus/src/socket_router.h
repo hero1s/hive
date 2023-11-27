@@ -26,6 +26,7 @@ struct service_node {
 	uint32_t id		= 0;
 	uint32_t token  = 0;
 	uint16_t index  = 0;
+	uint8_t  group  = 0;
 	uint8_t  status = 0;
 };
 

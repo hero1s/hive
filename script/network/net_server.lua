@@ -45,6 +45,7 @@ prop:reader("command_cds", {})          --CMD定制CD
 prop:accessor("coder", nil)             --编解码对象
 prop:accessor("log_client_msg", nil)    --消息日志函数
 prop:accessor("timeout", NETWORK_TIMEOUT)
+prop:accessor("check_seq", true)
 
 function NetServer:__init(session_type)
     self.session_type = session_type
@@ -86,6 +87,8 @@ function NetServer:on_socket_accept(session)
     end
     -- 设置超时(心跳)
     session.set_timeout(self.timeout)
+    -- 设置是否检测序号
+    session.set_check_seq(self.check_seq)
     -- 绑定call回调
     session.on_call_head  = function(recv_len, cmd_id, flag, session_id, data)
         thread_mgr:fork(function()
