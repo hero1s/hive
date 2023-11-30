@@ -2,6 +2,9 @@
 --logger功能支持
 local pcall       = pcall
 local pairs       = pairs
+local sformat     = string.format
+local sfind       = string.find
+local ssub        = string.sub
 local dgetinfo    = debug.getinfo
 local tunpack     = table.unpack
 local fsstem      = stdfs.stem
@@ -14,6 +17,7 @@ logger            = {}
 logfeature        = {}
 local title       = hive.title
 local monitors    = _ENV.monitors or {}
+local log_func    = false
 local log_lvl     = 1
 local dispatching = false
 
@@ -24,6 +28,7 @@ function logger.init()
     local rolltype            = environ.number("HIVE_LOG_ROLL", 0)
     local log_size            = environ.number("HIVE_LOG_SIZE", 50 * 1024 * 1024)
     local maxdays             = environ.number("HIVE_LOG_DAYS", 7)
+    log_func                  = environ.status("HIVE_LOG_FUNC")
     log_lvl                   = environ.number("HIVE_LOG_LVL", 1)
     local wlvl                = environ.number("HIVE_WEBHOOK_LVL", LOG_LEVEL.ERROR)
 
@@ -67,6 +72,17 @@ local function logger_output(flag, feature, lvl, lvl_name, fmt, ...)
     return msg
 end
 
+local function trim_src(short_src)
+    if short_src == nil then
+        return ""
+    end
+    local _, j = sfind(short_src, "%.%./")
+    if j == nil then
+        return short_src
+    end
+    return ssub(short_src, j + 1)
+end
+
 local LOG_LEVEL_OPTIONS = {
     [LOG_LEVEL.TRACE] = { "trace", 0x01 },
     [LOG_LEVEL.DEBUG] = { "debug", 0x01 },
@@ -78,6 +94,10 @@ local LOG_LEVEL_OPTIONS = {
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl_name, flag = tunpack(conf)
     logger[lvl_name]     = function(fmt, ...)
+        if log_func then
+            local info = dgetinfo(2, "nSl")
+            fmt        = sformat("[%s:%d(%s)]", trim_src(info.short_src), info.currentline or 0, info.name or "") .. fmt
+        end
         local msg = logger_output(flag, "", lvl, lvl_name, fmt, ...)
         if msg and (not dispatching) then
             dispatching = true

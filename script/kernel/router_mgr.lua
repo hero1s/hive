@@ -5,13 +5,13 @@ local log_err          = logger.err
 local log_info         = logger.info
 local log_debug        = logger.debug
 local signal_quit      = signal.quit
+local tsort            = table.sort
 local tunpack          = table.unpack
 local sformat          = string.format
 local id2nick          = service.id2nick
 local id2group         = service.id2group
 local check_success    = hive.success
 local mrandom          = math_ext.random
-local tshuffle         = table_ext.shuffle
 
 local monitor          = hive.get("monitor")
 local thread_mgr       = hive.get("thread_mgr")
@@ -74,7 +74,7 @@ function RouterMgr:add_router(router_id, host, port)
     end
     log_debug("[RouterMgr][add_router] {} --> {},{}:{}", hive.name, id2nick(router_id), host, port)
     local RpcClient         = import("network/rpc_client.lua")
-    self.routers[router_id] = RpcClient(self, host, port)
+    self.routers[router_id] = RpcClient(self, host, port, router_id)
 end
 
 --错误处理
@@ -96,13 +96,14 @@ end
 
 function RouterMgr:check_router()
     local old_ready = self:is_ready()
-    self.candidates = {}
+    local candidates = {}
     for _, client in pairs(self.routers) do
         if client:is_alive() then
-            self.candidates[#self.candidates + 1] = client
+            candidates[#candidates + 1] = client
         end
     end
-    self.candidates = tshuffle(self.candidates)
+    tsort(candidates, function(a, b) return a.id < b.id end)
+    self.candidates = candidates
     if old_ready ~= self:is_ready() then
         hive.change_service_status(hive.service_status)
         event_mgr:notify_trigger("on_router_connected", self:is_ready())

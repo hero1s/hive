@@ -24,16 +24,18 @@ local RPC_PROCESS_TIMEOUT = hive.enum("NetwkTime", "RPC_PROCESS_TIMEOUT")
 
 local RpcClient           = class()
 local prop                = property(RpcClient)
+prop:reader("id", 0)
 prop:reader("ip", nil)
 prop:reader("port", nil)
 prop:reader("alive", false)
 prop:reader("socket", nil)
 prop:reader("holder", nil)    --持有者
 
-function RpcClient:__init(holder, ip, port)
+function RpcClient:__init(holder, ip, port, id)
     self.holder   = holder
     self.port     = port
     self.ip       = ip
+    self.id       = id or 0
     self.timer_id = timer_mgr:loop(SECOND_MS, function()
         self:check_heartbeat()
     end)
