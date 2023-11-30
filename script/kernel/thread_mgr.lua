@@ -78,7 +78,7 @@ function ThreadMgr:lock(key, waiting)
     end
     if head.co == co_running() then
         --防止重入
-        head:increase()
+        head:lock()
         return head
     end
     if waiting or waiting == nil then
@@ -186,7 +186,7 @@ function ThreadMgr:on_second(clock_ms)
     --处理锁超时
     for key, queue in pairs(self.syncqueue_map) do
         local head = queue:head()
-        if head and head.timeout <= clock_ms then
+        if head and head:is_timeout(clock_ms) then
             self:unlock(key, true)
             log_err("[ThreadMgr][on_second] the lock is timeout:{},count:{},cost:{},queue:{}",
                     head.key, head.count, head:cost_time(clock_ms), queue:size())

@@ -23,7 +23,7 @@ function SyncLock:__init(thread_mgr, key)
     self.key        = key
 end
 
-function SyncLock:increase()
+function SyncLock:lock()
     self.count = self.count + 1
 end
 
@@ -32,6 +32,10 @@ function SyncLock:unlock()
     if self.count == 0 then
         self.thread_mgr:unlock(self.key)
     end
+end
+
+function SyncLock:is_timeout(clock_ms)
+    return self.timeout <= clock_ms
 end
 
 function SyncLock:__defer()
