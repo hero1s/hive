@@ -156,10 +156,7 @@ function DevopsGmMgr:gm_cfg_reload(is_remote)
                 local split_arr       = ssplit(full_file_name, "/")
                 local file_name       = split_arr[#split_arr]
                 local remote_file_url = url .. "/" .. file_name
-                local ok, status, res = http_client:call_get(remote_file_url)
-                if ok and status == 200 then
-                    io_ext.writefile(full_file_name, res)
-                end
+                http_client:load_save_file(remote_file_url, full_file_name)
             end)
         end
     end
