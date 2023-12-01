@@ -58,20 +58,6 @@ function logger.filter(level)
     end
 end
 
-local function logger_output(flag, feature, lvl, lvl_name, fmt, ...)
-    if lvl < log_lvl then
-        return
-    end
-    local ok, msg = pcall(lprint, lvl, flag, title, feature, fmt, ...)
-    if not ok then
-        local info = dgetinfo(3, "S")
-        local wfmt = "[logger][{}] format failed: {}, source({}:{})"
-        lprint(LOG_LEVEL.WARN, 0, title, feature, wfmt, lvl_name, msg, info.short_src, info.linedefined)
-        return
-    end
-    return msg
-end
-
 local function trim_src(short_src)
     if short_src == nil then
         return ""
@@ -81,6 +67,24 @@ local function trim_src(short_src)
         return short_src
     end
     return ssub(short_src, j + 1)
+end
+
+local function logger_output(flag, feature, lvl, lvl_name, fmt, ...)
+    if lvl < log_lvl then
+        return
+    end
+    if log_func then
+        local info = dgetinfo(3, "nSl")
+        fmt        = sformat("[%s:%d]", trim_src(info.short_src), info.currentline or 0) .. fmt
+    end
+    local ok, msg = pcall(lprint, lvl, flag, title, feature, fmt, ...)
+    if not ok then
+        local info = dgetinfo(3, "S")
+        local wfmt = "[logger][{}] format failed: {}, source({}:{})"
+        lprint(LOG_LEVEL.WARN, 0, title, feature, wfmt, lvl_name, msg, info.short_src, info.linedefined)
+        return
+    end
+    return msg
 end
 
 local LOG_LEVEL_OPTIONS = {
@@ -94,10 +98,6 @@ local LOG_LEVEL_OPTIONS = {
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl_name, flag = tunpack(conf)
     logger[lvl_name]     = function(fmt, ...)
-        if log_func then
-            local info = dgetinfo(2, "nSl")
-            fmt        = sformat("[%s:%d(%s)]", trim_src(info.short_src), info.currentline or 0, info.name or "") .. fmt
-        end
         local msg = logger_output(flag, "", lvl, lvl_name, fmt, ...)
         if msg and (not dispatching) then
             dispatching = true

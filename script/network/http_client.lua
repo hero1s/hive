@@ -7,6 +7,8 @@ local tconcat           = table.concat
 local tinsert           = table.insert
 local tunpack           = table.unpack
 local sformat           = string.format
+local strlen            = string.len
+local writefile         = io_ext.writefile
 local hxpcall           = hive.xpcall
 local json_encode       = hive.json_encode
 local env_get           = environ.get
@@ -160,6 +162,23 @@ end
 --del接口
 function HttpClient:call_del(url, querys, headers, timeout)
     return self:send_request(url, timeout, querys, headers, "call_del")
+end
+
+--下载文件
+function HttpClient:load_save_file(cdn_url, save_file)
+    local _lock <close> = thread_mgr:lock(sformat("load_url_%s", save_file), false)
+    if not _lock then
+        log_err("[HttpClient][load_save_file] repeat load file:%s", save_file)
+        return false
+    end
+    local ok, status, res = self:call_get(sformat("%s?tm=%s", cdn_url, hive.now))
+    if ok and status == 200 then
+        writefile(save_file, res)
+        log_debug("[HttpClient][load_save_file] file:%s,data size:%s", save_file, strlen(res))
+        return true
+    end
+    log_err("[HttpClient][load_save_file] ok:%s,status:%s,res:%s,url:%s", ok, status, res, cdn_url)
+    return false
 end
 
 hive.http_client = HttpClient()
