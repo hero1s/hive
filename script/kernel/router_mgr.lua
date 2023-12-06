@@ -60,7 +60,7 @@ function RouterMgr:add_router(router_id, host, port)
     local group = id2group(router_id)
     --不同组的只连router服
     if group ~= hive.group and hive.service_name ~= "router" then
-        --return
+        return
     end
     local router = self.routers[router_id]
     if router then
@@ -95,14 +95,16 @@ function RouterMgr:on_socket_connect(client, res)
 end
 
 function RouterMgr:check_router()
-    local old_ready = self:is_ready()
+    local old_ready  = self:is_ready()
     local candidates = {}
     for _, client in pairs(self.routers) do
         if client:is_alive() then
             candidates[#candidates + 1] = client
         end
     end
-    tsort(candidates, function(a, b) return a.id < b.id end)
+    tsort(candidates, function(a, b)
+        return a.id < b.id
+    end)
     self.candidates = candidates
     if old_ready ~= self:is_ready() then
         hive.change_service_status(hive.service_status)

@@ -5,6 +5,7 @@ local pairs       = pairs
 local sformat     = string.format
 local sfind       = string.find
 local ssub        = string.sub
+local dtraceback  = debug.traceback
 local dgetinfo    = debug.getinfo
 local tunpack     = table.unpack
 local fsstem      = stdfs.stem
@@ -79,12 +80,21 @@ local function logger_output(flag, feature, lvl, lvl_name, fmt, ...)
     end
     local ok, msg = pcall(lprint, lvl, flag, title, feature, fmt, ...)
     if not ok then
-        local info = dgetinfo(3, "S")
-        local wfmt = "[logger][{}] format failed: {}, source({}:{})"
-        lprint(LOG_LEVEL.WARN, 0, title, feature, wfmt, lvl_name, msg, info.short_src, info.linedefined)
+        local wfmt = "[logger][{}] format failed: {}=> {})"
+        lprint(LOG_LEVEL.WARN, 0, title, feature, wfmt, lvl_name, msg, dtraceback())
         return
     end
-    return msg
+    if msg and (not dispatching) then
+        dispatching = true
+        pcall(function()
+            for monitor, mlvl in pairs(monitors) do
+                if lvl >= mlvl then
+                    monitor:dispatch_log(msg, lvl_name)
+                end
+            end
+        end)
+        dispatching = false
+    end
 end
 
 local LOG_LEVEL_OPTIONS = {
@@ -98,18 +108,7 @@ local LOG_LEVEL_OPTIONS = {
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl_name, flag = tunpack(conf)
     logger[lvl_name]     = function(fmt, ...)
-        local msg = logger_output(flag, "", lvl, lvl_name, fmt, ...)
-        if msg and (not dispatching) then
-            dispatching = true
-            pcall(function()
-                for monitor, mlvl in pairs(monitors) do
-                    if lvl >= mlvl then
-                        monitor:dispatch_log(msg, lvl_name)
-                    end
-                end
-            end)
-            dispatching = false
-        end
+        logger_output(flag, "", lvl, lvl_name, fmt, ...)
     end
 end
 

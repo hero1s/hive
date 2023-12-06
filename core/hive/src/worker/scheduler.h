@@ -85,7 +85,7 @@ namespace lworker {
                 std::unique_lock<spin_mutex> lock(m_mutex);
                 m_read_buf.swap(m_write_buf);
             }
-            size_t plen = 0;
+            size_t plen = 0,pcount = 0;
             const char* service = m_service.c_str();
             slice* slice = read_slice(m_read_buf, &plen);
             while (slice) {
@@ -96,8 +96,10 @@ namespace lworker {
                     break;
                 }
                 m_read_buf->pop_size(plen);
-                if (ltimer::steady_ms() - clock_ms > 100) {
-                    LOG_WARN(fmt::format("on_scheduler is busy,remain:{}", m_read_buf->size()));
+                ++pcount;
+                auto cost_time = ltimer::steady_ms() - clock_ms;
+                if (cost_time > 100) {
+                    LOG_WARN(fmt::format("on_scheduler is busy,cost:{},pcount:{},remain:{}", cost_time, pcount, m_read_buf->size()));
                     break;
                 }
                 slice = read_slice(m_read_buf, &plen);
