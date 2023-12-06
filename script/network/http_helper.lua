@@ -85,7 +85,7 @@ function http_helper.check_param(securet, headKeys, querys, body, head)
         params[v] = head[v]
     end
     tmerge(querys, params)
-    local params  = tmapsort(params)
+    params        = tmapsort(params)
     local cal_str = ""
     for _, value in pairs(params) do
         cal_str = cal_str .. value[1] .. value[2]

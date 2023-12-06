@@ -313,7 +313,7 @@ function CacheMgr:rpc_cache_delete(hive_id, req_data)
         log_err("[CacheMgr][rpc_cache_delete] cache obj not find! cache_name={},primary={}", cache_name, primary_key)
         return code
     end
-    local code = cache_obj:destory()
+    code = cache_obj:destory()
     if check_failed(code) then
         log_err("[CacheMgr][rpc_cache_delete] delete failed! cache_name={}, primary={}", cache_name, primary_key)
         return CacheCode.CACHE_DELETE_FAILD
