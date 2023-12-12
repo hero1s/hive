@@ -139,6 +139,12 @@ function hive.make_channel(title, timeout)
     return Channel(title, timeout or 1000)
 end
 
+--创建存储对象
+function hive.make_store(sheet, primary_key, primary_id, cache)
+    local Store = import("store/store.lua")
+    return Store(sheet, primary_key, primary_id, cache)
+end
+
 --注册消息
 function hive.register_cmd_listener(doer, cmd_id, callback)
     local protobuf_mgr = hive.get("protobuf_mgr")

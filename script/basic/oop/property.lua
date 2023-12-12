@@ -24,10 +24,10 @@ local function clamp(n, min, max)
     return n
 end
 
-local function on_prop_changed(object, name, value, ...)
+local function on_prop_changed(object, name, value)
     local f_prop_changed = object.on_prop_changed
     if f_prop_changed then
-        f_prop_changed(object, value, name, ...)
+        f_prop_changed(object, name, value)
     end
 end
 
@@ -42,10 +42,10 @@ local function prop_accessor(class, name, default, mode)
         end
     end
     if (mode & WRITER) == WRITER then
-        class["set_" .. name] = function(self, value, ...)
+        class["set_" .. name] = function(self, value)
             if self[name] ~= value then
                 self[name] = value
-                on_prop_changed(self, name, value, ...)
+                on_prop_changed(self, name, value)
             end
         end
     end
