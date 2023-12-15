@@ -89,7 +89,7 @@ namespace luabus {
             "ip", &lua_socket_node::m_ip,
             "token", &lua_socket_node::m_token,
             "call", &lua_socket_node::call,
-            "call_head",&lua_socket_node::call_head,
+            "call_pb",&lua_socket_node::call_pb,
             "call_text",&lua_socket_node::call_text,
             "call_data", &lua_socket_node::call_data,
             "forward_hash", &lua_socket_node::forward_hash,

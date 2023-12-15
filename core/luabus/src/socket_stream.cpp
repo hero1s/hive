@@ -509,8 +509,7 @@ void socket_stream::dispatch_package(bool reset) {
 	if (reset) {
 		reset_dispatch_pkg(false);
 		if (!m_need_dispatch_pkg)return;
-	}
-	else {
+	} else {
 		if (m_need_dispatch_pkg)return;
 	}
 	m_need_dispatch_pkg = false;
