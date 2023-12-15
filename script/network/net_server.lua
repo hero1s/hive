@@ -79,7 +79,7 @@ function NetServer:on_socket_accept(session)
     session.set_timeout(self.timeout)
     -- 绑定call回调
     session.on_call_pb    = function(recv_len, cmd_id, flag, session_id, seq_id, data)
-        if seq_id ~= session.seq_id then
+        if seq_id ~= session.seq_id and seq_id ~= 0xff then
             log_err("[NetServer][on_socket_accept] seq_id:{} != cur:{}", seq_id, session.seq_id)
             return
         end
