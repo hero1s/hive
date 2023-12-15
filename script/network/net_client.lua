@@ -17,7 +17,7 @@ prop:reader("port", nil)
 prop:reader("codec", nil)
 prop:reader("alive", false)
 prop:reader("alive_time", 0)
-prop:reader("proto_type", eproto_type.head)
+prop:reader("proto_type", eproto_type.pb)
 prop:reader("socket", nil)          --连接成功对象
 prop:reader("holder", nil)          --持有者
 prop:reader("wait_list", {})        --等待协议列表
@@ -42,10 +42,10 @@ function NetClient:connect(block)
         return false, cerr
     end
     --设置阻塞id
-    local block_id      = block and thread_mgr:build_session_id()
+    local block_id = block and thread_mgr:build_session_id()
     -- 调用成功，开始安装回调函数
     socket.set_codec(self.codec)
-    socket.on_connect   = function(res)
+    socket.on_connect = function(res)
         local succes = (res == "ok")
         thread_mgr:fork(function()
             if not succes then
@@ -59,18 +59,18 @@ function NetClient:connect(block)
             thread_mgr:response(block_id, succes, res)
         end
     end
-    socket.on_call_pb = function(recv_len, cmd_id, flag, session_id, data)
+    socket.on_call_pb = function(recv_len, cmd_id, flag, session_id, seq_id, data)
         thread_mgr:fork(function()
             proxy_agent:statistics("on_proto_recv", cmd_id, recv_len)
             hxpcall(self.on_socket_rpc, "on_socket_rpc: %s", self, socket, cmd_id, flag, session_id, data)
         end)
     end
-    socket.on_error     = function(token, err)
+    socket.on_error   = function(token, err)
         thread_mgr:fork(function()
             hxpcall(self.on_socket_error, "on_socket_error: %s", self, token, err)
         end)
     end
-    self.socket         = socket
+    self.socket       = socket
     --阻塞模式挂起
     if block_id then
         return thread_mgr:yield(block_id, "connect", CONNECT_TIMEOUT)
@@ -83,7 +83,7 @@ function NetClient:get_token()
 end
 
 function NetClient:on_socket_rpc(socket, cmd_id, flag, session_id, body)
-    self.alive_time      = hive.clock_ms
+    self.alive_time = hive.clock_ms
     if session_id == 0 or (flag & FlagMask.REQ == FlagMask.REQ) then
         -- 执行消息分发
         local function dispatch_rpc_message()

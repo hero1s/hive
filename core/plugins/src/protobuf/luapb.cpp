@@ -49,7 +49,7 @@ namespace luapb {
             header.cmd_id = (uint32_t)lua_tointeger(L, index++);
             header.flag = (uint8_t)lua_tointeger(L, index++);
             header.session_id = (uint32_t)lua_tointeger(L, index++);
-            //header.seq_id = (uint8_t)lua_tointeger(L, index++);
+            header.seq_id = 0xff;//服务端包不检测序号
             //string类型直接发送
             int type = lua_type(L, index);
             if (type != LUA_TSTRING && type != LUA_TTABLE) {
@@ -91,7 +91,7 @@ namespace luapb {
             lua_pushinteger(L, header->cmd_id);
             lua_pushinteger(L, header->flag);
             lua_pushinteger(L, header->session_id);
-            //lua_pushinteger(L, header->seq_id);
+            lua_pushinteger(L, header->seq_id);
             lpb_pushtypetable(L, LS, t);
             e.L = L, e.LS = LS, e.s = &s;
             lpbD_message(&e, t);

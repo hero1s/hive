@@ -183,7 +183,7 @@ void lua_socket_node::close() {
 }
 
 void lua_socket_node::on_recv(slice* slice) {
-	if (eproto_type::proto_head == m_proto_type) {
+	if (eproto_type::proto_pb == m_proto_type) {
 		return on_call_pb(slice);
 	}
 	if (eproto_type::proto_text == m_proto_type) {
