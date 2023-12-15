@@ -74,7 +74,23 @@ void lua_socket_mgr::set_rpc_key(std::string key) {
 const std::string lua_socket_mgr::get_rpc_key() {
 	return m_mgr->get_handshake_verify();
 }
-
+int lua_socket_mgr::broadgroup(lua_State* L, codec_base* codec) {
+	size_t data_len = 0;
+	std::vector<uint32_t> groups;
+	if (!lua_to_native(L, 2, groups)) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+	char* data = (char*)codec->encode(L, 3, &data_len);
+	if (data_len > 1 && data_len < NET_PACKET_MAX_LEN) {
+		//发送数据
+		m_mgr->broadgroup(groups, data, data_len);
+		lua_pushboolean(L, true);
+		return 1;
+	}
+	lua_pushboolean(L, false);
+	return 1;
+}
 //玩家路由
 void lua_socket_mgr::set_player_service(uint32_t player_id, uint32_t sid, uint8_t login) {
 	m_router->set_player_service(player_id, sid, login);

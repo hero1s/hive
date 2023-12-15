@@ -63,6 +63,7 @@
     <ClCompile Include="src\lstdfs\lstdfs.cpp"/>
     <ClCompile Include="src\ltimer\ltimer.cpp"/>
     <ClCompile Include="src\lzset\lzset.cpp"/>
+    <ClCompile Include="src\protobuf\luapb.cpp"/>
     <ClCompile Include="src\protobuf\pb.c"/>
     <ClCompile Include="src\tools\helper.cpp"/>
   </ItemGroup>

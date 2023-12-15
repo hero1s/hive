@@ -42,29 +42,25 @@ lua_socket_node::~lua_socket_node() {
 	close();
 }
 
-int lua_socket_node::call_head(lua_State* L,uint32_t cmd_id,uint8_t flag,uint32_t session_id,std::string_view buff) {
+int lua_socket_node::call_head(lua_State* L) {
 	int top = lua_gettop(L);
 	if (top < 4) {
 		lua_pushinteger(L, -1);
 		return 1;
 	}
-
-	socket_header header;
-	header.cmd_id = cmd_id;
-	header.flag = flag;
-	header.session_id = session_id;
-	size_t data_len = buff.size();
-	if (data_len + sizeof(socket_header) >= NET_PACKET_MAX_LEN) {
-		lua_pushinteger(L, -2);
-		return 1;
+	if (m_codec) {
+		size_t data_len = 0;
+		char* data = (char*)m_codec->encode(L, 1, &data_len);
+		if (data_len > 1 && data_len < NET_PACKET_MAX_LEN) {
+			m_mgr->send(m_token, data, data_len);
+			lua_pushinteger(L, data_len);
+			return 1;
+		} else {			
+			lua_pushinteger(L, -2);
+			return 1;			
+		}
 	}
-	header.len = data_len + sizeof(socket_header);
-	header.seq_id = m_send_seq_id++;
-
-	sendv_item items[] = { { &header, sizeof(socket_header) }, {buff.data(), data_len} };
-	auto send_len = m_mgr->sendv(m_token, items, _countof(items));
-
-	lua_pushinteger(L, send_len);
+	lua_pushinteger(L, -1);
 	return 1;
 }
 
@@ -259,11 +255,8 @@ void lua_socket_node::on_call(router_header* header, slice* slice) {
 }
 
 void lua_socket_node::on_call_head(slice* slice) {
-	size_t header_len = sizeof(socket_header);
-	auto data = slice->peek(header_len);
-	socket_header* head = (socket_header*)data;
-	slice->erase(header_len);
-	m_luakit->object_call(this, "on_call_head",nullptr, std::tie(), slice->size(), head->cmd_id, head->flag, head->session_id, slice->contents());
+	size_t buf_size = slice->size();
+	m_luakit->object_call(this, "on_call_head", nullptr, m_codec, std::tie(), buf_size);
 }
 
 void lua_socket_node::on_call_data(slice* slice) {

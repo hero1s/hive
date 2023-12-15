@@ -5,21 +5,23 @@ local hgetenv  = hive.getenv
 --加载全局扩展库，使用顶级域名
 local librarys = {
     --日志库
-    log    = require("lualog"),
+    log      = require("lualog"),
     --文件系统库
-    stdfs  = require("lstdfs"),
+    stdfs    = require("lstdfs"),
     --定时器库
-    timer  = require("ltimer"),
+    timer    = require("ltimer"),
+    --PB解析库
+    protobuf = require("luapb"),
     --json库
-    json   = require("ljson"),
+    json     = require("ljson"),
     --bson库
-    bson   = require("lbson"),
+    bson     = require("lbson"),
     --编码库
-    codec  = require("lcodec"),
+    codec    = require("lcodec"),
     --加密解密库
-    crypt  = require("lcrypt"),
+    crypt    = require("lcrypt"),
     --网络库
-    luabus = require("luabus"),
+    luabus   = require("luabus"),
 }
 
 --特定模块

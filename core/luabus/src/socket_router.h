@@ -96,7 +96,7 @@ struct player_list
 	inline void clean_sid(uint32_t sid) {
 		for (auto it = mp_player_sid.begin(); it != mp_player_sid.end();) {
 			if (it->second == sid) {
-				mp_player_sid.erase(it);
+				it = mp_player_sid.erase(it);
 			} else {
 				++it;
 			}
@@ -139,8 +139,8 @@ protected:
 private:
 	stdsptr<socket_mgr> m_mgr;
 	std::unordered_map<uint32_t, std::string> m_service_names;
-	std::array<service_list, MAX_SERVICE_GROUP> m_services;
-	std::array<player_list, MAX_SERVICE_GROUP> m_players;
+	std::array<service_list, MAX_SERVICE_GROUP> m_services{};
+	std::array<player_list, MAX_SERVICE_GROUP> m_players{};
 	std::unordered_map<uint32_t, stdsptr<router_node>> m_routers;
 	std::unordered_map<uint32_t, stdsptr<router_node>>::iterator m_router_iter = m_routers.begin();
 	int16_t m_router_idx = -1;

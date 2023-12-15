@@ -15,7 +15,7 @@ extern "C"
 	{
 		//core
 		REGISTER_CUSTOM_LIBRARY("lualog", luaopen_lualog);
-		REGISTER_CUSTOM_LIBRARY("pb", luaopen_pb);
+		REGISTER_CUSTOM_LIBRARY("luapb", luaopen_luapb);
 		REGISTER_CUSTOM_LIBRARY("lbson", luaopen_lbson);
 		REGISTER_CUSTOM_LIBRARY("ltimer", luaopen_ltimer);
 		REGISTER_CUSTOM_LIBRARY("lcodec", luaopen_lcodec);

@@ -1,8 +1,5 @@
 --protobuf_mgr.lua
 --升级pb库时,修改lpb_tointegerx函数支持浮点数自动转整数
-
-local protobuf     = require('pb')
-
 local pairs        = pairs
 local ipairs       = ipairs
 local pcall        = pcall
@@ -21,6 +18,7 @@ local setmetatable = setmetatable
 local pb_decode    = protobuf.decode
 local pb_encode    = protobuf.encode
 local pb_enum_id   = protobuf.enum
+local set_cmd_name = protobuf.set_cmd_name
 
 local event_mgr    = hive.get("event_mgr")
 
@@ -151,6 +149,7 @@ function ProtobufMgr:define_command(full_name, proto_name)
             local msg_id = pb_enum_id(package_name .. "." .. enum_type, msg_name)
             if msg_id then
                 self.pb_indexs[msg_id] = full_name
+                set_cmd_name(msg_id,full_name)
                 return
             end
         end

@@ -538,32 +538,11 @@ void socket_stream::dispatch_package(bool reset) {
 				return;
 			}
 			package_size = header->len;
+			if (data_len < package_size) break;
+			m_package_cb(m_recv_buffer.get_slice(package_size));
+			m_recv_buffer.pop_size(package_size);
 		}break;
-		case eproto_type::proto_head: {
-			size_t header_len = sizeof(socket_header);
-			if(!m_recv_buffer.peek_data(header_len))return;
-			socket_header* header = (socket_header*)data;
-			// 当前包长小于headlen，关闭连接
-			if (header->len < header_len) {
-				on_error(fmt::format("package-length-err:{}/{},ip:{}", header->len, header_len,m_ip).c_str());
-				return;
-			}
-			// 当前包头标识的数据超过最大长度
-			if (header->len > NET_PACKET_MAX_LEN) {
-				on_error(fmt::format("package-parse-large:{},ip:{}", header->len,m_ip).c_str());
-				return;
-			}
-			if (m_check_seq_id) {
-				// 当前包序号错误
-				if (header->seq_id != m_recv_seq_id) {
-					on_error(fmt::format("seq_id not eq,ip:{},recv:{}--cur:{},cmd:{},len:{}", m_ip, header->seq_id, m_recv_seq_id, header->cmd_id, header->len).c_str());
-					break;
-				}
-			}
-			m_fc_package++;
-			m_fc_bytes += header->len;
-			package_size = header->len;
-		}break;
+		case eproto_type::proto_head: 
 		case eproto_type::proto_text: {
 			if (!m_codec) {
 				on_error("codec-is-null");
@@ -590,7 +569,8 @@ void socket_stream::dispatch_package(bool reset) {
 			}
 			size_t read_size = m_codec->get_packet_len();
 			// 数据包还没有收完整
-			if (read_size == 0) {				
+			if (read_size == 0) {
+				std::cout << "read_size:" << package_size << std::endl;
 				return;
 			}					
 			// 接收缓冲读游标调整
@@ -599,13 +579,6 @@ void socket_stream::dispatch_package(bool reset) {
 		default: 
 			on_error(fmt::format("proto-type-not-suppert!:{},ip:{}", (int)m_proto_type,m_ip).c_str());
 			return;
-		}
-		// 数据包还没有收完整
-		if (m_proto_type != eproto_type::proto_text) {
-			if (data_len < package_size) break;
-			m_package_cb(m_recv_buffer.get_slice(package_size));
-			m_recv_buffer.pop_size(package_size);
-			m_recv_seq_id++;
 		}
 		m_last_recv_time = steady_ms();		
 		// 防止单个连接处理太久
