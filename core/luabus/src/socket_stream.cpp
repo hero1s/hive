@@ -120,7 +120,7 @@ bool socket_stream::update(int64_t now,bool check_timeout) {
 				return true;
 			}
 			// 限流检测
-			if (eproto_type::proto_head == m_proto_type) {
+			if (eproto_type::proto_pb == m_proto_type) {
 				if (check_flow_ctrl(now)) {
 					on_error(fmt::format("trigger package:{} or bytes:{},escape_time:{} flowctrl line,will be closed", m_fc_package, m_fc_bytes, now - m_last_fc_time).c_str());
 					return true;
@@ -541,7 +541,7 @@ void socket_stream::dispatch_package(bool reset) {
 			m_package_cb(m_recv_buffer.get_slice(package_size));
 			m_recv_buffer.pop_size(package_size);
 		}break;
-		case eproto_type::proto_head: 
+		case eproto_type::proto_pb:
 		case eproto_type::proto_text: {
 			if (!m_codec) {
 				on_error("codec-is-null");
@@ -574,6 +574,9 @@ void socket_stream::dispatch_package(bool reset) {
 			}					
 			// 接收缓冲读游标调整
 			m_recv_buffer.pop_size(read_size);
+			// 限流
+			m_fc_package++;
+			m_fc_bytes += read_size;			
 		}break;
 		default: 
 			on_error(fmt::format("proto-type-not-suppert!:{},ip:{}", (int)m_proto_type,m_ip).c_str());
@@ -676,7 +679,7 @@ bool socket_stream::check_flow_ctrl(int64_t now) {
 //客户端延迟包发送
 bool socket_stream::need_delay_send() {
 #ifdef DELAY_SEND
-	if (eproto_type::proto_head == m_proto_type || eproto_type::proto_rpc == m_proto_type) {
+	if (eproto_type::proto_pb == m_proto_type || eproto_type::proto_rpc == m_proto_type) {
 		return true;
 	}
 #endif // DELAY_SEND
@@ -684,7 +687,7 @@ bool socket_stream::need_delay_send() {
 }
 
 int64_t socket_stream::max_process_time() {
-	if (eproto_type::proto_head == m_proto_type) {
+	if (eproto_type::proto_pb == m_proto_type) {
 		return 10;
 	} else if (eproto_type::proto_text == m_proto_type) {
 		return 100;

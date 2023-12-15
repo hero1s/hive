@@ -153,8 +153,20 @@ end
 
 function GcMgr:log_gc_end(gc_cycle, avg_time, old_step_value)
     if self.step_value > GC_SLOW_STEP then
-        log_info("[GcMgr][log_gc_end] step_count:{},curr_mem:{},last_mem:{},cost_time:{},cycle:{},step_time_max:{},step_time_avg:{},free_time:{},step_value:{},step_time50_cnt:{},mem_cost_speed:{}",
-                 self.gc_step_count, self.gc_stop_mem, self.gc_start_mem, self.gc_use_time, gc_cycle, self.gc_step_use_time_max, avg_time, self.gc_free_time, old_step_value, self.gc_step_time50_cnt, self.mem_cost_speed)
+        local gc_info = {
+            step_count      = self.gc_step_count,
+            curr_mem        = self.gc_stop_mem,
+            last_mem        = self.gc_start_mem,
+            cost_time       = self.gc_use_time,
+            cycle           = gc_cycle,
+            step_time_max   = self.gc_step_use_time_max,
+            step_time_avg   = avg_time,
+            free_time       = self.gc_free_time,
+            step_value      = old_step_value,
+            step_time50_cnt = self.gc_step_time50_cnt,
+            mem_cost_speed  = self.mem_cost_speed,
+        }
+        log_info("[GcMgr][log_gc_end] {}", gc_info)
     end
 end
 

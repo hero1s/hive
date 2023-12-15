@@ -30,7 +30,7 @@ enum elink_type : uint8_t
 enum class eproto_type : int
 {
 	proto_rpc		= 0,   // rpc协议,根据协议头解析
-	proto_head		= 1,   // head协议,根据协议头解析
+	proto_pb		= 1,   // pb协议,根据协议头解析
 	proto_text		= 2,   // text协议，mysql/mongo/http/wss/redis
 	proto_max		= 3,   // max 
 };

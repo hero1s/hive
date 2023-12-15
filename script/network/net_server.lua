@@ -27,7 +27,7 @@ local NetServer        = class()
 local prop             = property(NetServer)
 prop:reader("ip", "")                   --监听ip
 prop:reader("port", 0)                  --监听端口
-prop:reader("proto_type", eproto_type.head)
+prop:reader("proto_type", eproto_type.pb)
 prop:reader("sessions", {})             --会话列表
 prop:reader("session_type", "default")  --会话类型
 prop:reader("session_count", 0)         --会话数量
@@ -78,7 +78,12 @@ function NetServer:on_socket_accept(session)
     -- 设置超时(心跳)
     session.set_timeout(self.timeout)
     -- 绑定call回调
-    session.on_call_pb  = function(recv_len, cmd_id, flag, session_id, data)
+    session.on_call_pb    = function(recv_len, cmd_id, flag, session_id, seq_id, data)
+        if seq_id ~= session.seq_id then
+            log_err("[NetServer][on_socket_accept] seq_id:{} != cur:{}", seq_id, session.seq_id)
+            return
+        end
+        session.seq_id = (session.seq_id + 1) & 0xff
         thread_mgr:fork(function()
             proxy_agent:statistics("on_proto_recv", cmd_id, recv_len)
             hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, cmd_id, flag, session_id, data)
@@ -91,6 +96,7 @@ function NetServer:on_socket_accept(session)
         end)
     end
     session.command_times = {}
+    session.seq_id        = 0
     --通知链接成功
     event_mgr:notify_listener("on_socket_accept", session)
 end
@@ -174,7 +180,7 @@ function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
         local function dispatch_rpc_message(_session, cmd, bd)
             local _<close> = heval(cmd_id)
             if self.log_client_msg then
-                self.log_client_msg(session, cmd, bd, session_id, 0, true)
+                self.log_client_msg(_session, cmd, bd, session_id, 0, true)
             end
             local result = event_mgr:notify_listener("on_session_cmd", _session, cmd, bd, session_id)
             if not result[1] then
