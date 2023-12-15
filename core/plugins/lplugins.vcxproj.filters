@@ -165,6 +165,9 @@
     <ClCompile Include="src\lzset\lzset.cpp">
       <Filter>lzset</Filter>
     </ClCompile>
+    <ClCompile Include="src\protobuf\luapb.cpp">
+      <Filter>protobuf</Filter>
+    </ClCompile>
     <ClCompile Include="src\protobuf\pb.c">
       <Filter>protobuf</Filter>
     </ClCompile>

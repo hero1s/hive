@@ -59,6 +59,7 @@ namespace luabus {
         lluabus.set_function("set_router_id", [](int id) { return socket_mgr.set_router_id(id); });
         lluabus.set_function("set_rpc_key", [](std::string key) { return socket_mgr.set_rpc_key(key); });
         lluabus.set_function("get_rpc_key", []() { return socket_mgr.get_rpc_key(); });
+        lluabus.set_function("broadgroup", [](lua_State* L, codec_base* codec) { return socket_mgr.broadgroup(L,codec); });
         lluabus.set_function("set_service_name", [](uint32_t service_id, std::string service_name) { return socket_mgr.set_service_name(service_id,service_name); });
         lluabus.set_function("set_player_service", [](uint32_t player_id, uint32_t sid, uint8_t login) { return socket_mgr.set_player_service(player_id, sid,login); });
         lluabus.set_function("find_player_sid", [](uint32_t player_id, uint16_t service_id) { return socket_mgr.find_player_sid(player_id, service_id); });
@@ -101,7 +102,6 @@ namespace luabus {
             "set_timeout", &lua_socket_node::set_timeout,
             "set_codec", &lua_socket_node::set_codec,
             "set_flow_ctrl",&lua_socket_node::set_flow_ctrl,
-            "set_check_seq",&lua_socket_node::set_check_seq,
             "can_send",&lua_socket_node::can_send
             );
         return lluabus;

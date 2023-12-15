@@ -25,7 +25,6 @@ struct socket_stream : public socket_object
 	void set_timeout(int duration) override { m_timeout = duration; }
 	void set_nodelay(int flag) override { set_no_delay(m_socket, flag); }
 	void set_flow_ctrl(int ctrl_package, int ctrl_bytes) override { m_fc_ctrl_package = ctrl_package; m_fc_ctrl_bytes = ctrl_bytes; m_last_fc_time = steady_ms(); }
-	void set_check_seq(bool bOpen) { m_check_seq_id = bOpen; }
 
 	int send(const void* data, size_t data_len) override;
 	int sendv(const sendv_item items[], int count) override;
@@ -70,8 +69,6 @@ struct socket_stream : public socket_object
 	int64_t m_tick_dispatch_time;
 	uint8_t m_stock_count = 0;
 
-	bool    m_check_seq_id = true;
-	uint8_t m_recv_seq_id = 0;
 	int64_t m_last_recv_time = 0;
 	int64_t m_connecting_time = 0;
 

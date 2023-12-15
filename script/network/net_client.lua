@@ -1,27 +1,20 @@
 local log_err          = logger.err
 local hxpcall          = hive.xpcall
-local b64_encode       = crypt.b64_encode
-local b64_decode       = crypt.b64_decode
-local lz4_encode       = crypt.lz4_encode
-local lz4_decode       = crypt.lz4_decode
 local eproto_type      = luabus.eproto_type
 
 local proxy_agent      = hive.get("proxy_agent")
 local thread_mgr       = hive.get("thread_mgr")
-local protobuf_mgr     = hive.get("protobuf_mgr")
 local heval            = hive.eval
 
 local FlagMask         = enum("FlagMask")
 local CONNECT_TIMEOUT  = hive.enum("NetwkTime", "CONNECT_TIMEOUT")
 local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 
-local out_press        = environ.status("HIVE_OUT_PRESS")
-local out_encrypt      = environ.status("HIVE_OUT_ENCRYPT")
-
 local NetClient        = class()
 local prop             = property(NetClient)
 prop:reader("ip", nil)
 prop:reader("port", nil)
+prop:reader("codec", nil)
 prop:reader("alive", false)
 prop:reader("alive_time", 0)
 prop:reader("proto_type", eproto_type.head)
@@ -35,6 +28,7 @@ function NetClient:__init(holder, ip, port)
     self.holder = holder
     self.port   = port
     self.ip     = ip
+    self.codec  = protobuf.pbcodec()
 end
 
 -- 发起连接
@@ -50,6 +44,7 @@ function NetClient:connect(block)
     --设置阻塞id
     local block_id      = block and thread_mgr:build_session_id()
     -- 调用成功，开始安装回调函数
+    socket.set_codec(self.codec)
     socket.on_connect   = function(res)
         local succes = (res == "ok")
         thread_mgr:fork(function()
@@ -87,54 +82,12 @@ function NetClient:get_token()
     return self.socket and self.socket.token
 end
 
-function NetClient:encode(cmd_id, data, flag)
-    local encode_data
-    if self.encoder then
-        encode_data = self.encoder(cmd_id, data)
-    else
-        encode_data = protobuf_mgr:encode(cmd_id, data)
-    end
-    -- 加密处理
-    if out_encrypt then
-        encode_data = b64_encode(encode_data)
-        flag        = flag | FlagMask.ENCRYPT
-    end
-    -- 压缩处理
-    if out_press then
-        encode_data = lz4_encode(encode_data)
-        flag        = flag | FlagMask.ZIP
-    end
-    return encode_data, flag
-end
-
-function NetClient:decode(cmd_id, data, flag)
-    local decode_data = data
-    if flag & FlagMask.ZIP == FlagMask.ZIP then
-        --解压处理
-        decode_data = lz4_decode(decode_data)
-    end
-    if flag & FlagMask.ENCRYPT == FlagMask.ENCRYPT then
-        --解密处理
-        decode_data = b64_decode(decode_data)
-    end
-    if self.decoder then
-        return self.decoder(cmd_id, decode_data)
-    else
-        return protobuf_mgr:decode(cmd_id, decode_data)
-    end
-end
-
-function NetClient:on_socket_rpc(socket, cmd_id, flag, session_id, data)
+function NetClient:on_socket_rpc(socket, cmd_id, flag, session_id, body)
     self.alive_time      = hive.clock_ms
-    local body, cmd_name = self:decode(cmd_id, data, flag)
-    if not body then
-        log_err("[NetClient][on_socket_rpc] decode failed! cmd_id:{}，data:{}", cmd_id, data)
-        return
-    end
     if session_id == 0 or (flag & FlagMask.REQ == FlagMask.REQ) then
         -- 执行消息分发
         local function dispatch_rpc_message()
-            local _<close> = heval(cmd_name)
+            local _<close> = heval(cmd_id)
             self.holder:on_socket_rpc(self, cmd_id, body, session_id)
         end
         thread_mgr:fork(dispatch_rpc_message)
@@ -164,15 +117,10 @@ function NetClient:write(cmd_id, data, session_id, flag)
         log_err("[NetClient][write] the socket is not alive! cmd_id:{}", cmd_id)
         return false
     end
-    local body, pflag = self:encode(cmd_id, data, flag)
-    if not body then
-        log_err("[NetClient][write] encode failed! cmd_id:{},data:{}", cmd_id, data)
-        return false
-    end
     -- call luabus
-    local send_len = self.socket.call_head(cmd_id, pflag, session_id or 0, body)
+    local send_len = self.socket.call_head(cmd_id, flag, session_id or 0, data)
     if send_len < 0 then
-        log_err("[NetClient][write] call_pack failed! code:{},cmd_id:{},len:{}", send_len, cmd_id, #body)
+        log_err("[NetClient][write] call_pack failed! code:{},cmd_id:{}", send_len, cmd_id)
         return false
     end
     return true

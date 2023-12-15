@@ -12,7 +12,7 @@ struct lua_socket_node final
 	~lua_socket_node();
 
 	int call(lua_State* L,uint32_t session_id,uint8_t flag,uint32_t source_id);
-	int call_head(lua_State* L, uint32_t cmd_id, uint8_t flag, uint32_t session_id, std::string_view buff);
+	int call_head(lua_State* L);
 	int call_text(lua_State* L);
 	int call_data(lua_State* L);
 
@@ -24,7 +24,6 @@ struct lua_socket_node final
 		m_mgr->set_codec(m_token, codec);
 	}
 	void set_flow_ctrl(int ctrl_package, int ctrl_bytes) { m_mgr->set_flow_ctrl(m_token, ctrl_package, ctrl_bytes); }
-	void set_check_seq(bool bOpen) { m_mgr->set_check_seq(m_token, bOpen); }
 	bool can_send() { return m_mgr->can_send(m_token); }
 
 	int forward_target(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id,uint32_t target);
@@ -69,6 +68,5 @@ private:
 	stdsptr<socket_router> m_router;
 	eproto_type m_proto_type;
 	std::string m_error_msg;
-	uint8_t m_send_seq_id = 0;
 };
 

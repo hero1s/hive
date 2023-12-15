@@ -250,13 +250,6 @@ void socket_mgr::set_flow_ctrl(uint32_t token, int ctrl_package, int ctrl_bytes)
 	}
 }
 
-void socket_mgr::set_check_seq(uint32_t token, bool bOpen) {
-	auto node = get_object(token);
-	if (node) {
-		node->set_check_seq(bOpen);
-	}
-}
-
 bool socket_mgr::can_send(uint32_t token) {
 	auto node = get_object(token);
 	if (node) {
@@ -279,6 +272,12 @@ int socket_mgr::sendv(uint32_t token, const sendv_item items[], int count) {
 		return node->sendv(items, count);
 	}
 	return 0;
+}
+
+void socket_mgr::broadgroup(std::vector<uint32_t>& groups, const void* data, size_t data_len) {
+	for (auto token : groups) {
+		send(token, data, data_len);
+	}
 }
 
 void socket_mgr::close(uint32_t token) {
