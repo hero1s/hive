@@ -42,7 +42,7 @@ lua_socket_node::~lua_socket_node() {
 	close();
 }
 
-int lua_socket_node::call_head(lua_State* L) {
+int lua_socket_node::call_pb(lua_State* L) {
 	int top = lua_gettop(L);
 	if (top < 4) {
 		lua_pushinteger(L, -1);
@@ -184,7 +184,7 @@ void lua_socket_node::close() {
 
 void lua_socket_node::on_recv(slice* slice) {
 	if (eproto_type::proto_head == m_proto_type) {
-		return on_call_head(slice);
+		return on_call_pb(slice);
 	}
 	if (eproto_type::proto_text == m_proto_type) {
 		return on_call_data(slice);
@@ -254,9 +254,9 @@ void lua_socket_node::on_call(router_header* header, slice* slice) {
 	m_luakit->object_call(this, "on_call", nullptr, m_codec, std::tie(), slice->size(), header->session_id, header->rpc_flag, header->source_id);
 }
 
-void lua_socket_node::on_call_head(slice* slice) {
+void lua_socket_node::on_call_pb(slice* slice) {
 	size_t buf_size = slice->size();
-	m_luakit->object_call(this, "on_call_head", nullptr, m_codec, std::tie(), buf_size);
+	m_luakit->object_call(this, "on_call_pb", nullptr, m_codec, std::tie(), buf_size);
 }
 
 void lua_socket_node::on_call_data(slice* slice) {

@@ -12,7 +12,7 @@ struct lua_socket_node final
 	~lua_socket_node();
 
 	int call(lua_State* L,uint32_t session_id,uint8_t flag,uint32_t source_id);
-	int call_head(lua_State* L);
+	int call_pb(lua_State* L);
 	int call_text(lua_State* L);
 	int call_data(lua_State* L);
 
@@ -56,7 +56,7 @@ public:
 	uint32_t m_token = 0;
 private:
 	void on_recv(slice* slice);
-	void on_call_head(slice* slice);
+	void on_call_pb(slice* slice);
 	void on_call_data(slice* slice);
 	void on_call(router_header* header, slice* slice);
 	void on_forward_broadcast(router_header* header, size_t target_size);

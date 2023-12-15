@@ -78,7 +78,7 @@ function NetServer:on_socket_accept(session)
     -- 设置超时(心跳)
     session.set_timeout(self.timeout)
     -- 绑定call回调
-    session.on_call_head  = function(recv_len, cmd_id, flag, session_id, data)
+    session.on_call_pb  = function(recv_len, cmd_id, flag, session_id, data)
         thread_mgr:fork(function()
             proxy_agent:statistics("on_proto_recv", cmd_id, recv_len)
             hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, cmd_id, flag, session_id, data)
@@ -97,7 +97,7 @@ end
 
 function NetServer:write(session, cmd_id, data, session_id, flag)
     -- call luabus
-    local send_len = session.call_head(cmd_id, flag, session_id or 0, data)
+    local send_len = session.call_pb(cmd_id, flag, session_id or 0, data)
     if send_len > 0 then
         proxy_agent:statistics("on_proto_send", cmd_id, send_len)
         if self.log_client_msg then

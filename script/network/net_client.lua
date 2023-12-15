@@ -59,7 +59,7 @@ function NetClient:connect(block)
             thread_mgr:response(block_id, succes, res)
         end
     end
-    socket.on_call_head = function(recv_len, cmd_id, flag, session_id, data)
+    socket.on_call_pb = function(recv_len, cmd_id, flag, session_id, data)
         thread_mgr:fork(function()
             proxy_agent:statistics("on_proto_recv", cmd_id, recv_len)
             hxpcall(self.on_socket_rpc, "on_socket_rpc: %s", self, socket, cmd_id, flag, session_id, data)
@@ -118,7 +118,7 @@ function NetClient:write(cmd_id, data, session_id, flag)
         return false
     end
     -- call luabus
-    local send_len = self.socket.call_head(cmd_id, flag, session_id or 0, data)
+    local send_len = self.socket.call_pb(cmd_id, flag, session_id or 0, data)
     if send_len < 0 then
         log_err("[NetClient][write] call_pack failed! code:{},cmd_id:{}", send_len, cmd_id)
         return false
