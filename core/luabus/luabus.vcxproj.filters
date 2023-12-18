@@ -42,7 +42,7 @@
     <ClCompile Include="src\lua_socket_node.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\main.cpp">
+    <ClCompile Include="src\luabus.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\socket_helper.cpp">

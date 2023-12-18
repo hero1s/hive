@@ -22,7 +22,7 @@
   <ItemGroup>
     <ClCompile Include="src\lua_socket_mgr.cpp"/>
     <ClCompile Include="src\lua_socket_node.cpp"/>
-    <ClCompile Include="src\main.cpp"/>
+    <ClCompile Include="src\luabus.cpp"/>
     <ClCompile Include="src\socket_helper.cpp"/>
     <ClCompile Include="src\socket_listener.cpp"/>
     <ClCompile Include="src\socket_mgr.cpp"/>

@@ -18,7 +18,7 @@ local setmetatable = setmetatable
 local pb_decode    = protobuf.decode
 local pb_encode    = protobuf.encode
 local pb_enum_id   = protobuf.enum
-local set_cmd_name = protobuf.set_cmd_name
+local pb_bind_cmd  = protobuf.bind_cmd
 
 local event_mgr    = hive.get("event_mgr")
 
@@ -149,7 +149,7 @@ function ProtobufMgr:define_command(full_name, proto_name)
             local msg_id = pb_enum_id(package_name .. "." .. enum_type, msg_name)
             if msg_id then
                 self.pb_indexs[msg_id] = full_name
-                set_cmd_name(msg_id,full_name)
+                pb_bind_cmd(msg_id, full_name)
                 return
             end
         end

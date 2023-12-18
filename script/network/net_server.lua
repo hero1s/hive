@@ -207,6 +207,11 @@ function NetServer:close_session_by_token(token)
     self:close_session(session)
 end
 
+function NetServer:disconnect(session)
+    self:on_socket_error(session.token, "action-close")
+    session.close()
+end
+
 -- 会话被关闭回调
 function NetServer:on_socket_error(token, err)
     local session = self:remove_session(token)
