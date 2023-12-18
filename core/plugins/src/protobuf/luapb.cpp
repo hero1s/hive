@@ -8,7 +8,7 @@ using namespace luakit;
 namespace luapb {
 
     thread_local luabuf thread_buff;
-    thread_local std::unordered_map<uint32_t,std::string> cmd_names;
+    thread_local std::unordered_map<uint32_t,std::string> pb_cmd_ids;
 
     #pragma pack(1)
     struct pb_header {
@@ -62,9 +62,6 @@ namespace luapb {
                 pb_addslice(e.b, pb_lslice(buf,data_len));                
             } else {
                 const pb_Type* t = pb_type_from_stack(L, LS, &header);
-                if (t == nullptr) {
-                    return nullptr;
-                }
                 //encode            
                 lua_pushvalue(L, index);
                 pb_addslice(e.b, sh);
@@ -88,6 +85,7 @@ namespace luapb {
             //decode
             lpb_Env e;
             int top = lua_gettop(L);
+            lua_pushinteger(L, data_len);
             lua_pushinteger(L, header->cmd_id);
             lua_pushinteger(L, header->flag);
             lua_pushinteger(L, header->session_id);
@@ -99,25 +97,16 @@ namespace luapb {
         }
 
     protected:
-        const pb_Type* pb_type_from_name(lua_State* L, lpb_State* LS, const string& cmd_name) {            
-            return lpb_type(L, LS, pb_lslice(cmd_name.c_str(), cmd_name.size()));
-        }
-
         const pb_Type* pb_type_from_enum(lua_State* L, lpb_State* LS, size_t cmd_id) {
-            auto it = cmd_names.find(cmd_id);
-            if (it == cmd_names.end()) {
-                throw invalid_argument("invalid pb cmdid: " + cmd_id);
-            }            
-            return pb_type_from_name(L, LS, it->second);
+            auto it = pb_cmd_ids.find(cmd_id);
+            if (it == pb_cmd_ids.end()) throw invalid_argument("invalid pb cmdid: " + cmd_id);
+            return lpb_type(L, LS, pb_lslice(it->second.c_str(), it->second.size()));
         }
 
         const pb_Type* pb_type_from_stack(lua_State* L, lpb_State* LS, pb_header* header) {
-            auto it = cmd_names.find(header->cmd_id);
-            if (it != cmd_names.end()) {                
-                return pb_type_from_name(L, LS, it->second);
-            }            
-            luaL_error(L, "invalid pb cmdid: %d", header->cmd_id);
-            return nullptr;
+            auto it = pb_cmd_ids.find(header->cmd_id);
+            if (it == pb_cmd_ids.end()) throw invalid_argument("invalid pb cmdid: " + header->cmd_id);
+            return lpb_type(L, LS, pb_lslice(it->second.c_str(), it->second.size()));
         }
 
     protected:
@@ -133,7 +122,7 @@ namespace luapb {
         luaopen_pb(L);
         lua_table luapb(L);
         luapb.set_function("pbcodec", pb_codec);
-        luapb.set_function("set_cmd_name", [](uint32_t cmd_id, std::string name) { cmd_names[cmd_id] = name; });
+        luapb.set_function("bind_cmd", [](uint32_t cmd_id, std::string fullname) { pb_cmd_ids[cmd_id] = fullname; });
         return luapb;
     }
 }
