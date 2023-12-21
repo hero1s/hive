@@ -105,7 +105,7 @@ namespace luapb {
 
         const pb_Type* pb_type_from_stack(lua_State* L, lpb_State* LS, pb_header* header) {
             auto it = pb_cmd_ids.find(header->cmd_id);
-            if (it == pb_cmd_ids.end()) throw invalid_argument("invalid pb cmdid: " + header->cmd_id);
+            if (it == pb_cmd_ids.end()) luaL_error(L, "invalid pb cmd: %d", header->cmd_id);
             return lpb_type(L, LS, pb_lslice(it->second.c_str(), it->second.size()));
         }
 

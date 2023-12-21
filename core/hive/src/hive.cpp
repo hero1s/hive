@@ -101,9 +101,7 @@ void hive_app::setup(int argc, const char* argv[]) {
 void hive_app::exception_handler(const std::string& err_msg) {
 	LOG_FATAL(err_msg);
 	log_service::instance()->stop();
-#if WIN32
-	_getch();
-#endif
+	std::this_thread::sleep_for(std::chrono::seconds(1));
 	exit(1);
 }
 
@@ -218,7 +216,7 @@ void hive_app::run() {
 			});
 	}
 	m_schedulor.shutdown();
-	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	std::this_thread::sleep_for(std::chrono::seconds(1));
 	//lua.close(); todo 优化析构逻辑
 	log_service::instance()->stop();
 }
