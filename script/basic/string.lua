@@ -38,7 +38,9 @@ end
 function string_ext.split(str, token)
     local pos, t = 0, {}
     if #str > 0 then
-        for st, sp in function() return sfind(str, token, pos, true) end do
+        for st, sp in function()
+            return sfind(str, token, pos, true)
+        end do
             if st > 1 then
                 t[#t + 1] = ssub(str, pos, st - 1)
             end
@@ -53,11 +55,13 @@ end
 
 function string_ext.split_pos(str, token)
     if #str > 0 then
-        local elem = {}
+        local elem   = {}
         local pos, t = 0, { cur = 0 }
-        for st, sp in function() return sfind(str, token, pos, true) end do
+        for st, sp in function()
+            return sfind(str, token, pos, true)
+        end do
             if st > 1 then
-                elem[#elem + 1] = {ssub(str, pos, st - 1), sp }
+                elem[#elem + 1] = { ssub(str, pos, st - 1), sp }
             end
             pos = sp + 1
         end
@@ -98,6 +102,16 @@ function string_ext.usplit(str, token)
     return tunpack(ssplit(str, token))
 end
 
-
+function string_ext.count(value, chl)
+    local c, p = 0, 0
+    while true do
+        p = sfind(value, chl, p + 1, 0)
+        if not p then
+            break
+        end
+        c = c + 1
+    end
+    return c
+end
 
 

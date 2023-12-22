@@ -11,7 +11,7 @@ local mfloor              = math.floor
 local log_info            = logger.info
 local cut_tail            = math_ext.cut_tail
 
-local MAX_IDLE_TIME       = 1 * 1000                   -- 空闲时间
+local MAX_IDLE_TIME       = 10 * 1000                  -- 空闲时间
 local GC_MAX_STEP         = 200                        -- gc最大回收速度
 local GC_FAST_STEP        = 100                        -- gc快速回收
 local GC_SLOW_STEP        = 50                         -- gc慢回收
@@ -22,7 +22,7 @@ local PER_US_FOR_SECOND   = 1000                       -- 1秒=1000ms
 
 local GcMgr               = singleton()
 local prop                = property(GcMgr)
-prop:reader("gc_threshold", 1024 * 1024)
+prop:reader("gc_threshold", 32 * 1024)
 prop:reader("gc_initflag", false)
 prop:reader("gc_stop_mem", 0)
 prop:reader("gc_running", true)
@@ -129,7 +129,7 @@ function GcMgr:update(threshold)
         if costTime > 50 then
             self.gc_step_time50_cnt = self.gc_step_time50_cnt + 1
         end
-        --log_info("gc step, step_count:{} cost_time: {}", gc_step_count, costTime)
+        --log_info("gc step, step_count:{} cost_time: {}", self.gc_step_count, costTime)
 
         if not self.gc_running then
             self.gc_stop_mem     = mfloor(collectgarbage("count"))

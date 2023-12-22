@@ -75,4 +75,9 @@ function Store:load()
     return true
 end
 
+function Store:update_value(key, value)
+    self.data[key] = value
+    self.dirty     = true
+end
+
 return Store
