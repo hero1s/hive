@@ -56,28 +56,8 @@ end
 
 --协程改造
 local function init_coroutine()
-    coroutine.yield  = function(...)
-        if co_hookor then
-            co_hookor:yield()
-        end
-        return raw_yield(...)
-    end
-    coroutine.resume = function(co, ...)
-        if co_hookor then
-            co_hookor:yield()
-            co_hookor:resume(co)
-        end
-        local args = tpack(raw_resume(co, ...))
-        if co_hookor then
-            co_hookor:resume()
-        end
-        return tunpack(args)
-    end
-    hive.eval        = function(name)
-        if co_hookor then
-            return co_hookor:eval(name)
-        end
-    end
+    import("basic/coroutine.lua")
+    hive.init_coroutine()
 end
 
 --初始化loop
@@ -116,11 +96,6 @@ function hive.init()
     import("kernel/protobuf_mgr.lua")
     --挂载运维附加逻辑
     import("devops/devops_mgr.lua")
-end
-
-function hive.hook_coroutine(hooker)
-    co_hookor      = hooker
-    hive.co_hookor = hooker
 end
 
 --启动
