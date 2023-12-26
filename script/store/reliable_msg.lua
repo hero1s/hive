@@ -80,8 +80,8 @@ end
 -- 设置信息为已处理
 function ReliableMsg:deal_message(to, timestamp)
     log_info("[ReliableMsg][deal_message] message:{}, {},{}", self.table_name, to, timestamp)
-    local selecter = { ["$and"] = { { to = to }, { time = { ["$lte"] = timestamp } } } }
-    local query    = { self.table_name, { ["$set"] = { deal_time = hive.now } }, selecter }
+    local selector = { ["$and"] = { { to = to }, { time = { ["$lte"] = timestamp } } } }
+    local query    = { self.table_name, { ["$set"] = { deal_time = hive.now } }, selector }
     return mongo_agent:update(query, to, self.db_name)
 end
 
@@ -94,8 +94,8 @@ end
 -- 删除消息
 function ReliableMsg:delete_message(to, timestamp)
     log_info("[ReliableMsg][delete_message] delete {} message: {}", self.table_name, to)
-    local selecter = { ["$and"] = { { to = to }, { time = { ["$lte"] = timestamp } } } }
-    return mongo_agent:delete({ self.table_name, selecter }, hive.id, self.db_name)
+    local selector = { ["$and"] = { { to = to }, { time = { ["$lte"] = timestamp } } } }
+    return mongo_agent:delete({ self.table_name, selector }, hive.id, self.db_name)
 end
 
 function ReliableMsg:delete_message_by_uuid(uuid, to)
@@ -103,9 +103,13 @@ function ReliableMsg:delete_message_by_uuid(uuid, to)
     return mongo_agent:delete({ self.table_name, { uuid = uuid, to = to }, true }, hive.id, self.db_name)
 end
 
-function ReliableMsg:delete_message_from_to(from, to)
-    log_info("[ReliableMsg][delete_message_from_to] delete message from:{},to:{}", from, to)
-    return mongo_agent:delete({ self.table_name, { from = from, to = to } }, hive.id, self.db_name)
+function ReliableMsg:delete_message_from_to(from, to, type)
+    log_info("[ReliableMsg][delete_message_from_to] delete message from:{},to:{},type:{}", from, to, type)
+    local selector = { from = from, to = to }
+    if type then
+        selector["type"] = type
+    end
+    return mongo_agent:delete({ self.table_name, selector }, hive.id, self.db_name)
 end
 
 -- 发送消息
