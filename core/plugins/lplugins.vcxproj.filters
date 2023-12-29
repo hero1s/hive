@@ -4,9 +4,6 @@
     <ClInclude Include="src\laes\aes.h">
       <Filter>laes</Filter>
     </ClInclude>
-    <ClInclude Include="src\laes\PKCS7.h">
-      <Filter>laes</Filter>
-    </ClInclude>
     <ClInclude Include="src\laoi\aoi.hpp">
       <Filter>laoi</Filter>
     </ClInclude>
@@ -99,13 +96,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\laes\aes.c">
+    <ClCompile Include="src\laes\aes.cpp">
       <Filter>laes</Filter>
     </ClCompile>
-    <ClCompile Include="src\laes\laes.c">
-      <Filter>laes</Filter>
-    </ClCompile>
-    <ClCompile Include="src\laes\PKCS7.c">
+    <ClCompile Include="src\laes\laes.cpp">
       <Filter>laes</Filter>
     </ClCompile>
     <ClCompile Include="src\laoi\laoi.cpp">
