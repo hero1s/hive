@@ -27,6 +27,7 @@ prop:reader("clients", {})          --clients
 prop:reader("handlers", {})         --handlers
 prop:accessor("limit_ips", nil)
 prop:reader("qps_counter", nil)
+prop:accessor("open_log", true)
 
 function HttpServer:__init(http_addr, induce)
     self.jcodec   = jsoncodec()
@@ -77,7 +78,9 @@ function HttpServer:on_socket_accept(socket, token)
 end
 
 function HttpServer:on_socket_recv(socket, method, url, params, headers, body)
-    log_debug("[HttpServer][on_socket_recv] recv:[{}][{}],params:{},body:{}", method, url, params, body)
+    if self.open_log then
+        log_debug("[HttpServer][on_socket_recv] recv:[{}][{}],query:{},body:{},head:{}", method, url, params, body, headers)
+    end
     local handlers = self.handlers[method]
     if not handlers then
         self:response(socket, 404, "this http method hasn't suppert!")
