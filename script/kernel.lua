@@ -1,18 +1,13 @@
 --kernel.lua
 import("basic/basic.lua")
 
-local tpack         = table.pack
-local tunpack       = table.unpack
 local log_err       = logger.err
-local raw_yield     = coroutine.yield
-local raw_resume    = coroutine.resume
 local lclock_ms     = timer.clock_ms
 local ltime         = timer.time
 
 local HiveMode      = enum("HiveMode")
 local ServiceStatus = enum("ServiceStatus")
 
-local co_hookor     = hive.load("co_hookor")
 local scheduler     = hive.load("scheduler")
 local update_mgr    = hive.load("update_mgr")
 local event_mgr     = hive.load("event_mgr")
