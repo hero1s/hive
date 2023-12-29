@@ -1,4 +1,4 @@
-#include "AES.h"
+#include "aes.h"
 
 AES::AES(const AESKeyLength keyLength) {
   switch (keyLength) {
