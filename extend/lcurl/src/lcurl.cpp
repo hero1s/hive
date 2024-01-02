@@ -1,8 +1,13 @@
 ﻿#define LUA_LIB
 
 #include "lcurl.h"
+#include "email_sender.h"
 
 namespace lcurl {
+
+	static SmtpSendMail* new_email_sender() {
+		return new SmtpSendMail();
+	}
 
 	luakit::lua_table open_lcurl(lua_State* L) {
 		//类导出
@@ -24,6 +29,17 @@ namespace lcurl {
 			"enable_debug",&curl_request::enable_debug,
 			"debug",&curl_request::debug
 			);
+		kit_state.new_class<SmtpSendMail>(
+			"set_smtp_server", &SmtpSendMail::SetSmtpServer,
+			"set_send_name", &SmtpSendMail::SetSendName,
+			"set_send_mail", &SmtpSendMail::SetSendMail,
+			"add_recv_mail", &SmtpSendMail::AddRecvMail,
+			"set_subject", &SmtpSendMail::SetSubject,
+			"set_body_content", &SmtpSendMail::SetBodyContent,
+			"add_attachment", &SmtpSendMail::AddAttachment,
+			"send_mail", &SmtpSendMail::SendMail
+			);
+
 		//创建管理器
 		CURL* curle = curl_easy_init();
 		CURLM* curlm = curl_multi_init();
@@ -52,6 +68,8 @@ namespace lcurl {
 			}
 			return 0;
 			});
+		luacurl.set_function("new_email_sender", new_email_sender);
+
 		return luacurl;
 	}
 }
