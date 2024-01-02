@@ -7,9 +7,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\email_sender.h"/>
     <ClInclude Include="src\lcurl.h"/>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\email_sender.cpp"/>
     <ClCompile Include="src\lcurl.cpp"/>
   </ItemGroup>
   <PropertyGroup Label="Globals">
