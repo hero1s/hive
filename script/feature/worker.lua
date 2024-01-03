@@ -44,6 +44,11 @@ local function init_coroutine()
     hive.init_coroutine()
 end
 
+local function init_listener()
+    event_mgr:add_listener(hive, "on_append")
+    event_mgr:add_listener(hive, "on_reload")
+end
+
 --初始化loop
 local function init_mainloop()
     import("kernel/timer_mgr.lua")
@@ -54,20 +59,38 @@ local function init_mainloop()
 end
 
 function hive.init()
+    --协程初始化
+    init_coroutine()
     --核心加载
     init_core()
     --初始化基础模块
     environ.init()
     service.init()
     --主循环
-    init_coroutine()
     init_mainloop()
     --加载统计
     init_statis()
     --网络
     init_network()
+    --事件
+    init_listener()
     --加载协议
     import("kernel/protobuf_mgr.lua")
+end
+
+--热更新
+hive.on_reload = function()
+    log_info("[Worker][on_reload]worker:{} reload for signal !", TITLE)
+    --重新加载脚本
+    update_mgr:check_hotfix()
+    --事件通知
+    event_mgr:notify_trigger("on_reload")
+end
+
+--附件文件
+hive.on_append = function(_, file)
+    log_info("[hive][on_append] worker:{} append {}!", TITLE, file)
+    import(file)
 end
 
 --启动
@@ -102,14 +125,6 @@ end
 
 --事件分发
 local function notify_rpc(session_id, title, rpc, ...)
-    if rpc == "on_reload" then
-        log_info("[Worker][on_reload]worker:{} reload for signal !", TITLE)
-        --重新加载脚本
-        update_mgr:check_hotfix()
-        --事件通知
-        event_mgr:notify_trigger("on_reload")
-        return
-    end
     local rpc_datas = event_mgr:notify_listener(rpc, ...)
     if session_id > 0 then
         hive.call(title, session_id, FLAG_RES, tunpack(rpc_datas))

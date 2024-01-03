@@ -39,6 +39,11 @@ function Scheduler:startup(name, entry)
     return ok
 end
 
+--注入线程
+function Scheduler:append(name, file)
+    worker_call(name, 0, FLAG_REQ, "master", "on_append", file)
+end
+
 --访问其他线程任务
 function Scheduler:broadcast(rpc, ...)
     worker_broadcast(0, FLAG_REQ, "master", rpc, ...)

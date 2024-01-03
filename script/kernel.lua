@@ -66,6 +66,8 @@ local function init_mainloop()
 end
 
 function hive.init()
+    --协程初始化
+    init_coroutine()
     --核心加载
     init_core()
     --初始化基础模块
@@ -75,7 +77,6 @@ function hive.init()
     logger.init()
     logger.info("hive init run version:[{}] \n", environ.get("COMMIT_VERSION"))
     --主循环
-    init_coroutine()
     init_mainloop()
     init_network()
     init_statis()
