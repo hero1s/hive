@@ -10,8 +10,7 @@ local co_hookor  = hive.load("co_hookor")
 --协程改造
 function hive.init_coroutine()
     coroutine.yield  = function(...)
-        local rco  = co_running()
-        hive.trace = rco.trace
+        local rco = co_running()
         if co_hookor then
             co_hookor:yield(rco)
         end
@@ -23,9 +22,7 @@ function hive.init_coroutine()
             co_hookor:yield(rco)
             co_hookor:resume(co)
         end
-        hive.trace = rco.trace
         local args = tpack(raw_resume(co, ...))
-        co.trace   = hive.trace
         if co_hookor then
             co_hookor:resume(co_running())
         end

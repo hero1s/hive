@@ -50,6 +50,12 @@ function WorkerAgent:call(rpc, ...)
     return false, "can't call self!"
 end
 
+function WorkerAgent:append(file)
+    if scheduler then
+        scheduler:append(self.service, file)
+    end
+end
+
 function WorkerAgent:hash_service(hash_key)
     return sformat("%s_%d", self.service, hhash(hash_key, self.thread_num))
 end
