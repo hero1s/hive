@@ -50,7 +50,7 @@ namespace luabus {
         lluabus.set_function("lan_ip", get_lan_ip);
 
         //管理器接口
-        lluabus.set_function("wait", [](int ms) { return socket_mgr.wait(ms); });
+        lluabus.set_function("wait", [](int64_t now, int ms) { return socket_mgr.wait(now,ms); });
         lluabus.set_function("listen", listen);
         lluabus.set_function("connect", connect);
         lluabus.set_function("map_token", [](uint32_t node_id, uint32_t token, uint16_t hash) { return socket_mgr.map_token(node_id, token, hash); });

@@ -83,8 +83,7 @@ namespace lworker {
             return false;
         }
 
-        void update() {
-            uint64_t clock_ms = ltimer::steady_ms();
+        void update(uint64_t clock_ms) {
             if (m_read_buf->empty()) {
                 if (m_write_buf->empty()) {
                     return;
@@ -125,7 +124,7 @@ namespace lworker {
             hive.set("pid", ::getpid());
             hive.set("title", m_name);
             hive.set_function("stop", [&]() { m_running = false; });
-            hive.set_function("update", [&]() { update(); });
+            hive.set_function("update", [&](uint64_t clock_ms) { update(clock_ms); });
             hive.set_function("getenv", [&](const char* key) { return get_env(key); });
             hive.set_function("call", [&](lua_State* L, std::string_view name) { return m_schedulor->call(L, name); });
             m_lua->run_script(g_sandbox, [&](std::string_view err) {

@@ -10,7 +10,7 @@ struct lua_socket_mgr final
 public:
 	~lua_socket_mgr() {};
 	bool setup(lua_State* L, uint32_t max_fd);
-	int wait(int ms) { return m_mgr->wait(ms); }
+	int wait(int64_t now, int ms) { return m_mgr->wait(now,ms); }
 	int listen(lua_State* L, const char* ip, int port);
 	int connect(lua_State* L, const char* ip, const char* port, int timeout);
 	int map_token(uint32_t node_id, uint32_t token, uint16_t hash);

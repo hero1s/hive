@@ -25,8 +25,8 @@ function Scheduler:quit()
     hive.worker_shutdown()
 end
 
-function Scheduler:update()
-    worker_update()
+function Scheduler:update(clock_ms)
+    worker_update(clock_ms)
 end
 
 function Scheduler:startup(name, entry)

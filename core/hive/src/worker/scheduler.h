@@ -76,8 +76,7 @@ namespace lworker {
             return false;
         }
 
-        void update() {
-            uint64_t clock_ms = ltimer::steady_ms();
+        void update(uint64_t clock_ms) {
             if (m_read_buf->empty()) {
                 if (m_write_buf->empty()) {
                     return;

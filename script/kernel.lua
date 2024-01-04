@@ -157,8 +157,8 @@ end
 --底层驱动
 hive.run  = function()
     local sclock_ms = lclock_ms()
-    scheduler:update()
-    luabus.wait(10)
+    scheduler:update(sclock_ms)
+    luabus.wait(sclock_ms, 10)
     --系统更新
     local now_ms, clock_ms = ltime()
     update_mgr:update(scheduler, now_ms, clock_ms)
