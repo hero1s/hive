@@ -182,7 +182,7 @@ void hive_app::run() {
 	hive.set_function("register_signal", [](int n) { signal(n, on_signal); });
 	hive.set_function("getenv", [&](const char* key) { return getenv(key); });
 	//begin worker操作接口
-	hive.set_function("worker_update", [&](size_t to) { m_schedulor.update(); });
+	hive.set_function("worker_update", [&](uint64_t clock_ms) { m_schedulor.update(clock_ms); });
 	hive.set_function("worker_shutdown", [&]() { m_schedulor.shutdown(); });
 	hive.set_function("worker_broadcast", [&](lua_State* L) { return m_schedulor.broadcast(L); });
 	hive.set_function("worker_setup", [&](lua_State* L, std::string_view service) {

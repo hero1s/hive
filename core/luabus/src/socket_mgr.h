@@ -88,7 +88,7 @@ public:
 	bool get_socket_funcs();
 #endif
 
-	int wait(int timeout);
+	int wait(int64_t now, int timeout);
 
 	uint32_t listen(std::string& err, const char ip[], int port, eproto_type proto_type);
 	uint32_t connect(std::string& err, const char node_name[], const char service_name[], int timeout, eproto_type proto_type);

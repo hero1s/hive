@@ -110,8 +110,8 @@ end
 hive.run = function()
     hxpcall(function()
         local sclock_ms = lclock_ms()
-        hive.update()
-        luabus.wait(10)
+        hive.update(sclock_ms)
+        luabus.wait(sclock_ms, 10)
         local now_ms, clock_ms = ltime()
         update_mgr:update(nil, now_ms, clock_ms)
         --时间告警
