@@ -95,7 +95,7 @@ function NetClient:on_socket_rpc(socket, cmd_id, flag, session_id, body)
         local wait_session_id = self.wait_list[cmd_id]
         if wait_session_id then
             self.wait_list[cmd_id] = nil
-            thread_mgr:response(wait_session_id, true)
+            thread_mgr:response(wait_session_id, true, body)
         end
         return
     end
