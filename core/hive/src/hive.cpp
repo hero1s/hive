@@ -178,7 +178,6 @@ void hive_app::run() {
 	auto hive = lua.new_table("hive");
 	hive.set("pid", ::getpid());
 	hive.set("title", "hive");
-	hive.set("environs", m_environs);
 	hive.set("platform", get_platform());
 	
 	hive.set_function("get_signal", [&]() { return m_signal; });
@@ -187,6 +186,7 @@ void hive_app::run() {
 	hive.set_function("default_signal", [](int n) { signal(n, SIG_DFL); });
 	hive.set_function("register_signal", [](int n) { signal(n, on_signal); });
 	hive.set_function("getenv", [&](const char* key) { return get_env(key); });
+	hive.set_function("environs", [&]() { return m_environs; });
 	//begin worker操作接口
 	hive.set_function("worker_update", [&](uint64_t clock_ms) { m_schedulor.update(clock_ms); });
 	hive.set_function("worker_shutdown", [&]() { m_schedulor.shutdown(); });
