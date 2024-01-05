@@ -62,14 +62,6 @@ static void daemon() {
 #endif
 }
 
-static int lset_env(lua_State* L) {
-	const char* key = lua_tostring(L, 1);
-	const char* value = lua_tostring(L, 2);
-	auto overwrite = luaL_optinteger(L, 3, 1);
-	setenv(key, value, int(overwrite));
-	return 0;
-}
-
 static std::string add_lua_path(std::string_view path) {
 	auto p = getenv("LUA_PATH");
 	std::string cur_path = (p != NULL) ? p : "";
@@ -88,6 +80,19 @@ void hive_app::set_signal(uint32_t n, bool b) {
 	} else {
 		m_signal ^= mask;
 	}
+}
+
+const char* hive_app::get_env(const char* key) {
+	return getenv(key);
+}
+
+int hive_app::set_env(lua_State* L) {
+	const char* key = lua_tostring(L, 1);
+	const char* value = lua_tostring(L, 2);
+	auto overwrite = luaL_optinteger(L, 3, 1);
+	setenv(key, value, int(overwrite));
+	m_environs[key] = value;
+	return 0;
 }
 
 void hive_app::setup(int argc, const char* argv[]) {
@@ -119,7 +124,7 @@ bool hive_app::load(int argc, const char* argv[]) {
 		//加载LUA配置
 		luakit::kit_state lua;
 		lua.set("platform", get_platform());
-		lua.set_function("set_env", lset_env);
+		lua.set_function("set_env", [&](lua_State* L) { return set_env(L); });
 		lua.set_function("add_lua_path", add_lua_path);
 
 		lua.run_file(lua_conf, [&](std::string_view err) {
@@ -167,12 +172,13 @@ void hive_app::run() {
 	}
 	luakit::kit_state lua;
 	lua.set("platform", get_platform());
-	lua.set_function("set_env", lset_env);
+	lua.set_function("set_env", [&](lua_State* L) { return set_env(L); });
 
 	open_custom_libs(lua.L());//添加扩展库
 	auto hive = lua.new_table("hive");
 	hive.set("pid", ::getpid());
 	hive.set("title", "hive");
+	hive.set("environs", m_environs);
 	hive.set("platform", get_platform());
 	
 	hive.set_function("get_signal", [&]() { return m_signal; });
@@ -180,7 +186,7 @@ void hive_app::run() {
 	hive.set_function("ignore_signal", [](int n) { signal(n, SIG_IGN); });
 	hive.set_function("default_signal", [](int n) { signal(n, SIG_DFL); });
 	hive.set_function("register_signal", [](int n) { signal(n, on_signal); });
-	hive.set_function("getenv", [&](const char* key) { return getenv(key); });
+	hive.set_function("getenv", [&](const char* key) { return get_env(key); });
 	//begin worker操作接口
 	hive.set_function("worker_update", [&](uint64_t clock_ms) { m_schedulor.update(clock_ms); });
 	hive.set_function("worker_shutdown", [&]() { m_schedulor.shutdown(); });
