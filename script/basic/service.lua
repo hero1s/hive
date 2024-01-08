@@ -72,7 +72,7 @@ function service.init()
     hive.safe_stop    = SERVICE_CONFS[service_id].safe_stop
     hive.pre_services = SERVICE_CONFS[service_id].pre_services
     hive.is_publish   = environ.status("HIVE_PUBLISH_ENV")
-
+    hive.rigion       = environ.number("HIVE_CURRENT_RIGION", 0)
     service.make_node()
 end
 
