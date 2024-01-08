@@ -112,6 +112,10 @@ for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     end
 end
 
+logger["dump"] = function(fmt, ...)
+    logger_output(0x01 | 0x02, "", LOG_LEVEL.TRACE, "trace", fmt, ...)
+end
+
 for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl_name, flag = tunpack(conf)
     logfeature[lvl_name] = function(feature, path, prefix, def)
