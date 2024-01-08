@@ -116,7 +116,7 @@ function hive.after_start()
     if environ.status("HIVE_DEBUG") then
         hive.check_endless_loop()
     end
-    logger.fatal("environs:{}", hive.environs())
+    logger.dump("environs:{}", hive.environs())
 end
 
 --变更服务状态
