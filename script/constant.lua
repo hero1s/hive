@@ -1,4 +1,3 @@
---constant.lua
 --服务状态
 local ServiceStatus              = enum("ServiceStatus", 0)
 ServiceStatus.READY              = 0  --准备

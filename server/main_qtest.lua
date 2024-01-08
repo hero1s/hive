@@ -1,8 +1,6 @@
---main_qtest.lua
 import("kernel.lua")
 
 hive.startup(function()
-    --初始化test
     --import("qtest/oop_test.lua")
     --import("qtest/etcd_test.lua")
     --import("qtest/pack_test.lua")
