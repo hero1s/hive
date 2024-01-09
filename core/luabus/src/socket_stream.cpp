@@ -533,7 +533,7 @@ void socket_stream::dispatch_package(bool reset) {
 			router_header* header = (router_header*)data;
 			// 当前包长小于headlen, 关闭连接
 			if (header->len < header_len) {
-				on_error("package-length-err");
+				on_error(fmt::format("rpc package-length-err,ip:{}",m_ip).c_str());
 				return;
 			}
 			package_size = header->len;
@@ -553,7 +553,7 @@ void socket_stream::dispatch_package(bool reset) {
 			package_size = m_codec->load_packet(data_len);
 			//当前包头长度解析失败, 关闭连接
 			if (package_size < 0) {
-				on_error("package-length-err");
+				on_error(fmt::format("text package-length-err,ip:{}", m_ip).c_str());
 				return;
 			}
 			// 数据包还没有收完整
