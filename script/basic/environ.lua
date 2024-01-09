@@ -60,7 +60,7 @@ end
 
 local function parse_hosts(value)
     local hosts = {}
-    local strs = ssplit(value, ",")
+    local strs  = ssplit(value, ",")
     for _, str in pairs(strs) do
         local k, v = saddr(str)
         if k then
@@ -105,4 +105,8 @@ function environ.driver(url)
         end
         return drivers
     end
+end
+
+function environ.dump()
+    logger.dump("environs:{}", hive.environs())
 end
