@@ -4,6 +4,8 @@
 #include "lualog/logger.h"
 #include "worker/scheduler.h"
 
+#define HIVE_VERSION 20240109
+
 using namespace logger;
 class hive_app final
 {

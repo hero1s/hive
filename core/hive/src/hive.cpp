@@ -203,7 +203,7 @@ void hive_app::run() {
 		});
 	
 	//end worker接口
-
+	LOG_INFO(fmt::format("hive engine init.version:{}", HIVE_VERSION));
 	lua.run_script(g_sandbox, [&](std::string_view err) {
 		exception_handler(fmt::format("load sandbox err:{}", err));
 		});
