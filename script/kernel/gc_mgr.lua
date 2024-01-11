@@ -1,8 +1,8 @@
 --手动垃圾回收模块
 --适用于管理较大内存对象的模块
---两种情况下触发：1.内存距离上次清理增长超过传入阈值 2.持续未清理时间超过MAX_IDLE_TIME
+--两种情况下触发：1.内存距离上次清理增长超过阈值 2.持续未清理时间超过MAX_IDLE_TIME
 --gc最终方案，根据内存增量，计算步长
--- 压测1W人在线，6秒增加内存186M，现网400人在线，6秒增加内存8M，暂定每秒增加20MB内存，就开启急速垃圾回收
+--压测1W人在线，6秒增加内存186M，现网400人在线，6秒增加内存8M，暂定每秒增加20MB内存，就开启急速垃圾回收
 local lhelper             = require("lhelper")
 local mem_usage           = lhelper.mem_usage
 local lclock_ms           = timer.clock_ms
@@ -11,14 +11,11 @@ local mfloor              = math.floor
 local log_info            = logger.info
 local cut_tail            = math_ext.cut_tail
 
-local MAX_IDLE_TIME       = 10 * 1000                  -- 空闲时间
-local GC_MAX_STEP         = 200                        -- gc最大回收速度
-local GC_FAST_STEP        = 100                        -- gc快速回收
-local GC_SLOW_STEP        = 50                         -- gc慢回收
-local MEM_SIZE_FOR_FAST   = 1000 * 1000                -- gc快速回收内存大小,1G
-local MEM_SIZE_FOR_MAX    = 2000 * 1000                -- 超过1G内存，极限速度回收内存
-local MEM_ALLOC_SPEED_MAX = 20 * 1000                  -- 每秒消耗内存超过20M，开启急速gc
-local PER_US_FOR_SECOND   = 1000                       -- 1秒=1000ms
+local MAX_IDLE_TIME<const>       = 10 * 1000                  -- 空闲时间
+local GC_FAST_STEP<const>        = 100                        -- gc快速回收
+local GC_SLOW_STEP<const>        = 50                         -- gc慢回收
+local MEM_ALLOC_SPEED_MAX<const> = 20 * 1000                  -- 每秒消耗内存超过20M，开启急速gc
+local PER_US_FOR_SECOND<const>   = 1000                       -- 1秒=1000ms
 
 local GcMgr               = singleton()
 local prop                = property(GcMgr)
@@ -39,16 +36,7 @@ prop:reader("mem_cost_speed", 0)
 prop:reader("gc_mode", 0)
 
 function GcMgr:__init()
-    self.gc_mode = environ.number("HIVE_GC_MODE", 0)
-    if self.gc_mode == 1 then
-        self:generational_gc()
-    end
-end
 
-function GcMgr:on_fast(clock_ms)
-    if self.gc_mode == 0 then
-        self:update()
-    end
 end
 
 function GcMgr:generational_gc()
@@ -79,11 +67,7 @@ function GcMgr:collect_gc()
     return lua_mem_e
 end
 
-function GcMgr:update(threshold)
-    if threshold ~= nil and threshold > 1024 * 32 then
-        self.gc_threshold = threshold
-    end
-
+function GcMgr:update()
     if not self.gc_initflag then
         self.gc_initflag = true
         collectgarbage("stop")
@@ -108,9 +92,7 @@ function GcMgr:update(threshold)
                 self.mem_cost_speed = (self.gc_free_time > PER_US_FOR_SECOND) and mem_cost / (self.gc_free_time / PER_US_FOR_SECOND) or MEM_ALLOC_SPEED_MAX
             end
 
-            if self.gc_start_mem > MEM_SIZE_FOR_MAX or self.mem_cost_speed >= MEM_ALLOC_SPEED_MAX then
-                self.step_value = GC_MAX_STEP
-            elseif self.gc_start_mem > MEM_SIZE_FOR_FAST then
+            if self.mem_cost_speed >= MEM_ALLOC_SPEED_MAX then
                 self.step_value = GC_FAST_STEP
             end
 

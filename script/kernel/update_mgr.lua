@@ -50,7 +50,6 @@ function UpdateMgr:__init()
     self:attach_frame(timer_mgr)
     self:attach_frame(event_mgr)
     self:attach_fast(thread_mgr)
-    self:attach_fast(gc_mgr)
     self:attach_second(event_mgr)
     self:attach_second(thread_mgr)
     self:attach_second30(thread_mgr)
@@ -114,6 +113,7 @@ function UpdateMgr:update(scheduler, now_ms, clock_ms)
         end)
     end
     hive.frame = frame
+    gc_mgr:update()
     --快帧更新
     if clock_ms < self.next_frame then
         return

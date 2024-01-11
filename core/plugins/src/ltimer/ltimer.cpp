@@ -144,6 +144,7 @@ namespace ltimer {
 		luatimer.set_function("sleep", [](uint64_t ms) { return sleep(ms); });
 		luatimer.set_function("offset", [](int64_t v) { offset(v); });
 		luatimer.set_function("cron_next", cron_next);
+		luatimer.set_function("timezone", []() { return timezone(); });
 		return luatimer;
 	}
 }
