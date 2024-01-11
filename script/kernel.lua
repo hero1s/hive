@@ -75,7 +75,7 @@ function hive.init()
     environ.init()
     service.init()
     logger.init()
-    logger.info("hive init run version:[{}] \n", environ.get("COMMIT_VERSION"))
+    logger.info("hive init run version:[{}] timezone:[{}] \n", environ.get("COMMIT_VERSION"), hive.timezone)
     --主循环
     init_mainloop()
     init_network()
