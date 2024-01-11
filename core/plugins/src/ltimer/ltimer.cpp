@@ -145,6 +145,14 @@ namespace ltimer {
 		luatimer.set_function("offset", [](int64_t v) { offset(v); });
 		luatimer.set_function("cron_next", cron_next);
 		luatimer.set_function("timezone", []() { return timezone(); });
+		luatimer.set_function("make_time", [](int year, int month, int day, int hour, int min, int sec) { return make_time(year, month, day, hour, min, sec); });
+		luatimer.set_function("is_leap_year", [](uint64_t ts) { return is_leap_year(ts); });
+		luatimer.set_function("month_days", [](int year, int month) { return month_days(year, month); });
+		luatimer.set_function("diff_day", [](uint64_t _early, uint64_t _late) { return diff_day(_early, _late); });
+		luatimer.set_function("diff_week", [](uint64_t _early, uint64_t _late) { return diff_week(_early, _late); });
+		luatimer.set_function("diff_month", [](uint64_t _early, uint64_t _late) { return diff_month(_early, _late); });
+		luatimer.set_function("is_birthday", [](uint64_t _early, uint64_t _late) { return is_birthday(_early, _late); });
+
 		return luatimer;
 	}
 }
