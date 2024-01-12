@@ -89,87 +89,56 @@ namespace ltimer {
 		return tz;
 	}
 
-    inline bool is_leap_year(uint64_t ts) {
-        tm tm_early = gmtime(ts);
-        auto year = tm_early.tm_year;
+    inline bool is_leap_year(int year) {
         if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
             return true;
         }
         return false;
     }
 
+    //获得今日开始时间
+    inline uint64_t day_begin_time(time_t t) {
+        auto _tm = gmtime(t);
+        _tm.tm_hour = 0;
+        _tm.tm_min = 0;
+        _tm.tm_sec = 0;
+        return mktime(&_tm);
+    }
+
 	//判断一个月有多少天
 	inline int month_days(int year, int month) {
-		int flag = 0;
-		if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
-			flag = 1; //是闰年
-		}
 		static int const month_normal[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 		static int const month_ruinian[12] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-		return flag ? month_ruinian[month] : month_normal[month];
+		return is_leap_year(year) ? month_ruinian[month] : month_normal[month];
 	}
+
+    inline int local_day(uint64_t ts) {
+        tm tm_ts = gmtime(ts);
+        auto days_before_year = [](int year) {
+            year--;
+            return year * 365 + year / 4 - year / 100 + year / 400;
+        };
+        auto days_before_month = [](int year, int month) {
+            static int const DAYS_BEFORE_MONTH[] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };
+            if (month > 1 && is_leap_year(year)) {
+                return DAYS_BEFORE_MONTH[month] + 1;
+            }
+            return DAYS_BEFORE_MONTH[month];
+        };
+        return days_before_year(tm_ts.tm_year) + days_before_month(tm_ts.tm_year, tm_ts.tm_mon) + tm_ts.tm_mday;
+    }
 
     //获得时间相差天数
     inline int diff_day(uint64_t _early, uint64_t _late) {
-        if (_early == 0 || _late == 0)
-            return 0;
-        tm tm_early = gmtime(_early);
-        tm tm_late  = gmtime(_late);
-
-        if (tm_early.tm_year > tm_late.tm_year)
-            return 0;
-
-        //同年同日
-        if (tm_early.tm_year == tm_late.tm_year && tm_early.tm_yday == tm_late.tm_yday)
-            return 0;
-
-        //同年判断
-        if (tm_early.tm_year == tm_late.tm_year) {
-            if (tm_early.tm_yday >= tm_late.tm_yday)
-                return 0;
-
-            return (tm_late.tm_yday - tm_early.tm_yday);
-        }
-
-        int32_t iDay = 0;
-        //不同年时
-        if (tm_early.tm_year != tm_late.tm_year) {
-            tm tm_temp = tm_early;
-
-            //获取12月31日时间
-            tm_temp.tm_mon = 11;
-            tm_temp.tm_mday = 31;
-            tm_temp.tm_yday = 0;
-            uint64_t _temp = mktime(&tm_temp);
-            tm_temp = gmtime(_temp);            
-            iDay = tm_temp.tm_yday - tm_early.tm_yday;
-
-            iDay += 1; //跨年+1
-
-            //获得相差年天数
-            for (int32_t i = tm_early.tm_year + 1; i < tm_late.tm_year; i++) {
-                tm_temp.tm_year++;
-                tm_temp.tm_yday = 0;
-                _temp = mktime(&tm_temp);
-                tm_temp = gmtime(_temp);
-                iDay += tm_temp.tm_yday;
-                iDay += 1; //跨年+1
-            }
-        }
-        return (iDay + tm_late.tm_yday);
+        auto de = local_day(_early);
+        auto dl = local_day(_late);
+        return dl - de;
     }
 
     //获得时间相差周数
-    inline int32_t diff_week(uint64_t _early, uint64_t _late) {
-        if (_early == 0 || _late == 0)
-            return 0;
-
+    inline int diff_week(uint64_t _early, uint64_t _late) {
         tm tm_early = gmtime(_early);
         tm tm_late  = gmtime(_late);
-
-        if (tm_early.tm_year > tm_late.tm_year)
-            return 0;
-
         //同年同日
         if (tm_early.tm_year == tm_late.tm_year && tm_early.tm_yday == tm_late.tm_yday)
             return 0;
@@ -180,26 +149,14 @@ namespace ltimer {
         if (tm_late.tm_wday != 6)
             tm_late.tm_mday += (6 - tm_late.tm_wday);
 
-        int32_t iDay = diff_day(mktime(&tm_early), mktime(&tm_late));
-
-        int32_t iWeek = 0;
-        if (iDay > 0)
-            iWeek = iDay / 7; //肯定相差都是7的倍数因为都是周六
-
-        return iWeek;
+        auto iDay = diff_day(mktime(&tm_early), mktime(&tm_late));
+        return iDay / 7; //肯定相差都是7的倍数因为都是周六
     }
 
     //获得时间相差月数
-    inline int32_t diff_month(uint64_t _early, uint64_t _late)
-    {
-        if (_early == 0 || _late == 0)
-            return 0;
-
+    inline int diff_month(uint64_t _early, uint64_t _late) {
         tm tm_early = gmtime(_early);
         tm tm_late  = gmtime(_late);
-
-        if (tm_early.tm_year > tm_late.tm_year)
-            return 0;
 
         //同年同月
         if (tm_early.tm_year == tm_late.tm_year && tm_early.tm_mon == tm_late.tm_mon)
@@ -209,19 +166,15 @@ namespace ltimer {
         if (tm_early.tm_year == tm_late.tm_year)
             return (tm_late.tm_mon - tm_early.tm_mon);
 
-        int32_t iMon = 0;
+        int iMon = 0;
         //不同年时
         if (tm_early.tm_year != tm_late.tm_year) {
             //计算相差年数
             iMon = (tm_late.tm_year - tm_early.tm_year) * 12;
             //再计算相差月数
             iMon += tm_late.tm_mon;
-            if (iMon >= tm_early.tm_mon)
-                iMon -= tm_early.tm_mon;
-            else
-                iMon = 0;
+            iMon -= tm_early.tm_mon;
         }
-
         return iMon;
     }
 
