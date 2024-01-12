@@ -97,8 +97,8 @@ namespace ltimer {
     }
 
     //获得今日开始时间
-    inline uint64_t day_begin_time(time_t t) {
-        auto _tm = gmtime(t);
+    inline uint64_t day_begin_time(uint64_t ts) {
+        auto _tm = gmtime(ts);
         _tm.tm_hour = 0;
         _tm.tm_min = 0;
         _tm.tm_sec = 0;
@@ -106,10 +106,11 @@ namespace ltimer {
     }
 
 	//判断一个月有多少天
-	inline int month_days(int year, int month) {
+	inline int month_days(uint64_t ts) {
+        tm tm_ts = gmtime(ts);
 		static int const month_normal[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 		static int const month_ruinian[12] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-		return is_leap_year(year) ? month_ruinian[month] : month_normal[month];
+		return is_leap_year(tm_ts.tm_year) ? month_ruinian[tm_ts.tm_mon] : month_normal[tm_ts.tm_mon];
 	}
 
     inline int local_day(uint64_t ts) {

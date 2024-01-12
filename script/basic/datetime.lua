@@ -26,9 +26,9 @@ function datetime_ext.is_same_day(time1, time2)
     return timer.diff_day(time1, time2) == 0
 end
 
----Get diff of days
+---Get diff of days, always >= 0
 function datetime_ext.past_day(time1, time2)
-    return timer.diff_day(time1, time2)
+    return math.abs(timer.diff_day(time1, time2))
 end
 
 ---Make today's some time
