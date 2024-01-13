@@ -90,7 +90,7 @@ bool socket_stream::update(int64_t now,bool check_timeout) {
 	switch (m_link_status) {
 	case elink_status::link_closed: {
 #ifdef _MSC_VER
-		if (m_ovl_ref != 0) return true;
+		if (m_ovl_ref > 0) return true;
 #endif
 		if (m_socket != INVALID_SOCKET) {
 			m_mgr->unwatch(m_socket);
@@ -100,6 +100,9 @@ bool socket_stream::update(int64_t now,bool check_timeout) {
 		return false;
 	}
 	case elink_status::link_colsing: {
+#ifdef _MSC_VER
+		if (m_ovl_ref > 1) return true;
+#endif
 		if (m_send_buffer.empty()) {
 			m_link_status = elink_status::link_closed;
 		}
