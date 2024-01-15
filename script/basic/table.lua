@@ -332,6 +332,20 @@ local function tweak(src, mode)
     return setmetatable(src, { __mode = mode or "kv" })
 end
 
+local function set_const_table(tbl)
+    for key, value in pairs(tbl) do
+        if type(value) == "table" then
+            tbl[key] = set_const_table(value)
+        end
+    end
+    return setmetatable({}, {
+        __index    = tbl,
+        __newindex = function(t, key, value)
+            error("attempting to change constant " .. tostring(key) .. " to " .. tostring(value), 2)
+        end
+    })
+end
+
 table_ext                   = _ENV.table_ext or {}
 
 table_ext.random            = trandom
@@ -363,6 +377,7 @@ table_ext.filter            = tfilter
 table_ext.reverse           = treverse
 table_ext.tremove_out       = tremove_out
 table_ext.weak              = tweak
+table_ext.set_const_table   = set_const_table
 
 -- 按哈希key排序
 --[[ 使用示例:

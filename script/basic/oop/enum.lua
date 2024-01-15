@@ -25,7 +25,7 @@ local sformat      = string.format
 local dgetinfo     = debug.getinfo
 local setmetatable = setmetatable
 local log_err      = logger.err
-local enum_tpls    = _ENV.enum_tpls or {}
+local enum_tpls    = _ENV.__enums or {}
 
 local function enum_tostring(eo)
     local ekv = {}
@@ -134,3 +134,4 @@ function enum_kv_list(enum_obj)
     return enum_obj.__vlist
 end
 
+_ENV.__enums = enum_tpls

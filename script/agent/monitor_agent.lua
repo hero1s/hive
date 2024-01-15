@@ -202,7 +202,7 @@ function MonitorAgent:rpc_snapshot(snap)
 end
 
 function MonitorAgent:rpc_count_lua_obj(less_num)
-    local obj_counts = show_class_track(less_num)
+    local obj_counts = class_review(less_num)
     log_warn("rpc_count_lua_obj:{}", obj_counts)
     return { objs = obj_counts, lua_mem = gc_mgr:lua_mem_size(), mem = gc_mgr:mem_size() }
 end
