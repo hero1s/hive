@@ -5,6 +5,7 @@ local hxpcall            = hive.xpcall
 local log_info           = logger.info
 local log_err            = logger.err
 local tunpack            = table.unpack
+local wcall              = hive.call
 local lclock_ms          = timer.clock_ms
 local ltime              = timer.time
 
@@ -127,7 +128,7 @@ end
 local function notify_rpc(session_id, title, rpc, ...)
     local rpc_datas = event_mgr:notify_listener(rpc, ...)
     if session_id > 0 then
-        hive.call(title, session_id, FLAG_RES, tunpack(rpc_datas))
+        wcall(title, session_id, FLAG_RES, tunpack(rpc_datas))
     end
 end
 
@@ -143,7 +144,7 @@ end
 --访问主线程
 hive.call_master = function(rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    if hive.call("master", session_id, FLAG_REQ, TITLE, rpc, ...) then
+    if wcall("master", session_id, FLAG_REQ, TITLE, rpc, ...) then
         return thread_mgr:yield(session_id, rpc, THREAD_RPC_TIMEOUT)
     end
     return false, "call failed!"
@@ -151,13 +152,13 @@ end
 
 --通知主线程
 hive.send_master = function(rpc, ...)
-    hive.call("master", 0, FLAG_REQ, TITLE, rpc, ...)
+    wcall("master", 0, FLAG_REQ, TITLE, rpc, ...)
 end
 
 --访问其他线程
 hive.call_worker = function(name, rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    if hive.call(name, session_id, FLAG_REQ, TITLE, rpc, ...) then
+    if wcall(name, session_id, FLAG_REQ, TITLE, rpc, ...) then
         return thread_mgr:yield(session_id, rpc, THREAD_RPC_TIMEOUT)
     end
     return false, "call failed!"
@@ -165,5 +166,5 @@ end
 
 --通知其他线程
 hive.send_worker = function(name, rpc, ...)
-    hive.call(name, 0, FLAG_REQ, TITLE, rpc, ...)
+    wcall(name, 0, FLAG_REQ, TITLE, rpc, ...)
 end

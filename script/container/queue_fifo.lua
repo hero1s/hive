@@ -48,15 +48,13 @@ end
 function QueueFIFO:pop()
     local first, tail = self.first, self.tail
     if first > tail then
+        self.first = 1
+        self.tail  = 0
         return
     end
     local value       = self.datas[first]
     self.datas[first] = nil
     self.first        = first + 1
-    if self:empty() then
-        self.first = 1
-        self.tail  = 0
-    end
     return value
 end
 
