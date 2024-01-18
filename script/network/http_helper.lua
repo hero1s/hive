@@ -9,18 +9,51 @@ local luencode = curl.url_encode
 local lmd5     = crypt.md5
 local tmapsort = table_ext.mapsort
 local tmerge   = table_ext.merge
+local mmin     = math.min
 
 http_helper    = {}
+
+local function cmp_key(a, b)
+    local len = mmin(a[1]:len(), b[1]:len())
+    for i = 1, len do
+        local a1, b1 = a[1]:byte(i), b[1]:byte(i)
+        if a1 ~= b1 then
+            return a1 < b1
+        end
+    end
+    return a[1]:len() < b[1]:len()
+end
+
+function http_helper.url_query_concat(query, sort)
+    if query and next(query) then
+        local fquery = {}
+        if sort then
+            local params = tmapsort(query, cmp_key)
+            for _, value in pairs(params) do
+                local k, v = value[1], value[2]
+                if k and v then
+                    fquery[#fquery + 1] = sformat("%s=%s", k, v)
+                end
+            end
+        else
+            for key, value in pairs(query) do
+                fquery[#fquery + 1] = sformat("%s=%s", key, value)
+            end
+        end
+        return tconcat(fquery, "&")
+    end
+    return ""
+end
 
 function http_helper.urlencoded(query, sort)
     if query and next(query) then
         local fquery = {}
         if sort then
-            local params = tmapsort(query)
+            local params = tmapsort(query, cmp_key)
             for _, value in pairs(params) do
                 local k, v = luencode(value[1]), luencode(value[2])
                 if k and v then
-                    fquery[#fquery + 1] = sformat("%s=%s", luencode(value[1]), luencode(value[2]))
+                    fquery[#fquery + 1] = sformat("%s=%s", k, v)
                 end
             end
         else
@@ -85,7 +118,7 @@ function http_helper.check_param(securet, headKeys, querys, body, head)
         params[v] = head[v]
     end
     tmerge(querys, params)
-    params        = tmapsort(params)
+    params        = tmapsort(params, cmp_key)
     local cal_str = ""
     for _, value in pairs(params) do
         cal_str = cal_str .. value[1] .. value[2]

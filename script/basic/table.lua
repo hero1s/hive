@@ -172,9 +172,9 @@ local function tmap(src)
     return dst
 end
 
-local function tmapsort(src)
+local function tmapsort(src, sort)
     local dst = tkvarray(src)
-    tsort(dst, function(a, b)
+    tsort(dst, sort or function(a, b)
         return a[1] < b[1]
     end)
     return dst
