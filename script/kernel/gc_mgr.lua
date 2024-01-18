@@ -8,13 +8,13 @@ local mem_usage                  = lhelper.mem_usage
 local lclock_ms                  = timer.clock_ms
 local collectgarbage             = collectgarbage
 local mfloor                     = math.floor
-local log_info                   = logger.info
+local log_warn                   = logger.warn
 local cut_tail                   = math_ext.cut_tail
 
 local MAX_IDLE_TIME<const>       = 10 * 1000                  -- 空闲时间
 local GC_FAST_STEP<const>        = 500                        -- gc快速回收
 local GC_SLOW_STEP<const>        = 100                        -- gc慢回收
-local MEM_ALLOC_SPEED_MAX<const> = 20 * 1000                  -- 每秒消耗内存超过20M，开启急速gc
+local MEM_ALLOC_SPEED_MAX<const> = 10 * 1000                  -- 每秒消耗内存超过10M，开启急速gc
 local PER_US_FOR_SECOND<const>   = 1000                       -- 1秒=1000ms
 
 local GcMgr                      = singleton()
@@ -39,16 +39,6 @@ function GcMgr:__init()
     self.gc_running  = false
 end
 
-function GcMgr:generational_gc()
-    log_info("convert to generational gc")
-    collectgarbage("generational")
-end
-
-function GcMgr:incremental_gc()
-    log_info("convert to incremental gc")
-    collectgarbage("incremental")
-end
-
 function GcMgr:lua_mem_size()
     return cut_tail(collectgarbage("count") / 1024, 1)
 end
@@ -63,7 +53,7 @@ function GcMgr:collect_gc()
     local lua_mem_s = self:lua_mem_size()
     collectgarbage("collect")
     local lua_mem_e = self:lua_mem_size()
-    log_info("[GcMgr][collect_gc] {} m,lua:{} m --> {} m,cost time:{}", mem, lua_mem_s, lua_mem_e, lclock_ms() - clock_ms)
+    log_warn("[GcMgr][collect_gc] {} m,lua:{} m --> {} m,cost time:{}", mem, lua_mem_s, lua_mem_e, lclock_ms() - clock_ms)
     return lua_mem_e
 end
 
@@ -78,17 +68,8 @@ function GcMgr:run_step(now_us)
     if costTime > 50 then
         self.gc_step_time50_cnt = self.gc_step_time50_cnt + 1
     end
-    --log_info("gc step, step_count:{} cost_time: {}", self.gc_step_count, costTime)
     if not self.gc_running then
-        self.gc_stop_mem     = mfloor(collectgarbage("count"))
-        local old_step_value = self.step_value
-        local gc_cycle       = lclock_ms() - self.gc_start_time
-        local avg_time       = mfloor(self.gc_use_time / self.gc_step_count)
-        self:log_gc_end(gc_cycle, avg_time, old_step_value)
-        self.gc_step_count        = 0
-        self.gc_use_time          = 0
-        self.gc_step_use_time_max = 0
-        self.gc_last_collect_time = lclock_ms()
+        self:log_gc_end()
     end
 end
 
@@ -101,32 +82,35 @@ function GcMgr:update()
     self.gc_start_mem = mfloor(collectgarbage("count"))
     local mem_cost    = self.gc_start_mem - self.gc_stop_mem
     if (mem_cost > self.gc_threshold) or self.gc_last_collect_time + MAX_IDLE_TIME < now_us then
-        self.gc_running     = true
-        self.gc_start_time  = now_us
-        self.step_value     = GC_SLOW_STEP
-
-        self.mem_cost_speed = 0
-        if self.gc_last_collect_time > 0 then
-            self.gc_free_time   = self.gc_start_time - self.gc_last_collect_time
-            self.mem_cost_speed = (self.gc_free_time > PER_US_FOR_SECOND) and mem_cost / (self.gc_free_time / PER_US_FOR_SECOND) or MEM_ALLOC_SPEED_MAX
-        end
-
-        if self.mem_cost_speed >= MEM_ALLOC_SPEED_MAX then
-            self.step_value = GC_FAST_STEP
-        end
-
-        self.gc_step_time50_cnt = 0
-        self:log_gc_start()
+        self:log_gc_start(now_us, mem_cost)
     end
 end
 
-function GcMgr:log_gc_start()
+function GcMgr:log_gc_start(now_us, mem_cost)
+    self.gc_running     = true
+    self.gc_start_time  = now_us
+    self.step_value     = GC_SLOW_STEP
+
+    self.mem_cost_speed = 0
+    if self.gc_last_collect_time > 0 then
+        self.gc_free_time   = self.gc_start_time - self.gc_last_collect_time
+        self.mem_cost_speed = (self.gc_free_time > PER_US_FOR_SECOND) and mem_cost / (self.gc_free_time / PER_US_FOR_SECOND) or MEM_ALLOC_SPEED_MAX
+    end
+
+    if self.mem_cost_speed >= MEM_ALLOC_SPEED_MAX then
+        self.step_value = GC_FAST_STEP
+    end
+
+    self.gc_step_time50_cnt = 0
     if self.step_value > GC_SLOW_STEP then
-        log_info("[GcMgr][log_gc_start] count is:{},last mem is:{},step value is:{}", self.gc_start_mem, self.gc_stop_mem, self.step_value)
+        log_warn("[GcMgr][log_gc_start] count is:{},last mem is:{},step value is:{}", self.gc_start_mem, self.gc_stop_mem, self.step_value)
     end
 end
 
-function GcMgr:log_gc_end(gc_cycle, avg_time, old_step_value)
+function GcMgr:log_gc_end()
+    self.gc_stop_mem = mfloor(collectgarbage("count"))
+    local gc_cycle   = lclock_ms() - self.gc_start_time
+    local avg_time   = mfloor(self.gc_use_time / self.gc_step_count)
     if self.step_value > GC_SLOW_STEP then
         local gc_info = {
             step_count      = self.gc_step_count,
@@ -137,12 +121,16 @@ function GcMgr:log_gc_end(gc_cycle, avg_time, old_step_value)
             step_time_max   = self.gc_step_use_time_max,
             step_time_avg   = avg_time,
             free_time       = self.gc_free_time,
-            step_value      = old_step_value,
+            step_value      = self.step_value,
             step_time50_cnt = self.gc_step_time50_cnt,
             mem_cost_speed  = self.mem_cost_speed,
         }
-        log_info("[GcMgr][log_gc_end] {}", gc_info)
+        log_warn("[GcMgr][log_gc_end] {}", gc_info)
     end
+    self.gc_step_count        = 0
+    self.gc_use_time          = 0
+    self.gc_step_use_time_max = 0
+    self.gc_last_collect_time = lclock_ms()
 end
 
 hive.gc_mgr = GcMgr()

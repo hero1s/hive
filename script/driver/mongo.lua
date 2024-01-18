@@ -417,7 +417,7 @@ function MongoDB:find_one(co_name, query, projection)
 end
 
 function MongoDB:format_pairs(args, doc)
-    if args then
+    if args and next(args) then
         if type(next(args)) == "string" then
             return args
         end

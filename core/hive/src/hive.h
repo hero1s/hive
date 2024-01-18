@@ -4,8 +4,6 @@
 #include "lualog/logger.h"
 #include "worker/scheduler.h"
 
-#define HIVE_VERSION 20240109
-
 using namespace logger;
 class hive_app final
 {
@@ -13,15 +11,16 @@ public:
 	hive_app() { }
 	~hive_app() { }
 
-	void run();
+	void run(int rtype);
 	void setup(int argc, const char* argv[]);
-	bool load(int argc, const char* argv[]);
+	int load(int argc, const char* argv[]);
 	void set_signal(uint32_t n, bool b = true);
 protected:
 	std::string get_environ_def(const std::string_view key, const std::string_view def) { auto value = get_env(key.data()); return value ? value : def.data(); };
 	void exception_handler(const std::string& err_msg);
 	const char* get_env(const char* key);
 	int set_env(lua_State* L);
+	void init_default_log(int rtype);
 
 private:
 	uint64_t m_signal = 0;

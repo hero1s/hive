@@ -18,7 +18,7 @@ local NETWORK_TIMEOUT  = hive.enum("NetwkTime", "NETWORK_TIMEOUT")
 local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 
 local flow_ctrl        = environ.status("HIVE_FLOW_CTRL")
-local flow_cd          = env_number("HIVE_FLOW_CTRL_CD")
+local flow_cd          = env_number("HIVE_FLOW_CTRL_CD", 0)
 local fc_package       = env_number("HIVE_FLOW_CTRL_PACKAGE")
 local fc_bytes         = env_number("HIVE_FLOW_CTRL_BYTES")
 
@@ -167,15 +167,11 @@ function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
     local clock_ms    = hive.clock_ms
     local cmd_cd_time = self:get_cmd_cd(cmd_id)
     if cmd_cd_time > 0 then
-        local command_times = session.command_times
-        if command_times[cmd_id] and clock_ms - command_times[cmd_id] < cmd_cd_time then
+        if session.is_command_cd(cmd_id, cmd_cd_time, clock_ms) then
             log_warn("[NetServer][on_socket_recv] session({}) trigger cmd({}) cd ctrl, will be drop.", session.token, cmd_id)
-            --协议CD
             return
         end
-        command_times[cmd_id] = clock_ms
     end
-    session.alive_time = hive.clock_ms
     if session_id == 0 or (flag & FLAG_REQ == FLAG_REQ) then
         local function dispatch_rpc_message(_session, cmd, bd)
             local _<close> = heval(cmd_id)

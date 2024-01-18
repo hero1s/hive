@@ -16,7 +16,6 @@ prop:reader("ip", nil)
 prop:reader("port", nil)
 prop:reader("codec", nil)
 prop:reader("alive", false)
-prop:reader("alive_time", 0)
 prop:reader("proto_type", eproto_type.pb)
 prop:reader("socket", nil)          --连接成功对象
 prop:reader("holder", nil)          --持有者
@@ -83,7 +82,6 @@ function NetClient:get_token()
 end
 
 function NetClient:on_socket_rpc(socket, cmd_id, flag, session_id, body)
-    self.alive_time = hive.clock_ms
     if session_id == 0 or (flag & FlagMask.REQ == FlagMask.REQ) then
         -- 执行消息分发
         local function dispatch_rpc_message()
@@ -151,7 +149,6 @@ end
 -- 连接成回调
 function NetClient:on_socket_connect(socket)
     self.alive      = true
-    self.alive_time = hive.clock_ms
     self.holder:on_socket_connect(self)
 end
 

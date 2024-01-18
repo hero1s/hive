@@ -73,6 +73,18 @@ static std::string add_lua_path(std::string_view path) {
 	return cur_path;
 }
 
+static std::string compiler_info() {
+#ifdef _MSC_VER
+	return fmt::format("Compiler:MSVC {}", _MSC_VER);
+#elif __GNUC__
+	return fmt::format("Compiler:GCC {}.{}.{}", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+#elif __clang__
+	return fmt::format("Compiler:Clang {}.{}.{}", __clang_major__, __clang_minor__, __clang_patchlevel__);
+#endif // _MSC_VER
+	return fmt::format("Compiler:Unknown");
+}
+
+
 void hive_app::set_signal(uint32_t n, bool b) {
 	uint32_t mask = 1 << n;
 	if (b) {
@@ -95,11 +107,23 @@ int hive_app::set_env(lua_State* L) {
 	return 0;
 }
 
+void hive_app::init_default_log(int rtype) {
+	if (rtype != 0)return;//仅服务模式初始化文件日志
+
+	auto index = get_environ_def("HIVE_INDEX", "1");
+	auto service_name = get_environ_def("HIVE_SERVICE", "hive");
+	auto path = get_environ_def("HIVE_LOG_PATH", "./logs/");
+	
+	log_service::instance()->option(path, service_name, index);
+	log_service::instance()->add_dest(service_name, "");
+}
+
 void hive_app::setup(int argc, const char* argv[]) {
 	srand((unsigned)time(nullptr));
 	//加载配置
-	if (load(argc, argv)) {
-		run();
+	auto iRet = load(argc, argv);
+	if (iRet >= 0) {
+		run(iRet);
 	}
 }
 
@@ -110,14 +134,15 @@ void hive_app::exception_handler(const std::string& err_msg) {
 	exit(1);
 }
 
-bool hive_app::load(int argc, const char* argv[]) {
-	bool bRet = true;
+int hive_app::load(int argc, const char* argv[]) {
+	int iRet = 1;// -1失败，0服务，1工具
 	//将启动参数转负责覆盖环境变量
 	const char* lua_conf = nullptr;
 	if (argc > 1) {
 		std::string argvi = argv[1];
 		if (argvi.find("=") == std::string::npos) {
 			lua_conf = argv[1];
+			iRet = 0;
 		}
 	}
 	if (lua_conf) {
@@ -129,7 +154,7 @@ bool hive_app::load(int argc, const char* argv[]) {
 
 		lua.run_file(lua_conf, [&](std::string_view err) {
 			std::cout << "load lua config err: " << err << std::endl;
-			bRet = false;
+			iRet = -1;
 			});
 		lua.close();
 	}
@@ -160,12 +185,12 @@ bool hive_app::load(int argc, const char* argv[]) {
 	//检测缺失参数
 	if (getenv("HIVE_ENTRY") == NULL) {
 		std::cout << "HIVE_ENTRY is null" << std::endl;
-		bRet = false;
+		iRet = -1;
 	}
-	return bRet;
+	return iRet;
 }
 
-void hive_app::run() {
+void hive_app::run(int rtype) {
 	if ((std::stoi(get_environ_def("HIVE_DAEMON", "0")))) {
 		daemon();
 		log_service::instance()->daemon(true);
@@ -203,14 +228,17 @@ void hive_app::run() {
 		});
 	
 	//end worker接口
-	LOG_INFO(fmt::format("hive engine init.version:{}", HIVE_VERSION));
+	
+	init_default_log(rtype);
+	LOG_INFO(fmt::format("hive engine run.build in[{}] time:{} {}", compiler_info(), __DATE__, __TIME__));
+
 	lua.run_script(g_sandbox, [&](std::string_view err) {
 		exception_handler(fmt::format("load sandbox err:{}", err));
-		});
-	
+		});	
 	lua.run_script(fmt::format("require '{}'", getenv("HIVE_ENTRY")), [&](std::string_view err) {
 		exception_handler(fmt::format("load entry [{}] err:{}", getenv("HIVE_ENTRY"), err));
 		});
+	
 	while (hive.get_function("run")) {
 		hive.call([&](std::string_view err) {
 			LOG_FATAL(fmt::format("hive run err: {} ", err));

@@ -57,7 +57,6 @@ end
 
 --rpc事件
 function RpcServer:on_socket_rpc(client, rpc, session_id, rpc_flag, source, ...)
-    client.alive_time = hive.clock_ms
     if session_id == 0 or rpc_flag == FLAG_REQ then
         local btime = hive.clock_ms
         local function dispatch_rpc_message(...)

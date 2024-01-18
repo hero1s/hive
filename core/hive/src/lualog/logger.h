@@ -353,7 +353,7 @@ namespace logger {
     public:
         ~log_service() { stop(); }
         void daemon(bool status) { log_daemon_ = status; }
-        void option(vstring log_path, vstring service, vstring index, rolling_type type, log_level hook_lv) {
+        void option(vstring log_path, vstring service, vstring index, rolling_type type = rolling_type::DAYLY, log_level hook_lv = log_level::LOG_LEVEL_ERROR) {
             log_path_ = log_path, service_ = service; rolling_type_ = type; hook_lv_ = hook_lv > log_level::LOG_LEVEL_INFO ? hook_lv_ : log_level::LOG_LEVEL_ERROR;
             log_path_.append(fmt::format("{}-{}", service, index));
         }

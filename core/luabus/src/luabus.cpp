@@ -102,7 +102,8 @@ namespace luabus {
             "set_timeout", &lua_socket_node::set_timeout,
             "set_codec", &lua_socket_node::set_codec,
             "set_flow_ctrl",&lua_socket_node::set_flow_ctrl,
-            "can_send",&lua_socket_node::can_send
+            "can_send",&lua_socket_node::can_send,
+            "is_command_cd",&lua_socket_node::is_command_cd
             );
         return lluabus;
     }
