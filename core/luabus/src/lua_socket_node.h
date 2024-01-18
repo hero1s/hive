@@ -2,6 +2,7 @@
 #include <memory>
 #include <array>
 #include <vector>
+#include <map>
 #include "socket_mgr.h"
 #include "socket_router.h"
 
@@ -25,6 +26,11 @@ struct lua_socket_node final
 	}
 	void set_flow_ctrl(int ctrl_package, int ctrl_bytes) { m_mgr->set_flow_ctrl(m_token, ctrl_package, ctrl_bytes); }
 	bool can_send() { return m_mgr->can_send(m_token); }
+	bool is_command_cd(uint32_t cmd_id, uint32_t cd_time, uint64_t now_ms) {
+		uint64_t last_ms = m_command_cds[cmd_id];
+		m_command_cds[cmd_id] = now_ms;
+		return (now_ms - last_ms) < cd_time;
+	}
 
 	int forward_target(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id,uint32_t target);
 	int forward_player(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id, uint16_t service_id, uint32_t player_id);
@@ -68,5 +74,6 @@ private:
 	stdsptr<socket_router> m_router;
 	eproto_type m_proto_type;
 	std::string m_error_msg;
+	std::map<uint32_t, uint32_t> m_command_cds;
 };
 

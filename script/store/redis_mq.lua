@@ -27,7 +27,7 @@ end
 -- 获取消息长度
 function RedisMQ:len_message(target_id)
     local zset_name        = sformat("%s:%s", self.prefix, target_id)
-    local ok, code, result = redis_agent:execute({ "LLEN", zset_name })
+    local ok, code, result = redis_agent:execute({ "ZCARD", zset_name })
     if check_success(code, ok) then
         return result
     end
