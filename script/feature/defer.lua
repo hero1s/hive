@@ -22,4 +22,8 @@ function Defer:__defer()
     self.triggers = {}
 end
 
+function Defer:reset()
+    self.triggers = {}
+end
+
 return Defer

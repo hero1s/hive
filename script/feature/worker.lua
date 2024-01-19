@@ -21,6 +21,7 @@ local HALF_MS            = hive.enum("PeriodTime", "HALF_MS")
 
 --初始化核心
 local function init_core()
+    hive.init_coroutine()
     import("kernel/gc_mgr.lua")
     import("kernel/thread_mgr.lua")
     import("kernel/event_mgr.lua")
@@ -39,14 +40,7 @@ local function init_statis()
     import("kernel/perfeval_mgr.lua")
 end
 
---协程改造
-local function init_coroutine()
-    import("basic/coroutine.lua")
-    hive.init_coroutine()
-end
-
 local function init_listener()
-    event_mgr:add_listener(hive, "on_append")
     event_mgr:add_listener(hive, "on_reload")
 end
 
@@ -60,8 +54,6 @@ local function init_mainloop()
 end
 
 function hive.init()
-    --协程初始化
-    init_coroutine()
     --核心加载
     init_core()
     --初始化基础模块
@@ -86,12 +78,6 @@ hive.on_reload = function()
     update_mgr:check_hotfix()
     --事件通知
     event_mgr:notify_trigger("on_reload")
-end
-
---附件文件
-hive.on_append = function(_, file)
-    log_info("[hive][on_append] worker:{} append {}!", TITLE, file)
-    import(file)
 end
 
 --启动

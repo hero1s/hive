@@ -5,19 +5,20 @@
 #include "worker.h"
 
 using namespace std::chrono;
+using vstring = std::string_view;
 
 namespace lworker {
 
     class scheduler : public ischeduler
     {
     public:
-        void setup(lua_State* L, std::string_view service) {
+        void setup(lua_State* L, vstring service) {
             m_service = service;
             m_lua = std::make_shared<kit_state>(L);
             m_codec = m_lua->create_codec();
         }
 
-        std::shared_ptr<worker> find_worker(std::string_view name) {
+        std::shared_ptr<worker> find_worker(vstring name) {
             std::unique_lock<spin_mutex> lock(m_mutex);
             auto it = m_worker_map.find(name);
             if (it != m_worker_map.end()) {
@@ -26,11 +27,11 @@ namespace lworker {
             return nullptr;
         }
 
-        bool startup(std::string_view name, std::string_view entry) {
+        bool startup(vstring name, vstring entry, vstring incl) {
             std::unique_lock<spin_mutex> lock(m_mutex);
             auto it = m_worker_map.find(name);
             if (it == m_worker_map.end()) {
-                auto workor = std::make_shared<worker>(this, name, entry, m_service);
+                auto workor = std::make_shared<worker>(this, name, entry, incl, m_service);
                 m_worker_map.insert(std::make_pair(name, workor));
                 workor->startup();
                 return true;
@@ -47,7 +48,7 @@ namespace lworker {
             return 0;
         }
         
-        int call(lua_State* L, std::string_view name) {
+        int call(lua_State* L, vstring name) {
             if (name == "master") {
                 lua_pushboolean(L, call(L));
                 return 1;
@@ -105,7 +106,7 @@ namespace lworker {
             }
         }
 
-        void destory(std::string_view name) {
+        void destory(vstring name) {
             std::unique_lock<spin_mutex> lock(m_mutex);
             auto it = m_worker_map.find(name);
             if (it != m_worker_map.end()) {
