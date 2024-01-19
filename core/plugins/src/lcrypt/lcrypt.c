@@ -6,17 +6,6 @@
 #include <memory.h>
 #include <string.h>
 
-static int lrandomkey(lua_State *L) {
-    char tmp[8];
-    int i;
-    for (i=0;i<8;i++)
-    {
-        tmp[i] = rand() & 0xff;
-    }
-    lua_pushlstring(L, tmp, 8);
-    return 1;
-}
-
 static void hash(const char * str, int sz, char key[8]) {
     long djb_hash = 5381L;
     long js_hash = 1315423911L;
@@ -69,6 +58,19 @@ static int ltohex(lua_State *L) {
     size_t sz = 0;
     const unsigned char * text = (const unsigned char *)luaL_checklstring(L, 1, &sz);
     return tohex(L, text, sz);
+}
+
+static int lrandomkey(lua_State* L) {
+    char tmp[8];
+    int i;
+    for (i = 0; i < 8; i++) {
+        tmp[i] = rand() & 0xff;
+    }
+    if (luaL_optinteger(L, 1, 0)) {
+        return tohex(L, (const unsigned char*)tmp, 8);
+    }
+    lua_pushlstring(L, tmp, 8);
+    return 1;
 }
 
 #define HEX(v,c) { char tmp = (char) c; if (tmp >= '0' && tmp <= '9') { v = tmp-'0'; } else { v = tmp - 'a' + 10; } }
@@ -149,8 +151,7 @@ static int lmd5(lua_State* L) {
     const char* message = luaL_checklstring(L, 1, &data_len);
     char output[HASHSIZE];
     md5(message, data_len, output);
-    if (luaL_optinteger(L, 2, 0))
-    {
+    if (luaL_optinteger(L, 2, 0)) {
         return tohex(L, (const unsigned char*)output, HASHSIZE);
     }
     lua_pushlstring(L, output, HASHSIZE);

@@ -16,6 +16,7 @@ local HALF_MS       = hive.enum("PeriodTime", "HALF_MS")
 
 --初始化核心
 local function init_core()
+    hive.init_coroutine()
     import("kernel/gc_mgr.lua")
     import("kernel/thread_mgr.lua")
     import("kernel/event_mgr.lua")
@@ -48,12 +49,6 @@ local function init_monitor()
     import("agent/discovery_agent.lua")
 end
 
---协程改造
-local function init_coroutine()
-    import("basic/coroutine.lua")
-    hive.init_coroutine()
-end
-
 --初始化loop
 local function init_mainloop()
     import("kernel/timer_mgr.lua")
@@ -65,8 +60,6 @@ local function init_mainloop()
 end
 
 function hive.init()
-    --协程初始化
-    init_coroutine()
     --核心加载
     init_core()
     --初始化基础模块

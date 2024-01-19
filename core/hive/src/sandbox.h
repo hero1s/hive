@@ -173,4 +173,9 @@ function hive.reload()
     end
     return count
 end
+
+function hive.load(name)
+    return hive[name]
+end
+
 )__";

@@ -29,19 +29,14 @@ function Scheduler:update(clock_ms)
     worker_update(clock_ms)
 end
 
-function Scheduler:startup(name, entry)
-    local ok, err = pcall(hive.worker_startup, name, entry)
+function Scheduler:startup(name, entry, incl)
+    local ok, err = pcall(hive.worker_startup, name, entry, incl)
     if not ok then
         log_err("[Scheduler][startup] startup failed: {}", err)
         return ok
     end
-    log_info("[Scheduler][startup] startup {}: {}", name, entry)
+    log_info("[Scheduler][startup] startup {}: {},{}", name, entry, incl)
     return ok
-end
-
---注入线程
-function Scheduler:append(name, file)
-    worker_call(name, 0, FLAG_REQ, "master", "on_append", file)
 end
 
 --访问其他线程任务

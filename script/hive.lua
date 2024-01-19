@@ -5,10 +5,6 @@ local odate     = os.date
 local log_err   = logger.err
 local dgetinfo  = debug.getinfo
 
-function hive.load(name)
-    return hive[name]
-end
-
 function hive.get(name)
     local global_obj = hive[name]
     if not global_obj then
