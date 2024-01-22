@@ -3,7 +3,7 @@ local log_info      = logger.info
 local log_debug     = logger.debug
 local sidhash       = service.hash
 local id2nick       = service.id2nick
-local tinsert       = table.insert
+local sname2sid     = service.name2sid
 
 local FlagMask      = enum("FlagMask")
 local KernCode      = enum("KernCode")
@@ -35,6 +35,7 @@ function RouterServer:setup()
     local port      = environ.number("HIVE_ROUTER_PORT", 9001)
     --启动server
     self.rpc_server = RpcServer(self, "0.0.0.0", port, environ.status("HIVE_ADDR_INDUCE"))
+    self.router_sid = sname2sid("router")
     service.make_node(self.rpc_server:get_port())
     luabus.set_router_id(hive.id)
     --设置服务表
@@ -79,12 +80,7 @@ end
 
 function RouterServer:sync_all_node_info(force)
     if self.change or force then
-        local nodes = {}
-        for _, client in self.rpc_server:iterator() do
-            if client.id then
-                tinsert(nodes, client.id)
-            end
-        end
+        local nodes = self.rpc_server:service_nodes(0)
         self:broadcast_router("rpc_sync_router_info", hive.id, nodes, 1)
         log_info("[RouterServer][sync_all_node_info] router:{},service:{}", self.rpc_server:service_count(hive.service_id), self.rpc_server:service_count(0))
         self.change = false
@@ -92,11 +88,7 @@ function RouterServer:sync_all_node_info(force)
 end
 
 function RouterServer:broadcast_router(rpc, ...)
-    for _, client in self.rpc_server:iterator() do
-        if client.service_name == "router" then
-            self.rpc_server:send(client, rpc, ...)
-        end
-    end
+    self.rpc_server:servicecast(self.router_sid, rpc, ...)
 end
 
 --rpc事件处理

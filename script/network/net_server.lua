@@ -119,7 +119,7 @@ end
 
 -- 广播数据
 function NetServer:broadcast_groups(tokens, cmd_id, data)
-    luabus.broadgroup(self.codec, tokens, cmd_id, FLAG_REQ, 0, data)
+    luabus.broad_group(self.codec, tokens, cmd_id, FLAG_REQ, 0, data)
 end
 
 -- 广播数据

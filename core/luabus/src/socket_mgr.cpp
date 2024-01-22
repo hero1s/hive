@@ -279,6 +279,12 @@ void socket_mgr::broadgroup(std::vector<uint32_t>& groups, const void* data, siz
 	}
 }
 
+void socket_mgr::broadgroupv(std::vector<uint32_t>& groups, const sendv_item items[], int count) {
+	for (auto token : groups) {
+		sendv(token, items, count);
+	}
+}
+
 void socket_mgr::close(uint32_t token) {
 	auto node = get_object(token);
 	if (node) {

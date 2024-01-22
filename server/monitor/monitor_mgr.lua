@@ -13,6 +13,7 @@ local tinsert            = table.insert
 local tsize              = table_ext.size
 local id2nick            = service.id2nick
 local sid2index          = service.id2index
+local sname2sid          = service.name2sid
 
 local ServiceStatus      = enum("ServiceStatus")
 local update_mgr         = hive.get("update_mgr")
@@ -171,7 +172,7 @@ function MonitorMgr:broadcast(rpc, target, ...)
         if target == "" or target == "all" then
             service_id = 0
         else
-            service_id = service.name2sid(target)
+            service_id = sname2sid(target)
         end
     end
     self.rpc_server:servicecast(service_id, rpc, ...)
@@ -183,7 +184,7 @@ function MonitorMgr:add_service(service_name, node)
     log_debug("[MonitorMgr][add_service] {},{}", id2nick(node.id), node)
     local services   = self.services[service_name] or {}
     --检测ip唯一
-    local service_id = service.name2sid(service_name)
+    local service_id = sname2sid(service_name)
     if service.sole_ip(service_id) then
         for id, v in pairs(services) do
             if v.ip == node.host and v.port == node.port and id ~= node.id then
@@ -242,11 +243,9 @@ function MonitorMgr:broadcast_service_status(service_name, readys, closes)
         return
     end
     log_debug("[MonitorMgr][broadcast_service_status] {},{},{}", service_name, readys, closes)
-    for _, client in self.rpc_server:iterator() do
-        if client.id and client.watch_services[service_name] then
-            self.rpc_server:send(client, "rpc_service_changed", service_name, readys, closes)
-        end
-    end
+    self.rpc_server:broadcast(function(client)
+        return client.id and client.watch_services[service_name]
+    end, "rpc_service_changed", service_name, readys, closes)
 end
 
 function MonitorMgr:query_services(service_name)

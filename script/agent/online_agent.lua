@@ -3,6 +3,8 @@ local log_info      = logger.info
 local log_debug     = logger.debug
 local tunpack       = table.unpack
 
+local sname2sid     = service.name2sid
+
 local event_mgr     = hive.get("event_mgr")
 local router_mgr    = hive.get("router_mgr")
 local monitor       = hive.get("monitor")
@@ -56,7 +58,7 @@ function OnlineAgent:query_openid(open_id)
 end
 
 function OnlineAgent:query_player(player_id)
-    local service_id = service.name2sid("lobby")
+    local service_id = sname2sid("lobby")
     local router     = router_mgr:hash_router(player_id)
     if router then
         return router:call("rpc_query_player_service", player_id, service_id)
