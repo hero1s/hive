@@ -74,7 +74,7 @@ void lua_socket_mgr::set_rpc_key(std::string key) {
 const std::string lua_socket_mgr::get_rpc_key() {
 	return m_mgr->get_handshake_verify();
 }
-int lua_socket_mgr::broadgroup(lua_State* L, codec_base* codec) {
+int lua_socket_mgr::broad_group(lua_State* L, codec_base* codec) {
 	size_t data_len = 0;
 	std::vector<uint32_t> groups;
 	if (!lua_to_native(L, 2, groups)) {
@@ -91,6 +91,35 @@ int lua_socket_mgr::broadgroup(lua_State* L, codec_base* codec) {
 	lua_pushboolean(L, false);
 	return 1;
 }
+int lua_socket_mgr::broad_rpc(lua_State* L) {
+	if (m_codec) {
+		std::vector<uint32_t> groups;
+		if (!lua_to_native(L, 1, groups)) {
+			lua_pushboolean(L, false);
+			return 1;
+		}
+		uint8_t flag = lua_tointeger(L, 2);
+		uint32_t source_id = lua_tointeger(L, 3);
+		size_t data_len = 0;
+		void* data = m_codec->encode(L, 4, &data_len);
+		if (data_len <= SOCKET_PACKET_MAX) {
+			router_header header;
+			header.session_id = 0;
+			header.rpc_flag = flag;
+			header.source_id = source_id;
+			header.msg_id = (uint8_t)rpc_type::remote_call;
+			header.len = data_len + sizeof(router_header);
+			sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
+			m_mgr->broadgroupv(groups, items, _countof(items));
+			lua_pushboolean(L, true);
+			return 1;
+		}
+	}
+	lua_pushboolean(L, false);
+	return 1;
+}
+
+
 //Íæ¼ÒÂ·ÓÉ
 void lua_socket_mgr::set_player_service(uint32_t player_id, uint32_t sid, uint8_t login) {
 	m_router->set_player_service(player_id, sid, login);

@@ -20,7 +20,8 @@ public:
 	void set_service_name(uint32_t service_id, std::string service_name);
 	void set_rpc_key(std::string key);
 	const std::string get_rpc_key();
-	int broadgroup(lua_State* L, codec_base* codec);
+	int broad_group(lua_State* L, codec_base* codec);
+	int broad_rpc(lua_State* L);
 
 	//Íæ¼ÒÂ·ÓÉ
 	void set_player_service(uint32_t player_id, uint32_t sid, uint8_t login);

@@ -1,5 +1,4 @@
 --rpc_server.lua
-local next                = next
 local pairs               = pairs
 local tunpack             = table.unpack
 local log_err             = logger.err
@@ -146,31 +145,51 @@ function RpcServer:send_sid(id, rpc, ...)
 end
 
 --broadcast接口
-function RpcServer:broadcast(rpc, ...)
+function RpcServer:broadcast(filter, rpc, ...)
+    local tokens = {}
     for _, client in pairs(self.clients) do
-        client.call_rpc(0, FLAG_REQ, rpc, ...)
+        if not filter or filter(client) then
+            tokens[#tokens + 1] = client.token
+        end
     end
+    luabus.broad_rpc(tokens, FLAG_REQ, 0, rpc, ...)
 end
 
 --servicecast接口
 function RpcServer:servicecast(service_id, rpc, ...)
+    local tokens = {}
     for _, client in pairs(self.clients) do
         if client.id ~= 0 then
             if service_id == 0 or client.service_id == service_id then
-                client.call_rpc(0, FLAG_REQ, rpc, ...)
+                tokens[#tokens + 1] = client.token
             end
         end
     end
+    luabus.broad_rpc(tokens, FLAG_REQ, 0, rpc, ...)
 end
 
 function RpcServer:service_count(service_id)
     local count = 0
     for _, client in pairs(self.clients) do
-        if service_id == 0 or client.service_id == service_id then
-            count = count + 1
+        if client.id then
+            if service_id == 0 or client.service_id == service_id then
+                count = count + 1
+            end
         end
     end
     return count
+end
+
+function RpcServer:service_nodes(service_id)
+    local nodes = {}
+    for _, client in pairs(self.clients) do
+        if client.id then
+            if service_id == 0 or client.service_id == service_id then
+                nodes[#nodes + 1] = client.id
+            end
+        end
+    end
+    return nodes
 end
 
 --获取client
@@ -181,19 +200,6 @@ end
 --获取client
 function RpcServer:get_client_by_id(hive_id)
     return self.indexes[hive_id]
-end
-
---迭代器
-function RpcServer:iterator()
-    local token   = nil
-    local clients = self.clients
-    local function iter()
-        token = next(clients, token)
-        if token then
-            return token, clients[token]
-        end
-    end
-    return iter
 end
 
 --rpc回执
