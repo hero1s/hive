@@ -1,4 +1,5 @@
 --router_server.lua
+local luabus        = luabus
 local log_info      = logger.info
 local log_debug     = logger.debug
 local sidhash       = service.hash

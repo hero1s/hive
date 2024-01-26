@@ -6,6 +6,7 @@ local hxpcall          = hive.xpcall
 local env_number       = environ.number
 local signal_quit      = signal.quit
 local eproto_type      = luabus.eproto_type
+local luabus           = luabus
 
 local event_mgr        = hive.get("event_mgr")
 local thread_mgr       = hive.get("thread_mgr")
@@ -80,8 +81,8 @@ function NetServer:on_socket_accept(session)
     -- 绑定call回调
     session.on_call_pb    = function(recv_len, cmd_id, flag, session_id, seq_id, data)
         if seq_id ~= session.seq_id and seq_id ~= 0xff then
-            log_warn("[NetServer][on_socket_accept] seq_id:{} != cur:{}", seq_id, session.seq_id)
-            return
+            log_warn("[NetServer][on_socket_accept] seq_id:{} != cur:{},ip:{}", seq_id, session.seq_id, session.ip)
+            return -1
         end
         session.seq_id = (session.seq_id + 1) & 0xff
         thread_mgr:fork(function()
@@ -118,11 +119,6 @@ function NetServer:write(session, cmd_id, data, session_id, flag)
 end
 
 -- 广播数据
-function NetServer:broadcast_groups(tokens, cmd_id, data)
-    luabus.broad_group(self.codec, tokens, cmd_id, FLAG_REQ, 0, data)
-end
-
--- 广播数据
 function NetServer:broadcast(cmd_id, data, filter)
     local tokens = {}
     for _, session in pairs(self.sessions) do
@@ -130,7 +126,7 @@ function NetServer:broadcast(cmd_id, data, filter)
             tokens[#tokens + 1] = session.token
         end
     end
-    self:broadcast_groups(tokens, cmd_id, data)
+    luabus.broad_group(self.codec, tokens, cmd_id, FLAG_REQ, 0, data)
     if self.log_client_msg then
         self.log_client_msg({}, cmd_id, data, 0, 0, false)
     end

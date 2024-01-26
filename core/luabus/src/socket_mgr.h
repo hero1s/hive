@@ -56,7 +56,7 @@ struct socket_object
 	virtual void set_codec(codec_base* codec) { m_codec = codec; }
 	virtual void set_accept_callback(const std::function<void(int, eproto_type)>& cb) { }
 	virtual void set_connect_callback(const std::function<void(bool, const char*)>& cb) { }
-	virtual void set_package_callback(const std::function<void(slice*)>& cb) { }
+	virtual void set_package_callback(const std::function<int(slice*)>& cb) { }
 	virtual void set_error_callback(const std::function<void(const char*)>& cb) { }
 
 #ifdef _MSC_VER
@@ -107,7 +107,7 @@ public:
 
 	void set_accept_callback(uint32_t token, const std::function<void(uint32_t, eproto_type eproto_type)>& cb);
 	void set_connect_callback(uint32_t token, const std::function<void(bool, const char*)>& cb);
-	void set_package_callback(uint32_t token, const std::function<void(slice*)>& cb);
+	void set_package_callback(uint32_t token, const std::function<int(slice*)>& cb);
 	void set_error_callback(uint32_t token, const std::function<void(const char*)>& cb);
 
 	bool watch_listen(socket_t fd, socket_object* object);

@@ -5,6 +5,7 @@ local log_err             = logger.err
 local log_info            = logger.info
 local hxpcall             = hive.xpcall
 local signal_quit         = signal.quit
+local luabus              = luabus
 
 local FLAG_REQ            = hive.enum("FlagMask", "REQ")
 local FLAG_RES            = hive.enum("FlagMask", "RES")
