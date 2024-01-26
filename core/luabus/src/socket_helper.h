@@ -74,8 +74,7 @@ char* get_error_string(char buffer[], int len, int no);
 void get_error_string(std::string& err, int no);
 
 inline uint64_t steady_ms() {
-	steady_clock::duration dur = steady_clock::now().time_since_epoch();
-	return duration_cast<milliseconds>(dur).count();
+	return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
 }
 
 void init_socket_option(socket_t fd);

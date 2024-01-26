@@ -321,7 +321,7 @@ void socket_mgr::set_connect_callback(uint32_t token, const std::function<void(b
 	}
 }
 
-void socket_mgr::set_package_callback(uint32_t token, const std::function<void(slice*)>& cb) {
+void socket_mgr::set_package_callback(uint32_t token, const std::function<int(slice*)>& cb) {
 	auto node = get_object(token);
 	if (node) {
 		node->set_package_callback(cb);

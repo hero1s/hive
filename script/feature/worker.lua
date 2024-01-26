@@ -8,6 +8,7 @@ local tunpack            = table.unpack
 local wcall              = hive.call
 local lclock_ms          = timer.clock_ms
 local ltime              = timer.time
+local luabus             = luabus
 
 local event_mgr          = hive.load("event_mgr")
 local update_mgr         = hive.load("update_mgr")

@@ -4,6 +4,7 @@ import("basic/basic.lua")
 local log_err       = logger.err
 local lclock_ms     = timer.clock_ms
 local ltime         = timer.time
+local luabus        = luabus
 
 local HiveMode      = enum("HiveMode")
 local ServiceStatus = enum("ServiceStatus")
@@ -28,7 +29,7 @@ local function init_network()
     local max_conn = environ.number("HIVE_MAX_CONN", 4096)
     local rpc_key  = environ.get("HIVE_RPC_KEY", "hive2022")
     luabus.init_socket_mgr(max_conn)
-    luabus.set_rpc_key(rpc_key)
+    luabus.set_rpc_key(crypt.md5(rpc_key, 1))
 end
 
 --初始化统计

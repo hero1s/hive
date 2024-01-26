@@ -563,7 +563,11 @@ void socket_stream::dispatch_package(bool reset) {
 			if (package_size == 0) return;
 			// 数据回调
 			slice->attach(data, package_size);
-			m_package_cb(slice);				
+			auto ret = m_package_cb(slice);		
+			if (ret != 0) {
+				on_error(fmt::format("package process ret:{},ip:{}",ret, m_ip).c_str());
+				return;
+			}
 			// 数据包解析失败
 			if (m_codec->failed()) {
 				on_error(m_codec->err());

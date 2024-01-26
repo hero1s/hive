@@ -14,23 +14,19 @@ namespace ltimer {
 	}
 
 	inline uint64_t now() {
-		system_clock::duration dur = system_clock::now().time_since_epoch();
-		return duration_cast<seconds>(dur).count() + offset_;
+		return duration_cast<seconds>(system_clock::now().time_since_epoch()).count() + offset_;
 	}
 
 	inline uint64_t now_ms() {
-		system_clock::duration dur = system_clock::now().time_since_epoch();
-		return duration_cast<milliseconds>(dur).count() + offset_*1000;
+		return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() + offset_*1000;
 	}
 
 	inline uint64_t steady() {
-		steady_clock::duration dur = steady_clock::now().time_since_epoch();
-		return duration_cast<seconds>(dur).count();
+		return duration_cast<seconds>(steady_clock::now().time_since_epoch()).count();
 	}
 
 	inline uint64_t steady_ms() {
-		steady_clock::duration dur = steady_clock::now().time_since_epoch();
-		return duration_cast<milliseconds>(dur).count();
+		return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
 	}
 
 	inline void sleep(uint64_t ms) {
