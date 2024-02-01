@@ -16,10 +16,10 @@ import("kernel/config_mgr.lua")
 local sformat       = string.format
 
 --服务组常量
-local SERVICES      = _ENV.SERVICES or {}
-local SERVICE_NAMES = _ENV.SERVICE_NAMES or {}
-local SERVICE_HASHS = _ENV.SERVICE_HASHS or {}
-local SERVICE_CONFS = _ENV.SERVICE_CONFS or {}
+local SERVICES      = hive.init("SERVICES")
+local SERVICE_NAMES = hive.init("SERVICE_NAMES")
+local SERVICE_HASHS = hive.init("SERVICE_HASHS")
+local SERVICE_CONFS = hive.init("SERVICE_CONFS")
 
 service             = {}
 
@@ -37,10 +37,6 @@ function service.make_node(port, domain)
         is_ready     = false,
         status       = hive.service_status
     }
-    --防止ip为空无法注册nacos
-    if not hive.node_info.host or hive.node_info.host == "" then
-        hive.node_info.host = "127.0.0.1"
-    end
 end
 
 function service.init()
@@ -66,7 +62,7 @@ function service.init()
     hive.service_name = service_name
     hive.service_id   = service_id
     hive.name         = service.id2nick(hive.id)
-    hive.host         = environ.get("HIVE_HOST_IP")
+    hive.host         = environ.get("HIVE_HOST_IP", "127.0.0.1")
     hive.mode         = SERVICE_CONFS[service_id].mode
     hive.rely_router  = SERVICE_CONFS[service_id].rely_router
     hive.safe_stop    = SERVICE_CONFS[service_id].safe_stop

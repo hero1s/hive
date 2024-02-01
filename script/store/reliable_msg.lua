@@ -68,9 +68,9 @@ function ReliableMsg:len_message(to)
 end
 
 -- 查询未处理消息列表
-function ReliableMsg:list_message(to)
+function ReliableMsg:list_message(to, page_size)
     local query            = { self.table_name, { to = to, deal_time = 0 }, { _id = 0, ttl = 0 }, { time = 1 } }
-    local ok, code, result = mongo_agent:find(query, to, self.db_name)
+    local ok, code, result = mongo_agent:find(query, to, self.db_name, page_size)
     if check_success(code, ok) then
         return result
     end
@@ -103,13 +103,13 @@ function ReliableMsg:delete_message_by_uuid(uuid, to)
     return mongo_agent:delete({ self.table_name, { uuid = uuid, to = to }, true }, hive.id, self.db_name)
 end
 
-function ReliableMsg:delete_message_from_to(from, to, type)
+function ReliableMsg:delete_message_from_to(from, to, type, onlyone)
     log_info("[ReliableMsg][delete_message_from_to] delete message from:{},to:{},type:{}", from, to, type)
     local selector = { from = from, to = to }
     if type then
         selector["type"] = type
     end
-    return mongo_agent:delete({ self.table_name, selector }, hive.id, self.db_name)
+    return mongo_agent:delete({ self.table_name, selector, onlyone }, hive.id, self.db_name)
 end
 
 -- 发送消息
