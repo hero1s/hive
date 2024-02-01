@@ -43,16 +43,21 @@ function RmsgAgent:lock_msg(rmsg_type, to)
     return thread_mgr:lock(sformat("RMSG:%s:%s", rmsg_type, to))
 end
 
-function RmsgAgent:list_message(rmsg_type, to)
-    return self.rmsgs[rmsg_type]:list_message(to)
+function RmsgAgent:list_message(rmsg_type, to, page_size)
+    return self.rmsgs[rmsg_type]:list_message(to, page_size)
 end
 
 function RmsgAgent:safe_do_message(rmsg_type, to, do_func)
     local _lock<close> = self:lock_msg(rmsg_type, to)
-    local records      = self:list_message(rmsg_type, to)
-    for _, record in ipairs(records) do
-        do_func(record)
-        self:delete_message_by_uuid(rmsg_type, record.uuid, record.to)
+    for i = 1, 100 do
+        local records = self:list_message(rmsg_type, to, 100)
+        for _, record in ipairs(records) do
+            do_func(record)
+            self:delete_message_by_uuid(rmsg_type, record.uuid, record.to)
+        end
+        if #records < 100 then
+            return
+        end
     end
 end
 
@@ -75,8 +80,8 @@ function RmsgAgent:delete_message_by_uuid(rmsg_type, uuid, to)
     return self.rmsgs[rmsg_type]:delete_message_by_uuid(uuid, to)
 end
 
-function RmsgAgent:delete_message_from_to(rmsg_type, from, to, type)
-    return self.rmsgs[rmsg_type]:delete_message_from_to(from, to, type)
+function RmsgAgent:delete_message_from_to(rmsg_type, from, to, type, onlyone)
+    return self.rmsgs[rmsg_type]:delete_message_from_to(from, to, type, onlyone)
 end
 
 -- export

@@ -100,7 +100,11 @@ end
 -- 检测失活
 function MonitorMgr:check_lost_node()
     for _, v in pairs(self.monitor_lost_nodes) do
-        log_err("[MonitorMgr][check_lost_node] lost service:{},please fast to repair!!!!!", v)
+        if hive.is_publish then
+            log_err("[MonitorMgr][check_lost_node] lost service:{},please fast to repair!!!!!", v)
+        else
+            log_warn("[MonitorMgr][check_lost_node] lost service:{},please fast to repair!!!!!", v)
+        end
     end
 end
 

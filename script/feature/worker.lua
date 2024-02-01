@@ -54,7 +54,7 @@ local function init_mainloop()
     update_mgr = hive.get("update_mgr")
 end
 
-function hive.init()
+function hive.main()
     --核心加载
     init_core()
     --初始化基础模块
@@ -89,7 +89,7 @@ function hive.startup(entry)
     --初始化随机种子
     math.randomseed(hive.now_ms)
     --初始化hive
-    hive.init()
+    hive.main()
     --启动服务器
     entry()
 end

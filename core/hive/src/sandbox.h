@@ -178,4 +178,11 @@ function hive.load(name)
     return hive[name]
 end
 
+function hive.init(name, val)
+    if not hive[name] then
+        hive[name] = val or {}
+    end
+    return hive[name]
+end
+
 )__";
