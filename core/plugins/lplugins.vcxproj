@@ -30,8 +30,6 @@
     <ClInclude Include="src\lcrypt\sha1.h"/>
     <ClInclude Include="src\lcrypt\sha2.h"/>
     <ClInclude Include="src\lcrypt\xxtea.h"/>
-    <ClInclude Include="src\ljson\ljson.h"/>
-    <ClInclude Include="src\ljson\yyjson.h"/>
     <ClInclude Include="src\lrandom\random.hpp"/>
     <ClInclude Include="src\ltimer\croncpp.h"/>
     <ClInclude Include="src\ltimer\ltimer.h"/>
@@ -55,8 +53,6 @@
     <ClCompile Include="src\lcrypt\sha1.c"/>
     <ClCompile Include="src\lcrypt\sha2.c"/>
     <ClCompile Include="src\lcrypt\xxtea.c"/>
-    <ClCompile Include="src\ljson\ljson.cpp"/>
-    <ClCompile Include="src\ljson\yyjson.c"/>
     <ClCompile Include="src\lrandom\lrandom.cpp"/>
     <ClCompile Include="src\lstdfs\lstdfs.cpp"/>
     <ClCompile Include="src\ltimer\ltimer.cpp"/>
