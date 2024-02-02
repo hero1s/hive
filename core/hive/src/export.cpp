@@ -21,7 +21,6 @@ extern "C"
 		REGISTER_CUSTOM_LIBRARY("lcodec", luaopen_lcodec);
 		REGISTER_CUSTOM_LIBRARY("lstdfs", luaopen_lstdfs);
 		REGISTER_CUSTOM_LIBRARY("lcrypt", luaopen_lcrypt);
-		REGISTER_CUSTOM_LIBRARY("ljson", luaopen_ljson);
 		REGISTER_CUSTOM_LIBRARY("luabus", luaopen_luabus);
 		REGISTER_CUSTOM_LIBRARY("laes", luaopen_laes);
 

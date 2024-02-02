@@ -122,11 +122,6 @@ OBJS += $(patsubst $(SRC_DIR)/lcrypt/%.m, $(INT_DIR)/lcrypt/%.o, $(filter-out $(
 OBJS += $(patsubst $(SRC_DIR)/lcrypt/%.cc, $(INT_DIR)/lcrypt/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrypt/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/lcrypt/%.cpp, $(INT_DIR)/lcrypt/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrypt/*.cpp)))
 #子目录
-OBJS += $(patsubst $(SRC_DIR)/ljson/%.c, $(INT_DIR)/ljson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/ljson/*.c)))
-OBJS += $(patsubst $(SRC_DIR)/ljson/%.m, $(INT_DIR)/ljson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/ljson/*.m)))
-OBJS += $(patsubst $(SRC_DIR)/ljson/%.cc, $(INT_DIR)/ljson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/ljson/*.cc)))
-OBJS += $(patsubst $(SRC_DIR)/ljson/%.cpp, $(INT_DIR)/ljson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/ljson/*.cpp)))
-#子目录
 OBJS += $(patsubst $(SRC_DIR)/lrandom/%.c, $(INT_DIR)/lrandom/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lrandom/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lrandom/%.m, $(INT_DIR)/lrandom/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lrandom/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/lrandom/%.cc, $(INT_DIR)/lrandom/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lrandom/*.cc)))
@@ -192,7 +187,6 @@ pre_build:
 	mkdir -p $(INT_DIR)/lbson
 	mkdir -p $(INT_DIR)/lcodec
 	mkdir -p $(INT_DIR)/lcrypt
-	mkdir -p $(INT_DIR)/ljson
 	mkdir -p $(INT_DIR)/lrandom
 	mkdir -p $(INT_DIR)/lstdfs
 	mkdir -p $(INT_DIR)/ltimer
