@@ -7,55 +7,82 @@ using namespace std;
 using namespace luakit;
 
 namespace ljson {
-    const uint8_t max_encode_depth = 16;
+    const uint8_t   max_encode_depth = 16;
+    const uint32_t  max_jsonbuf_size = 1024 * 1024; //1M
+
+    class jdoc_guard {
+    public:
+        jdoc_guard(yyjson_doc* doc) : ydoc(doc) {}
+        jdoc_guard(yyjson_mut_doc* doc) : ymdoc(doc) {}
+        ~jdoc_guard() { yyjson_doc_free(ydoc); yyjson_mut_doc_free(ymdoc); }
+    private:
+        yyjson_doc* ydoc = nullptr;
+        yyjson_mut_doc* ymdoc = nullptr;
+    };
 
     class jsoncodec;
     class yyjson {
     public:
         friend jsoncodec;
-
-        yyjson_alc* get_alc() {
-            return &m_alc;
+        yyjson() {
+            yyjson_alc_pool_init(&m_alc, m_buf, sizeof(m_buf));
         }
-
+   
         int encode(lua_State* L) {
-            bool empty_as_array = luaL_opt(L, lua_toboolean, 2, false);
-            return encode_impl(L, YYJSON_WRITE_ALLOW_INVALID_UNICODE, empty_as_array);
+            return encode_impl(L, YYJSON_WRITE_ALLOW_INVALID_UNICODE);
         }
 
         int pretty(lua_State* L) {
-            bool empty_as_array = luaL_opt(L, lua_toboolean, 2, false);
-            yyjson_write_flag flag = YYJSON_WRITE_ALLOW_INVALID_UNICODE | YYJSON_WRITE_PRETTY;
-            return encode_impl(L, flag, empty_as_array);
+            return encode_impl(L, YYJSON_WRITE_ALLOW_INVALID_UNICODE | YYJSON_WRITE_PRETTY);
         }
 
-        int encode_impl(lua_State* L, yyjson_write_flag flag, bool emy_as_arr) {
-            size_t data_len;
-            yyjson_write_err err;
+        int encode_impl(lua_State* L, yyjson_write_flag flag) {
+            try {
+                size_t data_len;
+                bool emy_as_arr = luaL_opt(L, lua_toboolean, 2, false);
+                char* json = encode_core(L, flag, emy_as_arr, 1, &data_len);
+                lua_pushlstring(L, json, data_len);
+                return 1;
+            } catch(const std::exception& e) {
+                luaL_error(L, e.what());
+                return 0;
+            }
+        }
+
+        char* encode_core(lua_State* L, yyjson_write_flag flag, bool emy_as_arr, int index, size_t* data_len) {
             yyjson_mut_doc* doc = yyjson_mut_doc_new(&m_alc);
-            yyjson_mut_val* val = encode_one(L, doc, emy_as_arr, 1, 0);
-            char* json = yyjson_mut_val_write_opts(val, flag, &m_alc, &data_len, &err);
-            if (!json) luaL_error(L, err.msg);
-            lua_pushlstring(L, json, data_len);
+            if (!doc) throw invalid_argument("json encode memory not enough!");
+
+            jdoc_guard g(doc);
+            yyjson_write_err err;
+            yyjson_mut_val* val = encode_one(L, doc, emy_as_arr, index, 0);
+            if (!val) throw invalid_argument("json encode memory not enough!");
+            char* json = yyjson_mut_val_write_opts(val, flag, &m_alc, data_len, &err);
+            if (!json) throw invalid_argument(err.msg);
             m_alc.free(m_alc.ctx, json);
-            yyjson_mut_doc_free(doc);
-            return 1;
+            return json;
         }
 
         int decode(lua_State* L) {
-            size_t len;
-            yyjson_read_err err;
-            const char* buf = luaL_checklstring(L, 1, &len);
-            bool numkeyable = luaL_opt(L, lua_toboolean, 2, false);
-            yyjson_doc* doc = yyjson_read_opts((char*)buf, len, YYJSON_READ_ALLOW_INVALID_UNICODE, &m_alc, &err);
-            if (!doc) luaL_error(L, err.msg);
-            decode_one(L, yyjson_doc_get_root(doc), numkeyable);
-            yyjson_doc_free(doc);
-            return 1;
+            try {
+                size_t len;
+                char* buf = (char*)luaL_checklstring(L, 1, &len);
+                bool numkeyable = luaL_opt(L, lua_toboolean, 2, false);
+                return decode_core(L, buf, len, numkeyable);
+            } catch(const std::exception& e) {
+                luaL_error(L, e.what());
+                return 0;
+            }
         }
 
-        void init_alc() {
-            yyjson_alc_pool_init(&m_alc, m_buf, USHRT_MAX);
+        int decode_core(lua_State* L, char* buf, size_t len, bool numkeyable) {
+            yyjson_read_err err;
+            yyjson_doc* doc = yyjson_read_opts(buf, len, YYJSON_READ_ALLOW_INVALID_UNICODE, &m_alc, &err);
+            if (!doc) throw invalid_argument(err.msg);
+
+            jdoc_guard g(doc);
+            decode_one(L, yyjson_doc_get_root(doc), numkeyable);
+            return 1;
         }
 
     protected:
@@ -84,7 +111,7 @@ namespace ljson {
 
         yyjson_mut_val* encode_one(lua_State* L, yyjson_mut_doc* doc, bool emy_as_arr, int idx, int depth) {
             if (depth > max_encode_depth) {
-                luaL_error(L, "encode can't pack too depth table");
+                throw invalid_argument("encode can't pack too depth table");
             }
             int type = lua_type(L, idx);
             switch (type) {
@@ -122,14 +149,18 @@ namespace ljson {
                 }
                 return yyjson_mut_strcpy(doc, to_string(lua_tonumber(L, idx)).c_str());
             }
+            throw invalid_argument("json key must is number or string");
             return nullptr;
         }
 
         yyjson_mut_val* array_encode(lua_State* L, yyjson_mut_doc* doc, bool emy_as_arr, int index, int depth) {
             lua_pushnil(L);
             yyjson_mut_val* array = yyjson_mut_arr(doc);
+            if (!array) throw invalid_argument("json encode memory not enough!");
             while (lua_next(L, index) != 0) {
-                yyjson_mut_arr_append(array, encode_one(L, doc, emy_as_arr, -1, depth));
+                auto value = encode_one(L, doc, emy_as_arr, -1, depth);
+                if (!value) throw invalid_argument("json encode memory not enough!");
+                yyjson_mut_arr_append(array, value);
                 lua_pop(L, 1);
             }
             return array;
@@ -140,12 +171,12 @@ namespace ljson {
             if (!is_array(L, index, emy_as_arr)) {
                 lua_pushnil(L);
                 yyjson_mut_val* object = yyjson_mut_obj(doc);
+                if (!object) throw invalid_argument("json encode memory not enough!");
                 while (lua_next(L, index) != 0) {
                     auto key = key_encode(L, doc, -2);
-                    if (!key) {
-                        luaL_error(L, "json key must is number or string");
-                    }
+                    if (!key) throw invalid_argument("json encode memory not enough!");
                     auto value = encode_one(L, doc, emy_as_arr, -1, depth);
+                    if (!value) throw invalid_argument("json encode memory not enough!");
                     unsafe_yyjson_mut_obj_add(object, key, value, unsafe_yyjson_get_len(object));
                     lua_pop(L, 1);
                 }
@@ -225,7 +256,7 @@ namespace ljson {
         
     protected:
         yyjson_alc m_alc;
-        char m_buf[USHRT_MAX];
+        char m_buf[max_jsonbuf_size];
     };
 
     class jsoncodec : public codec_base {
@@ -237,25 +268,17 @@ namespace ljson {
         }
 
         virtual uint8_t* encode(lua_State* L, int index, size_t* len) {
-            yyjson_write_err err;
-            yyjson_alc* alc = m_json->get_alc();
-            yyjson_mut_doc* doc = yyjson_mut_doc_new(alc);
-            yyjson_mut_val* val = m_json->encode_one(L, doc, false, index, 0);
-            auto json = yyjson_mut_val_write_opts(val, YYJSON_WRITE_ALLOW_INVALID_UNICODE, alc, len, &err);
-            alc->free(alc->ctx, json);
-            yyjson_mut_doc_free(doc);
-            return (uint8_t*)json;
+            try {
+                return (uint8_t*)m_json->encode_core(L, YYJSON_WRITE_ALLOW_INVALID_UNICODE, false, index, len);
+            } catch(const std::exception& e) {
+                luaL_error(L, e.what());
+                return nullptr;
+            }
         }
 
         virtual size_t decode(lua_State* L) {
             if (!m_slice) return 0;
-            yyjson_read_err err;
-            yyjson_doc* doc = yyjson_read_opts((char*)m_slice->head(), m_slice->size(), YYJSON_READ_ALLOW_INVALID_UNICODE, m_json->get_alc(), &err);
-            if (!doc) throw invalid_argument(err.msg);
-            int otop = lua_gettop(L);
-            m_json->decode_one(L, yyjson_doc_get_root(doc), true);
-            yyjson_doc_free(doc);
-            return lua_gettop(L) - otop;
+            return m_json->decode_core(L, (char*)m_slice->head(), m_slice->size(), true);
         }
 
         void set_json(yyjson* json) {

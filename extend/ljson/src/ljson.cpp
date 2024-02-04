@@ -12,7 +12,6 @@ namespace ljson {
     }
 
     luakit::lua_table open_ljson(lua_State* L) {
-        thread_json.init_alc();
         luakit::kit_state kit_state(L);
         auto ljson = kit_state.new_table();
         ljson.set_function("jsoncodec", json_codec);
