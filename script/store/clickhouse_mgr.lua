@@ -24,9 +24,8 @@ function ClickHouseMgr:setup()
     local MysqlDB  = import("driver/mysql.lua")
     local database = config_mgr:init_table("database", "name")
     for _, conf in database:iterator() do
-        local drivers = environ.driver(conf.url)
-        if drivers and #drivers > 0 then
-            local dconf = drivers[1]
+        local dconf = environ.driver(conf.url)
+        if dconf then
             if dconf.driver == "mysql" then
                 local mysql_db                 = MysqlDB(dconf)
                 self.clickhouse_dbs[conf.name] = mysql_db
