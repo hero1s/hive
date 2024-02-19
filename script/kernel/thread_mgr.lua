@@ -148,7 +148,7 @@ end
 
 function ThreadMgr:response(session_id, ...)
     if not self:try_response(session_id, ...) then
-        log_err("[ThreadMgr][response][%s] unknown session_id({}) response!,[{}],from:[{}]", hive.frame, session_id, tpack(...), hive.where_call())
+        log_err("[ThreadMgr][response][{}] unknown session_id({}) response!,[{}],from:[{}]", hive.frame, session_id, tpack(...), hive.where_call())
     end
 end
 
