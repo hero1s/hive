@@ -39,9 +39,8 @@ function MongoMgr:setup()
     local MongoDB  = import("driver/mongo.lua")
     local database = config_mgr:init_table("database", "name")
     for _, conf in database:iterator() do
-        local drivers = environ.driver(conf.url)
-        if drivers and #drivers > 0 then
-            local dconf = drivers[1]
+        local dconf = environ.driver(conf.url)
+        if dconf then
             if dconf.driver == "mongodb" then
                 local mongo_db            = MongoDB(dconf)
                 self.mongo_dbs[conf.name] = mongo_db

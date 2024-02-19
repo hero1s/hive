@@ -97,14 +97,9 @@ end
 --标准化url驱动配置
 function environ.driver(url)
     if url then
-        local drivers = {}
-        local value1  = sgsub(url, " ", "")
-        local value2  = sgsub(value1, "\n", "")
-        local strs    = ssplit(value2, ";")
-        for i, str in ipairs(strs) do
-            drivers[i] = parse_driver(str)
-        end
-        return drivers
+        local value1 = sgsub(url, " ", "")
+        local value2 = sgsub(value1, "\n", "")
+        return parse_driver(value2)
     end
 end
 
