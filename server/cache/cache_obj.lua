@@ -141,7 +141,7 @@ function CacheObj:destory()
     local query     = { [self.cache_key] = self.primary_value }
     local code, res = mongo_mgr:delete(self.db_name, self.primary_value, self.cache_table, query, true)
     if check_failed(code) then
-        log_err("[CacheObj][destory] failed: %s=> db: %s, table: %s", res, self.db_name, self.cache_table)
+        log_err("[CacheObj][destory] failed: {}=> db: {}, table: {}", res, self.db_name, self.cache_table)
         return code
     end
     self.data    = {}
