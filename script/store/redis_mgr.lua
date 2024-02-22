@@ -17,7 +17,7 @@ prop:accessor("default_db", nil)    -- default_db
 function RedisMgr:__init()
     self:setup()
     -- 注册事件
-    event_mgr:add_listener(self, "redis_execute", "execute")
+    event_mgr:add_listener(self, "rpc_redis_execute", "execute")
 end
 
 --初始化
@@ -46,7 +46,7 @@ function RedisMgr:get_db(db_name)
     return self.redis_dbs[db_name]
 end
 
-function RedisMgr:execute(db_name, primary_id, cmd, ...)
+function RedisMgr:execute(db_name, cmd, ...)
     local redisdb = self:get_db(db_name)
     if redisdb then
         local ok, res_oe = redisdb:execute(cmd, ...)

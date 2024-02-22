@@ -56,7 +56,6 @@ end
 
 --accept事件
 function RouterServer:on_client_accept(client)
-    log_info("[RouterServer][on_client_accept] new connection, token={},ip:{}", client.token, client.ip)
     client.on_forward_error     = function(session_id, error_msg, source_id, msg_type)
         thread_mgr:fork(function()
             client.call(session_id, FlagMask.RES, hive.id, "on_forward_error", KernCode.RPC_UNREACHABLE, error_msg, msg_type)
