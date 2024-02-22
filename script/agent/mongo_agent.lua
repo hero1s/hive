@@ -30,75 +30,75 @@ end
 
 --db_query: {coll_name, selector, fields}
 function MongoAgent:find_one(db_query, hash_key, db_name)
-    return self:execute("mongo_find_one", db_query, hash_key, db_name)
+    return self:execute("rpc_mongo_find_one", db_query, hash_key, db_name)
 end
 
 --db_query: {coll_name, selector, fields, sortor, limit, skip}
 function MongoAgent:find(db_query, hash_key, db_name)
-    return self:execute("mongo_find", db_query, hash_key, db_name)
+    return self:execute("rpc_mongo_find", db_query, hash_key, db_name)
 end
 
 --db_query: {coll_name, selector, single}
 function MongoAgent:delete(db_query, hash_key, db_name)
-    return self:execute("mongo_delete", db_query, hash_key, db_name)
+    return self:execute("rpc_mongo_delete", db_query, hash_key, db_name)
 end
 
 --db_query: {coll_name, selector, single}
 function MongoAgent:unsafe_delete(db_query, hash_key, db_name)
-    return self:execute("mongo_unsafe_delete", db_query, hash_key, db_name)
+    return self:execute("rpc_mongo_unsafe_delete", db_query, hash_key, db_name)
 end
 
 --db_query: {coll_name, obj, selector, upsert, multi}
 function MongoAgent:update(db_query, hash_key, db_name)
-    return self:execute("mongo_update", db_query, hash_key, db_name)
+    return self:execute("rpc_mongo_update", db_query, hash_key, db_name)
 end
 
 --db_query: {coll_name, obj, selector, upsert, multi}
 function MongoAgent:unsafe_update(db_query, hash_key, db_name)
-    return self:execute("mongo_unsafe_update", db_query, hash_key, db_name)
+    return self:execute("rpc_mongo_unsafe_update", db_query, hash_key, db_name)
 end
 
 function MongoAgent:find_and_modify(db_query, hash_key, db_name)
-    return self:execute("mongo_find_and_modify", db_query, hash_key, db_name)
+    return self:execute("rpc_mongo_find_and_modify", db_query, hash_key, db_name)
 end
 
 --db_query:{coll_name,pipeline,options}
 function MongoAgent:aggregate(db_query, hash_key, db_name)
-    return self:execute("mongo_aggregate", db_query, hash_key, db_name)
+    return self:execute("rpc_mongo_aggregate", db_query, hash_key, db_name)
 end
 
 --db_query: {coll_name, obj}
 function MongoAgent:insert(db_query, hash_key, db_name)
-    return self:execute("mongo_insert", db_query, hash_key, db_name)
+    return self:execute("rpc_mongo_insert", db_query, hash_key, db_name)
 end
 
 --db_query: {coll_name, obj}
 function MongoAgent:unsafe_insert(db_query, hash_key, db_name)
-    return self:execute("mongo_unsafe_insert", db_query, hash_key, db_name)
+    return self:execute("rpc_mongo_unsafe_insert", db_query, hash_key, db_name)
 end
 
 --db_query: {coll_name, selector}
 function MongoAgent:count(db_query, hash_key, db_name)
-    return self:execute("mongo_count", db_query, hash_key, db_name)
+    return self:execute("rpc_mongo_count", db_query, hash_key, db_name)
 end
 
 function MongoAgent:get_indexes(coll_name, db_name)
-    return self:execute("mongo_get_indexes", { coll_name }, coll_name, db_name)
+    return self:execute("rpc_mongo_get_indexes", { coll_name }, coll_name, db_name)
 end
 
 --db_query: {coll_name, indexes}
 function MongoAgent:create_indexes(db_query, hash_key, db_name)
-    return self:execute("mongo_create_indexes", db_query, hash_key, db_name)
+    return self:execute("rpc_mongo_create_indexes", db_query, hash_key, db_name)
 end
 
 --db_query: {coll_name, index_name}
 function MongoAgent:drop_indexes(db_query, hash_key, db_name)
-    return self:execute("mongo_drop_indexes", db_query, hash_key, db_name)
+    return self:execute("rpc_mongo_drop_indexes", db_query, hash_key, db_name)
 end
 
 --db_query: {cmd, ...}
 function MongoAgent:run_command(db_query, hash_key, db_name)
-    return self:execute("mongo_execute", db_query, hash_key, db_name)
+    return self:execute("rpc_mongo_execute", db_query, hash_key, db_name)
 end
 
 function MongoAgent:execute(rpc, db_query, hash_key, db_name)

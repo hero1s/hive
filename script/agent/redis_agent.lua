@@ -61,6 +61,15 @@ function RedisAgent:expire(key, seconds)
     return false
 end
 
+function RedisAgent:autoinc_id(key)
+    local ok, code, res = self:execute({ "incr", key }, key)
+    if check_success(code, ok) then
+        return true, res
+    end
+    log_err("[RedisAgent][autoinc_id] ok:{},code:{},res:{},ref:{}", ok, code, res, hive.where_call())
+    return false
+end
+
 function RedisAgent:start_local_run()
     if self.local_run then
         return
@@ -73,10 +82,10 @@ end
 --db_query: { cmd, ...}
 function RedisAgent:execute(db_query, hash_key, db_name)
     if self.local_run then
-        return scheduler:call(self.service, "redis_execute", db_name or "default", hash_key, tunpack(db_query))
+        return scheduler:call(self.service, "rpc_redis_execute", db_name or "default", tunpack(db_query))
     end
     if router_mgr then
-        return router_mgr:call_dbsvr_hash(hash_key or mrandom(), "redis_execute", db_name or "default", hash_key, tunpack(db_query))
+        return router_mgr:call_dbsvr_hash(hash_key or mrandom(), "rpc_redis_execute", db_name or "default", tunpack(db_query))
     end
     return false, KernCode.FAILED, "init not right"
 end

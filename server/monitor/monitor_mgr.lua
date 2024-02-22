@@ -45,7 +45,7 @@ function MonitorMgr:__init()
 end
 
 function MonitorMgr:on_client_accept(client)
-    log_info("[MonitorMgr][on_client_accept] token:{},ip:{}", client.token, client.ip)
+
 end
 
 -- 心跳

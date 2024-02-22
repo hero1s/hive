@@ -78,6 +78,7 @@ end
 
 --连接关闭
 function RpcServer:on_socket_error(token, err)
+    log_info("[RpcServer][on_socket_error] token:{},err:{}!", token, err)
     local client = self.clients[token]
     if client then
         self.clients[token] = nil
@@ -92,6 +93,7 @@ end
 
 --accept事件
 function RpcServer:on_socket_accept(client)
+    log_info("[RpcServer][on_socket_accept] token:{},ip:{}", client.token, client.ip)
     client.set_timeout(RPCLINK_TIMEOUT)
     self.clients[client.token] = client
 
