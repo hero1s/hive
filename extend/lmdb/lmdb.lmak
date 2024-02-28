@@ -1,0 +1,38 @@
+--工程名字
+PROJECT_NAME = "lmdb"
+
+--目标名字
+TARGET_NAME = "lmdb"
+
+----工程类型: static/dynamic/exe
+PROJECT_TYPE = "dynamic"
+
+EX_FLAGS = {
+    "Wno-implicit-fallthrough"
+}
+
+--需要的include目录
+INCLUDES = {
+    "../lua/lua",
+    "../luakit/include"
+}
+
+MIMALLOC = false
+
+--需要连接的库文件
+LIBS = {
+    "lua"
+}
+
+--WINDOWS需要定义的选项
+WINDOWS_DEFINES = {
+    "LUA_BUILD_AS_DLL"
+}
+
+--依赖项目
+DEPS = {
+    "lualib"
+}
+
+--分组定义
+GROUP = "luaext"
