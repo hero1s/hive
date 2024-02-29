@@ -10,7 +10,7 @@ namespace lcodec {
         } else if (type == LUA_TSTRING) {
             hcode = std::hash<std::string>{}(lua_tostring(L, 1));
         } else {
-            luaL_error(L, "hashkey only support number or string!");
+            luaL_error(L, "hashkey(%s) only support number or string!",lua_typename(L,type));
         }
         size_t mod = luaL_optinteger(L, 2, 0);
         if (mod > 0) {
@@ -121,7 +121,7 @@ namespace lcodec {
         } else if (type == LUA_TSTRING) {
             key = fnv_1_32(lua_tostring(L, 1), 0);
         } else {
-            luaL_error(L, "hashkey only support number or string!");
+            luaL_error(L, "hashkey(%s) only support number or string!", lua_typename(L, type));
         }
         int32_t num_buckets = lua_tointeger(L, 2);
         int32_t hval = jumphash(key, num_buckets);
