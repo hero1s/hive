@@ -262,8 +262,12 @@ int lua_socket_node::on_call_pb(slice* slice) {
 }
 
 int lua_socket_node::on_call_data(slice* slice) {
-	size_t buf_size = slice->size();
-	m_luakit->object_call(this, "on_call_data", nullptr, m_codec, std::tie(), buf_size);
+	if (m_codec) {
+		size_t buf_size = slice->size();
+		m_luakit->object_call(this, "on_call_data", nullptr, m_codec, std::tie(), buf_size);
+	} else {
+		m_luakit->object_call(this, "on_call_text", nullptr, std::tie(), slice->size(), slice->contents());
+	}
 	return 0;
 }
 

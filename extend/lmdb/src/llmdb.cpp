@@ -4,39 +4,58 @@
 #include "lua_kit.h"
 
 namespace llmdb {
-    mdb_env* env_create(lua_State* L) {
+    mdb_driver* create_criver(lua_State* L) {
         MDB_env* handle = nullptr;
         int rc = mdb_env_create(&handle);
         if (rc != MDB_SUCCESS) {
             luaL_error(L, "mdb env create failed!");
         }
-        return new mdb_env(handle);
+        return new mdb_driver(handle);
     }
 
     luakit::lua_table open_lmdb(lua_State* L) {
         luakit::kit_state kit_state(L);
         auto lmdb = kit_state.new_table();
-        lmdb.set_function("create_env", env_create);
-        kit_state.new_class<mdb_env>(
-            "get", &mdb_env::get,
-            "put", &mdb_env::put,
-            "del", &mdb_env::del,
-            "drop", &mdb_env::drop,
-            "sync", &mdb_env::sync,
-            "open", &mdb_env::open,
-            "begin", &mdb_env::begin,
-            "commit", &mdb_env::commit,
-            "txn_id", &mdb_env::txn_id,
-            "txn_abort", &mdb_env::txn_abort,
-            "txn_reset", &mdb_env::txn_reset,
-            "set_flags", &mdb_env::set_flags,
-            "cursor_put", &mdb_env::cursor_put,
-            "cursor_get", &mdb_env::cursor_get,
-            "cursor_del", &mdb_env::cursor_del,
-            "cursor_open", &mdb_env::cursor_open,
-            "set_max_dbs", &mdb_env::set_max_dbs,
-            "set_mapsize", &mdb_env::set_mapsize,
-            "set_max_readers", &mdb_env::set_max_readers
+        lmdb.set_function("create", create_criver);
+        kit_state.new_class<mdb_driver>(
+            "get", &mdb_driver::get,
+            "put", &mdb_driver::put,
+            "del", &mdb_driver::del,
+            "drop", &mdb_driver::drop,
+            "sync", &mdb_driver::sync,
+            "open", &mdb_driver::open,
+            "easy_put", &mdb_driver::easy_put,
+            "easy_get", &mdb_driver::easy_get,
+            "easy_del", &mdb_driver::easy_del,
+            "set_flags", &mdb_driver::set_flags,
+            "begin_txn", &mdb_driver::begin_txn,
+            "abort_txn", &mdb_driver::abort_txn,
+            "reset_txn", &mdb_driver::reset_txn,
+            "renew_txn", &mdb_driver::renew_txn,            
+            "commit_txn", &mdb_driver::commit_txn,
+            "cursor_put", &mdb_driver::cursor_put,
+            "cursor_get", &mdb_driver::cursor_get,
+            "cursor_del", &mdb_driver::cursor_del,
+            "cursor_open", &mdb_driver::cursor_open,
+            "cursor_close", &mdb_driver::cursor_close,
+            "set_max_readers", &mdb_driver::set_max_readers,
+            "set_max_dbs", &mdb_driver::set_max_dbs,
+            "set_mapsize", &mdb_driver::set_mapsize,
+            "set_codec", &mdb_driver::set_codec
+        );
+        lmdb.new_enum("MDB_ENV_FLAG",
+            "MDB_FIXEDMAP", MDB_FIXEDMAP,
+            "MDB_NOSUBDIR", MDB_NOSUBDIR,
+            "MDB_NOSYNC", MDB_NOSYNC,
+            "MDB_RDONLY", MDB_RDONLY,
+            "MDB_NOMETASYNC", MDB_NOMETASYNC,
+            "MDB_WRITEMAP", MDB_WRITEMAP,
+            "MDB_MAPASYNC", MDB_MAPASYNC,
+            "MDB_NOTLS", MDB_NOTLS,
+            "MDB_NOLOCK", MDB_NOLOCK,
+            "MDB_NORDAHEAD", MDB_NORDAHEAD,
+            "MDB_NOMEMINIT", MDB_NOMEMINIT,
+            "MDB_PREVSNAPSHOT", MDB_PREVSNAPSHOT
         );
         lmdb.new_enum("MDB_CODE",
             "MDB_SUCCESS", MDB_SUCCESS,
@@ -63,7 +82,7 @@ namespace llmdb {
             "MDB_PROBLEM", MDB_PROBLEM,
             "MDB_LAST_ERRCODE", MDB_LAST_ERRCODE
         );
-        lmdb.new_enum("MDBI_FLAG",
+        lmdb.new_enum("MDB_DBI_FLAG",
             "MDB_REVERSEKEY", MDB_REVERSEKEY,
             "MDB_DUPSORT", MDB_DUPSORT,
             "MDB_INTEGERKEY", MDB_INTEGERKEY,
@@ -72,7 +91,7 @@ namespace llmdb {
             "MDB_REVERSEDUP", MDB_REVERSEDUP,
             "MDB_CREATE", MDB_CREATE
         );
-        lmdb.new_enum("MDB_CUROP",
+        lmdb.new_enum("MDB_CUR_OP",
             "MDB_FIRST", MDB_FIRST,
             "MDB_FIRST_DUP", MDB_FIRST_DUP,
             "MDB_GET_BOTH", MDB_GET_BOTH,
@@ -93,7 +112,7 @@ namespace llmdb {
             "MDB_SET_RANGE", MDB_SET_RANGE,
             "MDB_PREV_MULTIPLE", MDB_PREV_MULTIPLE
         );
-        lmdb.new_enum("MDB_WFLAG",
+        lmdb.new_enum("MDB_WRITE_FLAG",
             "MDB_NOOVERWRITE", MDB_NOOVERWRITE,
             "MDB_NODUPDATA", MDB_NODUPDATA,
             "MDB_CURRENT", MDB_CURRENT,

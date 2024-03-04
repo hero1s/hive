@@ -211,6 +211,7 @@ void hive_app::run(int rtype) {
 	hive.set_function("default_signal", [](int n) { signal(n, SIG_DFL); });
 	hive.set_function("register_signal", [](int n) { signal(n, on_signal); });
 	hive.set_function("getenv", [&](const char* key) { return get_env(key); });
+	hive.set_function("setenv", [&](lua_State* L) { return set_env(L); });
 	hive.set_function("environs", [&]() { return m_environs; });
 	//begin worker操作接口
 	hive.set_function("worker_update", [&](uint64_t clock_ms) { m_schedulor.update(clock_ms); });
