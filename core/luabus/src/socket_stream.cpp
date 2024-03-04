@@ -546,44 +546,46 @@ void socket_stream::dispatch_package(bool reset) {
 		}break;
 		case eproto_type::proto_pb:
 		case eproto_type::proto_text: {
-			if (!m_codec) {
-				on_error("codec-is-null");
-				return;
-			}			
-			//解析数据包头长度
-			slice* slice = m_recv_buffer.get_slice();
-			m_codec->set_slice(slice);
-			package_size = m_codec->load_packet(data_len);
-			//当前包头长度解析失败, 关闭连接
-			if (package_size < 0) {
-				on_error(fmt::format("text package-length-err,ip:{}", m_ip).c_str());
-				return;
+			if (m_codec) {
+				//解析数据包头长度
+				slice* slice = m_recv_buffer.get_slice();
+				m_codec->set_slice(slice);
+				package_size = m_codec->load_packet(data_len);
+				//当前包头长度解析失败, 关闭连接
+				if (package_size < 0) {
+					on_error(fmt::format("text package-length-err,ip:{}", m_ip).c_str());
+					return;
+				}
+				// 数据包还没有收完整
+				if (package_size == 0) return;
+				// 数据回调
+				slice->attach(data, package_size);
+				auto ret = m_package_cb(slice);
+				if (ret != 0) {
+					on_error(fmt::format("package process ret:{},ip:{}", ret, m_ip).c_str());
+					return;
+				}
+				// 数据包解析失败
+				if (m_codec->failed()) {
+					on_error(m_codec->err());
+					return;
+				}
+				size_t read_size = m_codec->get_packet_len();
+				// 数据包还没有收完整
+				if (read_size == 0) {
+					std::cout << "read_size:" << package_size << std::endl;
+					return;
+				}
+				// 接收缓冲读游标调整
+				m_recv_buffer.pop_size(read_size);
+				// 限流
+				m_fc_package++;
+				m_fc_bytes += read_size;
+			} else {
+				package_size = data_len;
+				m_package_cb(m_recv_buffer.get_slice(package_size));
+				m_recv_buffer.pop_size(package_size);
 			}
-			// 数据包还没有收完整
-			if (package_size == 0) return;
-			// 数据回调
-			slice->attach(data, package_size);
-			auto ret = m_package_cb(slice);		
-			if (ret != 0) {
-				on_error(fmt::format("package process ret:{},ip:{}",ret, m_ip).c_str());
-				return;
-			}
-			// 数据包解析失败
-			if (m_codec->failed()) {
-				on_error(m_codec->err());
-				return;
-			}
-			size_t read_size = m_codec->get_packet_len();
-			// 数据包还没有收完整
-			if (read_size == 0) {
-				std::cout << "read_size:" << package_size << std::endl;
-				return;
-			}					
-			// 接收缓冲读游标调整
-			m_recv_buffer.pop_size(read_size);
-			// 限流
-			m_fc_package++;
-			m_fc_bytes += read_size;			
 		}break;
 		default: 
 			on_error(fmt::format("proto-type-not-suppert!:{},ip:{}", (int)m_proto_type,m_ip).c_str());

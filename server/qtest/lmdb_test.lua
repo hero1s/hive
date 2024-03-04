@@ -1,37 +1,55 @@
-local lmdb       = require("lmdb")
-local log_debug  = logger.debug
+local lmdb         = require("lmdb")
+local log_debug    = logger.debug
+local jsoncodec    = json.jsoncodec
 
-local MDB_CREATE = lmdb.MDBI_FLAG.MDB_CREATE
-local MDB_FIRST  = lmdb.MDB_CUROP.MDB_FIRST
-local MDB_NEXT   = lmdb.MDB_CUROP.MDB_NEXT
+local MDB_CREATE   = lmdb.MDB_DBI_FLAG.MDB_CREATE
+local MDB_NOSUBDIR = lmdb.MDB_ENV_FLAG.MDB_NOSUBDIR
+local MDB_NEXT     = lmdb.MDB_CUR_OP.MDB_NEXT
+local MDB_SET      = lmdb.MDB_CUR_OP.MDB_SET
 
-local env        = lmdb.create_env()
-env.set_max_dbs(10)
-local code = env.open("./lmdb/", 0, 0644)
-log_debug("{}", code)
+local driver       = lmdb.create()
+local jcodec       = jsoncodec()
 
-env.begin("test", MDB_CREATE)
-local a = env.put("abc1", "123")
-local b = env.put("abc2", "234")
+driver.set_max_dbs(10)
+driver.set_codec(jcodec)
+driver.open("./lmdb/xxx.lmdb", MDB_NOSUBDIR, 0644)
+
+driver.begin_txn("test", MDB_CREATE)
+local a = driver.put("abc1", { a = 123 })
+local b = driver.put("abc2", "234")
+local c = driver.put("abc3", "235")
 log_debug("{}-{}", a, b)
-env.commit()
+driver.commit_txn()
 
-env.begin("test")
-local aa = env.get("abc1")
-local bb = env.get("abc2")
+driver.begin_txn("test")
+local aa = driver.get("abc1")
+local bb = driver.get("abc2")
 log_debug("{}-{}", aa, bb)
-env.del("abc1")
-env.del("abc2")
-local ac = env.get("abc1")
-local bc = env.get("abc2")
-log_debug("{}-{}", ac, bc)
-env.commit()
+local aa = driver.get("abc4")
+local bb = driver.get("abc5")
+log_debug("{}-{}", aa, bb)
+driver.commit_txn()
 
-env.begin("test")
-env.cursor_open()
-local a = env.cursor_get("abc1", MDB_FIRST)
-while a do
-    log_debug("{}", a)
-    a = env.cursor_get("abc1", MDB_NEXT)
+driver.begin_txn("test")
+driver.cursor_open()
+local v, k, c = driver.cursor_get("abc1", MDB_SET)
+while v do
+    log_debug("{}-{}-{}", v, k, c)
+    k, v, c = driver.cursor_get(0, MDB_NEXT)
 end
-env.commit()
+driver.commit_txn()
+
+local b = driver.easy_put("abc4", { a = 123 })
+local c = driver.easy_put("abc5", "235")
+log_debug("{}-{}", a, b)
+local aa, c = driver.easy_get("abc1")
+local bb, d = driver.easy_get("abc2")
+log_debug("{}-{}-{}-{}", aa, bb, c, d)
+local aa, c = driver.easy_get("abc4")
+local bb, d = driver.easy_get("abc5")
+log_debug("{}-{}-{}-{}", aa, bb, c, d)
+local bb = driver.easy_del("abc5")
+local bb = driver.easy_del("abc4")
+local aa = driver.easy_get("abc4")
+local bb = driver.easy_get("abc5")
+log_debug("{}-{}", aa, bb)
