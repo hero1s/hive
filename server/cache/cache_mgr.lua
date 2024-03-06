@@ -1,5 +1,6 @@
 -- cache_mgr.lua
 import("store/mongo_mgr.lua")
+import("cache/lmdb_mgr.lua")
 local CacheObj     = import("cache/cache_obj.lua")
 local log_err      = logger.err
 local log_info     = logger.info
@@ -25,6 +26,8 @@ local event_mgr    = hive.get("event_mgr")
 local config_mgr   = hive.get("config_mgr")
 local update_mgr   = hive.get("update_mgr")
 local monitor      = hive.get("monitor")
+local timer_mgr    = hive.get("timer_mgr")
+local lmdb_mgr     = hive.get("lmdb_mgr")
 
 local obj_table    = config_mgr:init_table("dbcache", "cache_name")
 
@@ -73,6 +76,27 @@ function CacheMgr:setup()
     end
     self.save_limit = env_number("HIVE_SAVE_LIMIT", 100)
     self.rwlock     = environ.status("HIVE_OPEN_RWLOCK")
+    --恢复未存储数据
+    timer_mgr:once(1000, function()
+        self:recover_lmdb()
+    end)
+end
+
+function CacheMgr:recover_lmdb()
+    for cache_name, _ in pairs(self.cache_lists) do
+        lmdb_mgr:recover(cache_name, self)
+    end
+end
+
+function CacheMgr:recover_cacheobj(cache_name, primary_key, data)
+    log_warn("[CacheMgr][recover_cacheobj] {},{}", cache_name, primary_key)
+    local conf       = self.cache_confs[cache_name]
+    local cache_list = self.cache_lists[cache_name]
+    local cache_obj  = CacheObj(conf, primary_key)
+    cache_list:set(primary_key, cache_obj)
+    cache_obj:update(data, true)
+    cache_obj.holding = false
+    self:set_dirty(cache_obj, true)
 end
 
 function CacheMgr:vote_stop_service()
@@ -169,6 +193,7 @@ end
 function CacheMgr:delete(cache_obj, delay_time)
     cache_obj:set_lock_node_id(0)
     cache_obj:set_expire_time(delay_time or mrandom(1000, 60000))
+    lmdb_mgr:delete_cache(cache_obj.cache_name, cache_obj.primary_value)
 end
 
 function CacheMgr:clear_obj(cache_obj)
@@ -180,6 +205,7 @@ end
 function CacheMgr:save_cache(cache_obj, remove)
     thread_mgr:fork(function()
         self:set_dirty(cache_obj, false)
+        lmdb_mgr:save_cache(cache_obj.cache_name, cache_obj.primary_value, cache_obj.data)
         if not cache_obj:save() then
             self:set_dirty(cache_obj, true)
         end
