@@ -154,10 +154,11 @@ namespace ljson {
         }
 
         yyjson_mut_val* array_encode(lua_State* L, yyjson_mut_doc* doc, bool emy_as_arr, int index, int depth) {
-            lua_pushnil(L);
+            int asize = lua_rawlen(L, index);
             yyjson_mut_val* array = yyjson_mut_arr(doc);
             if (!array) throw invalid_argument("json encode memory not enough!");
-            while (lua_next(L, index) != 0) {
+            for (int i = 1; i <= asize; ++i){
+                lua_geti(L, index, i);
                 auto value = encode_one(L, doc, emy_as_arr, -1, depth);
                 if (!value) throw invalid_argument("json encode memory not enough!");
                 yyjson_mut_arr_append(array, value);
