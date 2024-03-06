@@ -108,11 +108,21 @@ namespace luakit {
     inline void table_encode(lua_State* L, luabuf* buff, int index, int depth) {
         index = lua_absindex(L, index);
         value_encode(buff, type_tab_head);
-        lua_pushnil(L);
-        while (lua_next(L, index) != 0) {
-            encode_one(L, buff, -2, depth);
-            encode_one(L, buff, -1, depth);
-            lua_pop(L, 1);
+        size_t rawlen = lua_rawlen(L, index);
+        if (is_array(L, index, rawlen)) {
+            for (int i = 1; i <= rawlen; ++i) {
+                lua_geti(L, index, i);
+                integer_encode(buff, i);
+                encode_one(L, buff, -1, depth);
+                lua_pop(L, 1);
+            }
+        } else {
+            lua_pushnil(L);
+            while (lua_next(L, index) != 0) {
+                encode_one(L, buff, -2, depth);
+                encode_one(L, buff, -1, depth);
+                lua_pop(L, 1);
+            }
         }
         value_encode(buff, type_tab_tail);
     }
@@ -287,13 +297,11 @@ namespace luakit {
     }
 
     inline void serialize_table(lua_State* L, luabuf* buff, int index, int depth, int line) {
+        int size = 0;
         index = lua_absindex(L, index);
         size_t rawlen = lua_rawlen(L, index);
-        bool barray = is_array(L, index, rawlen);
-
-        int size = 0;
         serialize_value(buff, "{");
-        if (barray) {
+        if (is_array(L, index, rawlen)) {
             for (int i = 1; i <= rawlen; ++i){
                 if (size++ > 0) {
                     serialize_value(buff, ",");

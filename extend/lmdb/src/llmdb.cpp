@@ -1,7 +1,6 @@
 #define LUA_LIB
 
 #include "llmdb.h"
-#include "lua_kit.h"
 
 namespace llmdb {
     mdb_driver* create_criver(lua_State* L) {
