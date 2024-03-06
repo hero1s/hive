@@ -6,11 +6,9 @@
 using namespace std;
 using namespace luakit;
 
-#ifdef _MSC_VER
-#define strncasecmp _strnicmp
-#endif
-
 namespace llmdb {
+    const uint16_t  max_key_size = 4096;
+
     class mdb_driver {
     public:
         mdb_driver(MDB_env* env) : _env{env} {}
@@ -49,9 +47,6 @@ namespace llmdb {
         void reset_txn() {
             mdb_txn_reset(_txn);
         }
-        int32_t renew_txn() {
-            return mdb_txn_renew(_txn);
-        }
         int32_t commit_txn() {
             return mdb_txn_commit(_txn);
         }
@@ -64,10 +59,10 @@ namespace llmdb {
             return MDB_SUCCESS;
         }
         int32_t begin_txn(const char* name, int flags) {
-            int rc = mdb_txn_begin(_env, nullptr, flags, &_txn);
+            int rc = mdb_txn_begin(_env, nullptr, 0, &_txn);
             if (rc != MDB_SUCCESS) return rc;
             rc = mdb_dbi_open(_txn, name, flags, &_dbi);
-            if (rc != MDB_SUCCESS) mdb_txn_abort(_txn);
+            if (rc != MDB_SUCCESS) mdb_txn_reset(_txn);
             return rc;
         }
         int put(lua_State* L) {
@@ -75,11 +70,7 @@ namespace llmdb {
             read_key(L, 1, mkey);
             read_value(L, 2, mval);
             int rc = mdb_put(_txn, _dbi, &mkey, &mval, 0);
-            if (rc != MDB_SUCCESS) {
-                mdb_txn_reset(_txn);
-                lua_pushinteger(L, rc);
-                return 1;
-            }
+            if (rc != MDB_SUCCESS && rc != MDB_KEYEXIST) mdb_txn_reset(_txn);
             lua_pushinteger(L, rc);
             return 1;
         }
@@ -99,6 +90,31 @@ namespace llmdb {
             lua_pushinteger(L, rc);
             return 1;
         exit:
+            if (rc != MDB_KEYEXIST) mdb_txn_reset(_txn);
+            lua_pushinteger(L, rc);
+            return 1;
+        }
+        int batch_put(lua_State* L) {
+            luaL_checktype(L, 1, LUA_TTABLE);
+            const char* name = luaL_optstring(L, 2, nullptr);
+            int rc = mdb_txn_begin(_env, nullptr, 0, &_txn);
+            if (rc != MDB_SUCCESS) goto exit;
+            rc = mdb_dbi_open(_txn, name, MDB_CREATE, &_dbi);
+            if (rc != MDB_SUCCESS) goto exit;
+            lua_pushnil(L);
+            MDB_val mkey, mval;
+            while (lua_next(L, 1) != 0) {
+                read_key(L, -2, mkey);
+                read_value(L, -1, mval);
+                lua_pop(L, 1);
+                rc = mdb_put(_txn, _dbi, &mkey, &mval, 0);
+                if (rc != MDB_SUCCESS && rc != MDB_KEYEXIST) goto exit;
+            }
+            rc = mdb_txn_commit(_txn);
+            if (rc != MDB_SUCCESS) goto exit;
+            lua_pushinteger(L, rc);
+            return 1;
+        exit:
             mdb_txn_reset(_txn);
             lua_pushinteger(L, rc);
             return 1;
@@ -107,10 +123,10 @@ namespace llmdb {
             MDB_val mkey, mval;
             read_key(L, 1, mkey);
             int rc = mdb_get(_txn, _dbi, &mkey, &mval);
+            if (rc != MDB_SUCCESS && rc != MDB_NOTFOUND) mdb_txn_reset(_txn);
             if (rc != MDB_SUCCESS) {
                 lua_pushnil(L);
                 lua_pushinteger(L, rc);
-                mdb_txn_reset(_txn);
                 return 2;
             }
             push_value(L, mval);
@@ -118,8 +134,8 @@ namespace llmdb {
             return 2;
         }
         int easy_get(lua_State* L) {
-            const char* name = luaL_optstring(L, 3, nullptr);
-            int rc = mdb_txn_begin(_env, nullptr, MDB_RDONLY, &_txn);
+            const char* name = luaL_optstring(L, 2, nullptr);
+            int rc = mdb_txn_begin(_env, nullptr, 0, &_txn);
             if (rc != MDB_SUCCESS) goto exit;
             rc = mdb_dbi_open(_txn, name, MDB_CREATE, &_dbi);
             if (rc != MDB_SUCCESS) goto exit;
@@ -127,64 +143,125 @@ namespace llmdb {
             read_key(L, 1, mkey);
             rc = mdb_get(_txn, _dbi, &mkey, &mval);
             if (rc != MDB_SUCCESS) goto exit;
-            rc = mdb_txn_commit(_txn);
-            if (rc != MDB_SUCCESS) goto exit;
             push_value(L, mval);
+            mdb_txn_reset(_txn);
             lua_pushinteger(L, rc);
             return 2;
         exit:
             lua_pushnil(L);
-            lua_pushinteger(L, rc);
             mdb_txn_reset(_txn);
+            lua_pushinteger(L, rc);
+            return 2;
+        }
+        int batch_get(lua_State* L) {
+            lua_createtable(L, 0, 4);
+            luaL_checktype(L, 1, LUA_TTABLE);
+            const char* name = luaL_optstring(L, 2, nullptr);
+            int rc = mdb_txn_begin(_env, nullptr, 0, &_txn);
+            if (rc != MDB_SUCCESS) goto exit;
+            rc = mdb_dbi_open(_txn, name, MDB_CREATE, &_dbi);
+            if (rc != MDB_SUCCESS) goto exit;
+            lua_pushnil(L);
+            MDB_val mkey, mval;
+            while (lua_next(L, 1) != 0) {
+                read_key(L, -1, mkey);
+                rc = mdb_get(_txn, _dbi, &mkey, &mval);
+                if (rc == MDB_SUCCESS) {
+                    push_value(L, mval);
+                    lua_settable(L, 3);
+                } else {
+                    lua_pop(L, 1);
+                    if (rc != MDB_NOTFOUND) goto exit;
+                }
+            }
+        exit:
+            mdb_txn_reset(_txn);
+            lua_pushinteger(L, rc);
             return 2;
         }
         int del(lua_State* L) {
+            int rc;
             MDB_val mkey;
             read_key(L, 1, mkey);
             if (lua_gettop(L) == 1) {
-                int rc = mdb_del(_txn, _dbi, &mkey, nullptr);
-                if (rc != MDB_SUCCESS) mdb_txn_reset(_txn);
-                lua_pushboolean(L, rc != MDB_SUCCESS);
-                return 1;
+                rc = mdb_del(_txn, _dbi, &mkey, nullptr);
+            } else {
+                MDB_val mval;
+                read_value(L, 2, mval);
+                rc = mdb_del(_txn, _dbi, &mkey, &mval);
             }
-            MDB_val mval;
-            read_value(L, 2, mval);
-            int rc = mdb_del(_txn, _dbi, &mkey, &mval);
-            if (rc != MDB_SUCCESS) mdb_txn_reset(_txn);
-            lua_pushboolean(L, rc != MDB_SUCCESS);
+            bool success = (rc == MDB_SUCCESS || rc == MDB_NOTFOUND);
+            if (!success) mdb_txn_reset(_txn);
+            lua_pushboolean(L, success);
             return 1;
         }
         int easy_del(lua_State* L) {
-            const char* name = luaL_optstring(L, 3, nullptr);
+            const char* name = luaL_optstring(L, 2, nullptr);
             int rc = mdb_txn_begin(_env, nullptr, 0, &_txn);
             if (rc != MDB_SUCCESS) goto exit;
             rc = mdb_dbi_open(_txn, name, MDB_CREATE, &_dbi);
             if (rc != MDB_SUCCESS) goto exit;
             MDB_val mkey;
             read_key(L, 1, mkey);
-            if (lua_gettop(L) == 1) {
+            if (lua_type(L, 3) == LUA_TNONE) {
                 rc = mdb_del(_txn, _dbi, &mkey, nullptr);
-                if (rc != MDB_SUCCESS) goto exit;
             } else {
                 MDB_val mval;
-                read_value(L, 2, mval);
+                read_value(L, 3, mval);
                 rc = mdb_del(_txn, _dbi, &mkey, &mval);
-                if (rc != MDB_SUCCESS) goto exit;
             }
+            if (!(rc == MDB_SUCCESS || rc == MDB_NOTFOUND)) goto exit;
             rc = mdb_txn_commit(_txn);
             if (rc != MDB_SUCCESS) goto exit;
-            lua_pushboolean(L, true);
+            lua_pushinteger(L, rc);
             return 1;
         exit:
-            lua_pushboolean(L, false);
+            lua_pushinteger(L, rc);
             mdb_txn_reset(_txn);
             return 1;
         }
-        int32_t cursor_open() {
-            return mdb_cursor_open(_txn, _dbi, &_cur);
+        int batch_del(lua_State* L) {
+            MDB_val mkey;
+            luaL_checktype(L, 1, LUA_TTABLE);
+            const char* name = luaL_optstring(L, 2, nullptr);
+            int rc = mdb_txn_begin(_env, nullptr, 0, &_txn);
+            if (rc != MDB_SUCCESS) goto exit;
+            rc = mdb_dbi_open(_txn, name, MDB_CREATE, &_dbi);
+            if (rc != MDB_SUCCESS) goto exit;
+            lua_pushnil(L);
+            while (lua_next(L, 1) != 0) {
+                read_key(L, -1, mkey);
+                lua_pop(L, 1);
+                rc = mdb_del(_txn, _dbi, &mkey, nullptr);
+                if (!(rc == MDB_SUCCESS || rc == MDB_NOTFOUND)) goto exit;
+            }
+            rc = mdb_txn_commit(_txn);
+            if (rc != MDB_SUCCESS) goto exit;
+            lua_pushinteger(L, rc);
+            return 1;
+        exit:
+            mdb_txn_reset(_txn);
+            lua_pushinteger(L, rc);
+            return 1;
         }
-        void cursor_close() {
+        int32_t cursor_open(const char* name) {
+            int rc = mdb_txn_begin(_env, nullptr, 0, &_txn);
+            if (rc != MDB_SUCCESS) goto exit;
+            rc = mdb_dbi_open(_txn, name, MDB_CREATE, &_dbi);
+            if (rc != MDB_SUCCESS) goto exit;
+            return mdb_cursor_open(_txn, _dbi, &_cur);
+        exit:
+            mdb_txn_reset(_txn);
+            return rc;
+        }
+        int32_t cursor_close() {
+            int rc = mdb_txn_commit(_txn);
+            if (rc != MDB_SUCCESS) {
+                mdb_txn_reset(_txn);
+                return rc;
+            };
             mdb_cursor_close(_cur);
+            return rc;
         }
         int cursor_put(lua_State* L) {
             MDB_val mkey, mval;
@@ -226,54 +303,64 @@ namespace llmdb {
     protected:
         void read_key(lua_State* L, int idx, MDB_val& val) {
             int type = lua_type(L, idx);
-            switch (type) {
-            case LUA_TNUMBER: {
-                    auto cval = lua_isinteger(L, idx) ? to_string(lua_tointeger(L, idx)) : to_string(lua_tonumber(L, idx));
-                    val = { cval.size(), (void*)cval.c_str() };
+            if (m_jcodec) {
+                switch (type) {
+                case LUA_TNIL:
+                    val.mv_size = 0;
+                    break;
+                case LUA_TNUMBER: {
+                        size_t len;
+                        char* body = (char*)m_jcodec->encode(L, idx, &len);
+                        if (len >= max_key_size) luaL_error(L, "lmdb read key size %d ge 4096!", len);
+                        strncpy(m_keys, body, len);
+                        val = MDB_val{ len, (void*)m_keys };
+                    }
+                    break;
+                case LUA_TSTRING: {
+                        size_t len;
+                        const char* body = lua_tolstring(L, idx, &len);
+                        val = MDB_val{ len, (void*)body };
+                    }
+                    break;
+                default:
+                    luaL_error(L, "lmdb read key type %s not suppert!", lua_typename(L, idx));
+                    break;
                 }
-                break;
-            case LUA_TSTRING: {
-                    size_t len;
-                    const char* data = lua_tolstring(L, idx, &len);
-                    val = { len, (void*)data };
-                }
-                break;
-            default:
-                luaL_error(L, "lmdb read key type %d not suppert!", type);
-                break;
+                return;
             }
+            if (type != LUA_TSTRING) luaL_error(L, "lmdb read key type %s not suppert!", lua_typename(L, idx));
+            size_t len;
+            const char* data = lua_tolstring(L, idx, &len);
+            val = MDB_val{ len, (void*)data };
         }
 
         void read_value(lua_State* L, int idx, MDB_val& val) {
             int type = lua_type(L, idx);
+            if (m_jcodec) {
+                switch (type) {
+                case LUA_TNIL:
+                case LUA_TTABLE:
+                case LUA_TNUMBER:
+                case LUA_TSTRING:
+                case LUA_TBOOLEAN: {
+                        size_t len;
+                        char* body = (char*)m_jcodec->encode(L, idx, &len);
+                        val = MDB_val{ len, (void*)body };
+                    }
+                    break;
+                default:
+                    luaL_error(L, "lmdb read value type %s not suppert!", lua_typename(L, idx));
+                    break;
+                }
+                return;
+            }
             switch (type) {
-            case LUA_TNIL:
-                val = MDB_val { 3, (void*)"nil" };
-                break;
-            case LUA_TBOOLEAN: {
-                    auto cval = (lua_toboolean(L, idx) == 1) ? to_string(true) : to_string(false);
-                    val = MDB_val{ cval.size(), (void*)cval.c_str() };
-                }
-                break;
-            case LUA_TNUMBER: {
-                    auto cval = lua_isinteger(L, idx) ? to_string(lua_tointeger(L, idx)) : to_string(lua_tonumber(L, idx));
-                    val = MDB_val{ cval.size(), (void*)cval.c_str() };
-                }
-                break;
+            case LUA_TNUMBER:
             case LUA_TSTRING: {
                     size_t len;
                     const char* data = lua_tolstring(L, idx, &len);
                     val = MDB_val{ len, (void*)data };
                 }
-                break;
-            case LUA_TTABLE: {
-                    if (!m_jcodec) {
-                        luaL_error(L, "lmdb read table value not suppert!");
-                    }
-                    size_t len;
-                    char* body = (char*)m_jcodec->encode(L, idx, &len);
-                    val = MDB_val{ len, (void*)body };
-                };
                 break;
             default:
                 luaL_error(L, "lmdb read value type %d not suppert!", type);
@@ -282,15 +369,18 @@ namespace llmdb {
         }
 
         void push_value(lua_State* L, MDB_val& val) {
-            if (m_jcodec && !strncasecmp((const char*)val.mv_data, "{", 1)) {
+            if (m_jcodec) {
                 try {
                     m_jcodec->decode(L, (uint8_t*)val.mv_data, val.mv_size);
-                    return;
                 } catch (...) {
                     lua_pushlstring(L, (const char*)val.mv_data, val.mv_size);
                 }
+                return;
             }
-            lua_pushlstring(L, (const char*)val.mv_data, val.mv_size);
+            std::string buf = { (const char*)val.mv_data, val.mv_size };
+            if (lua_stringtonumber(L, buf.c_str()) == 0) {
+                lua_pushlstring(L, (const char*)buf.c_str(), buf.size());
+            }
         }
 
     protected:
@@ -299,5 +389,6 @@ namespace llmdb {
         MDB_txn* _txn = nullptr;
         MDB_cursor* _cur = nullptr;
         codec_base* m_jcodec = nullptr;
+        char m_keys[max_key_size];
     };
 }

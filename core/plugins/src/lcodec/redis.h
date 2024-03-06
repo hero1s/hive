@@ -74,12 +74,9 @@ namespace lcodec {
                 string_view nline;
                 if (!read_line(buf, nline))
                     throw length_error("redis text not full");
-                if (!strncasecmp(nline.data(), "{", 1)) {
-                    try {
-                        m_jcodec->decode(L, (uint8_t*)nline.data(), nline.size());
-                    } catch (...) {
-                        lua_pushlstring(L, nline.data(), nline.size());
-                    }
+                if (!strncasecmp(nline.data(), "[js]", 4)) {
+                    nline.remove_prefix(4);
+                    m_jcodec->decode(L, (uint8_t*)nline.data(), nline.size());
                 } else {
                     lua_pushlstring(L, nline.data(), nline.size());
                 }
@@ -184,7 +181,7 @@ namespace lcodec {
             size_t len;
             char* body = (char*)m_jcodec->encode(L, idx, &len);
             char* head = (char*)m_buf->peek_space(HEAD_SIZE + len);
-            m_buf->pop_space(sprintf(head, "$%zd\r\n%s\r\n", len + 4, body));
+            m_buf->pop_space(sprintf(head, "$%zd\r\n[js]%s\r\n", len + 4, body));
         }
 
         void encode_bulk_string(lua_State* L, int idx) {

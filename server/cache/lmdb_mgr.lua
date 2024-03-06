@@ -1,0 +1,60 @@
+local LMDB      = import("driver/lmdb.lua")
+local log_debug = logger.debug
+local sformat   = string.format
+
+local LmdbMgr   = singleton()
+local prop      = property(LmdbMgr)
+prop:reader("open_status", false)
+prop:reader("dbs", {})
+
+function LmdbMgr:__init()
+    self:setup()
+end
+
+function LmdbMgr:setup()
+    self.open_status = environ.status("HIVE_LMDB_OPEN")
+end
+
+function LmdbMgr:get_db(cache_name)
+    local db = self.dbs[cache_name]
+    if not db then
+        local db_name = sformat("%s_%s", cache_name, hive.index)
+        db            = LMDB()
+        db:open(db_name, cache_name)
+        self.dbs[cache_name] = db
+    end
+    return db
+end
+
+function LmdbMgr:save_cache(cache_name, primary_key, data)
+    if not self.open_status then
+        return
+    end
+    log_debug("[LmdbMgr][save_cache] {},{}", cache_name, primary_key)
+    local db = self:get_db(cache_name)
+    db:put(primary_key, data)
+end
+
+function LmdbMgr:delete_cache(cache_name, primary_key)
+    if not self.open_status then
+        return
+    end
+    log_debug("[LmdbMgr][delete_cache] {},{}", cache_name, primary_key)
+    local db = self:get_db(cache_name)
+    db:del(primary_key)
+end
+
+function LmdbMgr:recover(cache_name, cache_mgr)
+    if not self.open_status then
+        return
+    end
+    log_debug("[LmdbMgr][recover] {}", cache_name)
+    local db = self:get_db(cache_name)
+    for key, value in db:iter() do
+        cache_mgr:recover_cacheobj(cache_name, key, value)
+    end
+end
+
+hive.lmdb_mgr = LmdbMgr()
+
+return LmdbMgr
