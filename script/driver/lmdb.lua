@@ -1,6 +1,6 @@
 --lmdb.lua
 local lmdb         = require("lmdb")
-local log_info     = logger.info
+local log_debug    = logger.debug
 local sformat      = string.format
 
 local MDB_SUCCESS  = lmdb.MDB_CODE.MDB_SUCCESS
@@ -30,11 +30,11 @@ function Lmdb:open(name, dbname)
         local jcodec = json.jsoncodec()
         driver.set_max_dbs(128)
         driver.set_codec(jcodec)
-        local rc    = driver.open(sformat("%s%s.mdb", LMDB_PATH, name), MDB_NOSUBDIR, 0644)
         self.driver = driver
         self.jcodec = jcodec
         self.dbname = dbname
-        log_info("[Lmdb][open] open lmdb {}:{}!", name, rc)
+        local rc    = driver.open(sformat("%s%s.mdb", LMDB_PATH, name), MDB_NOSUBDIR, 0644)
+        log_debug("[Lmdb][open] open lmdb {}:{}!", name, rc)
     end
 end
 
@@ -43,36 +43,39 @@ function Lmdb:puts(objects, dbname)
 end
 
 function Lmdb:put(key, value, dbname)
-    log_info("[Lmdb][put] {}.{}={}", key, dbname, value)
-    return self.driver.easy_put(key, value, dbname or self.dbname) == MDB_SUCCESS
+    log_debug("[Lmdb][put] {}.{}={}", key, dbname, value)
+    return self.driver.quick_put(key, value, dbname or self.dbname) == MDB_SUCCESS
 end
 
 function Lmdb:get(key, dbname)
-    local data, rc = self.driver.easy_get(key, dbname or self.dbname)
-    log_info("[Lmdb][get] {}.{}={}={}", key, dbname, data, rc)
-    if data then
-        return data, true
-    end
+    local data, rc = self.driver.quick_get(key, dbname or self.dbname)
+    log_debug("[Lmdb][get] {}.{}={}={}", key, dbname, data, rc)
     if rc == MDB_NOTFOUND or rc == MDB_SUCCESS then
-        return nil, true
+        return data, true
     end
     return nil, false
 end
 
 function Lmdb:gets(keys, dbname)
     local res, rc = self.driver.batch_get(keys, dbname or self.dbname)
-    if rc == MDB_SUCCESS then
+    if rc == MDB_NOTFOUND or rc == MDB_SUCCESS then
         return res, true
     end
     return nil, false
 end
 
 function Lmdb:del(key, dbname)
-    return self.driver.easy_del(key, dbname or self.dbname)
+    local rc = self.driver.quick_del(key, dbname or self.dbname)
+    return rc == MDB_NOTFOUND or rc == MDB_SUCCESS
 end
 
 function Lmdb:dels(keys, dbname)
-    return self.driver.batch_del(keys, dbname or self.dbname) == MDB_SUCCESS
+    local rc = self.driver.batch_del(keys, dbname or self.dbname)
+    return rc == MDB_NOTFOUND or rc == MDB_SUCCESS
+end
+
+function Lmdb:drop(dbname)
+    return self.driver.quick_drop(dbname or self.dbname)
 end
 
 --迭代器
@@ -81,12 +84,12 @@ function Lmdb:iter(dbname, key)
     local driver = self.driver
     driver.cursor_open(dbname or self.dbname)
     local function iter()
-        local v, k
+        local _, k, v
         if not flag then
-            flag = MDB_NEXT
-            v, k = driver.cursor_get(key, key and MDB_SET or MDB_FIRST)
+            flag    = MDB_NEXT
+            _, k, v = driver.cursor_get(key, key and MDB_SET or MDB_FIRST)
         else
-            v, k = driver.cursor_get(key, flag)
+            _, k, v = driver.cursor_get(key, flag)
         end
         if not v then
             driver.cursor_close()
