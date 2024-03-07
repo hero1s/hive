@@ -10,6 +10,7 @@ local KernCode      = enum("KernCode")
 local CacheCode     = enum("CacheCode")
 local SUCCESS       = KernCode.SUCCESS
 local mongo_mgr     = hive.get("mongo_mgr")
+local lmdb_mgr      = hive.get("lmdb_mgr")
 
 local CacheObj      = class()
 local prop          = property(CacheObj)
@@ -150,7 +151,7 @@ function CacheObj:destory()
     return SUCCESS
 end
 
-function CacheObj:update(tab_data, flush)
+function CacheObj:update(tab_data, flush, ignore_lmdb)
     self:active()
     self.update_count = self.update_count + 1
     if flush or self.data == nil or not next(self.data) then
@@ -161,10 +162,13 @@ function CacheObj:update(tab_data, flush)
     if flush then
         self.flush = true
     end
+    if not ignore_lmdb then
+        lmdb_mgr:save_cache(self.cache_name, self.primary_value, self.data)
+    end
     return SUCCESS
 end
 
-function CacheObj:update_key(table_kvs, flush)
+function CacheObj:update_key(table_kvs, flush, ignore_lmdb)
     if not self.data then
         log_err("[CacheObj][update_key] cannot find record! cache:{}, table:{}", self.cache_name, self.cache_table)
         return CacheCode.CACHE_KEY_IS_NOT_EXIST
@@ -178,7 +182,14 @@ function CacheObj:update_key(table_kvs, flush)
         self.data[key] = value
     end
     self.dirty = true
+    if not ignore_lmdb then
+        lmdb_mgr:save_cache(self.cache_name, self.primary_value, self.data)
+    end
     return SUCCESS
+end
+
+function CacheObj:remove_lmdb()
+    lmdb_mgr:delete_cache(self.cache_name, self.primary_value)
 end
 
 return CacheObj
