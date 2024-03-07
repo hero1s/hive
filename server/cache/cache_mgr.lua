@@ -94,9 +94,10 @@ function CacheMgr:recover_cacheobj(cache_name, primary_key, data)
     local cache_list = self.cache_lists[cache_name]
     local cache_obj  = CacheObj(conf, primary_key)
     cache_list:set(primary_key, cache_obj)
-    cache_obj:update(data, true)
+    cache_obj:update(data, true, true)
     cache_obj.holding = false
     self:set_dirty(cache_obj, true)
+    cache_obj:set_expire_time(mrandom(1000, 60000))
 end
 
 function CacheMgr:vote_stop_service()
@@ -170,6 +171,7 @@ function CacheMgr:on_second(clock_ms)
         for primary_key, obj in obj_list:wheel_iterator() do
             if obj:expired(clock_ms, self.flush) then
                 obj_list:set(primary_key, nil)
+                obj:remove_lmdb()
             end
         end
     end
@@ -193,19 +195,18 @@ end
 function CacheMgr:delete(cache_obj, delay_time)
     cache_obj:set_lock_node_id(0)
     cache_obj:set_expire_time(delay_time or mrandom(1000, 60000))
-    lmdb_mgr:delete_cache(cache_obj.cache_name, cache_obj.primary_value)
 end
 
 function CacheMgr:clear_obj(cache_obj)
     self:set_dirty(cache_obj, false)
     local cache_list = self.cache_lists[cache_obj.cache_name]
     cache_list:set(cache_obj:get_primary_value(), nil)
+    cache_obj:remove_lmdb()
 end
 
 function CacheMgr:save_cache(cache_obj, remove)
     thread_mgr:fork(function()
         self:set_dirty(cache_obj, false)
-        lmdb_mgr:save_cache(cache_obj.cache_name, cache_obj.primary_value, cache_obj.data)
         if not cache_obj:save() then
             self:set_dirty(cache_obj, true)
         end

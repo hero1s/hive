@@ -43,13 +43,12 @@ function Lmdb:puts(objects, dbname)
 end
 
 function Lmdb:put(key, value, dbname)
-    log_debug("[Lmdb][put] {}.{}={}", key, dbname, value)
+    log_debug("[Lmdb][put] {}.{}", key, dbname)
     return self.driver.quick_put(key, value, dbname or self.dbname) == MDB_SUCCESS
 end
 
 function Lmdb:get(key, dbname)
     local data, rc = self.driver.quick_get(key, dbname or self.dbname)
-    log_debug("[Lmdb][get] {}.{}={}={}", key, dbname, data, rc)
     if rc == MDB_NOTFOUND or rc == MDB_SUCCESS then
         return data, true
     end
