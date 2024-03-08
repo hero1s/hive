@@ -44,10 +44,10 @@ namespace luabus {
 
         lluabus.set_function("udp", create_udp);
         lluabus.set_function("tcp", create_tcp);
+        lluabus.set_function("host", gethostip);
         lluabus.set_function("dns", gethostbydomain);
         lluabus.set_function("init_socket_mgr", init_socket_mgr);
         lluabus.set_function("port_is_used", port_is_used);
-        lluabus.set_function("lan_ip", get_lan_ip);
 
         //管理器接口
         lluabus.set_function("wait", [](int64_t now, int ms) { return socket_mgr.wait(now,ms); });
