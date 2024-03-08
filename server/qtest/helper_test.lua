@@ -1,9 +1,9 @@
 local lhelper = require("lhelper")
 
-logger.debug("mem_available:{}",lhelper.mem_available())
-logger.debug("cpu_use_percent:{}",lhelper.cpu_use_percent())
-logger.debug("cpu_core_num:{}",lhelper.cpu_core_num())
-logger.debug("mem_usage:{}",lhelper.mem_usage())
+logger.debug("mem_available:{}", lhelper.mem_available())
+logger.debug("cpu_use_percent:{}", lhelper.cpu_use_percent())
+logger.debug("cpu_core_num:{}", lhelper.cpu_core_num())
+logger.debug("mem_usage:{}", lhelper.mem_usage())
 
 logger.debug("[{}] dns: [{}]", "www.baidu.com", luabus.dns("www.baidu.com"))
 
@@ -25,7 +25,7 @@ logger.debug("ip:{}", guess_name_type("git.ids111.com"))
 
 local udp     = luabus.udp()
 local ok, err = udp.listen("0.0.0.0", 8080)
-logger.debug("ok:{},err:{}",ok,err)
+logger.debug("ok:{},err:{}", ok, err)
 
 logger.debug("lan ip:{},udp port:8080:{},port:20013:tcp[{}],udp:[{}]",
-             luabus.lan_ip(), luabus.port_is_used(8080,0),luabus.port_is_used(20013,1),luabus.port_is_used(20013,0))
+        luabus.host(), luabus.port_is_used(8080, 0), luabus.port_is_used(20013, 1), luabus.port_is_used(20013, 0))

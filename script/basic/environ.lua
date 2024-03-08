@@ -14,7 +14,7 @@ environ         = {}
 local pattern   = "(%a+)://([^:]-):([^@]-)@([^/]+)/?([^?]*)[%?]?(.*)"
 
 function environ.init()
-    hive.lan_ip   = luabus.lan_ip()
+    hive.lan_ip   = luabus.host()
     hive.timezone = timer.timezone()
 end
 

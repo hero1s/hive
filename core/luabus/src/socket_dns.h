@@ -1,8 +1,31 @@
 ﻿#pragma once
+#include "socket_helper.h"
 
 #ifndef WIN32
 #include <netdb.h>
 #endif
+
+inline int gethostip(lua_State* L) {
+    int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    struct sockaddr_in remote_addr;
+    struct sockaddr_in local_addr;
+    remote_addr.sin_family = AF_INET;
+    remote_addr.sin_port = htons(53);
+    remote_addr.sin_addr.s_addr = inet_addr("1.1.1.1");
+    if (connect(sock_fd, (struct sockaddr*)&remote_addr, sizeof(struct sockaddr_in)) != 0) {
+        closesocket(sock_fd);
+        return 0;
+    }
+    socklen_t len = sizeof(struct sockaddr_in);
+    getsockname(sock_fd, (struct sockaddr*)&local_addr, &len);
+    char* local_ip = inet_ntoa(local_addr.sin_addr);
+    closesocket(sock_fd);
+    if (local_ip) {
+        lua_pushstring(L, local_ip);
+        return 1;
+    }
+    return 0;
+}
 
 inline int gethostbydomain(lua_State* L, std::string domain) {
     struct addrinfo hints;

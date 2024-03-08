@@ -79,6 +79,3 @@ inline uint64_t steady_ms() {
 
 void init_socket_option(socket_t fd);
 
-std::string get_lan_ip();
-
-size_t get_all_host_ip(std::vector<uint32_t>& oIPs);
