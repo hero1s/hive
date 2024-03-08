@@ -5,7 +5,7 @@ local sformat   = string.format
 local LmdbMgr   = singleton()
 local prop      = property(LmdbMgr)
 prop:reader("open_status", false)
-prop:reader("dbs", {})
+prop:reader("db", nil)
 
 function LmdbMgr:__init()
     self:setup()
@@ -13,17 +13,11 @@ end
 
 function LmdbMgr:setup()
     self.open_status = environ.status("HIVE_LMDB_OPEN")
-end
-
-function LmdbMgr:get_db(cache_name)
-    local db = self.dbs[cache_name]
-    if not db then
-        local db_name = sformat("%s_%s", cache_name, hive.index)
-        db            = LMDB()
-        db:open(db_name, cache_name)
-        self.dbs[cache_name] = db
+    if self.open_status then
+        local db_name = sformat("cache_db_%s", hive.index)
+        self.db       = LMDB()
+        self.db:open(db_name)
     end
-    return db
 end
 
 function LmdbMgr:save_cache(cache_name, primary_key, data)
@@ -31,8 +25,7 @@ function LmdbMgr:save_cache(cache_name, primary_key, data)
         return
     end
     log_debug("[LmdbMgr][save_cache] {},{}", cache_name, primary_key)
-    local db = self:get_db(cache_name)
-    db:put(primary_key, data)
+    self.db:put(primary_key, data, cache_name)
 end
 
 function LmdbMgr:delete_cache(cache_name, primary_key)
@@ -40,8 +33,7 @@ function LmdbMgr:delete_cache(cache_name, primary_key)
         return
     end
     log_debug("[LmdbMgr][delete_cache] {},{}", cache_name, primary_key)
-    local db = self:get_db(cache_name)
-    db:del(primary_key)
+    self.db:del(primary_key, cache_name)
 end
 
 function LmdbMgr:recover(cache_name, cache_mgr)
@@ -49,8 +41,7 @@ function LmdbMgr:recover(cache_name, cache_mgr)
         return
     end
     log_debug("[LmdbMgr][recover] {}", cache_name)
-    local db = self:get_db(cache_name)
-    for key, value in db:iter() do
+    for key, value in self.db:iter(cache_name) do
         cache_mgr:recover_cacheobj(cache_name, key, value)
     end
 end
