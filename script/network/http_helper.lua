@@ -131,4 +131,18 @@ function http_helper.check_param(securet, headKeys, querys, body, head)
     return true
 end
 
+function http_helper.urlbase64_encode(str)
+    local base64_str = lcrypt.b64_encode(str)
+    return base64_str:gsub("/", "_"):gsub("+", "-"):gsub("=", "")
+end
+
+function http_helper.urlbase64_decode(str)
+    local base64_str = str:gsub("_", "/"):gsub("-", "+")
+    local padding    = #base64_str % 4
+    if padding > 0 then
+        base64_str = base64_str .. string.rep("=", 4 - padding)
+    end
+    return lcrypt.b64_decode(base64_str)
+end
+
 

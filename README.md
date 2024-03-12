@@ -13,7 +13,7 @@ Distributed game server framework based on CPP 17 && LUA 5.4
 * 支持nacos或monitor服务发现
 
 ## 数据库
-  - mysql,clickhouse,mongodb,redis,etcd,influxdb
+  - mysql,clickhouse,mongodb,redis,etcd,influxdb,lmdb
   - 自实现的分布式cache服务,支持分布式读写权限控制,容灾,扩容
   
 ## 网络协议
