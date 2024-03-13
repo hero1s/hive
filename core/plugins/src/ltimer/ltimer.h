@@ -3,6 +3,7 @@
 #include <thread>
 #include <chrono>
 #include <ctime>
+#include <string>
 
 using namespace std::chrono;
 
@@ -179,6 +180,16 @@ namespace ltimer {
         tm tm_early = gmtime(_early);
         tm tm_late  = gmtime(_late);
         return tm_early.tm_mon == tm_late.tm_mon && tm_early.tm_mday == tm_late.tm_mday;
+    }
+
+    // 格式化为 YY-MM-DD hh:mm::ss 的字符串
+    inline std::string date_time_str(uint64_t time_sec) {
+        char buffer[64] = { 0 };
+        time_t curr_time = (time_t)time_sec;
+        std::tm ptm;
+        localtime(&curr_time, &ptm);
+        snprintf(buffer, 64, "%d-%02d-%02d %02d:%02d:%02d", ptm.tm_year + 1900, ptm.tm_mon + 1, ptm.tm_mday, ptm.tm_hour, ptm.tm_min, ptm.tm_sec);
+        return std::string(buffer);
     }
 
 }

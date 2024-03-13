@@ -33,7 +33,7 @@ function Lmdb:open(name, dbname)
         self.driver = driver
         self.jcodec = jcodec
         self.dbname = dbname
-        local rc    = driver.open(sformat("%s%s.mdb", LMDB_PATH, name), MDB_NOSUBDIR, 0644)
+        local rc    = driver.open(sformat("%s%s.mdb", LMDB_PATH, name), MDB_NOSUBDIR, tonumber("0644", 8))
         log_debug("[Lmdb][open] open lmdb {}:{}!", name, rc)
     end
 end
