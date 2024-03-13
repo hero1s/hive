@@ -39,6 +39,10 @@ function service.make_node(port, domain)
     }
 end
 
+function service.modify_node(key, val)
+    hive.node_info[key] = val
+end
+
 function service.init()
     --加载服务配置
     local config_mgr = hive.get("config_mgr")

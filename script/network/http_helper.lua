@@ -1,17 +1,19 @@
-﻿local log_err  = logger.err
-local pairs    = pairs
-local tconcat  = table.concat
-local tinsert  = table.insert
-local sformat  = string.format
-local sfind    = string.find
-local ssub     = string.sub
-local luencode = curl.url_encode
-local lmd5     = crypt.md5
-local tmapsort = table_ext.mapsort
-local tmerge   = table_ext.merge
-local mmin     = math.min
+﻿local log_err    = logger.err
+local pairs      = pairs
+local tconcat    = table.concat
+local tinsert    = table.insert
+local sformat    = string.format
+local sfind      = string.find
+local ssub       = string.sub
+local luencode   = curl.url_encode
+local lmd5       = crypt.md5
+local lb64encode = crypt.b64_encode
+local lb64decode = crypt.b64_decode
+local tmapsort   = table_ext.mapsort
+local tmerge     = table_ext.merge
+local mmin       = math.min
 
-http_helper    = {}
+http_helper      = {}
 
 local function cmp_key(a, b)
     local len = mmin(a[1]:len(), b[1]:len())
@@ -132,7 +134,7 @@ function http_helper.check_param(securet, headKeys, querys, body, head)
 end
 
 function http_helper.urlbase64_encode(str)
-    local base64_str = lcrypt.b64_encode(str)
+    local base64_str = lb64encode(str)
     return base64_str:gsub("/", "_"):gsub("+", "-"):gsub("=", "")
 end
 
@@ -142,7 +144,7 @@ function http_helper.urlbase64_decode(str)
     if padding > 0 then
         base64_str = base64_str .. string.rep("=", 4 - padding)
     end
-    return lcrypt.b64_decode(base64_str)
+    return lb64decode(base64_str)
 end
 
 
