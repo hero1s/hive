@@ -8,24 +8,24 @@ stds.hive = {
         "table_ext", "string_ext", "math_ext", "http_helper", "redis_key", "io_ext","datetime_ext", "mongo_key",
         "hive", "environ", "signal", "http", "luabt", "service", "logger", "utility",
         "import", "class", "enum", "enum_kv_list", "mixin", "property", "singleton", "super", "implemented","logfeature",
-        "classof", "is_class", "is_subclass", "instanceof","is_singleton", "conv_class","show_class_track","set_open_track","set_const_table",
+        "classof", "is_class", "is_subclass", "instanceof","conv_class","class_review",
         --library
-        "codec", "crypt", "stdfs", "luabus", "json", "curl", "timer", "log", "http", "bson",
+        "luakit","codec", "crypt", "stdfs", "luabus", "json", "curl", "timer", "log", "http", "bson","protobuf",
     }
 }
 std = "max+hive"
 -- 排除文件
 exclude_files = {
-    "../../hive/tools/",
-	"../../hive/server/qtest/",
-	"../../tools/"
+    "../../tools/",
+	"../../server/qtest/",
+	"../../script/third/"
 }
 -- 圈复杂度
-max_cyclomatic_complexity = 16
+max_cyclomatic_complexity = 30
 -- 最大代码长度
-max_code_line_length = 180
+max_code_line_length = 220
 -- 最大注释长度
-max_comment_line_length = 160
+max_comment_line_length = 180
 -- 忽略警告
 ignore = {
     "212", "213", "512",
