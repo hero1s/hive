@@ -131,6 +131,11 @@ function RpcServer:send(client, rpc, ...)
     return client.call_rpc(0, FLAG_REQ, rpc, ...)
 end
 
+--回调
+function RpcServer:callback(client, session_id, ...)
+    client.call_rpc(session_id, FLAG_RES, "callback", ...)
+end
+
 function RpcServer:call_sid(id, rpc, ...)
     local client = self.indexes[id]
     if client then

@@ -250,6 +250,13 @@ function RpcClient:forward_socket(method, rpc, session_id, ...)
     return false, "socket not connected"
 end
 
+--回调
+function RpcClient:callback(session_id, ...)
+    if self.alive then
+        self.socket.call_rpc(session_id, FLAG_RES, "callback", ...)
+    end
+end
+
 --直接发送接口
 function RpcClient:send(rpc, ...)
     if self.alive then

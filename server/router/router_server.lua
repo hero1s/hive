@@ -7,10 +7,12 @@ local id2nick       = service.id2nick
 local sname2sid     = service.name2sid
 
 local FlagMask      = enum("FlagMask")
-local KernCode      = enum("KernCode")
 local PeriodTime    = enum("PeriodTime")
 local ServiceStatus = enum("ServiceStatus")
 local RpcServer     = import("network/rpc_server.lua")
+
+local SUCCESS       = hive.enum("KernCode", "SUCCESS")
+local UNREACHABLE   = hive.enum("KernCode", "RPC_UNREACHABLE")
 
 local thread_mgr    = hive.get("thread_mgr")
 local event_mgr     = hive.get("event_mgr")
@@ -58,12 +60,14 @@ end
 function RouterServer:on_client_accept(client)
     client.on_forward_error     = function(session_id, error_msg, source_id, msg_type)
         thread_mgr:fork(function()
-            client.call(session_id, FlagMask.RES, hive.id, "on_forward_error", KernCode.RPC_UNREACHABLE, error_msg, msg_type)
+            client.call(session_id, FlagMask.RES, hive.id, "on_forward_error", UNREACHABLE, error_msg, msg_type)
+            --为了方便错误日志暂时先留着 toney
+            --self.rpc_server:callback(client, session_id, false, UNREACHABLE, error_msg, msg_type)
         end)
     end
     client.on_forward_broadcast = function(session_id, broadcast_num)
         thread_mgr:fork(function()
-            client.call(session_id, FlagMask.RES, hive.id, "on_forward_broadcast", true, KernCode.SUCCESS, broadcast_num)
+            self.rpc_server:callback(client, session_id, true, SUCCESS, broadcast_num)
         end)
     end
 end
