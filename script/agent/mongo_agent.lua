@@ -210,6 +210,17 @@ function MongoAgent:insert_no_exist(doc, selector, co_name, db_name)
     return false, KernCode.DATA_EXIST
 end
 
+--插入数组数据
+function MongoAgent:push_array_data(selector, co_name, array, data, limit, hash_key, db_name)
+    local query            = { co_name, { ["$push"] = { [array] = { ["$each"] = { data }, ["$slice"] = limit } } }, selector, true }
+    local ok, code, result = self:update(query, hash_key, db_name)
+    if check_failed(code, ok) then
+        log_err("[MongoAgent][push_array_data] query:{} ec={},result:{}", query, code, result)
+        return false
+    end
+    return true
+end
+
 hive.mongo_agent = MongoAgent()
 
 return MongoAgent
