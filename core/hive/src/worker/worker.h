@@ -133,18 +133,18 @@ namespace lworker {
                 m_schedulor->destory(m_name);
                 return;
             });
+            if (!m_include.empty()) {
+                m_lua->run_script(fmt::format("import('{}')", m_include), [&](vstring err) {
+                    printf("worker load includes %s failed, because: %s", m_include.c_str(), err.data());
+                    m_schedulor->destory(m_name);
+                    return;
+                    });
+            }
             m_lua->run_script(fmt::format("require '{}'", m_entry), [&](vstring err) {
                 printf("worker load %s failed, because: %s", m_entry.c_str(), err.data());
                 m_schedulor->destory(m_name);
                 return;
             });
-            if (!m_include.empty()) {
-                m_lua->run_script(fmt::format("require '{}'", m_include), [&](vstring err) {
-                    printf("worker load includes %s failed, because: %s", m_include.c_str(), err.data());
-                    m_schedulor->destory(m_name);
-                    return;
-                });
-            }
             m_running = true;
             const char* service = m_service.c_str();
             while (m_running) {
