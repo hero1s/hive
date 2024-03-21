@@ -163,7 +163,7 @@ function CacheObj:update(tab_data, flush, ignore_lmdb)
         self.flush = true
     end
     if not ignore_lmdb then
-        lmdb_mgr:save_cache(self.cache_name, self.primary_value, self.data)
+        self:save_lmdb()
     end
     return SUCCESS
 end
@@ -183,9 +183,13 @@ function CacheObj:update_key(table_kvs, flush, ignore_lmdb)
     end
     self.dirty = true
     if not ignore_lmdb then
-        lmdb_mgr:save_cache(self.cache_name, self.primary_value, self.data)
+        self:save_lmdb()
     end
     return SUCCESS
+end
+
+function CacheObj:save_lmdb()
+    lmdb_mgr:save_cache(self.cache_name, self.primary_value, self.data)
 end
 
 function CacheObj:remove_lmdb()
