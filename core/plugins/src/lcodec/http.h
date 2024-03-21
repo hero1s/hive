@@ -184,7 +184,7 @@ namespace lcodec {
                         }
                         mslice = m_buf->get_slice();
                     }
-                    else if (!strncasecmp(key.data(), "Content-Type", key.size()) && !strncasecmp(header.data(), "application/json", strlen("application/json"))) {
+                    else if (!strncasecmp(key.data(), "Content-Type", key.size()) && header.find("application/json") != string_view::npos) {                        
                         jsonable = true;
                     }
                     //压栈
