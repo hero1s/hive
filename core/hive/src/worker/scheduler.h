@@ -73,7 +73,7 @@ namespace lworker {
                 m_write_buf->push_data(data, data_len);
                 return true;
             }
-            LOG_ERROR(fmt::format("thread call buffer is full!,size:{}",m_write_buf->size()));
+            LOG_ERROR(fmt::format("master thread call buffer is full!,size:{}",m_write_buf->size()));
             return false;
         }
 
@@ -99,7 +99,7 @@ namespace lworker {
                 ++pcount;
                 auto cost_time = ltimer::steady_ms() - clock_ms;
                 if (cost_time > 100) {
-                    LOG_WARN(fmt::format("on_scheduler is busy,cost:{},pcount:{},remain:{}", cost_time, pcount, m_read_buf->size()));
+                    LOG_ERROR(fmt::format("on_scheduler is busy,cost:{},pcount:{},remain:{}", cost_time, pcount, m_read_buf->size()));
                     break;
                 }
                 slice = read_slice(m_read_buf, &plen);
