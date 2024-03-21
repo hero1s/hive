@@ -81,6 +81,7 @@ namespace lworker {
                 m_write_buf->push_data(data, data_len);
                 return true;
             }
+            LOG_ERROR(fmt::format("[{}] thread call buffer is full!,size:{}", m_name, m_write_buf->size()));
             return false;
         }
 
@@ -106,7 +107,7 @@ namespace lworker {
                 ++pcount;
                 auto cost_time = ltimer::steady_ms() - clock_ms;
                 if (ltimer::steady_ms() - clock_ms > 100) {
-                    LOG_WARN(fmt::format("on_worker [{}]  is busy,cost:{},pcount:{},remain:{}", m_name, cost_time, pcount, m_read_buf->size()));
+                    LOG_ERROR(fmt::format("on_worker [{}]  is busy,cost:{},pcount:{},remain:{}", m_name, cost_time, pcount, m_read_buf->size()));
                     break;
                 }
                 slice = read_slice(m_read_buf, &plen);
@@ -129,31 +130,33 @@ namespace lworker {
             hive.set_function("getenv", [&](const char* key) { return get_env(key); });
             hive.set_function("call", [&](lua_State* L, vstring name) { return m_schedulor->call(L, name); });
             m_lua->run_script(g_sandbox, [&](vstring err) {
-                printf("worker load sandbox failed, because: %s", err.data());
+                LOG_ERROR(fmt::format("worker load sandbox failed, because: {}", err.data()));
                 m_schedulor->destory(m_name);
                 return;
             });
             if (!m_include.empty()) {
                 m_lua->run_script(fmt::format("import('{}')", m_include), [&](vstring err) {
-                    printf("worker load includes %s failed, because: %s", m_include.c_str(), err.data());
+                    LOG_ERROR(fmt::format("worker load includes {} failed, because: {}", m_include.c_str(), err.data()));
                     m_schedulor->destory(m_name);
                     return;
                     });
             }
             m_lua->run_script(fmt::format("require '{}'", m_entry), [&](vstring err) {
-                printf("worker load %s failed, because: %s", m_entry.c_str(), err.data());
+                LOG_ERROR(fmt::format("worker load {} failed, because: {}", m_entry.c_str(), err.data()));
                 m_schedulor->destory(m_name);
                 return;
             });
             m_running = true;
+            LOG_WARN(fmt::format("the worker [{}] start running !", m_name));
             const char* service = m_service.c_str();
             while (m_running) {
                 if (m_stop) break;
                 m_lua->table_call(service, "run");
             }
-            if (!m_stop) {
+            if (!m_stop) {                
                 m_schedulor->destory(m_name);
             }
+            LOG_WARN(fmt::format("the worker [{}] exit !", m_name));
         }
 
         void stop(){
