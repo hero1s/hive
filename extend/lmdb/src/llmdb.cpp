@@ -43,7 +43,8 @@ namespace llmdb {
             "set_max_readers", &mdb_driver::set_max_readers,
             "set_max_dbs", &mdb_driver::set_max_dbs,
             "set_mapsize", &mdb_driver::set_mapsize,
-            "set_codec", &mdb_driver::set_codec
+            "set_codec", &mdb_driver::set_codec,
+            "close",&mdb_driver::close
         );
         lmdb.new_enum("MDB_ENV_FLAG",
             "MDB_FIXEDMAP", MDB_FIXEDMAP,
