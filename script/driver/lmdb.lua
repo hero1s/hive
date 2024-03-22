@@ -24,6 +24,14 @@ function Lmdb:__init()
     stdfs.mkdir(LMDB_PATH)
 end
 
+function Lmdb:close()
+    if self.driver then
+        self.driver.close()
+        self.driver = nil
+        log_debug("[Lmdb][close] close lmdb {}", self.dbname)
+    end
+end
+
 function Lmdb:open(name, dbname)
     if not self.driver then
         local driver = lmdb.create()
