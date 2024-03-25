@@ -270,7 +270,7 @@ namespace ljson {
 
         virtual uint8_t* encode(lua_State* L, int index, size_t* len) {
             try {
-                return (uint8_t*)m_json->encode_core(L, YYJSON_WRITE_ALLOW_INVALID_UNICODE, false, index, len);
+                return (uint8_t*)m_json->encode_core(L, YYJSON_WRITE_ALLOW_INVALID_UNICODE, m_emy_as_arr, index, len);
             } catch(const std::exception& e) {
                 luaL_error(L, e.what());
                 return nullptr;
@@ -279,14 +279,24 @@ namespace ljson {
 
         virtual size_t decode(lua_State* L) {
             if (!m_slice) return 0;
-            return m_json->decode_core(L, (char*)m_slice->head(), m_slice->size(), true);
+            return m_json->decode_core(L, (char*)m_slice->head(), m_slice->size(), !m_numkeydisable);
         }
 
         void set_json(yyjson* json) {
             m_json = json;
         }
 
+        void set_empty_as_arr(bool emy_as_arr) {
+            m_emy_as_arr = emy_as_arr;
+        }
+
+        void set_numkeydisable(bool numkeydisable) {
+            m_numkeydisable = numkeydisable;
+        }
+
     protected:
         yyjson* m_json;
+        bool m_emy_as_arr = false;
+        bool m_numkeydisable = false;
     };
 }

@@ -5,8 +5,10 @@
 namespace ljson {
     thread_local yyjson thread_json;
     
-    static codec_base* json_codec() {
+    static codec_base* json_codec(bool numkey, bool empty_as_arr) {
         jsoncodec* codec = new jsoncodec();
+        codec->set_empty_as_arr(empty_as_arr);
+        codec->set_numkeydisable(numkey);
         codec->set_json(&thread_json);
         return codec;
     }

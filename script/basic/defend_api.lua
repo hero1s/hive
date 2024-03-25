@@ -55,8 +55,8 @@ end
 
 local xpcall_ret = hive.xpcall_ret
 
-function hive.json_decode(json_str, result)
-    local ok, res = xpcall_ret(json.decode, "[hive.json_decode] error:%s", json_str)
+function hive.json_decode(json_str, result, numkeyable)
+    local ok, res = xpcall_ret(json.decode, "[hive.json_decode] error:%s", json_str, numkeyable)
     if not ok then
         log_err("[hive][json_decode] err json_str:[{}],from:[{}]", json_str, hive.where_call())
     end
@@ -67,8 +67,8 @@ function hive.json_decode(json_str, result)
     end
 end
 
-function hive.try_json_decode(json_str, result)
-    local ok, res = xpcall_ret(json.decode, nil, json_str)
+function hive.try_json_decode(json_str, result, numkeyable)
+    local ok, res = xpcall_ret(json.decode, nil, json_str, numkeyable)
     if not ok then
         log_warn("[hive][try_json_decode] err json_str:[{}],from:[{}]", json_str, hive.where_call())
     end
@@ -79,8 +79,8 @@ function hive.try_json_decode(json_str, result)
     end
 end
 
-function hive.json_encode(body)
-    local ok, jstr = xpcall_ret(json.encode, "[hive.json_encode] error:%s", body)
+function hive.json_encode(body, empty_as_arr)
+    local ok, jstr = xpcall_ret(json.encode, "[hive.json_encode] error:%s", body, empty_as_arr)
     if not ok then
         log_err("[hive][json_encode] err body:[{}],from:[{}]", body, hive.where_call())
     end
