@@ -52,6 +52,7 @@ namespace lcodec {
             //body
             uint8_t* body = nullptr;
             if (lua_type(L, index + 2) == LUA_TTABLE) {
+                if (!m_jcodec) luaL_error(L, "http json not suppert, con't use lua table!");
                 body = m_jcodec->encode(L, index + 2, len);
             } else {
                 body = (uint8_t*)lua_tolstring(L, index + 2, len);
@@ -143,7 +144,7 @@ namespace lcodec {
             }
         }
 
-        void http_parse_body(lua_State* L, string_view header, string_view& buf) {
+        void http_parse_body(lua_State* L, string_view header, string_view buf) {
             m_buf->clean();
             bool jsonable = false;
             bool contentlenable = false;
@@ -208,7 +209,7 @@ namespace lcodec {
             lua_pushboolean(L, jsonable);
         }
 
-        void parse_http_packet(lua_State* L, string_view& buf) {
+        void parse_http_packet(lua_State* L, string_view buf) {
             size_t pos = buf.find(CRLF2);
             if (pos == string_view::npos) {
                 throw length_error("http text not full");
@@ -229,7 +230,7 @@ namespace lcodec {
             http_parse_body(L, header, buf);
         }
 
-        string_view read_line(string_view& buf) {
+        string_view read_line(string_view buf) {
             size_t pos = buf.find(CRLF);
             auto ss = buf.substr(0, pos);
             buf.remove_prefix(pos + LCRLF);
