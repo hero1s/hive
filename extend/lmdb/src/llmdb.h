@@ -261,7 +261,6 @@ namespace llmdb {
                 case LUA_TNUMBER: {
                         size_t len;
                         char* body = (char*)m_jcodec->encode(L, idx, &len);
-                        if (len >= max_key_size) luaL_error(L, "lmdb read key size %d ge 4096!", len);
                         strncpy(m_keys, body, len);
                         val = MDB_val{ len, (void*)m_keys };
                     }
@@ -269,6 +268,7 @@ namespace llmdb {
                 case LUA_TSTRING: {
                         size_t len;
                         const char* body = lua_tolstring(L, idx, &len);
+                        if (len >= max_key_size) luaL_error(L, "lmdb read key size %d ge 4096!", len);
                         val = MDB_val{ len, (void*)body };
                     }
                     break;

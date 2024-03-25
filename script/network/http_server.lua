@@ -11,6 +11,7 @@ local signal_quit       = signal.quit
 local saddr             = string_ext.addr
 local jsoncodec         = json.jsoncodec
 local httpcodec         = codec.httpcodec
+local json_decode       = hive.json_decode
 
 local HTTP_CALL_TIMEOUT = hive.enum("NetwkTime", "HTTP_CALL_TIMEOUT")
 local eproto_type       = luabus.eproto_type
@@ -77,51 +78,54 @@ function HttpServer:on_socket_accept(socket, token)
     self.clients[token] = socket
 end
 
-function HttpServer:on_socket_recv(socket, method, url, params, headers, body)
+function HttpServer:on_socket_recv(socket, method, url, params, headers, body, jsonable)
     if self.open_log then
-        log_debug("[HttpServer][on_socket_recv] recv:[{}][{}],query:{},body:{},head:{}", method, url, params, body, headers)
+        log_debug("[HttpServer][on_socket_recv] recv:[{}][{}],query:{},body:{},head:{},jsonable:{}", method, url, params, body, headers, jsonable)
     end
     local handlers = self.handlers[method]
     if not handlers then
         self:response(socket, 404, "this http method hasn't suppert!")
         return
     end
-    self:on_http_request(handlers, socket, url, body, params, headers)
+    self:on_http_request(handlers, socket, url, body, params, headers, jsonable)
 end
 
 --注册get回调
-function HttpServer:register_get(url, handler, target)
+function HttpServer:register_get(url, handler, target, decode)
     log_debug("[HttpServer][register_get] url: {}", url)
-    self.handlers.GET[url] = { handler, target }
+    self.handlers.GET[url] = { handler, target, decode or true }
 end
 
 --注册post回调
-function HttpServer:register_post(url, handler, target)
+function HttpServer:register_post(url, handler, target, decode)
     log_debug("[HttpServer][register_post] url: {}", url)
-    self.handlers.POST[url] = { handler, target }
+    self.handlers.POST[url] = { handler, target, decode or true }
 end
 
 --注册put回调
-function HttpServer:register_put(url, handler, target)
+function HttpServer:register_put(url, handler, target, decode)
     log_debug("[HttpServer][register_put] url: {}", url)
-    self.handlers.PUT[url] = { handler, target }
+    self.handlers.PUT[url] = { handler, target, decode or true }
 end
 
 --注册del回调
-function HttpServer:register_del(url, handler, target)
+function HttpServer:register_del(url, handler, target, decode)
     log_debug("[HttpServer][register_del] url: {}", url)
-    self.handlers.DELETE[url] = { handler, target }
+    self.handlers.DELETE[url] = { handler, target, decode or true }
 end
 
 --http post 回调
-function HttpServer:on_http_request(handlers, socket, url, ...)
+function HttpServer:on_http_request(handlers, socket, url, body, params, headers, jsonable)
     self.qps_counter:count_increase()
     local handler_info = handlers[url] or handlers["*"]
     if handler_info then
-        local handler, target = tunpack(handler_info)
+        local handler, target, decode = tunpack(handler_info)
+        if jsonable and decode then
+            body = json_decode(body)
+        end
         if not target then
             if type(handler) == "function" then
-                local ok, response, headers = pcall(handler, url, ...)
+                local ok, response, headers = pcall(handler, url, body, params, headers)
                 if not ok then
                     response = { code = 1, msg = response }
                 end
@@ -133,7 +137,7 @@ function HttpServer:on_http_request(handlers, socket, url, ...)
                 handler = target[handler]
             end
             if type(handler) == "function" then
-                local ok, response, headers = pcall(handler, target, url, ...)
+                local ok, response, headers = pcall(handler, target, url, body, params, headers)
                 if not ok then
                     log_err("[HttpServer][on_http_request] ok:{}, response:{}", ok, response)
                     response = { code = 1, msg = response }

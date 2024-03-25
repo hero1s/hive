@@ -184,7 +184,7 @@ namespace lcodec {
                         }
                         mslice = m_buf->get_slice();
                     }
-                    else if (!strncasecmp(key.data(), "Content-Type", key.size()) && header.find("application/json") != string_view::npos) {                        
+                    else if (!strncasecmp(key.data(), "Content-Type", key.size()) && header.find("json") != string_view::npos) {
                         jsonable = true;
                     }
                     //压栈
@@ -204,12 +204,8 @@ namespace lcodec {
                 lua_pushnil(L);
                 return;
             }
-            if (jsonable) {
-                m_jcodec->set_slice(mslice);
-                m_jcodec->decode(L);
-                return;
-            }
             lua_pushlstring(L, (char*)mslice->head(), mslice->size());
+            lua_pushboolean(L, jsonable);
         }
 
         void parse_http_packet(lua_State* L, string_view& buf) {
