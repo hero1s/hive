@@ -98,13 +98,11 @@ const char* hive_app::get_env(const char* key) {
 	return getenv(key);
 }
 
-int hive_app::set_env(lua_State* L) {
-	const char* key = lua_tostring(L, 1);
-	const char* value = lua_tostring(L, 2);
-	auto overwrite = luaL_optinteger(L, 3, 1);
-	setenv(key, value, int(overwrite));
-	m_environs[key] = value;
-	return 0;
+void hive_app::set_env(std::string key, std::string value, int over) {
+	if (over == 1 || m_environs.find(key) == m_environs.end()) {
+		setenv(key.c_str(), value.c_str(), 1);
+		m_environs[key] = value;
+	}
 }
 
 void hive_app::init_default_log(int rtype) {
@@ -149,7 +147,7 @@ int hive_app::load(int argc, const char* argv[]) {
 		//加载LUA配置
 		luakit::kit_state lua;
 		lua.set("platform", get_platform());
-		lua.set_function("set_env", [&](lua_State* L) { return set_env(L); });
+		lua.set_function("set_env", [&](std::string key, std::string value) { return set_env(key, value, 1); });
 		lua.set_function("add_lua_path", add_lua_path);
 
 		lua.run_file(lua_conf, [&](vstring err) {
@@ -197,7 +195,7 @@ void hive_app::run(int rtype) {
 	}
 	luakit::kit_state lua;
 	lua.set("platform", get_platform());
-	lua.set_function("set_env", [&](lua_State* L) { return set_env(L); });
+	lua.set_function("set_env", [&](std::string key, std::string value) { return set_env(key, value, 1); });
 
 	open_custom_libs(lua.L());//添加扩展库
 	auto hive = lua.new_table("hive");
@@ -211,7 +209,7 @@ void hive_app::run(int rtype) {
 	hive.set_function("default_signal", [](int n) { signal(n, SIG_DFL); });
 	hive.set_function("register_signal", [](int n) { signal(n, on_signal); });
 	hive.set_function("getenv", [&](const char* key) { return get_env(key); });
-	hive.set_function("setenv", [&](lua_State* L) { return set_env(L); });
+	hive.set_function("setenv", [&](std::string key, std::string value) { return set_env(key, value, 1); });
 	hive.set_function("environs", [&]() { return m_environs; });
 	//begin worker操作接口
 	hive.set_function("worker_update", [&](uint64_t clock_ms) { m_schedulor.update(clock_ms); });

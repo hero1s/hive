@@ -202,7 +202,7 @@ namespace lbson {
             size_t offset = m_buffer.size();
             m_buffer.write<uint32_t>(0);
             for (size_t i = 1; i <= len; i++) {
-                lua_geti(L, -1, i);
+                lua_rawgeti(L, -1, i);
                 size_t len = bson_index(numkey, i - 1);
                 pack_one(L, numkey, len, depth);
                 lua_pop(L, 1);

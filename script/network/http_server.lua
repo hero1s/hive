@@ -93,25 +93,25 @@ end
 --注册get回调
 function HttpServer:register_get(url, handler, target, decode)
     log_debug("[HttpServer][register_get] url: {}", url)
-    self.handlers.GET[url] = { handler, target, decode or true }
+    self.handlers.GET[url] = { handler, target, decode == nil and true or decode }
 end
 
 --注册post回调
 function HttpServer:register_post(url, handler, target, decode)
     log_debug("[HttpServer][register_post] url: {}", url)
-    self.handlers.POST[url] = { handler, target, decode or true }
+    self.handlers.POST[url] = { handler, target, decode == nil and true or decode }
 end
 
 --注册put回调
 function HttpServer:register_put(url, handler, target, decode)
     log_debug("[HttpServer][register_put] url: {}", url)
-    self.handlers.PUT[url] = { handler, target, decode or true }
+    self.handlers.PUT[url] = { handler, target, decode == nil and true or decode }
 end
 
 --注册del回调
 function HttpServer:register_del(url, handler, target, decode)
     log_debug("[HttpServer][register_del] url: {}", url)
-    self.handlers.DELETE[url] = { handler, target, decode or true }
+    self.handlers.DELETE[url] = { handler, target, decode == nil and true or decode }
 end
 
 --http post 回调
