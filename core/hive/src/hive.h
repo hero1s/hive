@@ -21,7 +21,7 @@ protected:
 	std::string get_environ_def(vstring key, vstring def) { auto value = get_env(key.data()); return value ? value : def.data(); };
 	void exception_handler(const std::string& err_msg);
 	const char* get_env(const char* key);
-	int set_env(lua_State* L);
+	void set_env(std::string key, std::string value, int over = 0);
 	void init_default_log(int rtype);
 
 private:

@@ -158,7 +158,7 @@ namespace ljson {
             yyjson_mut_val* array = yyjson_mut_arr(doc);
             if (!array) throw invalid_argument("json encode memory not enough!");
             for (int i = 1; i <= asize; ++i){
-                lua_geti(L, index, i);
+                lua_rawgeti(L, index, i);
                 auto value = encode_one(L, doc, emy_as_arr, -1, depth);
                 if (!value) throw invalid_argument("json encode memory not enough!");
                 yyjson_mut_arr_append(array, value);
