@@ -403,76 +403,134 @@ static int lxor_byte(lua_State *L) {
     return 1;
 }
 
-static int lrsa_init_public_key(lua_State* L) {
+static bool lrsa_init_public_key(lua_State* L, rsa_pk_t* pk) {
     size_t pubkey_sz = 0;
-    uint8_t* pubkey_b64 = (uint8_t*)luaL_checklstring(L, 1, &pubkey_sz);
-    int code = rsa_init_public_key(pubkey_b64, pubkey_sz);
-    lua_pushinteger(L, code);
-    return 1;
+    uint8_t* pubkey_b64 = (uint8_t*)luaL_checklstring(L, 2, &pubkey_sz);
+    int code = rsa_init_public_key(pubkey_b64, pubkey_sz, pk);
+    if (code != 0) {
+        lua_pushnil(L);
+        lua_pushinteger(L, code);
+        return false;
+    }
+    return true;
 }
 
-static int lrsa_init_private_key(lua_State* L) {
+static int lrsa_init_private_key(lua_State* L, rsa_sk_t* sk) {
     size_t prikey_sz = 0;
-    uint8_t* prikey_b64 = (uint8_t*)luaL_checklstring(L, 1, &prikey_sz);
-    int code = rsa_init_private_key(prikey_b64, prikey_sz);
-    lua_pushinteger(L, code);
-    return 1;
+    uint8_t* prikey_b64 = (uint8_t*)luaL_checklstring(L, 2, &prikey_sz);
+    int code = rsa_init_private_key(prikey_b64, prikey_sz, sk);
+    if (code != 0) {
+        lua_pushnil(L);
+        lua_pushinteger(L, code);
+        return false;
+    }
+    return true;
 }
 
 static int lrsa_public_encrypt(lua_State* L) {
-    size_t key_sz = 0; uint32_t dest_sz = 0;
-    uint8_t dest[RSA_MAX_MODULUS_BITS];
-    uint8_t* key = (uint8_t*)luaL_checklstring(L, 1, &key_sz);
-    int code = rsa_public_encrypt(dest, &dest_sz, key, key_sz);
-    if (code == 0) {
-        lua_pushlstring(L, (const char*)dest, dest_sz);
-        return 1;
+    rsa_pk_t spk;
+    if (!lrsa_init_public_key(L, &spk)) {
+        return 2;
     }
-    lua_pushnil(L);
-    lua_pushinteger(L, code);
-    return 2;
+    size_t key_sz = 0; uint32_t dest_sz = 0, out_sz = 0;
+    uint8_t* key = (uint8_t*)luaL_checklstring(L, 1, &key_sz);
+    int ss = RSA_ENCODE_OUT_SIZE(key_sz);
+    char* dest = (char*)malloc(RSA_ENCODE_OUT_SIZE(key_sz));
+    while (key_sz > 0) {
+        int in_sz = key_sz > RSA_MAX_ENCODE_LEN ? RSA_MAX_ENCODE_LEN : key_sz;
+        int code = rsa_public_encrypt(dest + dest_sz, &out_sz, key, in_sz, &spk);
+        if (code != 0) {
+            lua_pushnil(L);
+            lua_pushinteger(L, code);
+            free(dest);
+            return 2;
+        }
+        key += in_sz;
+        key_sz -= in_sz;
+        dest_sz += out_sz;
+    }
+    lua_pushlstring(L, (const char*)dest, dest_sz);
+    free(dest);
+    return 1;
 }
 
 static int lrsa_public_decrypt(lua_State* L) {
-    size_t key_sz = 0; uint32_t dest_sz = 0;
-    uint8_t dest[RSA_MAX_MODULUS_BITS];
-    uint8_t* key = (uint8_t*)luaL_checklstring(L, 1, &key_sz);
-    int code = rsa_public_decrypt(dest, &dest_sz, key, key_sz);
-    if (code == 0) {
-        lua_pushlstring(L, (const char*)dest, dest_sz);
-        return 1;
+    rsa_pk_t spk;
+    if (!lrsa_init_public_key(L, &spk)) {
+        return 2;
     }
-    lua_pushnil(L);
-    lua_pushinteger(L, code);
-    return 2;
+    size_t key_sz = 0; uint32_t dest_sz = 0, out_sz = 0;
+    uint8_t* key = (uint8_t*)luaL_checklstring(L, 1, &key_sz);
+    char* dest = (char*)malloc(RSA_DECODE_OUT_SIZE(key_sz));
+    while (key_sz > 0) {
+        int in_sz = key_sz > RSA_MAX_MODULUS_LEN ? RSA_MAX_MODULUS_LEN : key_sz;
+        int code = rsa_public_decrypt(dest + dest_sz, &out_sz, key, in_sz, &spk);
+        if (code != 0) {
+            lua_pushnil(L);
+            lua_pushinteger(L, code);
+            free(dest);
+            return 2;
+        }
+        key += in_sz;
+        key_sz -= in_sz;
+        dest_sz += out_sz;
+    }
+    lua_pushlstring(L, (const char*)dest, dest_sz);
+    free(dest);
+    return 1;
 }
 
 static int lrsa_private_encrypt(lua_State* L) {
-    size_t key_sz = 0; uint32_t dest_sz = 0;
-    uint8_t dest[RSA_MAX_MODULUS_BITS];
-    uint8_t* key = (uint8_t*)luaL_checklstring(L, 1, &key_sz);
-    int code = rsa_private_encrypt(dest, &dest_sz, key, key_sz);
-    if (code == 0) {
-        lua_pushlstring(L, (const char*)dest, dest_sz);
-        return 1;
+    rsa_sk_t ssk;
+    if (!lrsa_init_private_key(L, &ssk)) {
+        return 2;
     }
-    lua_pushnil(L);
-    lua_pushinteger(L, code);
-    return 2;
+    size_t key_sz = 0; uint32_t dest_sz = 0, out_sz = 0;
+    uint8_t* key = (uint8_t*)luaL_checklstring(L, 1, &key_sz);
+    char* dest = (char*)malloc(RSA_ENCODE_OUT_SIZE(key_sz));
+    while (key_sz > 0) {
+        int in_sz = key_sz > RSA_MAX_ENCODE_LEN ? RSA_MAX_ENCODE_LEN : key_sz;
+        int code = rsa_private_encrypt(dest + dest_sz, &out_sz, key, in_sz, &ssk);
+        if (code != 0) {
+            lua_pushnil(L);
+            lua_pushinteger(L, code);
+            free(dest);
+            return 2;
+        }
+        key += in_sz;
+        key_sz -= in_sz;
+        dest_sz += out_sz;
+    }
+    lua_pushlstring(L, (const char*)dest, dest_sz);
+    free(dest);
+    return 1;
 }
 
 static int lrsa_private_decrypt(lua_State* L) {
-    size_t key_sz = 0; uint32_t dest_sz = 0;
-    uint8_t dest[RSA_MAX_MODULUS_BITS];
-    uint8_t* key = (uint8_t*)luaL_checklstring(L, 1, &key_sz);
-    int code = rsa_private_decrypt(dest, &dest_sz, key, key_sz);
-    if (code == 0) {
-        lua_pushlstring(L, (const char*)dest, dest_sz);
-        return 1;
+    rsa_sk_t ssk;
+    if (!lrsa_init_private_key(L, &ssk)) {
+        return 2;
     }
-    lua_pushnil(L);
-    lua_pushinteger(L, code);
-    return 2;
+    size_t key_sz = 0; uint32_t dest_sz = 0, out_sz = 0;
+    uint8_t* key = (uint8_t*)luaL_checklstring(L, 1, &key_sz);
+    int ss = RSA_DECODE_OUT_SIZE(key_sz);
+    char* dest = (char*)malloc(RSA_DECODE_OUT_SIZE(key_sz));
+    while (key_sz > 0) {
+        int in_sz = key_sz > RSA_MAX_MODULUS_LEN ? RSA_MAX_MODULUS_LEN : key_sz;
+        int code = rsa_private_decrypt(dest + dest_sz, &out_sz, key, in_sz, &ssk);
+        if (code != 0) {
+            lua_pushnil(L);
+            lua_pushinteger(L, code);
+            free(dest);
+            return 2;
+        }
+        key += in_sz;
+        key_sz -= in_sz;
+        dest_sz += out_sz;
+    }
+    lua_pushlstring(L, (const char*)dest, dest_sz);
+    free(dest);
+    return 1;
 }
 
 static const luaL_Reg lcrypt_funcs[] = {
@@ -504,8 +562,6 @@ static const luaL_Reg lcrypt_funcs[] = {
     { "rsa_sencode", lrsa_private_encrypt },
     { "rsa_pdecode", lrsa_public_decrypt },
     { "rsa_sdecode", lrsa_private_decrypt },
-    { "rsa_init_pkey", lrsa_init_public_key },
-    { "rsa_init_skey", lrsa_init_private_key },
     { NULL, NULL },
 };
 

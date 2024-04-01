@@ -5,9 +5,6 @@
 
 #include "rsa.h"
 
-static rsa_sk_t * sk = NULL;
-static rsa_pk_t * pk = NULL;
-
 // bignum interface
 //-----------------------------------------------------------------------------
 void bignum_decode(bignum_t *bn, uint32_t digits, uint8_t *hexarr, uint32_t size) {
@@ -299,47 +296,38 @@ void generate_rand(uint8_t *block, uint32_t block_len) {
     }
 }
 
-int rsa_public_encrypt(uint8_t *out, uint32_t *out_len, uint8_t *in, uint32_t in_len) {
-    int status;
-    uint32_t i, modulus_len;
-    uint8_t byte, pkcs_block[RSA_MAX_MODULUS_LEN];
-
-    modulus_len = (pk->bits + 7) / 8;
-    if(in_len + 11 > modulus_len) {
+int rsa_public_encrypt(uint8_t *out, uint32_t *out_len, uint8_t *in, uint32_t in_len, rsa_pk_t* pk) {
+    if(in_len > RSA_MAX_ENCODE_LEN) {
         return ERR_WRONG_LEN;
     }
-
+    uint32_t i;
+    uint8_t byte, pkcs_block[RSA_MAX_MODULUS_LEN];
     pkcs_block[0] = 0;
     pkcs_block[1] = 2;
+    uint32_t modulus_len = (pk->bits + 7) / 8;
     for(i=2; i<modulus_len-in_len-1; i++) {
         do {
             generate_rand(&byte, 1);
         } while(byte == 0);
         pkcs_block[i] = byte;
     }
-
     pkcs_block[i++] = 0;
-
     memcpy((uint8_t *)&pkcs_block[i], (uint8_t *)in, in_len);
-    status = public_block_operation(out, out_len, pkcs_block, modulus_len);
-
+    int status = public_block_operation(out, out_len, pkcs_block, modulus_len, pk);
     // Clear potentially sensitive information
     byte = 0;
     memset((uint8_t *)pkcs_block, 0, sizeof(pkcs_block));
-
     return status;
 }
 
-int rsa_public_decrypt(uint8_t *out, uint32_t *out_len, uint8_t *in, uint32_t in_len) {
-    int status;
-    uint8_t pkcs_block[RSA_MAX_MODULUS_LEN];
-    uint32_t i, modulus_len, pkcs_block_len;
-
-    modulus_len = (pk->bits + 7) / 8;
+int rsa_public_decrypt(uint8_t *out, uint32_t *out_len, uint8_t *in, uint32_t in_len, rsa_pk_t* pk) {
+    uint32_t modulus_len = (pk->bits + 7) / 8;
     if(in_len > modulus_len)
         return ERR_WRONG_LEN;
 
-    status = public_block_operation(pkcs_block, &pkcs_block_len, in, in_len);
+    uint32_t i, pkcs_block_len;
+    uint8_t pkcs_block[RSA_MAX_MODULUS_LEN];
+    int status = public_block_operation(pkcs_block, &pkcs_block_len, in, in_len, pk);
     if(status != 0)
         return status;
 
@@ -361,50 +349,39 @@ int rsa_public_decrypt(uint8_t *out, uint32_t *out_len, uint8_t *in, uint32_t in
         return ERR_WRONG_DATA;
 
     memcpy((uint8_t *)out, (uint8_t *)&pkcs_block[i], *out_len);
-
     // Clear potentially sensitive information
     memset((uint8_t *)pkcs_block, 0, sizeof(pkcs_block));
-
     return status;
 }
 
-int rsa_private_encrypt(uint8_t *out, uint32_t *out_len, uint8_t *in, uint32_t in_len) {
-    int status;
-    uint8_t pkcs_block[RSA_MAX_MODULUS_LEN];
-    uint32_t i, modulus_len;
-
-    modulus_len = (sk->bits + 7) / 8;
-    if(in_len + 11 > modulus_len)
+int rsa_private_encrypt(uint8_t *out, uint32_t *out_len, uint8_t *in, uint32_t in_len, rsa_sk_t* sk) {
+    if(in_len > RSA_MAX_ENCODE_LEN)
         return ERR_WRONG_LEN;
 
+    int i, status;
+    uint32_t modulus_len = (sk->bits + 7) / 8;
+    uint8_t pkcs_block[RSA_MAX_MODULUS_LEN];
     pkcs_block[0] = 0;
     pkcs_block[1] = 1;
     for(i=2; i<modulus_len-in_len-1; i++) {
         pkcs_block[i] = 0xFF;
     }
-
     pkcs_block[i++] = 0;
-
     memcpy((uint8_t *)&pkcs_block[i], (uint8_t *)in, in_len);
-
-    status = private_block_operation(out, out_len, pkcs_block, modulus_len);
-
+    status = private_block_operation(out, out_len, pkcs_block, modulus_len, sk);
     // Clear potentially sensitive information
     memset((uint8_t *)pkcs_block, 0, sizeof(pkcs_block));
-
     return status;
 }
 
-int rsa_private_decrypt(uint8_t *out, uint32_t *out_len, uint8_t *in, uint32_t in_len) {
-    int status;
-    uint8_t pkcs_block[RSA_MAX_MODULUS_LEN];
+int rsa_private_decrypt(uint8_t *out, uint32_t *out_len, uint8_t *in, uint32_t in_len, rsa_sk_t* sk) {
     uint32_t i, modulus_len, pkcs_block_len;
-
     modulus_len = (sk->bits + 7) / 8;
     if(in_len > modulus_len)
         return ERR_WRONG_LEN;
 
-    status = private_block_operation(pkcs_block, &pkcs_block_len, in, in_len);
+    uint8_t pkcs_block[RSA_MAX_MODULUS_LEN];
+    int status = private_block_operation(pkcs_block, &pkcs_block_len, in, in_len, sk);
     if(status != 0)
         return status;
 
@@ -431,7 +408,7 @@ int rsa_private_decrypt(uint8_t *out, uint32_t *out_len, uint8_t *in, uint32_t i
     return status;
 }
 
-int public_block_operation(uint8_t *out, uint32_t *out_len, uint8_t *in, uint32_t in_len) {
+int public_block_operation(uint8_t *out, uint32_t *out_len, uint8_t *in, uint32_t in_len, rsa_pk_t* pk) {
     uint32_t edigits, ndigits;
     bignum_t c[BIGNUM_MAX_DIGITS], e[BIGNUM_MAX_DIGITS], m[BIGNUM_MAX_DIGITS], n[BIGNUM_MAX_DIGITS];
 
@@ -458,7 +435,7 @@ int public_block_operation(uint8_t *out, uint32_t *out_len, uint8_t *in, uint32_
     return 0;
 }
 
-int private_block_operation(uint8_t *out, uint32_t *out_len, uint8_t *in, uint32_t in_len) {
+int private_block_operation(uint8_t *out, uint32_t *out_len, uint8_t *in, uint32_t in_len, rsa_sk_t* sk) {
     uint32_t cdigits, ndigits, pdigits;
     bignum_t c[BIGNUM_MAX_DIGITS], cp[BIGNUM_MAX_DIGITS], cq[BIGNUM_MAX_DIGITS];
     bignum_t dp[BIGNUM_MAX_DIGITS], dq[BIGNUM_MAX_DIGITS], mp[BIGNUM_MAX_DIGITS], mq[BIGNUM_MAX_DIGITS];
@@ -550,8 +527,7 @@ uint8_t* parse_pem_param(uint8_t* data, uint8_t* target) {
     return data;
 }
 
-int rsa_init_public_key(uint8_t *pem, uint32_t pem_len){
-    if (pk != NULL) return 0;
+int rsa_init_public_key(uint8_t *pem, uint32_t pem_len, rsa_pk_t* pk){
     if (pem[0] != RSA_PEM_SEQUENCE) return ERR_WRONG_DATA;
     //30819e
     uint8_t * cur = parse_pem_sequence(pem, &pem_len);
@@ -563,7 +539,6 @@ int rsa_init_public_key(uint8_t *pem, uint32_t pem_len){
     //00 308188
     cur = parse_pem_sequence(cur, NULL);
     //build
-    pk = (rsa_pk_t*)malloc(sizeof(rsa_pk_t));
     memset(pk, 0, sizeof(rsa_pk_t));
     pk->bits = RSA_MAX_MODULUS_BITS;
     //modules
@@ -573,8 +548,7 @@ int rsa_init_public_key(uint8_t *pem, uint32_t pem_len){
     return 0;
 }
 
-int rsa_init_private_key(uint8_t *pem, uint32_t pem_len) {
-    if (sk != NULL) return 0;
+int rsa_init_private_key(uint8_t *pem, uint32_t pem_len, rsa_sk_t* sk) {
     if (pem[0] != RSA_PEM_SEQUENCE) return ERR_WRONG_DATA;
     //3082025c
     uint8_t* cur = parse_pem_sequence(pem, &pem_len);
@@ -582,7 +556,6 @@ int rsa_init_private_key(uint8_t *pem, uint32_t pem_len) {
     //020100
     cur = parse_pem_param(cur, NULL);
     //build
-    sk = (rsa_sk_t*)malloc(sizeof(rsa_sk_t));
     memset(sk, 0, sizeof(rsa_sk_t));
     sk->bits = RSA_MAX_MODULUS_BITS;
     //modules
