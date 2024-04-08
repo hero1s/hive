@@ -220,7 +220,7 @@ namespace lcodec {
             vector<string_view> parts;
             split(begining, " ", parts);
             if (parts.size() < 2) {
-                throw invalid_argument("invalid http healder");
+                throw lua_exception("invalid http healder");
             }
             //method
             lua_pushlstring(L, parts[0].data(), parts[0].size());

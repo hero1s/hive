@@ -75,6 +75,14 @@ namespace luakit {
             }
         }
 
+        void set_searchers(global_function fn) {
+            lua_guard g(m_L);
+            lua_getglobal(m_L, LUA_LOADLIBNAME);
+            lua_getfield(m_L, -1, "searchers");
+            lua_push_function(m_L, fn);
+            lua_rawseti(m_L, -2, 2);
+        }
+
         template <typename... ret_types, typename... arg_types>
         bool call(const char* function, error_fn efn, std::tuple<ret_types&...>&& rets, arg_types... args) {
             return call_global_function(m_L, function, efn, std::forward<std::tuple<ret_types&...>>(rets), std::forward<arg_types>(args)...);
@@ -194,7 +202,7 @@ namespace luakit {
 
     protected:
         void set_lua_path(const char* fieldname, const char* path, const char* dft, const char* workdir){
-            lua_getglobal(m_L, "package");
+            lua_getglobal(m_L, LUA_LOADLIBNAME);
             const char* dftmark = strstr(path, LUA_PATH_SEP LUA_PATH_SEP);
             if (dftmark == nullptr) {
                 lua_pushstring(m_L, path);  /* nothing to change */

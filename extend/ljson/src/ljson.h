@@ -51,14 +51,14 @@ namespace ljson {
 
         char* encode_core(lua_State* L, yyjson_write_flag flag, bool emy_as_arr, int index, size_t* data_len) {
             yyjson_mut_doc* doc = yyjson_mut_doc_new(&m_alc);
-            if (!doc) throw invalid_argument("json encode memory not enough!");
+            if (!doc) throw lua_exception("json encode memory not enough!");
 
             jdoc_guard g(doc);
             yyjson_write_err err;
             yyjson_mut_val* val = encode_one(L, doc, emy_as_arr, index, 0);
-            if (!val) throw invalid_argument("json encode memory not enough!");
+            if (!val) throw lua_exception("json encode memory not enough!");
             char* json = yyjson_mut_val_write_opts(val, flag, &m_alc, data_len, &err);
-            if (!json) throw invalid_argument(err.msg);
+            if (!json) throw lua_exception(err.msg);
             m_alc.free(m_alc.ctx, json);
             return json;
         }
@@ -78,7 +78,7 @@ namespace ljson {
         int decode_core(lua_State* L, char* buf, size_t len, bool numkeyable) {
             yyjson_read_err err;
             yyjson_doc* doc = yyjson_read_opts(buf, len, YYJSON_READ_ALLOW_INVALID_UNICODE, &m_alc, &err);
-            if (!doc) throw invalid_argument(err.msg);
+            if (!doc) throw lua_exception(err.msg);
 
             jdoc_guard g(doc);
             decode_one(L, yyjson_doc_get_root(doc), numkeyable);
@@ -111,7 +111,7 @@ namespace ljson {
 
         yyjson_mut_val* encode_one(lua_State* L, yyjson_mut_doc* doc, bool emy_as_arr, int idx, int depth) {
             if (depth > max_encode_depth) {
-                throw invalid_argument("encode can't pack too depth table");
+                throw lua_exception("encode can't pack too depth table");
             }
             int type = lua_type(L, idx);
             switch (type) {
@@ -149,18 +149,18 @@ namespace ljson {
                 }
                 return yyjson_mut_strcpy(doc, to_string(lua_tonumber(L, idx)).c_str());
             }
-            throw invalid_argument("json key must is number or string");
+            throw lua_exception("json key must is number or string");
             return nullptr;
         }
 
         yyjson_mut_val* array_encode(lua_State* L, yyjson_mut_doc* doc, bool emy_as_arr, int index, int depth) {
             int asize = lua_rawlen(L, index);
             yyjson_mut_val* array = yyjson_mut_arr(doc);
-            if (!array) throw invalid_argument("json encode memory not enough!");
+            if (!array) throw lua_exception("json encode memory not enough!");
             for (int i = 1; i <= asize; ++i){
                 lua_rawgeti(L, index, i);
                 auto value = encode_one(L, doc, emy_as_arr, -1, depth);
-                if (!value) throw invalid_argument("json encode memory not enough!");
+                if (!value) throw lua_exception("json encode memory not enough!");
                 yyjson_mut_arr_append(array, value);
                 lua_pop(L, 1);
             }
@@ -172,12 +172,12 @@ namespace ljson {
             if (!is_array(L, index, emy_as_arr)) {
                 lua_pushnil(L);
                 yyjson_mut_val* object = yyjson_mut_obj(doc);
-                if (!object) throw invalid_argument("json encode memory not enough!");
+                if (!object) throw lua_exception("json encode memory not enough!");
                 while (lua_next(L, index) != 0) {
                     auto key = key_encode(L, doc, -2);
-                    if (!key) throw invalid_argument("json encode memory not enough!");
+                    if (!key) throw lua_exception("json encode memory not enough!");
                     auto value = encode_one(L, doc, emy_as_arr, -1, depth);
-                    if (!value) throw invalid_argument("json encode memory not enough!");
+                    if (!value) throw lua_exception("json encode memory not enough!");
                     unsafe_yyjson_mut_obj_add(object, key, value, unsafe_yyjson_get_len(object));
                     lua_pop(L, 1);
                 }

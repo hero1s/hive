@@ -108,7 +108,7 @@ namespace lcodec {
                         parse_redis_array(L, line.substr(1), buf);
                         break;
                     default:
-                        throw invalid_argument("invalid redis format");
+                        throw lua_exception("invalid redis format");
                         break;
                     }
                     lua_seti(L, -2, i);
@@ -143,7 +143,7 @@ namespace lcodec {
                 parse_redis_array(L, line.substr(1), buf, true);
                 break;
             default:
-                throw invalid_argument("invalid redis format");
+                throw lua_exception("invalid redis format");
                 break;
             }
         }

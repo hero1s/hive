@@ -81,25 +81,32 @@ namespace luapb {
             //data
             size_t data_len;
             const char* data = (const char*)m_slice->data(&data_len);
-            pb_Slice s = pb_lslice(data, data_len);
-            //decode
-            lpb_Env e;
+            //return
             int top = lua_gettop(L);
             lua_pushinteger(L, data_len);
             lua_pushinteger(L, header->cmd_id);
             lua_pushinteger(L, header->flag);
             lua_pushinteger(L, header->session_id);
             lua_pushinteger(L, header->seq_id);
-            lpb_pushtypetable(L, LS, t);
-            e.L = L, e.LS = LS, e.s = &s;
-            lpbD_message(&e, t);
+            //decode
+            lua_push_function(L, [&](lua_State* L) {
+                lpb_Env e;
+                pb_Slice s = pb_lslice(data, data_len);
+                lpb_pushtypetable(L, LS, t);
+                e.L = L, e.LS = LS, e.s = &s;
+                lpbD_message(&e, t);
+                return 1;
+            });
+            if (lua_pcall(L, 0, 1, 0)) {
+                throw lua_exception("decode pb cmdid: %d failed: %s", header->cmd_id, lua_tostring(L, -1));
+            }
             return lua_gettop(L) - top;
         }
 
     protected:
         const pb_Type* pb_type_from_enum(lua_State* L, lpb_State* LS, size_t cmd_id) {
             auto it = pb_cmd_ids.find(cmd_id);
-            if (it == pb_cmd_ids.end()) throw invalid_argument("invalid pb cmdid: " + cmd_id);
+            if (it == pb_cmd_ids.end()) throw lua_exception("pb decode invalid cmdid: %d!", cmd_id);
             return lpb_type(L, LS, pb_lslice(it->second.c_str(), it->second.size()));
         }
 

@@ -86,7 +86,7 @@ namespace lcodec {
         virtual size_t decode(lua_State* L) {
             int top = lua_gettop(L);
             if (sessions.empty()) {
-                throw invalid_argument("invalid mysql data");
+                throw lua_exception("invalid mysql data");
             }
             size_t osize = m_slice->size();
             mysql_cmd cmd = sessions.front();
@@ -112,7 +112,7 @@ namespace lcodec {
             uint32_t payload = *(uint32_t*)m_slice->read<uint32_t>();
             uint32_t length = (payload & 0xffffff);
             if (length >= 0xffffff) {
-                throw invalid_argument("sharded packet not suppert!");
+                throw lua_exception("sharded packet not suppert!");
             }
             uint8_t* data = m_slice->erase(length);
             if (!data) {
@@ -192,7 +192,7 @@ namespace lcodec {
                 return data_packet_decode(L);
             case packet_type::MP_ERR:
                 return err_packet_decode(L);
-            default: throw invalid_argument("unsuppert mysql packet type");
+            default: throw lua_exception("unsuppert mysql packet type");
             }
         }
 
@@ -450,7 +450,7 @@ namespace lcodec {
                 m_buf->write<uint16_t>(lua_isinteger(L, index) ? MYSQL_TYPE_LONGLONG : MYSQL_TYPE_DOUBLE);
                 break;
             default:
-                throw invalid_argument("invalid mysql stmt args type");
+                throw lua_exception("invalid mysql stmt args type");
             }
         }
 
@@ -498,7 +498,7 @@ namespace lcodec {
             size_t length = decode_length_encoded_number();
             if (length > 0) {
                 char* data = (char*)m_packet.erase(length);
-                if (!data) throw invalid_argument("invalid length coded string");
+                if (!data) throw lua_exception("invalid length coded string");
                 return string_view(data, length);
             }
             return "";
@@ -512,9 +512,9 @@ namespace lcodec {
                     slice.erase(l + 1);
                     return dst;
                 }
-                if (l == sz - 1) throw invalid_argument("invalid mysql block : cstring");
+                if (l == sz - 1) throw lua_exception("invalid mysql block : cstring");
             }
-            throw invalid_argument("invalid mysql block : cstring");
+            throw lua_exception("invalid mysql block : cstring");
             return "";
         }
 

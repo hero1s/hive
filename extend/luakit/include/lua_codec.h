@@ -4,8 +4,6 @@
 #pragma warning(disable: 4267)
 #endif
 
-#include <stdexcept>
-
 #include "lua_buff.h"
 
 namespace luakit {
@@ -42,7 +40,7 @@ namespace luakit {
     T value_decode(lua_State* L, slice* slice) {
         T* value = slice->read<T>();
         if (value == nullptr) {
-            throw std::invalid_argument("decode can't unpack one value");
+            throw lua_exception("decode can't unpack one value");
         }
         return *value;
     }
@@ -178,7 +176,7 @@ namespace luakit {
         }
         auto str = (const char*)slice->peek(sz);
         if (str == nullptr || sz > USHRT_MAX) {
-            throw std::invalid_argument("decode string is out of range");
+            throw lua_exception("decode string is out of range");
         }
         slice->erase(sz);
         lua_pushlstring(L, str, sz);

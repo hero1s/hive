@@ -6,11 +6,12 @@
 #include <tuple>
 #include <string>
 #include <vector>
+#include <memory>
 #include <utility>
 #include <cstdint>
+#include <stdexcept>
 #include <functional>
 #include <type_traits>
-#include <assert.h>
 #include <string.h>
 
 extern "C"
@@ -22,7 +23,7 @@ extern "C"
 
 namespace luakit {
 
-#define MAX_LUA_META_KEY 128
+    #define MAX_LUA_META_KEY 128
 
     //错误函数
     using error_fn = std::function<void(std::string_view err)>;
@@ -49,6 +50,21 @@ namespace luakit {
     private:
         int m_top = 0;
         lua_State* m_L = nullptr;
+    };
+
+    class lua_exception : public std::logic_error {
+    public:
+        template <class... Args>
+        explicit lua_exception(const char* fmt, Args&&... args) : std::logic_error(format(fmt, std::forward<Args>(args)...)) {}
+
+    protected:
+        template <class... Args>
+        std::string format(const char* fmt, Args&&... args) {
+            int buf_size = std::snprintf(nullptr, 0, fmt, std::forward<Args>(args)...) + 1;
+            std::unique_ptr<char[]> buf = std::make_unique<char[]>(buf_size);
+            std::snprintf(buf.get(), buf_size, fmt, std::forward<Args>(args)...);
+            return std::string(buf.get(), buf_size - 1);
+        }
     };
 
 }
