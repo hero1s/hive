@@ -7,6 +7,9 @@ STDC = "gnu99"
 --c++11/c++14/c++17/c++20
 STDCPP = "c++17"
 
+--gcc优化级别
+GCCOPT = "-O2"
+
 --是否生效
 ENABLE = true
 
@@ -21,6 +24,7 @@ FLAGS = {
     "Wno-unused-but-set-parameter",
     "Wno-unused-function",
     "Wno-unused-result",
+    "Wno-format-security",
 }
 
 --扩展的FLAGS

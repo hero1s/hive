@@ -14,6 +14,11 @@ all : pre_build target post_build
 #CFLAG
 MYCFLAGS =
 
+{{% if GCCOPT then %}}
+#gcc优化选项
+GCCOPT = {{%= GCCOPT %}}
+{{% end %}}
+
 #需要定义的FLAG
 {{% for _, flag in ipairs(FLAGS) do %}}
 MYCFLAGS += -{{%= flag %}}
@@ -148,8 +153,8 @@ endif
 ifndef CX
 CX = c++
 endif
-CFLAGS = -g -O2 -Wall -Wno-deprecated -Wextra $(STDC) $(MYCFLAGS)
-CXXFLAGS = -g -O2 -Wall -Wno-deprecated -Wextra $(STDCPP) $(MYCFLAGS)
+CFLAGS = -g $(GCCOPT) -Wall -Wno-deprecated -Wextra $(STDC) $(MYCFLAGS)
+CXXFLAGS = -g $(GCCOPT) -Wall -Wno-deprecated -Wextra $(STDCPP) $(MYCFLAGS)
 
 #项目目录
 ifndef SOLUTION_DIR
