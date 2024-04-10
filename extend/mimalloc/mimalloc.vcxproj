@@ -18,8 +18,12 @@
     <ClCompile Include="mimalloc\src\alloc.c"/>
     <ClCompile Include="mimalloc\src\arena.c"/>
     <ClCompile Include="mimalloc\src\bitmap.c"/>
+    <ClCompile Include="mimalloc\src\free.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="mimalloc\src\heap.c"/>
     <ClCompile Include="mimalloc\src\init.c"/>
+    <ClCompile Include="mimalloc\src\libc.c"/>
     <ClCompile Include="mimalloc\src\options.c"/>
     <ClCompile Include="mimalloc\src\os.c"/>
     <ClCompile Include="mimalloc\src\page-queue.c">

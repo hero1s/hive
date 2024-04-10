@@ -62,6 +62,7 @@ namespace luapb {
                 pb_addslice(e.b, pb_lslice(buf,data_len));                
             } else {
                 const pb_Type* t = pb_type_from_stack(L, LS, &header);
+                if (t == nullptr) luaL_error(L, "pb message not define cmd: %d", header.cmd_id);
                 //encode            
                 lua_pushvalue(L, index);
                 pb_addslice(e.b, sh);
@@ -78,6 +79,9 @@ namespace luapb {
             //cmd_id
             lpb_State* LS = lpb_lstate(L);
             const pb_Type* t = pb_type_from_enum(L, LS, header->cmd_id);
+            if (t == nullptr) {
+                throw lua_exception("pb message not define cmd: %d", header->cmd_id);
+            }
             //data
             size_t data_len;
             const char* data = (const char*)m_slice->data(&data_len);

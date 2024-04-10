@@ -24,10 +24,16 @@
     <ClCompile Include="mimalloc\src\bitmap.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="mimalloc\src\free.c">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="mimalloc\src\heap.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="mimalloc\src\init.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="mimalloc\src\libc.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="mimalloc\src\options.c">
