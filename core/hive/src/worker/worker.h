@@ -62,7 +62,7 @@ namespace lworker {
         virtual ~worker() {
             m_running = false;
             if (m_thread.joinable()) {
-                m_thread.join();
+                m_thread.detach();
             }
             //m_lua->close();todo ำลปฏฮ๖นนย฿ผญ
         }

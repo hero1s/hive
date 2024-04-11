@@ -249,7 +249,7 @@ void hive_app::run(int rtype) {
 			});
 	}
 	m_schedulor.shutdown();
-	std::this_thread::sleep_for(std::chrono::seconds(1));
+	std::this_thread::sleep_for(std::chrono::seconds(2));
 	//lua.close(); todo 优化析构逻辑
 	log_service::instance()->stop();
 }

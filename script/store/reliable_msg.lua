@@ -80,7 +80,7 @@ end
 -- 设置信息为已处理
 function ReliableMsg:deal_message(to, timestamp)
     log_info("[ReliableMsg][deal_message] message:{}, {},{}", self.table_name, to, timestamp)
-    local selector = { ["$and"] = { { to = to }, { time = { ["$lte"] = timestamp } } } }
+    local selector = { to = to, time = { ["$lte"] = timestamp } }
     local query    = { self.table_name, { ["$set"] = { deal_time = hive.now } }, selector }
     return mongo_agent:update(query, to, self.db_name)
 end
@@ -94,7 +94,7 @@ end
 -- 删除消息
 function ReliableMsg:delete_message(to, timestamp)
     log_info("[ReliableMsg][delete_message] delete {} message: {}", self.table_name, to)
-    local selector = { ["$and"] = { { to = to }, { time = { ["$lte"] = timestamp } } } }
+    local selector = { to = to, time = { ["$lte"] = timestamp } }
     return mongo_agent:delete({ self.table_name, selector }, hive.id, self.db_name)
 end
 
