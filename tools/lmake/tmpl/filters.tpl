@@ -21,7 +21,14 @@
   </ItemGroup>
   <ItemGroup>
   {{% for GROUP in pairs(TEMPS or {}) do %}}
-    {{% table.insert(GROUPS, GROUP) %}}
+    {{% local FGROUP = string.gsub(GROUP, '/', '\\') %}}
+    {{% table.insert(GROUPS, FGROUP) %}}
+    {{% local i, j = FGROUP:find("\\") %}}
+    {{% while i do %}}
+        {{% local TITLE = FGROUP:sub(1, i - 1) %}}
+        {{% table.insert(GROUPS, TITLE) %}}
+        {{% i, j = FGROUP:find("\\", j + 1) %}}
+    {{% end %}}
   {{% end %}}
   {{% table.sort(GROUPS, function(a, b) return a < b end) %}}
   {{% for _, GROUP in pairs(GROUPS or {}) do %}}
