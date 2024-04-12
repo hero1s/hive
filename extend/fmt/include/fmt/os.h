@@ -13,13 +13,11 @@
 #include <cstdio>
 #include <system_error>  // std::system_error
 
-#include "format.h"
-
 #if defined __APPLE__ || defined(__FreeBSD__)
-#  if FMT_HAS_INCLUDE(<xlocale.h>)
-#    include <xlocale.h>  // for LC_NUMERIC_MASK on OS X
-#  endif
+#  include <xlocale.h>  // for LC_NUMERIC_MASK on OS X
 #endif
+
+#include "format.h"
 
 #ifndef FMT_USE_FCNTL
 // UWP doesn't provide _pipe.
@@ -48,7 +46,6 @@
 
 // Calls to system functions are wrapped in FMT_SYSTEM for testability.
 #ifdef FMT_SYSTEM
-#  define FMT_HAS_SYSTEM
 #  define FMT_POSIX_CALL(call) FMT_SYSTEM(call)
 #else
 #  define FMT_SYSTEM(call) ::call
@@ -117,7 +114,7 @@ template <typename Char> class basic_cstring_view {
   basic_cstring_view(const std::basic_string<Char>& s) : data_(s.c_str()) {}
 
   /** Returns the pointer to a C string. */
-  auto c_str() const -> const Char* { return data_; }
+  const Char* c_str() const { return data_; }
 };
 
 using cstring_view = basic_cstring_view<char>;
@@ -172,7 +169,7 @@ std::system_error windows_error(int error_code, string_view message,
 // Can be used to report errors from destructors.
 FMT_API void report_windows_error(int error_code, const char* message) noexcept;
 #else
-inline auto system_category() noexcept -> const std::error_category& {
+inline const std::error_category& system_category() noexcept {
   return std::system_category();
 }
 #endif  // _WIN32
@@ -209,7 +206,7 @@ class buffered_file {
     other.file_ = nullptr;
   }
 
-  auto operator=(buffered_file&& other) -> buffered_file& {
+  buffered_file& operator=(buffered_file&& other) {
     close();
     file_ = other.file_;
     other.file_ = nullptr;
@@ -223,26 +220,21 @@ class buffered_file {
   FMT_API void close();
 
   // Returns the pointer to a FILE object representing this file.
-  auto get() const noexcept -> FILE* { return file_; }
+  FILE* get() const noexcept { return file_; }
 
-  FMT_API auto descriptor() const -> int;
+  FMT_API int descriptor() const;
 
-  void vprint(string_view fmt, format_args args) {
-    fmt::vprint(file_, fmt, args);
-  }
-  void vprint_locked(string_view fmt, format_args args) {
-    fmt::vprint_locked(file_, fmt, args);
+  void vprint(string_view format_str, format_args args) {
+    fmt::vprint(file_, format_str, args);
   }
 
-  template <typename... T>
-  inline void print(string_view fmt, const T&... args) {
-    const auto& vargs = fmt::make_format_args(args...);
-    detail::is_locking<T...>() ? vprint(fmt, vargs) : vprint_locked(fmt, vargs);
+  template <typename... Args>
+  inline void print(string_view format_str, const Args&... args) {
+    vprint(format_str, fmt::make_format_args(args...));
   }
 };
 
 #if FMT_USE_FCNTL
-
 // A file. Closed file is represented by a file object with descriptor -1.
 // Methods that are not declared with noexcept may throw
 // fmt::system_error in case of failure. Note that some errors such as
@@ -255,8 +247,6 @@ class FMT_API file {
 
   // Constructs a file object with a given descriptor.
   explicit file(int fd) : fd_(fd) {}
-
-  friend struct pipe;
 
  public:
   // Possible values for the oflag argument to the constructor.
@@ -282,7 +272,7 @@ class FMT_API file {
   file(file&& other) noexcept : fd_(other.fd_) { other.fd_ = -1; }
 
   // Move assignment is not noexcept because close may throw.
-  auto operator=(file&& other) -> file& {
+  file& operator=(file&& other) {
     close();
     fd_ = other.fd_;
     other.fd_ = -1;
@@ -293,24 +283,24 @@ class FMT_API file {
   ~file() noexcept;
 
   // Returns the file descriptor.
-  auto descriptor() const noexcept -> int { return fd_; }
+  int descriptor() const noexcept { return fd_; }
 
   // Closes the file.
   void close();
 
   // Returns the file size. The size has signed type for consistency with
   // stat::st_size.
-  auto size() const -> long long;
+  long long size() const;
 
   // Attempts to read count bytes from the file into the specified buffer.
-  auto read(void* buffer, size_t count) -> size_t;
+  size_t read(void* buffer, size_t count);
 
   // Attempts to write count bytes from the specified buffer to the file.
-  auto write(const void* buffer, size_t count) -> size_t;
+  size_t write(const void* buffer, size_t count);
 
   // Duplicates a file descriptor with the dup function and returns
   // the duplicate as a file object.
-  static auto dup(int fd) -> file;
+  static file dup(int fd);
 
   // Makes fd be the copy of this file descriptor, closing fd first if
   // necessary.
@@ -320,9 +310,13 @@ class FMT_API file {
   // necessary.
   void dup2(int fd, std::error_code& ec) noexcept;
 
+  // Creates a pipe setting up read_end and write_end file objects for reading
+  // and writing respectively.
+  static void pipe(file& read_end, file& write_end);
+
   // Creates a buffered_file object associated with this file and detaches
   // this file object from the file.
-  auto fdopen(const char* mode) -> buffered_file;
+  buffered_file fdopen(const char* mode);
 
 #  if defined(_WIN32) && !defined(__MINGW32__)
   // Opens a file and constructs a file object representing this file by
@@ -331,24 +325,15 @@ class FMT_API file {
 #  endif
 };
 
-struct FMT_API pipe {
-  file read_end;
-  file write_end;
-
-  // Creates a pipe setting up read_end and write_end file objects for reading
-  // and writing respectively.
-  pipe();
-};
-
 // Returns the memory page size.
-auto getpagesize() -> long;
+long getpagesize();
 
 namespace detail {
 
 struct buffer_size {
   buffer_size() = default;
   size_t value = 0;
-  auto operator=(size_t val) const -> buffer_size {
+  buffer_size operator=(size_t val) const {
     auto bs = buffer_size();
     bs.value = val;
     return bs;
@@ -381,10 +366,9 @@ struct ostream_params {
 };
 
 class file_buffer final : public buffer<char> {
- private:
   file file_;
 
-  FMT_API static void grow(buffer<char>& buf, size_t);
+  FMT_API void grow(size_t) override;
 
  public:
   FMT_API file_buffer(cstring_view path, const ostream_params& params);
@@ -426,7 +410,7 @@ class FMT_API ostream {
   void flush() { buffer_.flush(); }
 
   template <typename... T>
-  friend auto output_file(cstring_view path, T... params) -> ostream;
+  friend ostream output_file(cstring_view path, T... params);
 
   void close() { buffer_.close(); }
 
@@ -435,7 +419,8 @@ class FMT_API ostream {
     output to the file.
    */
   template <typename... T> void print(format_string<T...> fmt, T&&... args) {
-    vformat_to(appender(buffer_), fmt, fmt::make_format_args(args...));
+    vformat_to(detail::buffer_appender<char>(buffer_), fmt,
+               fmt::make_format_args(args...));
   }
 };
 
@@ -455,7 +440,7 @@ class FMT_API ostream {
   \endrst
  */
 template <typename... T>
-inline auto output_file(cstring_view path, T... params) -> ostream {
+inline ostream output_file(cstring_view path, T... params) {
   return {path, detail::ostream_params(params...)};
 }
 #endif  // FMT_USE_FCNTL

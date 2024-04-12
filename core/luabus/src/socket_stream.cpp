@@ -307,7 +307,7 @@ int socket_stream::stream_send(const char* data, size_t data_len)
 			while (data_len > 0) {
 				int send_len = ::send(m_socket, data, (int)data_len, 0);
 				if (send_len == 0) {
-					on_error("connection-lost");
+					on_error("connection-send-lost");
 					return 0;
 				}
 				if (send_len == SOCKET_ERROR) {

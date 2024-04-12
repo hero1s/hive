@@ -233,13 +233,13 @@ class text_style {
   FMT_CONSTEXPR text_style(emphasis em = emphasis()) noexcept
       : set_foreground_color(), set_background_color(), ems(em) {}
 
-  FMT_CONSTEXPR auto operator|=(const text_style& rhs) -> text_style& {
+  FMT_CONSTEXPR text_style& operator|=(const text_style& rhs) {
     if (!set_foreground_color) {
       set_foreground_color = rhs.set_foreground_color;
       foreground_color = rhs.foreground_color;
     } else if (rhs.set_foreground_color) {
       if (!foreground_color.is_rgb || !rhs.foreground_color.is_rgb)
-        report_error("can't OR a terminal color");
+        FMT_THROW(format_error("can't OR a terminal color"));
       foreground_color.value.rgb_color |= rhs.foreground_color.value.rgb_color;
     }
 
@@ -248,7 +248,7 @@ class text_style {
       background_color = rhs.background_color;
     } else if (rhs.set_background_color) {
       if (!background_color.is_rgb || !rhs.background_color.is_rgb)
-        report_error("can't OR a terminal color");
+        FMT_THROW(format_error("can't OR a terminal color"));
       background_color.value.rgb_color |= rhs.background_color.value.rgb_color;
     }
 
@@ -257,29 +257,29 @@ class text_style {
     return *this;
   }
 
-  friend FMT_CONSTEXPR auto operator|(text_style lhs, const text_style& rhs)
-      -> text_style {
+  friend FMT_CONSTEXPR text_style operator|(text_style lhs,
+                                            const text_style& rhs) {
     return lhs |= rhs;
   }
 
-  FMT_CONSTEXPR auto has_foreground() const noexcept -> bool {
+  FMT_CONSTEXPR bool has_foreground() const noexcept {
     return set_foreground_color;
   }
-  FMT_CONSTEXPR auto has_background() const noexcept -> bool {
+  FMT_CONSTEXPR bool has_background() const noexcept {
     return set_background_color;
   }
-  FMT_CONSTEXPR auto has_emphasis() const noexcept -> bool {
+  FMT_CONSTEXPR bool has_emphasis() const noexcept {
     return static_cast<uint8_t>(ems) != 0;
   }
-  FMT_CONSTEXPR auto get_foreground() const noexcept -> detail::color_type {
+  FMT_CONSTEXPR detail::color_type get_foreground() const noexcept {
     FMT_ASSERT(has_foreground(), "no foreground specified for this style");
     return foreground_color;
   }
-  FMT_CONSTEXPR auto get_background() const noexcept -> detail::color_type {
+  FMT_CONSTEXPR detail::color_type get_background() const noexcept {
     FMT_ASSERT(has_background(), "no background specified for this style");
     return background_color;
   }
-  FMT_CONSTEXPR auto get_emphasis() const noexcept -> emphasis {
+  FMT_CONSTEXPR emphasis get_emphasis() const noexcept {
     FMT_ASSERT(has_emphasis(), "no emphasis specified for this style");
     return ems;
   }
@@ -297,11 +297,9 @@ class text_style {
     }
   }
 
-  friend FMT_CONSTEXPR auto fg(detail::color_type foreground) noexcept
-      -> text_style;
+  friend FMT_CONSTEXPR text_style fg(detail::color_type foreground) noexcept;
 
-  friend FMT_CONSTEXPR auto bg(detail::color_type background) noexcept
-      -> text_style;
+  friend FMT_CONSTEXPR text_style bg(detail::color_type background) noexcept;
 
   detail::color_type foreground_color;
   detail::color_type background_color;
@@ -311,19 +309,16 @@ class text_style {
 };
 
 /** Creates a text style from the foreground (text) color. */
-FMT_CONSTEXPR inline auto fg(detail::color_type foreground) noexcept
-    -> text_style {
+FMT_CONSTEXPR inline text_style fg(detail::color_type foreground) noexcept {
   return text_style(true, foreground);
 }
 
 /** Creates a text style from the background color. */
-FMT_CONSTEXPR inline auto bg(detail::color_type background) noexcept
-    -> text_style {
+FMT_CONSTEXPR inline text_style bg(detail::color_type background) noexcept {
   return text_style(false, background);
 }
 
-FMT_CONSTEXPR inline auto operator|(emphasis lhs, emphasis rhs) noexcept
-    -> text_style {
+FMT_CONSTEXPR inline text_style operator|(emphasis lhs, emphasis rhs) noexcept {
   return text_style(lhs) | rhs;
 }
 
@@ -389,9 +384,9 @@ template <typename Char> struct ansi_color_escape {
   }
   FMT_CONSTEXPR operator const Char*() const noexcept { return buffer; }
 
-  FMT_CONSTEXPR auto begin() const noexcept -> const Char* { return buffer; }
-  FMT_CONSTEXPR20 auto end() const noexcept -> const Char* {
-    return buffer + basic_string_view<Char>(buffer).size();
+  FMT_CONSTEXPR const Char* begin() const noexcept { return buffer; }
+  FMT_CONSTEXPR_CHAR_TRAITS const Char* end() const noexcept {
+    return buffer + std::char_traits<Char>::length(buffer);
   }
 
  private:
@@ -405,27 +400,25 @@ template <typename Char> struct ansi_color_escape {
     out[2] = static_cast<Char>('0' + c % 10);
     out[3] = static_cast<Char>(delimiter);
   }
-  static FMT_CONSTEXPR auto has_emphasis(emphasis em, emphasis mask) noexcept
-      -> bool {
+  static FMT_CONSTEXPR bool has_emphasis(emphasis em, emphasis mask) noexcept {
     return static_cast<uint8_t>(em) & static_cast<uint8_t>(mask);
   }
 };
 
 template <typename Char>
-FMT_CONSTEXPR auto make_foreground_color(detail::color_type foreground) noexcept
-    -> ansi_color_escape<Char> {
+FMT_CONSTEXPR ansi_color_escape<Char> make_foreground_color(
+    detail::color_type foreground) noexcept {
   return ansi_color_escape<Char>(foreground, "\x1b[38;2;");
 }
 
 template <typename Char>
-FMT_CONSTEXPR auto make_background_color(detail::color_type background) noexcept
-    -> ansi_color_escape<Char> {
+FMT_CONSTEXPR ansi_color_escape<Char> make_background_color(
+    detail::color_type background) noexcept {
   return ansi_color_escape<Char>(background, "\x1b[48;2;");
 }
 
 template <typename Char>
-FMT_CONSTEXPR auto make_emphasis(emphasis em) noexcept
-    -> ansi_color_escape<Char> {
+FMT_CONSTEXPR ansi_color_escape<Char> make_emphasis(emphasis em) noexcept {
   return ansi_color_escape<Char>(em);
 }
 
@@ -434,16 +427,15 @@ template <typename Char> inline void reset_color(buffer<Char>& buffer) {
   buffer.append(reset_color.begin(), reset_color.end());
 }
 
-template <typename T> struct styled_arg : detail::view {
+template <typename T> struct styled_arg {
   const T& value;
   text_style style;
-  styled_arg(const T& v, text_style s) : value(v), style(s) {}
 };
 
 template <typename Char>
-void vformat_to(
-    buffer<Char>& buf, const text_style& ts, basic_string_view<Char> format_str,
-    basic_format_args<buffered_context<type_identity_t<Char>>> args) {
+void vformat_to(buffer<Char>& buf, const text_style& ts,
+                basic_string_view<Char> format_str,
+                basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   bool has_style = false;
   if (ts.has_emphasis()) {
     has_style = true;
@@ -466,11 +458,19 @@ void vformat_to(
 
 }  // namespace detail
 
-inline void vprint(FILE* f, const text_style& ts, string_view fmt,
+inline void vprint(std::FILE* f, const text_style& ts, string_view fmt,
                    format_args args) {
+  // Legacy wide streams are not supported.
   auto buf = memory_buffer();
   detail::vformat_to(buf, ts, fmt, args);
-  print(f, FMT_STRING("{}"), string_view(buf.begin(), buf.size()));
+  if (detail::is_utf8()) {
+    detail::print(f, string_view(buf.begin(), buf.size()));
+    return;
+  }
+  buf.push_back('\0');
+  int result = std::fputs(buf.data(), f);
+  if (result < 0)
+    FMT_THROW(system_error(errno, FMT_STRING("cannot write to file")));
 }
 
 /**
@@ -484,10 +484,12 @@ inline void vprint(FILE* f, const text_style& ts, string_view fmt,
                "Elapsed time: {0:.2f} seconds", 1.23);
   \endrst
  */
-template <typename... T>
-void print(FILE* f, const text_style& ts, format_string<T...> fmt,
-           T&&... args) {
-  vprint(f, ts, fmt, fmt::make_format_args(args...));
+template <typename S, typename... Args,
+          FMT_ENABLE_IF(detail::is_string<S>::value)>
+void print(std::FILE* f, const text_style& ts, const S& format_str,
+           const Args&... args) {
+  vprint(f, ts, format_str,
+         fmt::make_format_args<buffer_context<char_t<S>>>(args...));
 }
 
 /**
@@ -501,15 +503,18 @@ void print(FILE* f, const text_style& ts, format_string<T...> fmt,
                "Elapsed time: {0:.2f} seconds", 1.23);
   \endrst
  */
-template <typename... T>
-void print(const text_style& ts, format_string<T...> fmt, T&&... args) {
-  return print(stdout, ts, fmt, std::forward<T>(args)...);
+template <typename S, typename... Args,
+          FMT_ENABLE_IF(detail::is_string<S>::value)>
+void print(const text_style& ts, const S& format_str, const Args&... args) {
+  return print(stdout, ts, format_str, args...);
 }
 
-inline auto vformat(const text_style& ts, string_view fmt, format_args args)
-    -> std::string {
-  auto buf = memory_buffer();
-  detail::vformat_to(buf, ts, fmt, args);
+template <typename S, typename Char = char_t<S>>
+inline std::basic_string<Char> vformat(
+    const text_style& ts, const S& format_str,
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
+  basic_memory_buffer<Char> buf;
+  detail::vformat_to(buf, ts, detail::to_string_view(format_str), args);
   return fmt::to_string(buf);
 }
 
@@ -525,21 +530,23 @@ inline auto vformat(const text_style& ts, string_view fmt, format_args args)
                                       "The answer is {}", 42);
   \endrst
 */
-template <typename... T>
-inline auto format(const text_style& ts, format_string<T...> fmt, T&&... args)
-    -> std::string {
-  return fmt::vformat(ts, fmt, fmt::make_format_args(args...));
+template <typename S, typename... Args, typename Char = char_t<S>>
+inline std::basic_string<Char> format(const text_style& ts, const S& format_str,
+                                      const Args&... args) {
+  return fmt::vformat(ts, detail::to_string_view(format_str),
+                      fmt::make_format_args<buffer_context<Char>>(args...));
 }
 
 /**
   Formats a string with the given text_style and writes the output to ``out``.
  */
-template <typename OutputIt,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
-auto vformat_to(OutputIt out, const text_style& ts, string_view fmt,
-                format_args args) -> OutputIt {
-  auto&& buf = detail::get_buffer<char>(out);
-  detail::vformat_to(buf, ts, fmt, args);
+template <typename OutputIt, typename Char,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value)>
+OutputIt vformat_to(
+    OutputIt out, const text_style& ts, basic_string_view<Char> format_str,
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
+  auto&& buf = detail::get_buffer<Char>(out);
+  detail::vformat_to(buf, ts, format_str, args);
   return detail::get_iterator(buf, out);
 }
 
@@ -555,11 +562,14 @@ auto vformat_to(OutputIt out, const text_style& ts, string_view fmt,
                    fmt::emphasis::bold | fg(fmt::color::red), "{}", 42);
   \endrst
 */
-template <typename OutputIt, typename... T,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
-inline auto format_to(OutputIt out, const text_style& ts,
-                      format_string<T...> fmt, T&&... args) -> OutputIt {
-  return vformat_to(out, ts, fmt, fmt::make_format_args(args...));
+template <typename OutputIt, typename S, typename... Args,
+          bool enable = detail::is_output_iterator<OutputIt, char_t<S>>::value&&
+              detail::is_string<S>::value>
+inline auto format_to(OutputIt out, const text_style& ts, const S& format_str,
+                      Args&&... args) ->
+    typename std::enable_if<enable, OutputIt>::type {
+  return vformat_to(out, ts, detail::to_string_view(format_str),
+                    fmt::make_format_args<buffer_context<char_t<S>>>(args...));
 }
 
 template <typename T, typename Char>
