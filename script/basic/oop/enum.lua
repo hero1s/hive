@@ -25,6 +25,7 @@ local sformat      = string.format
 local dgetinfo     = debug.getinfo
 local setmetatable = setmetatable
 local log_err      = logger.err
+local log_warn     = logger.warn
 local enum_tpls    = _ENV.__enums or {}
 
 local function enum_tostring(eo)
@@ -58,7 +59,7 @@ end
 local function enum_newindex(emobj, field, value)
     local vlist = emobj.__vlist
     if vlist[field] then
-        log_err("enum {} redefine field {}!", emobj.__name, field)
+        log_warn("enum {} redefine field {}!,{} -> {}", emobj.__name, field, vlist[field], value)
     end
     vlist[field] = value
     if type(value) == "number" then

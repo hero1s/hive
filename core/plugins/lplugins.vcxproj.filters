@@ -10,9 +10,6 @@
     <ClInclude Include="src\laoi\math.hpp">
       <Filter>laoi</Filter>
     </ClInclude>
-    <ClInclude Include="src\lbson\bson.h">
-      <Filter>lbson</Filter>
-    </ClInclude>
     <ClInclude Include="src\lcodec\bitarray.h">
       <Filter>lcodec</Filter>
     </ClInclude>
@@ -102,9 +99,6 @@
     <ClCompile Include="src\laoi\laoi.cpp">
       <Filter>laoi</Filter>
     </ClCompile>
-    <ClCompile Include="src\lbson\lbson.cpp">
-      <Filter>lbson</Filter>
-    </ClCompile>
     <ClCompile Include="src\lcodec\lcodec.cpp">
       <Filter>lcodec</Filter>
     </ClCompile>
@@ -172,9 +166,6 @@
     </Filter>
     <Filter Include="laoi">
       <UniqueIdentifier>{DC8FEA7C-8450-92D3-4C20-3A6D15D99A08}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lbson">
-      <UniqueIdentifier>{15BEA432-628B-E5CF-E5DE-A95D2DB86C4F}</UniqueIdentifier>
     </Filter>
     <Filter Include="lcodec">
       <UniqueIdentifier>{E24CB1AD-193A-E647-45BE-564E7264711B}</UniqueIdentifier>

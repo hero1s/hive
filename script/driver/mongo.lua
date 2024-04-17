@@ -1,45 +1,58 @@
 --mongo.lua
-local Socket       = import("driver/socket.lua")
-local log_warn     = logger.warn
-local log_err      = logger.err
-local log_info     = logger.info
-local qhash        = hive.hash
-local hdefer       = hive.defer
-local makechan     = hive.make_channel
-local tinsert      = table.insert
-local tunpack      = table.unpack
-local tdelete      = table_ext.delete
-local tjoin        = table_ext.join
-local mrandom      = math_ext.random
-local ssub         = string.sub
-local sgsub        = string.gsub
-local sformat      = string.format
-local sgmatch      = string.gmatch
-local mtointeger   = math.tointeger
-local lmd5         = crypt.md5
-local lsha1        = crypt.sha1
-local bsonpairs    = bson.pairs
-local lrandomkey   = crypt.randomkey
-local lb64encode   = crypt.b64_encode
-local lb64decode   = crypt.b64_decode
-local lhmac_sha1   = crypt.hmac_sha1
-local lxor_byte    = crypt.xor_byte
-local lclock_ms    = timer.clock_ms
+local bson          = require("bson")
+local lmongo        = require("mongo")
+local ltimer        = require("ltimer")
+local lcrypt        = require("lcrypt")
+local Socket        = import("driver/socket.lua")
+local log_warn      = logger.warn
+local log_err       = logger.err
+local log_info      = logger.info
+local qhash         = hive.hash
+local hdefer        = hive.defer
+local makechan      = hive.make_channel
+local xpcall_ret    = hive.xpcall_ret
+local tunpack       = table.unpack
+local tpack         = table.pack
+local tinsert       = table.insert
+local tis_array     = table_ext.is_array
+local tdelete       = table_ext.delete
+local tdeep_copy    = table_ext.deep_copy
+local tjoin         = table_ext.join
+local mrandom       = math_ext.random
+local ssub          = string.sub
+local sgsub         = string.gsub
+local sformat       = string.format
+local sgmatch       = string.gmatch
+local mtointeger    = math.tointeger
+local lmd5          = lcrypt.md5
+local lsha1         = lcrypt.sha1
+local lrandomkey    = lcrypt.randomkey
+local lb64encode    = lcrypt.b64_encode
+local lb64decode    = lcrypt.b64_decode
+local lhmac_sha1    = lcrypt.hmac_sha1
+local lxor_byte     = lcrypt.xor_byte
+local lclock_ms     = ltimer.clock_ms
 
-local timer_mgr    = hive.get("timer_mgr")
-local event_mgr    = hive.get("event_mgr")
-local update_mgr   = hive.get("update_mgr")
-local thread_mgr   = hive.get("thread_mgr")
+local mreply        = lmongo.reply
+local mopmsg        = lmongo.op_msg
+local mlength       = lmongo.length
+local bson_decode   = bson.decode
+local bson_encode_o = bson.encode_order
 
-local SUCCESS      = hive.enum("KernCode", "SUCCESS")
-local FAST_MS      = hive.enum("PeriodTime", "FAST_MS")
-local SECOND_MS    = hive.enum("PeriodTime", "SECOND_MS")
-local SECOND_10_MS = hive.enum("PeriodTime", "SECOND_10_MS")
-local DB_TIMEOUT   = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
-local POOL_COUNT   = environ.number("HIVE_DB_POOL_COUNT", 3)
+local timer_mgr     = hive.get("timer_mgr")
+local event_mgr     = hive.get("event_mgr")
+local update_mgr    = hive.get("update_mgr")
+local thread_mgr    = hive.get("thread_mgr")
 
-local MongoDB      = class()
-local prop         = property(MongoDB)
+local SUCCESS       = hive.enum("KernCode", "SUCCESS")
+local FAST_MS       = hive.enum("PeriodTime", "FAST_MS")
+local SECOND_MS     = hive.enum("PeriodTime", "SECOND_MS")
+local SECOND_10_MS  = hive.enum("PeriodTime", "SECOND_10_MS")
+local DB_TIMEOUT    = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
+local POOL_COUNT    = environ.number("HIVE_DB_POOL_COUNT", 13)
+
+local MongoDB       = class()
+local prop          = property(MongoDB)
 prop:reader("name", "")         --dbname
 prop:reader("user", nil)        --user
 prop:reader("passwd", nil)      --passwd
@@ -47,7 +60,6 @@ prop:reader("salted_pass", nil) --salted_pass
 prop:reader("executer", nil)    --执行者
 prop:reader("timer_id", nil)    --timer_id
 prop:reader("cursor_id", nil)   --cursor_id
-prop:reader("sort_doc", nil)    --sort_doc
 prop:reader("connections", {})  --connections
 prop:reader("sessions", {})     --sessions
 prop:reader("readpref", { mode = "primary" })    --readPreference
@@ -60,9 +72,7 @@ function MongoDB:__init(conf)
     self.user      = conf.user
     self.passwd    = conf.passwd
     self.name      = conf.db
-    self.sort_doc  = bson.doc()
     self.cursor_id = bson.int64(0)
-    self.codec     = bson.mongocodec()
     self:set_options(conf.opts)
     self:setup_pool(conf.hosts)
     --attach_hour
@@ -103,14 +113,14 @@ function MongoDB:setup_pool(hosts)
         log_err("[MongoDB][setup_pool] mongo config err: hosts is empty")
         return
     end
-    local count = 1
-    for _, host in pairs(hosts) do
-        for c = 1, POOL_COUNT do
+    local count = POOL_COUNT
+    while count > 0 do
+        for _, host in pairs(hosts) do
             local socket            = Socket(self, host[1], host[2])
             self.connections[count] = socket
             socket.sessions         = {}
             socket:set_id(count)
-            count = count + 1
+            count = count - 1
         end
     end
     self.timer_id = timer_mgr:register(0, SECOND_MS, -1, function()
@@ -160,14 +170,13 @@ function MongoDB:login(socket)
     local id, ip, port = socket.id, socket.ip, socket.port
     local ok, err      = socket:connect(ip, port)
     if not ok then
-        log_err("[MongoDB][login] connect db({}:{}:{}:{}) failed: {}!", ip, port, self.name, id, err)
+        log_err("[MongoDB][login] connect db(%s:%s:%s:%s) failed: %s!", ip, port, self.name, id, err)
         return false
     end
-    socket:set_codec(self.codec)
     if #self.user > 1 and #self.passwd > 1 then
         local aok, aerr = self:auth(socket, self.user, self.passwd)
         if not aok then
-            log_err("[MongoDB][login] auth db({}:{}:{}:{}) failed! because: {}", ip, port, self.name, id, aerr)
+            log_err("[MongoDB][login] auth db(%s:%s:%s:%s) failed! because: %s", ip, port, self.name, id, aerr)
             self:delive(socket)
             socket:close()
             return false
@@ -175,7 +184,7 @@ function MongoDB:login(socket)
     end
     self.connections[id] = nil
     tinsert(self.alives, socket)
-    log_info("[MongoDB][login] connect db({}:{}:{}:{}) success!", ip, port, self.name, id)
+    log_info("[MongoDB][login] connect db(%s:%s:%s:%s) success!", ip, port, self.name, id)
     return true, SUCCESS
 end
 
@@ -192,6 +201,29 @@ function MongoDB:salt_password(password, salt, iter)
     end
     self.salted_pass = output
     return output
+end
+
+---排序参数/联合主键需要控制顺序,将参数写成数组模式{{k1=1},{k2=2}},单参数或不需要优先级可以{k1=1,k2=2}
+function MongoDB:sort_param(param)
+    local dst = {}
+    if type(param) == "table" then
+        if tis_array(param) then
+            for _, p in ipairs(param) do
+                for k, v in pairs(p) do
+                    tinsert(dst, k)
+                    tinsert(dst, v)
+                end
+            end
+        else
+            for k, v in pairs(param) do
+                tinsert(dst, k)
+                tinsert(dst, v)
+            end
+        end
+    else
+        log_err("[MongoDB][sort_param]sort_param is not table:%s", param)
+    end
+    return bson_encode_o(tunpack(dst))
 end
 
 function MongoDB:auth(sock, username, password)
@@ -267,65 +299,99 @@ function MongoDB:on_socket_error(sock, token, err)
         self:check_alive()
     end)
     for session_id, cmd in pairs(sock.sessions) do
-        log_warn("[MongoDB][on_socket_error] drop cmd {}-{})!", cmd, session_id)
+        log_warn("[MongoDB][on_socket_error] drop cmd %s-%s)!", cmd, session_id)
         thread_mgr:response(session_id, false, err)
     end
     sock.sessions = {}
 end
 
-function MongoDB:decode_reply(result)
-    if result.writeErrors then
-        return false, result.writeErrors[1].errmsg
+function MongoDB:decode_reply(succ, documents)
+    local doc = bson_decode(documents)
+    if doc.writeErrors then
+        return false, doc.writeErrors[1].errmsg
     end
-    if result.writeConcernError then
-        return false, result.writeConcernError.errmsg
+    if doc.writeConcernError then
+        return false, doc.writeConcernError.errmsg
     end
-    if result.ok == 1 then
-        return true, result
+    if succ and doc.ok == 1 then
+        return succ, doc
     end
-    return false, result.errmsg or result["$err"]
+    return false, doc.errmsg or doc["$err"]
 end
 
-function MongoDB:on_socket_recv(sock, session_id, result)
-    if session_id > 0 then
-        self.res_counter:count_increase()
-        local succ, doc = self:decode_reply(result)
-        thread_mgr:response(session_id, succ, doc)
+function MongoDB:on_socket_recv(sock, token)
+    while true do
+        local hdata = sock:peek(4)
+        if not hdata then
+            break
+        end
+        local length = mlength(hdata)
+        local bdata  = sock:peek(length, 4)
+        if not bdata then
+            break
+        end
+        sock:pop(4 + length)
+        local reply, session_id, documents = mreply(bdata)
+        if session_id > 0 then
+            self.res_counter:count_increase()
+            local succ, doc = self:decode_reply(reply, documents)
+            thread_mgr:response(session_id, succ, doc)
+        end
     end
 end
 
-function MongoDB:op_msg(sock, session_id, cmd, ...)
+function MongoDB:op_msg(sock, bson_cmd, cmd)
     if not sock then
         return false, "db not connected"
     end
-    local tick = lclock_ms()
-    if not sock:send_data(session_id, cmd, ...) then
+    local tick       = lclock_ms()
+    local session_id = thread_mgr:build_session_id()
+    local msg        = mopmsg(session_id, 0, bson_cmd)
+    if not sock:send(msg) then
         return false, "send failed"
     end
-    sock.sessions[session_id] = cmd
     self.req_counter:count_increase()
-    local _<close> = hdefer(function()
+    sock.sessions[session_id] = cmd
+    local _<close>            = hdefer(function()
         sock.sessions[session_id] = nil
         local utime               = lclock_ms() - tick
         if utime > FAST_MS then
-            log_warn("[MongoDB][op_msg] cmd ({}:{}) execute so big {}!", cmd, session_id, utime)
+            log_warn("[MongoDB][on_socket_recv] cmd (%s:%s) execute so big %s!", cmd, session_id, utime)
         end
     end)
-    return thread_mgr:yield(session_id, cmd, DB_TIMEOUT)
+    return thread_mgr:yield(session_id, sformat("mongo_op:%s", cmd), DB_TIMEOUT)
 end
 
 function MongoDB:adminCommand(sock, cmd, cmd_v, ...)
-    local session_id = thread_mgr:build_session_id()
-    return self:op_msg(sock, session_id, cmd, cmd_v, "$db", "admin", ...)
+    local bson_cmd = bson_encode_o(cmd, cmd_v, "$db", self.auth_source, ...)
+    return self:op_msg(sock, bson_cmd, cmd)
 end
 
 function MongoDB:runCommand(cmd, cmd_v, ...)
-    local session_id = thread_mgr:build_session_id()
-    return self:op_msg(self.executer, session_id, cmd, cmd_v or 1, "$db", self.name, ...)
+    local ok, bson_cmd = xpcall_ret(bson_encode_o, "[mongo.bson] error:%s", cmd, cmd_v or 1, "$db", self.name, ...)
+    if not ok then
+        log_err("[MongoDB][runCommand] bson:%s", tpack(...))
+        return false, "bson failed"
+    end
+    return self:op_msg(self.executer, bson_cmd, cmd)
 end
 
 function MongoDB:sendCommand(cmd, cmd_v, ...)
-    self.executer:send_data(0, cmd, cmd_v or 1, "$db", self.name, "writeConcern", { w = 0 }, ...)
+    local sock = self.executer
+    if not sock then
+        return false, "db not connected"
+    end
+    local ok, bson_cmd = xpcall_ret(bson_encode_o, "[mongo.bson] error:%s", cmd, cmd_v or 1, "$db", self.name, "writeConcern", { w = 0 }, ...)
+    if not ok then
+        log_err("[MongoDB][sendCommand] bson:%s", tpack(...))
+        return false, "bson failed"
+    end
+    local msg = mopmsg(0, 2, bson_cmd)
+    if not sock:send(msg) then
+        return false, "send failed"
+    end
+    self.req_counter:count_increase()
+    return true
 end
 
 function MongoDB:drop_collection(co_name)
@@ -345,13 +411,13 @@ function MongoDB:get_indexes(co_name)
 end
 
 -- 参数说明
--- indexes: {{key={open_id=1}, name="open_id", unique=true} }
--- indexes: {{key={open_id,1,platform_id,1}, name="open_id-platform_id", unique=true} }
+-- indexes={{key={open_id=1,platform_id=1},name="open_id-platform_id",unique=true}, }
 function MongoDB:create_indexes(co_name, indexes)
-    for _, index in pairs(indexes) do
-        index.key = self:format_pairs(index.key)
+    local tindexs = tdeep_copy(indexes)
+    for _, v in ipairs(tindexs) do
+        v.key = self:sort_param(v.key)
     end
-    local succ, doc = self:runCommand("createIndexes", co_name, "indexes", indexes)
+    local succ, doc = self:runCommand("createIndexes", co_name, "indexes", tindexs)
     if not succ then
         return succ, doc
     end
@@ -403,7 +469,7 @@ function MongoDB:count(co_name, query, limit, skip)
 end
 
 function MongoDB:find_one(co_name, query, projection)
-    local succ, reply = self:runCommand("find", co_name, "filter", query, "projection" or {}, projection, "limit", 1)
+    local succ, reply = self:runCommand("find", co_name, "$readPreference", self.readpref, "filter", query, "projection" or {}, projection, "limit", 1)
     if not succ then
         return succ, reply
     end
@@ -416,24 +482,11 @@ function MongoDB:find_one(co_name, query, projection)
     return succ
 end
 
-function MongoDB:format_pairs(args, doc)
-    if args and next(args) then
-        if type(next(args)) == "string" then
-            return args
-        end
-        if doc then
-            tinsert(args, doc)
-        end
-        return bsonpairs(tunpack(args))
-    end
-end
-
--- 参数说明
---sort: {k1=1} / {k1,1,k2,-1,k3,-1}
 function MongoDB:find(co_name, query, projection, sortor, limit, skip)
-    local fsortor     = self:format_pairs(sortor, self.sort_doc)
-    local succ, reply = self:runCommand("find", co_name, "filter", query,
-                                        "projection", projection or {}, "sort", fsortor or {}, "limit", limit or 100, "skip", skip or 0)
+    if sortor and next(sortor) then
+        sortor = self:sort_param(sortor)
+    end
+    local succ, reply = self:runCommand("find", co_name, "$readPreference", self.readpref, "filter", query, "projection", projection or {}, "sort", sortor or {}, "limit", limit or 100, "skip", skip or 0)
     if not succ then
         return succ, reply
     end

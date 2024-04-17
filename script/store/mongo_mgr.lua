@@ -36,8 +36,7 @@ end
 
 --初始化
 function MongoMgr:setup()
-    --local MongoDB  = import("driver/mongo.lua")
-    local MongoDB  = import("driver/mongo_cloud.lua")
+    local MongoDB  = import("driver/mongo.lua")
     local database = config_mgr:init_table("database", "name")
     for _, conf in database:iterator() do
         local dconf = environ.driver(conf.url)

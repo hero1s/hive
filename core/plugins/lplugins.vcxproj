@@ -10,7 +10,6 @@
     <ClInclude Include="src\laes\aes.h"/>
     <ClInclude Include="src\laoi\aoi.hpp"/>
     <ClInclude Include="src\laoi\math.hpp"/>
-    <ClInclude Include="src\lbson\bson.h"/>
     <ClInclude Include="src\lcodec\bitarray.h"/>
     <ClInclude Include="src\lcodec\crc.h"/>
     <ClInclude Include="src\lcodec\guid.h"/>
@@ -42,7 +41,6 @@
     <ClCompile Include="src\laes\aes.cpp"/>
     <ClCompile Include="src\laes\laes.cpp"/>
     <ClCompile Include="src\laoi\laoi.cpp"/>
-    <ClCompile Include="src\lbson\lbson.cpp"/>
     <ClCompile Include="src\lcodec\lcodec.cpp"/>
     <ClCompile Include="src\lcodec\utf8.c"/>
     <ClCompile Include="src\lcrypt\base64.c"/>
