@@ -22,10 +22,12 @@ for /f "usebackq tokens=*" %%i in (`!vswherestr!`) do (
     echo Error: Cannot find VS2019 or later
     exit /b 2
   )
-"!BUILDVCTOOLS!\devenv.com" .\hive.sln /Rebuild
-"!BUILDVCTOOLS!\devenv.com" .\hive.sln /Build
+ "!BUILDVCTOOLS!\devenv.com" .\hive.sln /Rebuild
+ "!BUILDVCTOOLS!\devenv.com" .\hive.sln /Build
+ goto :break
 )
 
+:break
 move .\bin\*.dll .\bin\lib
 
 pause
