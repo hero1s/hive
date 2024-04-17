@@ -9,11 +9,7 @@ set ProtoDir=%RootDir%\..\bin\proto\
 rmdir /Q /S %ProtoDir%
 md %ProtoDir%
 
-set Files=
-for %%i in (*.proto) do (
-	call set "Files=%%i %%Files%%"
-)
-protoc.exe --descriptor_set_out=%ProtoDir%\ncmd_cs.pb %Files%
+protoc.exe --descriptor_set_out=%ProtoDir%\ncmd_cs.pb --proto_path=..\proto\ *.proto
 
 pause
 
