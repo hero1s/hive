@@ -98,27 +98,24 @@ local function logger_output(flag, feature, lvl, lvl_name, fmt, ...)
 end
 
 local LOG_LEVEL_OPTIONS = {
-    [LOG_LEVEL.TRACE] = { "trace", 0x01 },
-    [LOG_LEVEL.DEBUG] = { "debug", 0x01 },
-    [LOG_LEVEL.INFO]  = { "info", 0x00 },
-    [LOG_LEVEL.WARN]  = { "warn", 0x01 },
-    [LOG_LEVEL.ERROR] = { "err", 0x01 },
-    [LOG_LEVEL.FATAL] = { "fatal", 0x01 | 0x02 }
+    { LOG_LEVEL.TRACE, "dump", 0x01 | 0x02 },
+    { LOG_LEVEL.TRACE, "trace", 0x01 },
+    { LOG_LEVEL.DEBUG, "debug", 0x01 },
+    { LOG_LEVEL.INFO, "info", 0x00 },
+    { LOG_LEVEL.WARN, "warn", 0x01 },
+    { LOG_LEVEL.ERROR, "err", 0x01 },
+    { LOG_LEVEL.FATAL, "fatal", 0x01 | 0x02 }
 }
-for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
-    local lvl_name, flag = tunpack(conf)
-    logger[lvl_name]     = function(fmt, ...)
+for _, conf in pairs(LOG_LEVEL_OPTIONS) do
+    local lvl, lvl_name, flag = tunpack(conf)
+    logger[lvl_name]          = function(fmt, ...)
         logger_output(flag, "", lvl, lvl_name, fmt, ...)
     end
 end
 
-logger["dump"] = function(fmt, ...)
-    logger_output(0x01 | 0x02, "", LOG_LEVEL.TRACE, "trace", fmt, ...)
-end
-
-for lvl, conf in pairs(LOG_LEVEL_OPTIONS) do
-    local lvl_name, flag = tunpack(conf)
-    logfeature[lvl_name] = function(feature, path, prefix, def)
+for _, conf in pairs(LOG_LEVEL_OPTIONS) do
+    local lvl, lvl_name, flag = tunpack(conf)
+    logfeature[lvl_name]      = function(feature, path, prefix, def)
         if not feature then
             local info = dgetinfo(2, "S")
             feature    = fsstem(info.short_src)

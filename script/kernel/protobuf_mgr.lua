@@ -60,6 +60,9 @@ function ProtobufMgr:load_protos()
     local proto_paths = ssplit(env_get("HIVE_PROTO_PATH", ""), ";")
     for _, proto_path in pairs(proto_paths) do
         local dir_files = ldir(proto_path)
+        if not next(dir_files) then
+            log_err("[ProtobufMgr][load_protos] {} not exist pb file", proto_path)
+        end
         for _, file in pairs(dir_files) do
             if lextension(file.name) == ".pb" then
                 local filename = lfilename(file.name)
