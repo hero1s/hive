@@ -28,7 +28,7 @@ prop:reader("clients", {})          --clients
 prop:reader("handlers", {})         --handlers
 prop:accessor("limit_ips", nil)
 prop:reader("qps_counter", nil)
-prop:accessor("open_log", true)
+prop:accessor("open_log", false)
 
 function HttpServer:__init(http_addr, induce)
     self.jcodec   = jsoncodec()

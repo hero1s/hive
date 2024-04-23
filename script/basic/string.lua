@@ -5,11 +5,13 @@ local pcall    = pcall
 local tostring = tostring
 local tonumber = tonumber
 local tunpack  = table.unpack
+local tinsert  = table.insert
 local ssub     = string.sub
 local sfind    = string.find
 local supper   = string.upper
 local slower   = string.lower
 local sformat  = string.format
+local sbyte    = string.byte
 
 string_ext     = _ENV.string_ext or {}
 
@@ -127,4 +129,29 @@ function string_ext.count(value, chl)
     return c
 end
 
-
+function string_ext.chars(src)
+    local chars = {}
+    if not src then
+        return chars
+    end
+    local pos_bytes = 1
+    local scount    = 0 --单字节
+    while pos_bytes <= #src do
+        local byteCount
+        local curByte = sbyte(src, pos_bytes)
+        -- [0x00, 0x7f] [0x80, 0x7ff] [0x800, 0xd7ff] [0x10000, 0x10ffff]
+        if curByte < 128 then
+            byteCount = 1  -- 单字节字符
+            scount    = scount + 1
+        elseif curByte < 222 then
+            byteCount = 2  -- 双字节字符
+        elseif curByte < 238 then
+            byteCount = 3  -- 汉字
+        else
+            byteCount = 4  -- 4字节字符
+        end
+        tinsert(chars, ssub(src, pos_bytes, pos_bytes + byteCount - 1))
+        pos_bytes = pos_bytes + byteCount
+    end
+    return chars, scount
+end

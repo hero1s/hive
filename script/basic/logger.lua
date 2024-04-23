@@ -38,8 +38,6 @@ function logger.init()
     log.option(path, service_name, index, rolltype, wlvl);
     --设置日志过滤
     logger.filter(log_lvl)
-    --添加输出目标
-    --log.add_dest(service_name);
     --错误日志备份
     log.add_lvl_dest(LOG_LEVEL.ERROR)
 end

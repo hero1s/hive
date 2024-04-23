@@ -28,7 +28,11 @@ prop:reader("services", {})
 function MonitorAgent:__init()
     --创建连接
     local ip, port = env_addr("HIVE_MONITOR_ADDR")
-    self.client    = RpcClient(self, ip, port)
+    --过滤clb不能自己连自己
+    if hive.service_name == "monitor" then
+        ip = "127.0.0.1"
+    end
+    self.client = RpcClient(self, ip, port)
     --注册事件
     event_mgr:add_vote(self, "vote_stop_service")
     event_mgr:add_listener(self, "rpc_service_changed")
