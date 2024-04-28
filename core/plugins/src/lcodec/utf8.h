@@ -44,6 +44,9 @@ void utf8_to_gb(const char* src, char* dst, int len);
  */
 void gb_to_utf8(const char* src, char* dst, int len);
 
+int is_utf8(const char* src, char* dst, int len);
+
+
 #ifdef __cplusplus
 }
 #endif

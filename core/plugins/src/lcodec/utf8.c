@@ -87,6 +87,25 @@ void gb_to_utf8(const char* src, char* dst, int len)
     }
     free(strA);
 }
+
+int is_utf8(const char* src, char* dst, int len) {
+    len = MultiByteToWideChar(CP_UTF8, 0, src, -1, NULL, 0);
+    if (len == 0) {
+        return 0;
+    }
+    WCHAR* wide_str = (WCHAR*)malloc(len * sizeof(WCHAR));
+    if (!wide_str) {
+        return 0;
+    }
+    if (MultiByteToWideChar(CP_UTF8, 0, src, -1, wide_str, len) == 0) {
+        free(wide_str);
+        return 0;
+    }
+    int result = WideCharToMultiByte(CP_UTF8, 0, wide_str, -1, NULL, 0, NULL, NULL);
+    free(wide_str);
+    return (result > 0) ? 1 : 0;    
+}
+
 #else   //Linux
 // starkwong: In iconv implementations, inlen and outlen should be type of size_t not uint, which is different in length on Mac
 void utf8_to_gb(const char* src, char* dst, int len)
@@ -155,5 +174,24 @@ void gb_to_utf8(const char* src, char* dst, int len)
     }
     free(inbuf_hold);   // Don't pass in inbuf as it may have been modified
 }
+
+int is_utf8(const char* src, char* dst, int len) {
+    iconv_t cd = iconv_open("UTF-8", "UTF-8");
+    if (cd == (iconv_t)-1) {
+        return 0;
+    }
+    size_t inlen = strlen(src) + 1;
+    size_t outlen = len;
+    char* inbuf = (char*)src;
+    char* outbuf = dst;
+    int result = iconv(cd, &inbuf, &inlen, &outbuf, &outlen);
+    iconv_close(cd);
+    if (result == -1) {
+        return 0;
+    }
+    return 1;
+}
+
+
 #endif
 
