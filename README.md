@@ -52,6 +52,8 @@ Distributed game server framework based on CPP 17 && LUA 5.4
 
 ## ![自动GM页面](doc/gm.jpg)
 
+## ![进程说明](doc/process.png)
+
 ## 有bug或好的建议请@ QQ群:543833695 Toney
 
 ## Friend Open Source
