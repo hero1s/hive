@@ -1,10 +1,10 @@
 --服务状态
 local ServiceStatus              = enum("ServiceStatus", 0)
-ServiceStatus.READY              = 0  --准备
+ServiceStatus.READY              = 0  --准备[集群启动准备数据]
 ServiceStatus.RUN                = 1  --运行中
-ServiceStatus.BUSY               = 2  --繁忙
-ServiceStatus.HALT               = 3  --挂起
-ServiceStatus.STOP               = 4  --停服
+ServiceStatus.BUSY               = 2  --繁忙[业务不再分配调度]
+ServiceStatus.HALT               = 3  --挂起[停止hash接口派发流量]
+ServiceStatus.STOP               = 4  --停服[强杀ds,踢人,关闭集群]
 
 --核心基础错误(1-1000)
 local KernCode                   = enum("KernCode", 0)

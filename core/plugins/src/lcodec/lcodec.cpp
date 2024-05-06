@@ -44,6 +44,11 @@ namespace lcodec {
         gb_to_utf8(str.data(), pOut, sizeof(pOut));
         return pOut;
     }
+    static bool check_is_utf8(std::string_view str) {
+        char pOut[4096];
+        memset(pOut, 0, sizeof(pOut));
+        return is_utf8(str.data(), pOut, sizeof(pOut)) == 1;
+    }
 
     static bitarray* barray(lua_State* L, size_t nbits) {
         bitarray* barray = new bitarray();
@@ -114,6 +119,7 @@ namespace lcodec {
         
         llcodec.set_function("utf8_gbk", utf8_gbk);
         llcodec.set_function("gbk_utf8", gbk_utf8);
+        llcodec.set_function("is_utf8", check_is_utf8);
 
         llcodec.set_function("crc8_msb", lcrc8_msb);
         llcodec.set_function("crc64", lcrc64);

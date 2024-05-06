@@ -113,6 +113,10 @@ local function init_solution_env(env)
     env.GROUPS     = sgroup
 end
 
+local function is_cpp_file(ext_name)
+    return ext_name == ".c" or ext_name == ".cc" or ext_name == ".cpp" or ext_name == ".m"
+end
+
 --收集文件
 local function collect_files(collect_dir, project_dir, source_dir, args, group, collects, is_hfile)
     local dir_files = ldir(collect_dir)
@@ -134,7 +138,7 @@ local function collect_files(collect_dir, project_dir, source_dir, args, group, 
             end
             goto continue
         end
-        if ext_name == ".c" or ext_name == ".cc" or ext_name == ".cpp" then
+        if is_cpp_file(ext_name) then
             local cmp_name          = path_cut(fullname, source_dir)
             local is_obj            = tcontain(args.OBJS, cmp_name)
             local cmp_name_c        = sgsub(cmp_name, '/', '\\')
