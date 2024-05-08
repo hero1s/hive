@@ -30,6 +30,7 @@ luaext:
 	cd extend/ljson; make -j4 SOLUTION_DIR=$(CUR_DIR) -f ljson.mak;
 	cd extend/lmdb; make -j4 SOLUTION_DIR=$(CUR_DIR) -f lmdb.mak;
 	cd extend/luaxlsx; make -j4 SOLUTION_DIR=$(CUR_DIR) -f luaxlsx.mak;
+	cd extend/luaxml; make -j4 SOLUTION_DIR=$(CUR_DIR) -f luaxml.mak;
 
 share:
 	cd extend/mimalloc; make -j4 SOLUTION_DIR=$(CUR_DIR) -f mimalloc.mak;

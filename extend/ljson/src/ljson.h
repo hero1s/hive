@@ -86,29 +86,6 @@ namespace ljson {
         }
 
     protected:
-        bool is_array(lua_State* L, int index, bool emy_as_arr) {
-            size_t raw_len = lua_rawlen(L, index);
-            if (raw_len == 0 && !emy_as_arr) {
-                return false;
-            }
-            lua_guard g(L);
-            lua_pushnil(L);
-            size_t cur_len = 0;
-            while (lua_next(L, index) != 0) {
-                if (!lua_isinteger(L, -2)) {
-                    return false;
-                }
-                size_t key = lua_tointeger(L, -2);
-                if (key <= 0 || key > raw_len) {
-                    return false;
-                }
-                lua_pop(L, 1);
-                cur_len++;
-            }
-            if (cur_len == 0) return true;
-            return cur_len == raw_len;
-        }
-
         yyjson_mut_val* encode_one(lua_State* L, yyjson_mut_doc* doc, bool emy_as_arr, int idx, int depth) {
             if (depth > max_encode_depth) {
                 throw lua_exception("encode can't pack too depth table");
@@ -169,7 +146,7 @@ namespace ljson {
 
         yyjson_mut_val* table_encode(lua_State* L, yyjson_mut_doc* doc, bool emy_as_arr, int index, int depth) {
             index = lua_absindex(L, index);
-            if (!is_array(L, index, emy_as_arr)) {
+            if (!is_lua_array(L, index, emy_as_arr)) {
                 lua_pushnil(L);
                 yyjson_mut_val* object = yyjson_mut_obj(doc);
                 if (!object) throw lua_exception("json encode memory not enough!");

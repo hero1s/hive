@@ -45,25 +45,6 @@ namespace luakit {
         return *value;
     }
 
-    inline bool is_array(lua_State* L, int idx, size_t raw_len) {
-        if (raw_len == 0) return false;
-        lua_guard g(L);
-        size_t cur_len = 0;
-        lua_pushnil(L);
-        while (lua_next(L, idx) != 0) {
-            if (!lua_isinteger(L, -2)) {
-                return false;
-            }
-            size_t key = lua_tointeger(L, -2);
-            if (key <= 0 || key > raw_len) {
-                return false;
-            }
-            cur_len++;
-            lua_pop(L, 1);
-        }
-        return cur_len == raw_len;
-    }
-
     inline void string_encode(lua_State* L, luabuf* buff, int index) {
         size_t sz = 0;
         const char* ptr = lua_tolstring(L, index, &sz);
@@ -106,8 +87,8 @@ namespace luakit {
     inline void table_encode(lua_State* L, luabuf* buff, int index, int depth) {
         index = lua_absindex(L, index);
         value_encode(buff, type_tab_head);
-        size_t rawlen = lua_rawlen(L, index);
-        if (is_array(L, index, rawlen)) {
+        if (is_lua_array(L, index)) {
+            size_t rawlen = lua_rawlen(L, index);
             for (int i = 1; i <= rawlen; ++i) {
                 lua_rawgeti(L, index, i);
                 integer_encode(buff, i);
@@ -298,9 +279,9 @@ namespace luakit {
     inline void serialize_table(lua_State* L, luabuf* buff, int index, int depth, int line) {
         int size = 0;
         index = lua_absindex(L, index);
-        size_t rawlen = lua_rawlen(L, index);
         serialize_value(buff, "{");
-        if (is_array(L, index, rawlen)) {
+        if (is_lua_array(L, index)) {
+            size_t rawlen = lua_rawlen(L, index);
             for (int i = 1; i <= rawlen; ++i){
                 if (size++ > 0) {
                     serialize_value(buff, ",");

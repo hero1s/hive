@@ -52,6 +52,24 @@ namespace luakit {
         lua_State* m_L = nullptr;
     };
 
+    inline bool is_lua_array(lua_State* L, int index, bool emy_as_arr = false) {
+        if (lua_type(L, index) != LUA_TTABLE) return false;
+        size_t raw_len = lua_rawlen(L, index);
+        if (raw_len == 0 && !emy_as_arr) return false;
+        index = lua_absindex(L, index);
+        lua_guard g(L);
+        lua_pushnil(L);
+        size_t curlen = 0;
+        while (lua_next(L, index) != 0) {
+            if (!lua_isinteger(L, -2)) return false;
+            size_t key = lua_tointeger(L, -2);
+            if (key <= 0 || key > raw_len) return false;
+            lua_pop(L, 1);
+            curlen++;
+        }
+        return curlen == raw_len;
+    }
+
     class lua_exception : public std::logic_error {
     public:
         template <class... Args>
