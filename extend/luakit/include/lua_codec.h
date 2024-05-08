@@ -88,7 +88,7 @@ namespace luakit {
         index = lua_absindex(L, index);
         value_encode(buff, type_tab_head);
         if (is_lua_array(L, index)) {
-            size_t rawlen = lua_rawlen(L, index);
+            int rawlen = lua_rawlen(L, index);
             for (int i = 1; i <= rawlen; ++i) {
                 lua_rawgeti(L, index, i);
                 integer_encode(buff, i);
@@ -281,7 +281,7 @@ namespace luakit {
         index = lua_absindex(L, index);
         serialize_value(buff, "{");
         if (is_lua_array(L, index)) {
-            size_t rawlen = lua_rawlen(L, index);
+            int rawlen = lua_rawlen(L, index);
             for (int i = 1; i <= rawlen; ++i){
                 if (size++ > 0) {
                     serialize_value(buff, ",");

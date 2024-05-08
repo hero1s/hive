@@ -31,7 +31,7 @@ namespace luakit {
 
     protected:
         lua_State*  m_L = nullptr;
-        uint32_t    m_index = LUA_NOREF;
+        int32_t     m_index = LUA_NOREF;
     };
 
     template <>

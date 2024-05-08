@@ -55,7 +55,7 @@ namespace luaxml {
                     push_elem2lua(L, it.second[0]);
                 } else {
                     lua_createtable(L, 0, 4);
-                    for (int i = 0; i < child_size; ++i) {
+                    for (size_t i = 0; i < child_size; ++i) {
                         push_elem2lua(L, it.second[i]);
                         lua_seti(L, -2, i + 1);
                     }
@@ -74,7 +74,7 @@ namespace luaxml {
                 switch (lua_type(L, -1)) {
                 case LUA_TSTRING: printer->PushAttribute(key, lua_tostring(L, -1)); break;
                 case LUA_TBOOLEAN: printer->PushAttribute(key, lua_toboolean(L, -1)); break;
-                case LUA_TNUMBER: lua_isinteger(L, -1) ? printer->PushAttribute(key, int64_t(lua_tointeger(L, -1))) : printer->PushAttribute(key, double(lua_tonumber(L, -1))); break;
+                case LUA_TNUMBER: lua_isinteger(L, -1) ? printer->PushAttribute(key, int64_t(lua_tointeger(L, -1))) : printer->PushAttribute(key, lua_tonumber(L, -1)); break;
                 }
                 lua_pop(L, 1);
             }
@@ -84,7 +84,7 @@ namespace luaxml {
         switch (lua_geti(L, -2, 1)) {
         case LUA_TSTRING: printer->PushText(lua_tostring(L, -1)); break;
         case LUA_TBOOLEAN: printer->PushText(lua_toboolean(L, -1)); break;
-        case LUA_TNUMBER: lua_isinteger(L, -1) ? printer->PushText(int64_t(lua_tointeger(L, -1))) : printer->PushText(double(lua_tonumber(L, -1))); break;
+        case LUA_TNUMBER: lua_isinteger(L, -1) ? printer->PushText(int64_t(lua_tointeger(L, -1))) : printer->PushText(lua_tonumber(L, -1)); break;
         }
         lua_pushnil(L);
         lua_seti(L, -4, 1);
@@ -103,13 +103,13 @@ namespace luaxml {
             case LUA_TTABLE: load_table4lua(L, printer); break;
             case LUA_TSTRING: printer->PushText(lua_tostring(L, -1)); break;
             case LUA_TBOOLEAN: printer->PushText(lua_toboolean(L, -1)); break;
-            case LUA_TNUMBER: lua_isinteger(L, -1) ? printer->PushText(int64_t(lua_tointeger(L, -1))) : printer->PushText(double(lua_tonumber(L, -1))); break;
+            case LUA_TNUMBER: lua_isinteger(L, -1) ? printer->PushText(int64_t(lua_tointeger(L, -1))) : printer->PushText(lua_tonumber(L, -1)); break;
             }
             printer->CloseElement();
             return;
         }
         lua_pushstring(L, key);
-        size_t raw_len = lua_rawlen(L, -2);
+        int raw_len = lua_rawlen(L, -2);
         for (int i = 1; i <= raw_len; ++i) {
             lua_rawgeti(L, -2, i);
             load_elem4lua(L, printer);
@@ -134,7 +134,7 @@ namespace luaxml {
 
     static int encode_xml(lua_State* L) {
         XMLPrinter printer;
-        const char* header = luaL_optstring(L, 3, nullptr);
+        const char* header = luaL_optstring(L, 2, nullptr);
         if (header) {
             printer.PushDeclaration(header);
         } else {

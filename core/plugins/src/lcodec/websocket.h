@@ -105,7 +105,7 @@ namespace lcodec {
 
     protected:
         char* xor_byte(char* buffer, char* mask, size_t blen, size_t mlen) {
-            for (int i = 0; i < blen; i++) {
+            for (size_t i = 0; i < blen; i++) {
                 buffer[i] = buffer[i] ^ mask[i % mlen];
             }
             return buffer;
