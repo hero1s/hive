@@ -1,32 +1,84 @@
 #include <cstdint>
 #include <numeric>
 #include <iterator>
-#include "random.hpp"
+#include <random>
 #include "lua_kit.h"
 
-//[min,max]
-static int lrand_range(lua_State* L)
+struct thread_rand_context
 {
-	int64_t v_min = (int64_t)luaL_checkinteger(L, 1);
-	int64_t v_max = (int64_t)luaL_checkinteger(L, 2);
-	if (v_min > v_max)
+	std::vector<int64_t>& get_w() { w.clear(); return w; }
+	std::vector<int64_t>& get_v() { v.clear(); return v; }
+	std::mt19937 generator{ std::random_device{}() };
+private:
+	std::vector<int64_t> w;
+	std::vector<int64_t> v;
+};
+
+static thread_local thread_rand_context thread_rng;
+
+inline unsigned int rand_u32()
+{
+	std::uniform_int_distribution<unsigned int> dis(1, std::numeric_limits<unsigned int>::max());
+	return dis(thread_rng.generator);
+}
+
+///[min.max]
+template<typename IntType>
+IntType rand_range(IntType min, IntType max)
+{
+	std::uniform_int_distribution<IntType> dis(min, max);
+	return dis(thread_rng.generator);
+}
+
+///[min,max)
+template< class RealType = double >
+RealType randf_range(RealType min, RealType max)
+{
+	std::uniform_real_distribution<RealType> dis(min, max);
+	return dis(thread_rng.generator);
+}
+
+template< class RealType = double >
+bool randf_percent(RealType percent)
+{
+	if (percent <= 0.0)
 	{
+		return false;
+	}
+	if (randf_range(0.0f, 1.0f) >= percent)
+	{
+		return false;
+	}
+	return true;
+}
+
+template<typename Values, typename Weights>
+auto rand_weight(const Values& v, const Weights& w)
+{
+	if (v.empty() || v.size() != w.size())
+	{
+		return -1;
+	}
+
+	auto dist = std::discrete_distribution<int>(w.begin(), w.end());
+	int index = dist(thread_rng.generator);
+	return v[index];
+}
+
+//[min,max]
+static int lrand_range(lua_State* L, int64_t v_min, int64_t v_max) {
+	if (v_min > v_max) {
 		return luaL_error(L, "argument error: #1:%lld > #2:%lld", v_min, v_max);
 	}
-	auto res = lrandom::rand_range(v_min, v_max);
+	auto res = rand_range(v_min, v_max);
 	lua_pushinteger(L, res);
 	return 1;
 }
 
 //[min,max]
-static int lrand_range_some(lua_State* L)
-{
-	int64_t v_min = (int64_t)luaL_checkinteger(L, 1);
-	int64_t v_max = (int64_t)luaL_checkinteger(L, 2);
-	int64_t v_count = (int64_t)luaL_checkinteger(L, 3);
+static int lrand_range_some(lua_State* L, int64_t v_min, int64_t v_max, int64_t v_count) {
 	int64_t v_num = v_max - v_min + 1;
-	if (v_count <= 0 || v_num < v_count)
-	{
+	if (v_count <= 0 || v_num < v_count) {
 		return luaL_error(L, "rand_range_some range count:%lld < num:%lld", v_count, v_num);
 	}
 	std::vector<int64_t>* vec = new std::vector<int64_t>(v_num);
@@ -35,7 +87,7 @@ static int lrand_range_some(lua_State* L)
 	int count = 0;
 	while (v_count > 0)
 	{
-		auto index = lrandom::rand_range((size_t)0, vec->size() - 1);
+		auto index = rand_range((size_t)0, vec->size() - 1);
 		lua_pushinteger(L, (*vec)[index]);
 		lua_rawseti(L, -2, ++count);
 		(*vec)[index] = (*vec)[vec->size() - 1];
@@ -47,27 +99,19 @@ static int lrand_range_some(lua_State* L)
 }
 
 //[min,max)
-static int lrandf_range(lua_State* L)
-{
-	double v_min = (double)luaL_checknumber(L, 1);
-	double v_max = (double)luaL_checknumber(L, 2);
-	auto res = lrandom::randf_range(v_min, v_max);
+static int lrandf_range(lua_State* L, double v_min, double v_max) {
+	auto res = randf_range(v_min, v_max);
 	lua_pushnumber(L, res);
 	return 1;
 }
 
-static int lrandf_percent(lua_State* L)
-{
-	double v = (double)luaL_checknumber(L, 1);
-	auto res = lrandom::randf_percent(v);
+static int lrandf_percent(lua_State* L, double v) {
+	auto res = randf_percent(v);
 	lua_pushboolean(L, res);
 	return 1;
 }
 
-static int lrand_weight(lua_State* L)
-{
-	luaL_checktype(L, 1, LUA_TTABLE);
-	luaL_checktype(L, 2, LUA_TTABLE);
+static int lrand_weight(lua_State* L) {
 	std::vector<int64_t> values, weights;
 	luakit::lua_to_native(L, 1,values);
 	luakit::lua_to_native(L, 2, weights);
@@ -79,7 +123,7 @@ static int lrand_weight(lua_State* L)
 	if (sum == 0) {
 		return 0;
 	}
-	int64_t cutoff = lrandom::rand_range(int64_t{ 0 }, sum - 1);
+	int64_t cutoff = rand_range(int64_t{ 0 }, sum - 1);
 	auto vi = values.begin();
 	auto wi = weights.begin();
 	while (cutoff >= *wi)
@@ -91,10 +135,7 @@ static int lrand_weight(lua_State* L)
 	return 1;
 }
 
-static int lrand_weight_some(lua_State* L)
-{
-	luaL_checktype(L, 1, LUA_TTABLE);
-	luaL_checktype(L, 2, LUA_TTABLE);
+static int lrand_weight_some(lua_State* L) {
 	std::vector<int64_t> v, w;
 	luakit::lua_to_native(L, 1,v);
 	luakit::lua_to_native(L, 2,w);
@@ -112,7 +153,7 @@ static int lrand_weight_some(lua_State* L)
 			lua_pop(L, 1); // pop table
 			return 0;
 		}
-		int64_t cutoff = lrandom::rand_range(int64_t{ 0 }, sum - 1);
+		int64_t cutoff = rand_range(int64_t{ 0 }, sum - 1);
 		auto idx = 0;
 		while (cutoff >= w[idx])
 		{

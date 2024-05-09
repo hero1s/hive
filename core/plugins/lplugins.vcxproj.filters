@@ -70,9 +70,6 @@
     <ClInclude Include="src\lcrypt\xxtea.h">
       <Filter>lcrypt</Filter>
     </ClInclude>
-    <ClInclude Include="src\lrandom\random.hpp">
-      <Filter>lrandom</Filter>
-    </ClInclude>
     <ClInclude Include="src\ltimer\croncpp.h">
       <Filter>ltimer</Filter>
     </ClInclude>
