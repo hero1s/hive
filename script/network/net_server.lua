@@ -9,6 +9,7 @@ local eproto_type      = luabus.eproto_type
 local luabus           = luabus
 
 local event_mgr        = hive.get("event_mgr")
+local update_mgr       = hive.get("update_mgr")
 local thread_mgr       = hive.get("thread_mgr")
 local proxy_agent      = hive.get("proxy_agent")
 local heval            = hive.eval
@@ -41,6 +42,15 @@ prop:accessor("timeout", NETWORK_TIMEOUT)
 function NetServer:__init(session_type)
     self.session_type = session_type
     self.codec        = protobuf.pbcodec()
+    --注册退出
+    update_mgr:attach_quit(self)
+end
+
+function NetServer:on_quit()
+    if self.listener then
+        log_info("[NetServer][on_quit]")
+        self.listener:close()
+    end
 end
 
 --induce：根据index推导port

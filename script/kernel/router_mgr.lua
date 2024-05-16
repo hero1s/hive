@@ -139,7 +139,13 @@ end
 
 --通过router发送广播，并收集所有的结果
 function RouterMgr:collect(service_id, rpc, ...)
-    local collect_res          = {}
+    local collect_res = {}
+    if service_id == hive.service_id then
+        local ok, code, res = self:call_target(hive.id, rpc, ...)
+        if check_success(code, ok) then
+            collect_res[#collect_res + 1] = res
+        end
+    end
     local session_id           = thread_mgr:build_session_id()
     local ok, code, target_cnt = self:forward_target(self:hash_router(session_id), "call_broadcast", rpc, session_id, service_id, rpc, ...)
     if check_success(code, ok) then

@@ -16,6 +16,8 @@ local json_decode       = hive.json_decode
 local HTTP_CALL_TIMEOUT = hive.enum("NetwkTime", "HTTP_CALL_TIMEOUT")
 local eproto_type       = luabus.eproto_type
 
+local update_mgr        = hive.get("update_mgr")
+
 local HttpServer        = class()
 local prop              = property(HttpServer)
 prop:reader("listener", nil)        --网络连接对象
@@ -35,6 +37,15 @@ function HttpServer:__init(http_addr, induce)
     self.hcodec   = httpcodec(self.jcodec)
     self.handlers = { GET = {}, POST = {}, PUT = {}, DELETE = {} }
     self:setup(http_addr, induce)
+    --注册退出
+    update_mgr:attach_quit(self)
+end
+
+function HttpServer:on_quit()
+    if self.listener then
+        log_debug("[HttpServer][on_quit]")
+        self.listener:close()
+    end
 end
 
 function HttpServer:setup(http_addr, induce)
@@ -125,11 +136,11 @@ function HttpServer:on_http_request(handlers, socket, url, body, params, headers
         end
         if not target then
             if type(handler) == "function" then
-                local ok, response, headers = pcall(handler, url, body, params, headers)
+                local ok, response, header = pcall(handler, url, body, params, headers)
                 if not ok then
                     response = { code = 1, msg = response }
                 end
-                self:response(socket, 200, response, headers)
+                self:response(socket, 200, response, header)
                 return
             end
         else
@@ -137,12 +148,12 @@ function HttpServer:on_http_request(handlers, socket, url, body, params, headers
                 handler = target[handler]
             end
             if type(handler) == "function" then
-                local ok, response, headers = pcall(handler, target, url, body, params, headers)
+                local ok, response, header = pcall(handler, target, url, body, params, headers)
                 if not ok then
                     log_err("[HttpServer][on_http_request] ok:{}, response:{}", ok, response)
                     response = { code = 1, msg = response }
                 end
-                self:response(socket, 200, response, headers)
+                self:response(socket, 200, response, header)
                 return
             end
         end

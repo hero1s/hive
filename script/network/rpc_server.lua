@@ -15,6 +15,7 @@ local RPCLINK_TIMEOUT     = hive.enum("NetwkTime", "RPCLINK_TIMEOUT")
 local RPC_PROCESS_TIMEOUT = hive.enum("NetwkTime", "RPC_PROCESS_TIMEOUT")
 
 local event_mgr           = hive.get("event_mgr")
+local update_mgr          = hive.get("update_mgr")
 local thread_mgr          = hive.get("thread_mgr")
 local proxy_agent         = hive.get("proxy_agent")
 local heval               = hive.eval
@@ -53,6 +54,15 @@ function RpcServer:__init(holder, ip, port, induce)
     end
     event_mgr:add_listener(self, "rpc_heartbeat")
     event_mgr:add_listener(self, "rpc_register")
+    --注册退出
+    update_mgr:attach_quit(self)
+end
+
+function RpcServer:on_quit()
+    if self.listener then
+        log_info("[RpcServer][on_quit]")
+        self.listener:close()
+    end
 end
 
 --rpc事件
