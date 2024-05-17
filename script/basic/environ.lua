@@ -59,6 +59,13 @@ function environ.table(key, str)
     return ssplit(ogetenv(key) or "", str or ",")
 end
 
+function environ.json(key)
+    local value = ogetenv(key)
+    if value then
+        return json.decode(value)
+    end
+end
+
 local function parse_hosts(value)
     local hosts = {}
     local strs  = ssplit(value, ",")
