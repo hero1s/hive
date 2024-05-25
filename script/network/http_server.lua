@@ -174,6 +174,7 @@ function HttpServer:response(socket, status, response, headers)
         local html              = response:find("<html")
         headers["Content-Type"] = html and "text/html" or "text/plain"
     end
+    headers["connection"] = "close"
     socket:send_data(status, headers, response)
     self:close(token, socket)
 end

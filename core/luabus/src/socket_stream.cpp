@@ -567,7 +567,7 @@ void socket_stream::dispatch_package(bool reset) {
 				}
 				// 数据包解析失败
 				if (m_codec->failed()) {
-					on_error(m_codec->err());
+					on_error(fmt::format("codec decode failed:{}", m_codec->err()).c_str());
 					return;
 				}
 				size_t read_size = m_codec->get_packet_len();

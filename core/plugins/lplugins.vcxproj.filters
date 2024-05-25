@@ -37,9 +37,6 @@
     <ClInclude Include="src\lcodec\redis.h">
       <Filter>lcodec</Filter>
     </ClInclude>
-    <ClInclude Include="src\lcodec\url.h">
-      <Filter>lcodec</Filter>
-    </ClInclude>
     <ClInclude Include="src\lcodec\utf8.h">
       <Filter>lcodec</Filter>
     </ClInclude>

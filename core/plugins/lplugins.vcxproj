@@ -19,7 +19,6 @@
     <ClInclude Include="src\lcodec\lcodec.h"/>
     <ClInclude Include="src\lcodec\mysql.h"/>
     <ClInclude Include="src\lcodec\redis.h"/>
-    <ClInclude Include="src\lcodec\url.h"/>
     <ClInclude Include="src\lcodec\utf8.h"/>
     <ClInclude Include="src\lcodec\websocket.h"/>
     <ClInclude Include="src\lcrypt\base64.h"/>

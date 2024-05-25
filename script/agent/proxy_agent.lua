@@ -7,9 +7,12 @@ local ProxyAgent = singleton(thread)
 local prop       = property(ProxyAgent)
 prop:reader("ignore_statistics", {})
 prop:reader("statis_status", false)
+prop:reader("cur_path", "")
 
 function ProxyAgent:__init()
-    self.service = "proxy"
+    self.service  = "proxy"
+    self.cur_path = stdfs.current_path()
+    --开启调度器
     if scheduler then
         self:startup("worker.proxy")
         --开启统计
@@ -33,7 +36,7 @@ end
 
 --日志分发
 function ProxyAgent:dispatch_log(content, lvl_name)
-    local title = sformat("[%s][%s]", hive.name, lvl_name)
+    local title = sformat("[%s][%s][%s]", hive.name, lvl_name, self.cur_path)
     return self:send("rpc_fire_webhook", title, content)
 end
 
