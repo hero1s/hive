@@ -178,13 +178,25 @@ namespace lcodec {
             return res;
         }
 
-        std::string to_string(size_t i) {
+        std::string to_string() {
+            std::string str = "";
+            for (size_t i = 0; i < size_; ++i) {
+                str.append(raw_get_bit(i) ? "1" : "0");
+            }
+            return str;
+        }
+
+        std::string dump() {
             std::string str = "bitarray<";
             str.append(std::to_string(size_));
             str.append(">[");
             for (size_t i = 0; i < size_; ++i) {
-                str.append(raw_get_bit(i) ? "1," : "0,");
+                if (i > 0 && i % 8 == 0) {
+                    str.append(",");
+                }
+                str.append(raw_get_bit(i) ? "1" : "0");
             }
+            str.append("]");
             return str;
         }
 

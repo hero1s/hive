@@ -151,7 +151,8 @@ namespace lcodec {
             "from_uint8", &bitarray::from_number<uint8_t>,
             "from_uint16", &bitarray::from_number<uint16_t>,
             "from_uint32", &bitarray::from_number<uint32_t>,
-            "from_uint64", &bitarray::from_number<uint64_t>
+            "from_uint64", &bitarray::from_number<uint64_t>,
+            "dump",&bitarray::dump
             );
 
         return llcodec;
