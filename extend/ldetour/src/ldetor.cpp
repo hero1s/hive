@@ -28,7 +28,7 @@ namespace ldetour {
             "create_query", &nav_mesh::create_query,
             "get_max_tiles", &nav_mesh::get_max_tiles
             );
-        auto ldetour = kit_state.new_table();
+        auto ldetour = kit_state.new_table("detour");
         ldetour.set_function("create_mesh", create_mesh);
         return ldetour;
     }
