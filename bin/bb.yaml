@@ -1,0 +1,13 @@
+---
+foo:
+  id: 123456
+  name: Everyone has same name
+  age: 10
+bar:
+  id: 123456
+  name: Everyone has same name
+  age: 20
+base:
+  id: 123456
+  name: Everyone has same name
+...
