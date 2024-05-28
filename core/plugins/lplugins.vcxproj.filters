@@ -82,6 +82,9 @@
     <ClInclude Include="src\protobuf\pb.h">
       <Filter>protobuf</Filter>
     </ClInclude>
+    <ClInclude Include="src\protobuf\xor.h">
+      <Filter>protobuf</Filter>
+    </ClInclude>
     <ClInclude Include="src\tools\helper.h">
       <Filter>tools</Filter>
     </ClInclude>

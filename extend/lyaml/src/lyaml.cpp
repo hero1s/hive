@@ -309,7 +309,7 @@ namespace lyaml {
 
     lua_table open_lyaml(lua_State* L) {
         kit_state kit_state(L);
-        lua_table yaml = kit_state.new_table("yaml");
+        lua_table yaml = kit_state.new_table();
         yaml.set_function("decode", decode_yaml);
         yaml.set_function("encode", encode_yaml);
         yaml.set_function("open", open_yaml);

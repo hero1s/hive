@@ -34,6 +34,7 @@
     <ClInclude Include="src\ltimer\ltimer.h"/>
     <ClInclude Include="src\lzset\zset.hpp"/>
     <ClInclude Include="src\protobuf\pb.h"/>
+    <ClInclude Include="src\protobuf\xor.h"/>
     <ClInclude Include="src\tools\helper.h"/>
   </ItemGroup>
   <ItemGroup>

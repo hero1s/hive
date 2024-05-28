@@ -210,7 +210,7 @@ namespace luaxml {
 
 extern "C" {
     LUALIB_API int luaopen_luaxml(lua_State* L) {
-        auto luaxlsx = luaxml::open_luaxml(L);
-        return luaxlsx.push_stack();
+        auto lxml = luaxml::open_luaxml(L);
+        return lxml.push_stack();
     }
 }

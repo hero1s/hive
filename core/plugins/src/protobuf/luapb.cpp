@@ -1,6 +1,7 @@
 #include <algorithm>
 #include "pb.c"
 #include "lua_kit.h"
+#include "xor.h"
 
 using namespace std;
 using namespace luakit;
@@ -70,7 +71,11 @@ namespace luapb {
             }
             *len = pb_bufflen(e.b);
             auto data = (uint8_t*)pb_buffer(e.b);
-            ((pb_header*)data)->len = *len;            
+            ((pb_header*)data)->len = *len;
+            //encrypt
+            if (encrypt(header.flag)) {
+                xor_code(data, *len);
+            }
             return data;
         }
 
@@ -84,7 +89,12 @@ namespace luapb {
             }
             //data
             size_t data_len;
-            const char* data = (const char*)m_slice->data(&data_len);
+            char* data = (char*)m_slice->data(&data_len);
+            //encrypt
+            if (encrypt(header->flag)) {
+                xor_code((uint8_t*)data, data_len);
+            }
+
             //return
             int top = lua_gettop(L);
             lua_pushinteger(L, data_len);
@@ -120,6 +130,9 @@ namespace luapb {
             return lpb_type(L, LS, pb_lslice(it->second.c_str(), it->second.size()));
         }
 
+        bool encrypt(uint8_t flag) {
+            return (flag & 0x04) == 0x04;
+        }
     protected:
     };
     
@@ -134,6 +147,7 @@ namespace luapb {
         lua_table luapb(L);
         luapb.set_function("pbcodec", pb_codec);
         luapb.set_function("bind_cmd", [](uint32_t cmd_id, std::string fullname) { pb_cmd_ids[cmd_id] = fullname; });
+        luapb.set_function("xor_init", [](uint64_t key) { xor_init(key); });
         return luapb;
     }
 }
