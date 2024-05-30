@@ -23,7 +23,7 @@ function Listener:add_trigger(trigger, event, handler)
     local func_name     = handler or event
     local callback_func = trigger[func_name]
     if not callback_func or type(callback_func) ~= "function" then
-        log_err("[Listener][add_trigger] event({}) handler is nil!", event)
+        log_err("[Listener][add_trigger] event({}) handler is nil!,from({})", event, hive.where_call())
         return
     end
     local info     = { trigger, func_name }
@@ -58,13 +58,13 @@ end
 --支持队列处理
 function Listener:add_listener(listener, event, handler, queue_param)
     if self._listeners[event] then
-        log_err("[Listener][add_listener] event({}) repeat!", event)
+        log_err("[Listener][add_listener] event({}) repeat!,from({})", event, hive.where_call())
         return
     end
     local func_name     = handler or event
     local callback_func = listener[func_name]
     if not callback_func or type(callback_func) ~= "function" then
-        log_err("[Listener][add_listener] event({}) callback is nil!", event)
+        log_err("[Listener][add_listener] event({}) callback is nil!,from({})", event, hive.where_call())
         return
     end
     self._listeners[event] = { listener, func_name, queue_param }
@@ -85,7 +85,7 @@ function Listener:add_cmd_listener(listener, cmd, handler)
     local func_name     = handler
     local callback_func = listener[func_name]
     if not callback_func or type(callback_func) ~= "function" then
-        log_err("[Listener][add_cmd_listener] cmd({}) handler is nil!", cmd)
+        log_err("[Listener][add_cmd_listener] cmd({}) handler is nil!,from({})", cmd, hive.where_call())
         return
     end
     self._commands[cmd] = { listener, func_name }

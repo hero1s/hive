@@ -155,3 +155,9 @@ function string_ext.chars(src)
     end
     return chars, scount
 end
+
+-- 获取字符串中的字符数量(汉字字母都算一个)
+function string_ext.get_char_len(src)
+    local chars = string_ext.chars(src)
+    return #chars
+end

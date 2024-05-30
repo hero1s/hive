@@ -16,7 +16,7 @@ prop:reader("local_run", false) --本地线程服务
 function RedisAgent:__init()
 end
 
-function RedisAgent:try_lock(key, seconds)
+function RedisAgent:redis_lock(key, seconds)
     local expire_time   = hive.now + seconds
     local ok, code, res = self:execute({ "set", key, expire_time, "ex", seconds, "nx" })
     if check_success(code, ok) and res == "OK" then
