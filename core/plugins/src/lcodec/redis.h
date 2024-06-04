@@ -7,13 +7,13 @@
 #endif
 
 #include "lua_kit.h"
+#include "fmt/core.h"
 
 using namespace std;
 using namespace luakit;
 
 namespace lcodec {
     inline size_t       CRLF_LEN    = 2;
-    inline size_t       HEAD_SIZE   = 24;
     inline const char*  RDS_CRLF    = "\r\n";
 
     class rdscodec : public codec_base {
@@ -27,8 +27,7 @@ namespace lcodec {
             m_buf->clean();
             int n = lua_gettop(L);
             uint32_t session_id = lua_tointeger(L, index++);
-            char* head = (char*)m_buf->peek_space(HEAD_SIZE);
-            m_buf->pop_space(sprintf(head, "*%d\r\n", n - index + 1));
+            m_buf->write(fmt::format("*{}\r\n", n - index + 1));
             for (int i = index; i <= n; ++i) {
                 encode_bulk_string(L, i);
             }
@@ -160,28 +159,24 @@ namespace lcodec {
 
         void number_encode(double value) {
             auto svalue = std::to_string(value);
-            char* head = (char*)m_buf->peek_space(HEAD_SIZE + svalue.size());
-            m_buf->pop_space(sprintf(head, "$%zd\r\n%s\r\n", svalue.size(), svalue.c_str()));
+            m_buf->write(fmt::format("${}\r\n{}\r\n", svalue.size(), svalue.c_str()));
         }
 
         void integer_encode(int64_t integer) {
             auto svalue = std::to_string(integer);
-            char* head = (char*)m_buf->peek_space(HEAD_SIZE + svalue.size());
-            m_buf->pop_space(sprintf(head, "$%zd\r\n%s\r\n", svalue.size(), svalue.c_str()));
+            m_buf->write(fmt::format("${}\r\n{}\r\n", svalue.size(), svalue.c_str()));
         }
 
         void string_encode(lua_State* L, int idx) {
             size_t len;
             const char* data = lua_tolstring(L, idx, &len);
-            char* head = (char*)m_buf->peek_space(HEAD_SIZE + len);
-            m_buf->pop_space(sprintf(head, "$%zd\r\n%s\r\n", len, data));
+            m_buf->write(fmt::format("${}\r\n{}\r\n", len, string_view(data, len)));
         }
 
         void table_encode(lua_State* L, int idx) {
             size_t len;
             char* body = (char*)m_jcodec->encode(L, idx, &len);
-            char* head = (char*)m_buf->peek_space(HEAD_SIZE + len);
-            m_buf->pop_space(sprintf(head, "$%zd\r\n[js]%s\r\n", len + 4, body));
+            m_buf->write(fmt::format("${}\r\n[js]{}\r\n", len + 4, string_view(body, len)));
         }
 
         void encode_bulk_string(lua_State* L, int idx) {
