@@ -63,7 +63,7 @@ function OnlineAgent:query_player(player_id)
     if router then
         return router:call("rpc_query_player_service", player_id, service_id)
     end
-    return false, "router not connected"
+    return false, "router not connected", 0
 end
 
 --有序
