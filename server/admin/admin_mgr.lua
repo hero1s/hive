@@ -195,8 +195,8 @@ function AdminMgr:exec_player_cmd(cmd_name, player_id, ...)
         end
         return { code = codeoe, msg = res }
     end
-    local ok1, code, lobby_id = online_agent:query_player(player_id)
-    if check_success(code, ok1) and lobby_id == 0 then
+    local ok1, lobby_id = online_agent:query_player(player_id)
+    if ok1 and lobby_id == 0 then
         --离线处理
         router_mgr:call_lobby_hash(player_id, "rpc_offline_player_gm", cmd_name, player_id, ...)
         return { code = SUCCESS, msg = "玩家不在线,已发送离线处理" }

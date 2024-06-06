@@ -58,12 +58,9 @@ function OnlineAgent:query_openid(open_id)
 end
 
 function OnlineAgent:query_player(player_id)
-    local service_id = sname2sid("lobby")
-    local router     = router_mgr:hash_router(player_id)
-    if router then
-        return router:call("rpc_query_player_service", player_id, service_id)
-    end
-    return false, "router not connected", 0
+    local service_id   = sname2sid("lobby")
+    local ok, lobby_id = router_mgr:call_router(player_id, "rpc_query_player_service", player_id, service_id)
+    return ok, ok and lobby_id or 0
 end
 
 --有序
