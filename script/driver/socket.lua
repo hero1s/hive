@@ -135,6 +135,7 @@ function Socket:on_socket_error(token, err)
         if self.session then
             self.session = nil
             self.alive   = false
+            log_info("[Socket][on_socket_error] err: {} - {}!", err, token)
             self.host:on_socket_error(self, token, err)
             self.token = nil
         end

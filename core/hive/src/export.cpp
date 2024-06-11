@@ -13,6 +13,7 @@ extern "C"
 {
 	void open_custom_libs(lua_State* L)
 	{
+	    lua_checkstack(L, 1000);
 		//core
 		REGISTER_CUSTOM_LIBRARY("lualog", luaopen_lualog);
 		REGISTER_CUSTOM_LIBRARY("luapb", luaopen_luapb);

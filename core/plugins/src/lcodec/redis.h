@@ -96,6 +96,7 @@ namespace lcodec {
                 for (int i = 1; i <= length; ++i) {
                     string_view line;
                     if (!read_line(buf, line)) throw length_error("redis text not full");
+                    if (line.size() < 1) throw lua_exception("invalid redis array format,len is zero");
                     switch (line[0]) {
                     case ':':
                         parse_redis_integer(L, line.substr(1));
@@ -107,7 +108,7 @@ namespace lcodec {
                         parse_redis_array(L, line.substr(1), buf);
                         break;
                     default:
-                        throw lua_exception("invalid redis format");
+                        throw lua_exception(fmt::format("invalid redis array format:{}", line).c_str());
                         break;
                     }
                     lua_seti(L, -2, i);
@@ -125,6 +126,7 @@ namespace lcodec {
         void parse_redis_packet(lua_State* L, string_view& buf) {
             string_view line;
             if (!read_line(buf, line)) throw length_error("redis text not full");
+            if (line.size() < 1) throw lua_exception("invalid redis format,len is zero");
             switch (line[0]) {
             case '+':
                 parse_redis_success(L, line.substr(1));
@@ -142,7 +144,7 @@ namespace lcodec {
                 parse_redis_array(L, line.substr(1), buf, true);
                 break;
             default:
-                throw lua_exception("invalid redis format");
+                throw lua_exception(fmt::format("invalid redis format:{}",line).c_str());
                 break;
             }
         }
@@ -195,8 +197,7 @@ namespace lcodec {
                 table_encode(L, idx);
                 break;
             default:
-                m_buf->write("$-1\r\n");
-                break;
+                luaL_error(L,"Invalid value type:%s,idx:%d", lua_typename(L, type), idx);
             }
         }
 

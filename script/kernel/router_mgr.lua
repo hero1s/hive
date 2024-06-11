@@ -130,7 +130,8 @@ function RouterMgr:hash_router(hash_key)
 end
 
 --通过router发送点对点消息
-function RouterMgr:forward_target(router, method, rpc, session_id, ...)
+function RouterMgr:forward_target(hash_key, method, rpc, session_id, ...)
+    local router = self:hash_router(hash_key)
     if router then
         return router:forward_socket(method, rpc, session_id, ...)
     end
@@ -147,7 +148,7 @@ function RouterMgr:collect(service_id, rpc, ...)
         end
     end
     local session_id           = thread_mgr:build_session_id()
-    local ok, code, target_cnt = self:forward_target(self:hash_router(session_id), "call_broadcast", rpc, session_id, service_id, rpc, ...)
+    local ok, code, target_cnt = self:forward_target(session_id, "call_broadcast", rpc, session_id, service_id, rpc, ...)
     if check_success(code, ok) then
         while target_cnt > 0 do
             target_cnt              = target_cnt - 1
@@ -162,7 +163,7 @@ end
 
 --通过router传递广播
 function RouterMgr:broadcast(service_id, rpc, ...)
-    return self:forward_target(self:hash_router(service_id + hive.id), "call_broadcast", rpc, 0, service_id, rpc, ...)
+    return self:forward_target(service_id + hive.id, "call_broadcast", rpc, 0, service_id, rpc, ...)
 end
 
 --发送给指定目标
@@ -172,7 +173,7 @@ function RouterMgr:call_target(target, rpc, ...)
         return tunpack(res)
     end
     local session_id = thread_mgr:build_session_id()
-    return self:forward_target(self:hash_router(target + hive.id), "call_target", rpc, session_id, target, rpc, ...)
+    return self:forward_target(target + hive.id, "call_target", rpc, session_id, target, rpc, ...)
 end
 
 --发送给指定目标
@@ -181,7 +182,7 @@ function RouterMgr:send_target(target, rpc, ...)
         event_mgr:notify_listener(rpc, ...)
         return true
     end
-    return self:forward_target(self:hash_router(target + hive.id), "call_target", rpc, 0, target, rpc, ...)
+    return self:forward_target(target + hive.id, "call_target", rpc, 0, target, rpc, ...)
 end
 
 --发送给路由
@@ -210,32 +211,32 @@ end
 --发送给指定service的hash
 function RouterMgr:call_hash(service_id, hash_key, rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    return self:forward_target(self:hash_router(hash_key), "call_hash", rpc, session_id, service_id, hash_key, rpc, ...)
+    return self:forward_target(hash_key, "call_hash", rpc, session_id, service_id, hash_key, rpc, ...)
 end
 
 --发送给指定service的hash
 function RouterMgr:send_hash(service_id, hash_key, rpc, ...)
-    return self:forward_target(self:hash_router(hash_key), "call_hash", rpc, 0, service_id, hash_key, rpc, ...)
+    return self:forward_target(hash_key, "call_hash", rpc, 0, service_id, hash_key, rpc, ...)
 end
 
 --发送给指定service的master
 function RouterMgr:call_master(service_id, rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    return self:forward_target(self:hash_router(service_id + hive.id), "call_master", rpc, session_id, service_id, rpc, ...)
+    return self:forward_target(service_id + hive.id, "call_master", rpc, session_id, service_id, rpc, ...)
 end
 
 --发送给指定service的master
 function RouterMgr:send_master(service_id, rpc, ...)
-    return self:forward_target(self:hash_router(service_id + hive.id), "call_master", rpc, 0, service_id, rpc, ...)
+    return self:forward_target(service_id + hive.id, "call_master", rpc, 0, service_id, rpc, ...)
 end
 
 function RouterMgr:call_player(service_id, player_id, rpc, ...)
     local session_id = thread_mgr:build_session_id()
-    return self:forward_target(self:hash_router(player_id), "call_player", rpc, session_id, service_id, player_id, rpc, ...)
+    return self:forward_target(player_id, "call_player", rpc, session_id, service_id, player_id, rpc, ...)
 end
 
 function RouterMgr:send_player(service_id, player_id, rpc, ...)
-    return self:forward_target(self:hash_router(player_id), "call_player", rpc, 0, service_id, player_id, rpc, ...)
+    return self:forward_target(player_id, "call_player", rpc, 0, service_id, player_id, rpc, ...)
 end
 
 --生成针对服务的访问接口

@@ -189,7 +189,7 @@ bool socket_router::do_forward_broadcast(router_header* header, int source, char
 			broadcast_num++;
 		}
 	}
-	return broadcast_num > 0;
+	return true;
 }
 
 bool socket_router::do_forward_hash(router_header* header, char* data, size_t data_len, std::string& error, bool router) {

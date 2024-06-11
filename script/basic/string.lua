@@ -130,12 +130,12 @@ function string_ext.count(value, chl)
 end
 
 function string_ext.chars(src)
-    local chars = {}
+    local chars  = {}
+    local scount = 0 --单字节
     if not src then
-        return chars
+        return chars, scount
     end
     local pos_bytes = 1
-    local scount    = 0 --单字节
     while pos_bytes <= #src do
         local byteCount
         local curByte = sbyte(src, pos_bytes)
