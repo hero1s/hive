@@ -13,6 +13,7 @@
 #include <functional>
 #include <type_traits>
 #include <string.h>
+#include <unordered_map>
 
 extern "C"
 {
@@ -23,16 +24,21 @@ extern "C"
 
 namespace luakit {
 
-    #define MAX_LUA_META_KEY 128
-
+    static thread_local std::unordered_map<size_t, std::string> meta_name_cache;
     //错误函数
     using error_fn = std::function<void(std::string_view err)>;
 
     template<typename T>
     const char* lua_get_meta_name() {
-        thread_local char meta_name[MAX_LUA_META_KEY];
+        thread_local char meta_name[128];
         using OT = std::remove_cv_t<std::remove_pointer_t<T>>;
-        snprintf(meta_name, MAX_LUA_META_KEY, "__lua_class_meta_%zu__", typeid(OT).hash_code());
+        auto type_hash = typeid(OT).hash_code();
+        auto it = meta_name_cache.find(type_hash);
+        if (it != meta_name_cache.end()) {
+            return it->second.c_str();
+        }
+        snprintf(meta_name, 128, "__lua_class_meta_%zu__", type_hash);
+        meta_name_cache[type_hash] = meta_name;
         return meta_name;
     }
 
