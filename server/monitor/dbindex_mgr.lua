@@ -105,7 +105,7 @@ function DBIndexMgr:build_dbindex(rebuild)
         local index      = {}
         index.key        = {}
         index.name       = conf.name
-        index.unique     = conf.unique
+        index.unique     = (not self.sharding) and conf.unique or false
         index.background = true
         if conf.expireAfterSeconds > 0 then
             index.expireAfterSeconds = conf.expireAfterSeconds
@@ -157,10 +157,10 @@ function DBIndexMgr:on_service_ready(id, service_name)
     --启动检测索引
     local ok, res = self:check_dbindexes()
     if not ok then
-        thread_mgr:success_call(2000, function()
+        thread_mgr:success_call(5000, function()
             log_err("[DBIndexMgr][on_service_ready] not create dbindex:{},please fast repair !!!", res)
             return false
-        end)
+        end, 1000, 3)
     end
 end
 

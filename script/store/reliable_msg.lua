@@ -25,7 +25,7 @@ end
 
 function ReliableMsg:build_index(sharding)
     local indexs = {
-        { key = { uuid = 1 }, name = "uuid", unique = true, background = true },
+        { key = { uuid = 1 }, name = "uuid", unique = (not sharding), background = true },
     }
     if not sharding then
         tinsert(indexs, { key = { to = 1 }, name = "to", unique = false, background = true })
