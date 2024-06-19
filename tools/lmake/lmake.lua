@@ -203,6 +203,10 @@ local function load_env_file(file, env)
         error(sformat("load lmake file failed :%s", res))
         return false
     end
+    local vsversion = os.getenv("HIVE_VSVERSION")
+    if vsversion then
+        env.VSVERSION = vsversion
+    end
     return true
 end
 

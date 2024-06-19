@@ -13,7 +13,7 @@ local readfile      = io_ext.readfile
 local GMType        = enum("GMType")
 local KernCode      = enum("KernCode")
 local SUCCESS       = KernCode.SUCCESS
-local check_success = hive.success
+
 local cmdline       = hive.get("cmdline")
 local event_mgr     = hive.get("event_mgr")
 local router_mgr    = hive.get("router_mgr")
