@@ -78,11 +78,16 @@ namespace luakit {
     protected:
         template <class... Args>
         std::string format(const char* fmt, Args&&... args) {
-            int buf_size = std::snprintf(nullptr, 0, fmt, std::forward<Args>(args)...) + 1;
-            if (buf_size < 0) return "unknown error!";
-            std::unique_ptr<char[]> buf = std::make_unique<char[]>(buf_size);
-            std::snprintf(buf.get(), buf_size, fmt, std::forward<Args>(args)...);
-            return std::string(buf.get(), buf_size - 1);
+            int required_size = std::snprintf(nullptr, 0, fmt, std::forward<Args>(args)...);
+            if (required_size < 0) return "unknown error!";
+            std::string result;
+            result.reserve(required_size + 1);
+            char* buffer = &result[0];
+            int actual_size = std::snprintf(buffer, required_size + 1, fmt, std::forward<Args>(args)...);
+            if (actual_size < 0 || actual_size > required_size) {
+                return "format error: snprintf reported an unexpected result";
+            }
+            return result;
         }
     };
 
