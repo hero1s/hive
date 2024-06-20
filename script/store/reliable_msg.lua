@@ -23,7 +23,7 @@ function ReliableMsg:__init(db_name, table_name, due_day)
     self.table_name = table_name
 end
 
-function ReliableMsg:build_index(sharding)
+function ReliableMsg:generate_index(sharding)
     local indexs = {
         { key = { uuid = 1 }, name = "uuid", unique = (not sharding), background = true },
     }
@@ -33,29 +33,27 @@ function ReliableMsg:build_index(sharding)
     if self.ttl then
         tinsert(indexs, { key = { ttl = 1 }, expireAfterSeconds = 0, name = "ttl", unique = false, background = true })
     end
-    local query    = { self.table_name, indexs }
-    local ok, code = mongo_agent:create_indexes(query, nil, self.db_name)
-    if check_success(code, ok) then
-        log_info("[ReliableMsg][build_index] rmsg table:{},sharding:{} build due index success", self.table_name, sharding)
-    else
-        log_err("[ReliableMsg][build_index] rmsg table:{},sharding:{} build due index failed", self.table_name, sharding)
+    return indexs
+end
+
+function ReliableMsg:build_index(sharding, rebuild)
+    local indexs = self:generate_index(sharding)
+    for _, index in pairs(indexs) do
+        if not sharding or index.name ~= "to" then
+            mongo_agent:rebuild_create_index(index, self.table_name, self.db_name, rebuild)
+        end
     end
 end
 
 function ReliableMsg:check_indexes(sharding)
+    local indexs  = self:generate_index(sharding)
     local success = true
     local miss    = {}
-    if not mongo_agent:check_indexes({ uuid = 1 }, self.table_name, self.db_name, false) then
-        success = false
-        tinsert(miss, { db = self.db_name, co = self.table_name, key = { uuid = 1 } })
-    end
-    if not mongo_agent:check_indexes({ to = 1 }, self.table_name, self.db_name, sharding) then
-        success = false
-        tinsert(miss, { db = self.db_name, co = self.table_name, key = { to = 1 } })
-    end
-    if not mongo_agent:check_indexes({ ttl = 1 }, self.table_name, self.db_name, false) then
-        success = false
-        tinsert(miss, { db = self.db_name, co = self.table_name, key = { ttl = 1 }, expireAfterSeconds = 0 })
+    for _, index in ipairs(indexs) do
+        if not mongo_agent:check_indexes(index, self.table_name, self.db_name, sharding) then
+            success = false
+            tinsert(miss, { db = self.db_name, co = self.table_name, index = index })
+        end
     end
     return success, miss
 end

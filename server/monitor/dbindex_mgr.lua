@@ -5,7 +5,7 @@ local tjoin         = table_ext.join
 local log_err       = logger.err
 local log_info      = logger.info
 local log_warn      = logger.warn
-local check_success = hive.success
+
 local monitor       = hive.get("monitor")
 local mongo_agent   = hive.get("mongo_agent")
 local thread_mgr    = hive.get("thread_mgr")
@@ -14,6 +14,8 @@ local rmsg_agent    = hive.get("rmsg_agent")
 local config_mgr    = hive.get("config_mgr")
 
 local GMType        = enum("GMType")
+
+local dbindex_db    = config_mgr:init_table("dbindex", "db_name", "table_name", "name")
 
 local DBIndexMgr    = singleton()
 local prop          = property(DBIndexMgr)
@@ -57,14 +59,12 @@ end
 function DBIndexMgr:build_index(rebuild)
     log_info("[DBIndexMgr][build_index] rebuild:{}", rebuild)
     self:build_dbindex(rebuild)
-    rmsg_agent:build_index(self.sharding)
+    rmsg_agent:build_index(self.sharding, rebuild)
 end
 
 function DBIndexMgr:check_dbindexes()
-    log_info("[DBIndexMgr][check_dbindexes]")
-    local success    = true
-    local miss       = {}
-    local dbindex_db = config_mgr:init_table("dbindex", "db_name", "table_name", "name")
+    local success = true
+    local miss    = {}
     for _, conf in dbindex_db:iterator() do
         local db_name    = conf.db_name
         local table_name = conf.table_name
@@ -76,13 +76,10 @@ function DBIndexMgr:check_dbindexes()
         if self.sharding and conf.sharding then
             only_key = true
         end
-        local check_key = {}
-        for _, v in ipairs(conf.keys) do
-            check_key[v] = 1
-        end
-        if not mongo_agent:check_indexes(check_key, table_name, db_name, only_key) then
+        local index = self:generate_index(conf)
+        if not mongo_agent:check_indexes(index, table_name, db_name, only_key) then
             success = false
-            tinsert(miss, { db = db_name, co = table_name, key = check_key })
+            tinsert(miss, { db = db_name, co = table_name, index = index })
         end
     end
     local ok, res = rmsg_agent:check_indexes(self.sharding)
@@ -90,56 +87,44 @@ function DBIndexMgr:check_dbindexes()
         miss    = tjoin(res, miss)
         success = false
     end
+    log_warn("[DBIndexMgr][check_dbindexes] ret:{},miss:{}", success, miss)
     return success, miss
+end
+
+-- 检测表是否分片
+function DBIndexMgr:get_key_unique(db_name, table_name, unique)
+    if self.sharding then
+        for _, conf in dbindex_db:iterator() do
+            if db_name == conf.db_name and table_name == conf.table_name and conf.sharding then
+                return false
+            end
+        end
+    end
+    return unique
+end
+
+function DBIndexMgr:generate_index(conf)
+    local index      = {}
+    index.key        = {}
+    index.name       = conf.name
+    index.unique     = self:get_key_unique(conf.db_name, conf.table_name, conf.unique)
+    index.background = true
+    if conf.expireAfterSeconds > 0 then
+        index.expireAfterSeconds = conf.expireAfterSeconds
+    end
+    for _, v in ipairs(conf.keys) do
+        index.key[v] = 1
+    end
+    return index
 end
 
 function DBIndexMgr:build_dbindex(rebuild)
     log_info("[DBIndexMgr][build_dbindex] rebuild:{},sharding:{}", rebuild, self.sharding)
-    local dbindex_db = config_mgr:init_table("dbindex", "db_name", "table_name", "name")
     for _, conf in dbindex_db:iterator() do
-        if self.sharding and conf.sharding then
-            goto continue
+        if not self.sharding or not conf.sharding then
+            local index = self:generate_index(conf)
+            mongo_agent:rebuild_create_index(index, conf.table_name, conf.db_name, rebuild)
         end
-        local db_name    = conf.db_name
-        local table_name = conf.table_name
-        local index      = {}
-        index.key        = {}
-        index.name       = conf.name
-        index.unique     = (not self.sharding) and conf.unique or false
-        index.background = true
-        if conf.expireAfterSeconds > 0 then
-            index.expireAfterSeconds = conf.expireAfterSeconds
-        end
-        for _, v in ipairs(conf.keys) do
-            index.key[v] = 1
-        end
-        --检测是否创建过索引
-        if mongo_agent:check_indexes(index.key, table_name, db_name, false) then
-            log_info("[DBIndexMgr][build_index] db[{}],table[{}],key[{}] is exist index", db_name, table_name, index.name)
-            goto continue
-        end
-        local query    = { table_name, { index } }
-        local ok, code = mongo_agent:create_indexes(query, 1, db_name)
-        if check_success(code, ok) then
-            log_info("[DBIndexMgr][build_index] db[{}],table[{}],key[{}] build index success", db_name, table_name, index.name)
-        else
-            log_err("[DBIndexMgr][build_index] db[{}],table[{}] build index[{}] fail:{}", db_name, table_name, index, code)
-            if rebuild then
-                ok, code = mongo_agent:drop_indexes({ table_name, index.name }, 1, db_name)
-                if check_success(code, ok) then
-                    log_warn("[DBIndexMgr][build_index] db[{}],table[{}],key[{}] drop index success", db_name, table_name, index.name)
-                    ok, code = mongo_agent:create_indexes(query, 1, db_name)
-                    if check_success(code, ok) then
-                        log_info("[DBIndexMgr][build_index] db[{}],table[{}],key[{}] drop and build index success", db_name, table_name, index.name)
-                    else
-                        log_err("[DBIndexMgr][build_index] db[{}],table[{}] drop and build index[{}] fail:{}", db_name, table_name, index, code)
-                    end
-                else
-                    log_err("[DBIndexMgr][build_index] db[{}],table[{}],key[{}] drop index fail:{}", db_name, table_name, index.name, code)
-                end
-            end
-        end
-        :: continue ::
     end
 end
 

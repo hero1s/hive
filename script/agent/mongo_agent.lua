@@ -1,19 +1,20 @@
 --mongo_agent.lua
-local tunpack      = table.unpack
-local check_failed = hive.failed
-local log_err      = logger.err
-local log_info     = logger.info
-local log_warn     = logger.warn
-local mrandom      = math_ext.random
-local tequals      = table_ext.equals
-local tequal_keys  = table_ext.equal_keys
-local KernCode     = enum("KernCode")
-local router_mgr   = hive.load("router_mgr")
-local scheduler    = hive.load("scheduler")
+local tunpack       = table.unpack
+local check_failed  = hive.failed
+local log_err       = logger.err
+local log_info      = logger.info
+local log_warn      = logger.warn
+local mrandom       = math_ext.random
+local tequals       = table_ext.equals
+local tequal_keys   = table_ext.equal_keys
+local KernCode      = enum("KernCode")
+local router_mgr    = hive.load("router_mgr")
+local scheduler     = hive.load("scheduler")
+local check_success = hive.success
 
-local AUTOINCCC    = environ.get("HIVE_DB_AUTOINCTB", "autoinctb")
-local MongoAgent   = singleton()
-local prop         = property(MongoAgent)
+local AUTOINCCC     = environ.get("HIVE_DB_AUTOINCTB", "autoinctb")
+local MongoAgent    = singleton()
+local prop          = property(MongoAgent)
 prop:reader("service", "mongo")
 prop:reader("local_run", false) --本地线程服务
 
@@ -180,7 +181,7 @@ function MongoAgent:update_sheet(sheet_name, primary_id, primary_key, udata, db_
 end
 
 --检测是否建立了索引(only_key仅检测字段名)
-function MongoAgent:check_indexes(key, co_name, db_name, only_key)
+function MongoAgent:check_indexes(index, co_name, db_name, only_key)
     local ok, code, indexs = self:get_indexes(co_name, db_name)
     if check_failed(code, ok) then
         log_err("[MongoAgent][check_indexes] failed:{},{},ok:{},code:{},indexs:{}", co_name, db_name, ok, code, indexs)
@@ -188,11 +189,19 @@ function MongoAgent:check_indexes(key, co_name, db_name, only_key)
     end
     local cmp_func = only_key and tequal_keys or tequals
     for i, v in ipairs(indexs) do
-        if cmp_func(v.key, key) then
+        if cmp_func(v.key, index.key) then
+            if index.unique and not v.unique then
+                log_warn("[MongoAgent][check_indexes] db:{},table:{},index:{} --> {},is not unique", db_name, co_name, index, v)
+                return false
+            end
+            if index.expireAfterSeconds and v.expireAfterSeconds ~= index.expireAfterSeconds then
+                log_warn("[MongoAgent][check_indexes] db:{},table:{},index:{} --> {},expireAfterSeconds is not equal", db_name, co_name, index, v)
+                return false
+            end
             return true
         end
     end
-    log_warn("[MongoAgent][check_indexes] db:{},table:{},key:{},is not exist indexes:{}", db_name, co_name, key, indexs)
+    log_warn("[MongoAgent][check_indexes] db:{},table:{},index:{},is not exist indexes:{}", db_name, co_name, index, indexs)
     return false
 end
 
@@ -219,6 +228,39 @@ function MongoAgent:push_array_data(selector, co_name, array, data, limit, hash_
         return false
     end
     return true
+end
+
+--重建索引
+function MongoAgent:rebuild_create_index(index, table_name, db_name, rebuild)
+    --检测是否创建过索引
+    if self:check_indexes(index, table_name, db_name, false) then
+        log_info("[MongoAgent][rebuild_create_index] db[{}],table[{}],key[{}] is exist index", db_name, table_name, index.name)
+        return true
+    end
+    local query    = { table_name, { index } }
+    local ok, code = self:create_indexes(query, 1, db_name)
+    if check_success(code, ok) then
+        log_info("[MongoAgent][rebuild_create_index] db[{}],table[{}],key[{}] build index success", db_name, table_name, index.name)
+        return true
+    else
+        log_err("[MongoAgent][rebuild_create_index] db[{}],table[{}] build index[{}] fail:{}", db_name, table_name, index, code)
+        if rebuild then
+            ok, code = self:drop_indexes({ table_name, index.name }, 1, db_name)
+            if check_success(code, ok) then
+                log_warn("[MongoAgent][rebuild_create_index] db[{}],table[{}],key[{}] drop index success", db_name, table_name, index.name)
+                ok, code = self:create_indexes(query, 1, db_name)
+                if check_success(code, ok) then
+                    log_info("[MongoAgent][rebuild_create_index] db[{}],table[{}],key[{}] drop and build index success", db_name, table_name, index.name)
+                    return true
+                else
+                    log_err("[MongoAgent][rebuild_create_index] db[{}],table[{}] drop and build index[{}] fail:{}", db_name, table_name, index, code)
+                end
+            else
+                log_err("[MongoAgent][rebuild_create_index] db[{}],table[{}],key[{}] drop index fail:{}", db_name, table_name, index.name, code)
+            end
+        end
+    end
+    return false
 end
 
 hive.mongo_agent = MongoAgent()
