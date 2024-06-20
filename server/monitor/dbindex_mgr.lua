@@ -94,7 +94,7 @@ function DBIndexMgr:check_dbindexes()
 end
 
 function DBIndexMgr:build_dbindex(rebuild)
-    log_info("[DBIndexMgr][build_dbindex] {}", rebuild)
+    log_info("[DBIndexMgr][build_dbindex] rebuild:{},sharding:{}", rebuild, self.sharding)
     local dbindex_db = config_mgr:init_table("dbindex", "db_name", "table_name", "name")
     for _, conf in dbindex_db:iterator() do
         if self.sharding and conf.sharding then

@@ -131,14 +131,14 @@ bool check_can_write(socket_t fd, int timeout) {
 	return select((int)fd + 1, nullptr, &wset, nullptr, timeout >= 0 ? &tv : nullptr) == 1;
 }
 
-bool port_is_used(int port, int is_tcp) {
+bool port_is_used(int port, bool is_tcp) {
 	int fd = INVALID_SOCKET;
-	if (is_tcp == 1) {
+	if (is_tcp) {
 		fd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-	}
-	else {
+	} else {
 		fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	}
+	if (fd == INVALID_SOCKET) return false;
 	size_t addr_len = 0;
 	sockaddr_storage addr;
 	make_ip_addr(&addr, &addr_len, "0.0.0.0", port);

@@ -36,7 +36,9 @@ function ReliableMsg:build_index(sharding)
     local query    = { self.table_name, indexs }
     local ok, code = mongo_agent:create_indexes(query, nil, self.db_name)
     if check_success(code, ok) then
-        log_info("[ReliableMsg][build_index] rmsg table {} build due index success", self.table_name)
+        log_info("[ReliableMsg][build_index] rmsg table:{},sharding:{} build due index success", self.table_name, sharding)
+    else
+        log_err("[ReliableMsg][build_index] rmsg table:{},sharding:{} build due index failed", self.table_name, sharding)
     end
 end
 
