@@ -41,6 +41,7 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "rpc_reload")
     event_mgr:add_listener(self, "rpc_inject")
     event_mgr:add_listener(self, "rpc_set_env")
+    event_mgr:add_listener(self, "rpc_reload_env")
     event_mgr:add_listener(self, "rpc_set_server_status")
     event_mgr:add_listener(self, "rpc_hive_quit")
     event_mgr:add_listener(self, "rpc_set_log_level")
@@ -216,11 +217,26 @@ function MonitorAgent:rpc_inject(code_string)
     return func()
 end
 
+function MonitorAgent:notify_change_env(key)
+    event_mgr:notify_trigger("evt_change_env", key)
+    --通知woker更新
+    local scheduler = hive.load("scheduler")
+    scheduler:broadcast("on_reload_env", key)
+end
+
 function MonitorAgent:rpc_set_env(key, value)
     local old = environ.get(key)
     environ.set(key, value)
     log_debug("[MonitorAgent][rpc_set_env] {}:{},old:{} --> new:{}", key, value, old, environ.get(key))
-    event_mgr:notify_trigger("evt_change_env", key)
+    self:notify_change_env(key)
+end
+
+function MonitorAgent:rpc_reload_env()
+    local diff_keys = hive.reload_env()
+    for _, key in ipairs(diff_keys) do
+        log_debug("[MonitorAgent][rpc_reload_env] new conf diff:{}={}", key, environ.get(key))
+        self:notify_change_env(key)
+    end
 end
 
 function MonitorAgent:rpc_set_server_status(status)

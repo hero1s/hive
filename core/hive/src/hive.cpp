@@ -141,20 +141,12 @@ int hive_app::load(int argc, const char* argv[]) {
 		if (argvi.find("=") == std::string::npos) {
 			lua_conf = argv[1];
 			iRet = 0;
+			m_lua_conf = lua_conf;
 		}
 	}
-	if (lua_conf) {
-		//加载LUA配置
-		luakit::kit_state lua;
-		lua.set("platform", get_platform());
-		lua.set_function("set_env", [&](std::string key, std::string value) { return set_env(key, value, 1); });
-		lua.set_function("add_lua_path", add_lua_path);
-
-		lua.run_file(lua_conf, [&](vstring err) {
-			std::cout << "load lua config err: " << err << std::endl;
-			iRet = -1;
-			});
-		lua.close();
+	//加载LUA配置
+	if (lua_conf) {		
+		iRet = load_conf(iRet, false);
 	}
 	//将启动参数转负责覆盖环境变量
 	for (int i = 1; i < argc; ++i) {
@@ -164,16 +156,12 @@ int hive_app::load(int argc, const char* argv[]) {
 			auto evalue = argvi.substr(pos + 1);
 			auto ekey = fmt::format("HIVE_{}", argvi.substr(2, pos - 2));
 			std::transform(ekey.begin(), ekey.end(), ekey.begin(), [](auto c) { return std::toupper(c); });
-			setenv(ekey.c_str(), evalue.c_str(), 1);
+			set_env(ekey.c_str(), evalue.c_str(), 1);
+			m_cmd_environs[ekey] = evalue;
 			continue;
 		}
 	}
-	//设置默认参数
-	if (lua_conf) {
-		setenv("HIVE_SERVICE", "hive", 0);
-		setenv("HIVE_INDEX", "1", 0);
-		setenv("HIVE_HOST_IP", "127.0.0.1", 0);
-	}
+
 	//默认lib目录
 #if defined(__linux) || defined(__APPLE__)
 	setenv("LUA_CPATH", "./lib/?.so;", 0);
@@ -186,6 +174,43 @@ int hive_app::load(int argc, const char* argv[]) {
 		iRet = -1;
 	}
 	return iRet;
+}
+
+int hive_app::load_conf(int iRet, bool reload) {
+	luakit::kit_state lua;
+	lua.set("platform", get_platform());
+	lua.set_function("set_env", [&](std::string key, std::string value) {
+			if (reload) {
+				if (m_cmd_environs.find(key) != m_cmd_environs.end())return;				
+			}
+			return set_env(key, value, 1); 
+		});
+	lua.set_function("add_lua_path", add_lua_path);
+
+	lua.run_file(m_lua_conf, [&](vstring err) {
+		std::cout << "load lua config err: " << err << std::endl;
+		iRet = -1;
+		});
+	lua.close();
+
+	//设置默认参数
+	if (!reload) {
+		set_env("HIVE_SERVICE", "hive", 0);
+		set_env("HIVE_INDEX", "1", 0);
+		set_env("HIVE_HOST_IP", "127.0.0.1", 0);
+	}
+	
+	return iRet;
+}
+
+void hive_app::reload_conf(std::vector<std::string>& diff_keys) {
+	MAP_ENV olds = m_environs;
+	load_conf(0, true);
+	for (auto [k, v] : m_environs) {
+		if (olds[k] != v) {
+			diff_keys.push_back(k);
+		}
+	}
 }
 
 void hive_app::run(int rtype) {
@@ -211,6 +236,8 @@ void hive_app::run(int rtype) {
 	hive.set_function("getenv", [&](const char* key) { return get_env(key); });
 	hive.set_function("setenv", [&](std::string key, std::string value) { return set_env(key, value, 1); });
 	hive.set_function("environs", [&]() { return m_environs; });
+	hive.set_function("reload_env", [&]() { std::vector<std::string> diffs; reload_conf(diffs); return diffs; });
+
 	//begin worker操作接口
 	hive.set_function("worker_update", [&](uint64_t clock_ms) { m_schedulor.update(clock_ms); });
 	hive.set_function("worker_shutdown", [&]() { m_schedulor.shutdown(); });

@@ -41,7 +41,7 @@ end
 
 --访问其他线程任务
 function Scheduler:broadcast(rpc, ...)
-    worker_broadcast(0, FLAG_REQ, "master", rpc, ...)
+    worker_broadcast("", 0, FLAG_REQ, "master", rpc, ...)
 end
 
 --访问其他线程任务

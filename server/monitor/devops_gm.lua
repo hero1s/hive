@@ -37,6 +37,8 @@ function DevopsGmMgr:register_gm()
           args  = "service_name|string index|integer file_name|string code_content|string" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_set_env", desc = "设置环境变量", comment = "临时修改环境变量",
           args  = "key|string value|string service_name|string index|integer" },
+        { group = "运维", gm_type = GMType.GLOBAL, name = "gm_reload_env", desc = "reload环境变量", comment = "reload环境变量",
+          args  = "service_name|string index|integer" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_set_server_status", desc = "设置服务器状态", comment = "[1运行2繁忙3挂起4强退],延迟(秒),服务/index",
           args  = "status|integer delay|integer service_name|string index|integer" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_query_server_online", desc = "查询在线服务", comment = "", args = "service_name|string" },
@@ -103,13 +105,18 @@ end
 
 function DevopsGmMgr:gm_set_env(key, value, service_name, index)
     log_warn("[DevopsGmMgr][gm_set_env]:[{}:{}],service:{},index:{} ",
-             key, value, service_name, index)
+            key, value, service_name, index)
     return self:call_service_index(service_name, index, "rpc_set_env", key, value)
+end
+
+function DevopsGmMgr:gm_reload_env(service_name, index)
+    log_warn("[DevopsGmMgr][gm_reload_env] service:{},index:{} ", service_name, index)
+    return self:call_service_index(service_name, index, "rpc_reload_env")
 end
 
 function DevopsGmMgr:gm_set_server_status(status, delay, service_name, index)
     log_warn("[DevopsGmMgr][gm_set_server_status]:{},exe time:{},service:{},index:{} ",
-             status, time_str(hive.now + delay), service_name, index)
+            status, time_str(hive.now + delay), service_name, index)
     if status < ServiceStatus.RUN or status > ServiceStatus.STOP then
         return { code = 1, msg = "status is more than" }
     end
@@ -210,7 +217,7 @@ end
 
 function DevopsGmMgr:gm_db_set(db_name, table_name, key_name, key_value, json_str)
     log_debug("[DevopsGmMgr][gm_db_set] db_name:{}, table_name:{}, key_name:{} key_value:{}, json_str:{}",
-              db_name, table_name, key_name, key_value, json_str)
+            db_name, table_name, key_name, key_value, json_str)
     local ok1, value = json_decode(json_str, true)
     if not ok1 then
         return { code = -1 }
