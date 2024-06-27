@@ -2,26 +2,27 @@
 import("basic/cmdline.lua")
 import("agent/online_agent.lua")
 
-local gm_page       = nil
-local HttpServer    = import("network/http_server.lua")
-local tunpack       = table.unpack
-local env_get       = environ.get
-local log_err       = logger.err
-local log_debug     = logger.debug
-local readfile      = io_ext.readfile
+local gm_page      = nil
+local HttpServer   = import("network/http_server.lua")
+local tunpack      = table.unpack
+local env_get      = environ.get
+local log_err      = logger.err
+local log_debug    = logger.debug
+local readfile     = io_ext.readfile
+local json_decode  = hive.json_decode
 
-local GMType        = enum("GMType")
-local KernCode      = enum("KernCode")
-local SUCCESS       = KernCode.SUCCESS
+local GMType       = enum("GMType")
+local KernCode     = enum("KernCode")
+local SUCCESS      = KernCode.SUCCESS
 
-local cmdline       = hive.get("cmdline")
-local event_mgr     = hive.get("event_mgr")
-local router_mgr    = hive.get("router_mgr")
-local online_agent  = hive.get("online_agent")
-local update_mgr    = hive.get("update_mgr")
+local cmdline      = hive.get("cmdline")
+local event_mgr    = hive.get("event_mgr")
+local router_mgr   = hive.get("router_mgr")
+local online_agent = hive.get("online_agent")
+local update_mgr   = hive.get("update_mgr")
 
-local AdminMgr      = singleton()
-local prop          = property(AdminMgr)
+local AdminMgr     = singleton()
+local prop         = property(AdminMgr)
 prop:reader("http_server", nil)
 prop:reader("deploy", "local")
 
@@ -36,7 +37,7 @@ function AdminMgr:__init()
     server:register_get("/", "on_gm_page", self)
     server:register_get("/gmlist", "on_gmlist", self)
     server:register_post("/command", "on_command", self)
-    server:register_post("/message", "on_message", self)
+    server:register_post("/message", "on_message", self, false)
     service.make_node(server:get_port())
     self.http_server = server
     --ip白名单
@@ -119,8 +120,15 @@ end
 
 --后台GM调用，table格式
 function AdminMgr:on_message(url, body, querys, headers)
-    log_debug("[AdminMgr][on_message] body: {}", body)
-    return self:exec_message(body.data)
+    log_debug("[AdminMgr][on_message] curl cmd: {}", self:format_curl_cmd(body))
+    local cmd_req = json_decode(body)
+    local data    = cmd_req.data
+    return self:exec_message(data)
+end
+
+function AdminMgr:format_curl_cmd(body)
+    return string.format("curl --request POST --url http://%s:%s/message --header 'content-type: application/json' --data '%s'",
+            hive.host, self.http_server:get_port(), body)
 end
 
 -------------------------------------------------------------------------
