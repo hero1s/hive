@@ -2,8 +2,6 @@ bash ./stop.sh all
 bash ./clear_log.sh 1
 
 set -xe
-#添加动态库搜索路径
-export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH
 #设置本机的ip地址(监听及连接访问)
 hostip=$1
 if [ -z "$hostip" ];then

@@ -102,6 +102,11 @@ LDFLAGS += -L{{%= lib_dir %}}
 {{% end %}}
 endif
 {{% end %}}
+{{% if #RPATHS > 0 then %}}
+{{% for _, path in ipairs(RPATHS) do %}}
+LDFLAGS += -Wl,-rpath={{%= path %}}
+{{% end %}}
+{{% end %}}
 
 #源文件路径
 {{% if SRC_DIR then %}}

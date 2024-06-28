@@ -17,6 +17,10 @@ DEFINES = {
 	"FMT_HEADER_ONLY","SUPPORT_FORMAT_LUA"
 }
 
+RPATHS = {
+    './lib'
+}
+
 --需要的include目录
 INCLUDES = {
 	"../../extend/lua/lua",

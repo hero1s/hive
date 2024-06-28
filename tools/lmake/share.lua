@@ -59,6 +59,10 @@ DEFINES = {
 LINUX_DEFINES = {
 }
 
+--rpath
+RPATHS = {
+}
+
 --DARWIN需要定义的选项
 DARWIN_DEFINES = {
 }

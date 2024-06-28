@@ -52,6 +52,7 @@ MYCFLAGS += -DSUPPORT_FORMAT_LUA
 #LDFLAGS
 LDFLAGS =
 
+LDFLAGS += -Wl,-rpath=./lib
 
 #源文件路径
 SRC_DIR = src
