@@ -105,7 +105,9 @@ namespace logger {
             case 8: return tformat(L, lvl, tag, feature, flag, vfmt, make_index_sequence<8>{});
             case 9: return tformat(L, lvl, tag, feature, flag, vfmt, make_index_sequence<9>{});
             case 10: return tformat(L, lvl, tag, feature, flag, vfmt, make_index_sequence<10>{});
-            default: luaL_error(L, "log format args is more than 10!"); break;
+            case 11: return tformat(L, lvl, tag, feature, flag, vfmt, make_index_sequence<11>{});
+            case 12: return tformat(L, lvl, tag, feature, flag, vfmt, make_index_sequence<12>{});
+            default: luaL_error(L, "log format args is error : %d !",arg_num); break;
             }
             return 0;
             });

@@ -8,6 +8,7 @@ local log_info      = logger.info
 local check_success = hive.success
 local check_failed  = hive.failed
 local PeriodTime    = enum("PeriodTime")
+local mceil         = math.ceil
 
 local mongo_agent   = hive.get("mongo_agent")
 
@@ -18,7 +19,7 @@ prop:reader("table_name", "")
 prop:reader("ttl", nil)
 
 function ReliableMsg:__init(db_name, table_name, due_day)
-    self.ttl        = (due_day or 1) * PeriodTime.DAY_S
+    self.ttl        = mceil((due_day or 1) * PeriodTime.DAY_S - 0.5)
     self.db_name    = db_name
     self.table_name = table_name
 end

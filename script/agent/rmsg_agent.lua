@@ -47,16 +47,23 @@ function RmsgAgent:list_message(rmsg_type, to, page_size)
     return self.rmsgs[rmsg_type]:list_message(to, page_size)
 end
 
-function RmsgAgent:safe_do_message(rmsg_type, to, do_func)
+function RmsgAgent:safe_do_message(rmsg_type, to, do_func, msg_cnt_limit)
     local _lock<close> = self:lock_msg(rmsg_type, to)
+    local cnt = 0
     for i = 1, 100 do
         local records = self:list_message(rmsg_type, to, 100)
         for _, record in ipairs(records) do
             do_func(record)
             self:delete_message_by_uuid(rmsg_type, record.uuid, record.to)
+            cnt = cnt + 1
+            if msg_cnt_limit and msg_cnt_limit > 0 then
+                if cnt >= msg_cnt_limit then
+                    return cnt
+                end
+            end
         end
         if #records < 100 then
-            return
+            return cnt
         end
     end
 end
