@@ -3,6 +3,8 @@ local lmdb         = require("lmdb")
 local log_debug    = logger.debug
 local sformat      = string.format
 
+local update_mgr   = hive.get("update_mgr")
+
 local MDB_SUCCESS  = lmdb.MDB_CODE.MDB_SUCCESS
 local MDB_NOTFOUND = lmdb.MDB_CODE.MDB_NOTFOUND
 
@@ -22,6 +24,15 @@ prop:reader("jcodec", nil)
 
 function Lmdb:__init()
     stdfs.mkdir(LMDB_PATH)
+    update_mgr:attach_quit(self)
+end
+
+function Lmdb:__release()
+    self:close()
+end
+
+function Lmdb:on_quit()
+    self:close()
 end
 
 function Lmdb:close()

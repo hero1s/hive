@@ -12,6 +12,7 @@ local ProxyMgr    = singleton()
 function ProxyMgr:__init()
     -- 注册事件
     event_mgr:add_listener(self, "rpc_fire_webhook")
+    event_mgr:add_listener(self, "rpc_send_webhook")
     -- 通用http请求
     event_mgr:add_listener(self, "rpc_http_post")
     event_mgr:add_listener(self, "rpc_http_get")
@@ -26,8 +27,12 @@ function ProxyMgr:setup()
 end
 
 --日志上报
-function ProxyMgr:rpc_fire_webhook(title, content)
-    webhook:notify(title, content)
+function ProxyMgr:rpc_fire_webhook(title, content, ...)
+    webhook:notify(title, content, ...)
+end
+
+function ProxyMgr:rpc_send_webhook(hook_api, url, title, content, ...)
+    webhook:send_log(hook_api, url, title, content, ...)
 end
 
 --通用http请求

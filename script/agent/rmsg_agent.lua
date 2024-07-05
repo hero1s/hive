@@ -49,7 +49,7 @@ end
 
 function RmsgAgent:safe_do_message(rmsg_type, to, do_func, msg_cnt_limit)
     local _lock<close> = self:lock_msg(rmsg_type, to)
-    local cnt = 0
+    local cnt          = 0
     for i = 1, 100 do
         local records = self:list_message(rmsg_type, to, 100)
         for _, record in ipairs(records) do
@@ -73,10 +73,7 @@ function RmsgAgent:send_message(rmsg_type, from, to, body, typ, id)
 end
 
 function RmsgAgent:safe_send_message(rmsg_type, from, to, body, typ, id)
-    local uuid = id or hive.new_guid()
-    thread_mgr:success_call(PeriodTime.SECOND_10_MS, function()
-        return self:send_message(rmsg_type, from, to, body, typ, uuid)
-    end)
+    return self.rmsgs[rmsg_type]:send_message(from, to, body, typ or rmsg_type, id, true)
 end
 
 function RmsgAgent:delete_message(rmsg_type, to, timestamp)

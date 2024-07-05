@@ -116,15 +116,15 @@ function hive.defer(handler)
 end
 
 --创建普通计数器
-function hive.make_counter(title)
+function hive.make_counter(title, warn_avg)
     local Counter = import("feature/counter.lua")
-    return Counter(title)
+    return Counter(title, warn_avg)
 end
 
 --创建采样计数器
-function hive.make_sampling(title, period)
+function hive.make_sampling(title, period, warn_avg)
     local Counter = import("feature/counter.lua")
-    local counter = Counter(title)
+    local counter = Counter(title, warn_avg)
     counter:sampling(period)
     return counter
 end
@@ -146,3 +146,9 @@ function hive.register_cmd_listener(doer, cmd_id, callback)
     local protobuf_mgr = hive.get("protobuf_mgr")
     protobuf_mgr:register(doer, cmd_id, callback)
 end
+
+function hive.make_clock(host, cost)
+    local ClockLog = import("feature/clock_log.lua")
+    return ClockLog(host, cost)
+end
+

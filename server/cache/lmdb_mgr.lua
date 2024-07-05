@@ -2,8 +2,6 @@ local LMDB       = import("driver/lmdb.lua")
 local log_debug  = logger.debug
 local sformat    = string.format
 
-local update_mgr = hive.get("update_mgr")
-
 local LmdbMgr    = singleton()
 local prop       = property(LmdbMgr)
 prop:reader("open_status", false)
@@ -11,13 +9,6 @@ prop:reader("db", nil)
 
 function LmdbMgr:__init()
     self:setup()
-    update_mgr:attach_quit(self)
-end
-
-function LmdbMgr:on_quit()
-    if self.db then
-        self.db:close()
-    end
 end
 
 function LmdbMgr:setup()

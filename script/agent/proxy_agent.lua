@@ -40,6 +40,11 @@ function ProxyAgent:dispatch_log(content, lvl_name)
     return self:send("rpc_fire_webhook", title, content)
 end
 
+function ProxyAgent:send_webhook_log(hook_api, url, content, ...)
+    local title = sformat("[%s][%s]", hive.name, self.cur_path)
+    return self:send("rpc_send_webhook", hook_api, url, title, content, ...)
+end
+
 function ProxyAgent:http_get(url, querys, headers, datas, timeout, debug)
     return self:call("rpc_http_get", url, querys, headers, datas, timeout, debug)
 end

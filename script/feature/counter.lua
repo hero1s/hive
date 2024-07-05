@@ -1,5 +1,6 @@
 --countor.lua
 local log_info   = logger.info
+local log_err    = logger.err
 local cut_tail   = math_ext.cut_tail
 
 local timer_mgr  = hive.get("timer_mgr")
@@ -17,9 +18,11 @@ prop:reader("max", 0)           --统计周期最大值
 prop:reader("total", 0)         --统计周期总值
 prop:reader("count", 0)         --计数
 prop:accessor("counter", nil)   --计数器
+prop:reader("warn_avg", 0)      --告警平均值
 
-function Counter:__init(title)
-    self.title = title
+function Counter:__init(title, warn_avg)
+    self.title    = title
+    self.warn_avg = warn_avg or 0
     --统计周期更新
     update_mgr:attach_minute(self)
 end
@@ -55,7 +58,11 @@ function Counter:on_minute()
     if self.time > 0 then
         if self.total > 0 then
             local avg = cut_tail(self.total / self.time, 1)
-            log_info("[Counter][on_minute] last minute {} count => total:{}, avg:{} range:{}-{}!", self.title, self.total, avg, self.min, self.max)
+            if self.warn_avg > 0 and avg > self.warn_avg then
+                log_err("[Counter][on_minute] last minute {} count => total:{}, avg:{} range:{}-{}!,more than you set:{}", self.title, self.total, avg, self.min, self.max, self.warn_avg)
+            else
+                log_info("[Counter][on_minute] last minute {} count => total:{}, avg:{} range:{}-{}!", self.title, self.total, avg, self.min, self.max)
+            end
             self.total = 0
             self.max   = 0
             self.min   = 0

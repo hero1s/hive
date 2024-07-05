@@ -154,7 +154,7 @@ function UpdateMgr:update_by_time(now, clock_ms)
         return
     end
     for obj, key in pairs(self.second30_objs) do
-        thread_mgr:entry(key, function()
+        thread_mgr:fork(function()
             obj:on_second30(clock_ms)
         end)
     end

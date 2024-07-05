@@ -51,6 +51,13 @@ function Webhook:notify(title, content, ...)
     end
 end
 
+function Webhook:send_log(hook_api, url, title, content, ...)
+    if self[hook_api] then
+        title = title .. " host:" .. self.lan_ip
+        self[hook_api](self, url, title, content, ...)
+    end
+end
+
 hive.webhook = Webhook()
 
 return Webhook
