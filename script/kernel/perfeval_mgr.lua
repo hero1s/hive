@@ -5,7 +5,6 @@ local tinsert     = table.insert
 local tsort       = table.sort
 local pairs       = pairs
 local co_running  = coroutine.running
-local log_warn    = logger.warn
 local hdefer      = hive.defer
 
 local proxy_agent = hive.get("proxy_agent")
@@ -136,7 +135,7 @@ function PerfevalMgr:dump_perf()
         return a.total_time > b.total_time
     end)
     if next(sort_infos) then
-        log_warn("[StatisMgr][dump_perf] \n {}", sort_infos)
+        logger.dump("[StatisMgr][dump_perf] \n {}", sort_infos)
     end
 end
 

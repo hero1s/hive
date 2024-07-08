@@ -43,14 +43,12 @@ end
 
 --初始化
 function MongoMgr:setup()
-    --切换云风版bson需修改c++导出库为云风的
-    local MongoDB  = import("driver/mongo_new.lua")
-    if hive.is_publish then
-        self.table_queue_size  = environ.number("HIVE_MONGO_TABLE_QUEUE", 50)
-        self.table_queue_limit = environ.number("HIVE_MONGO_TABLE_QUEUE_LIMIT", 1000)
-        self.qps_warn_avg      = environ.number("HIVE_MONGO_TABLE_QPS", 50)
-    end
-    local database = config_mgr:init_table("database", "name")
+    self.table_queue_size  = environ.number("HIVE_MONGO_TABLE_QUEUE", 50)
+    self.table_queue_limit = environ.number("HIVE_MONGO_TABLE_QUEUE_LIMIT", 1000)
+    self.qps_warn_avg      = environ.number("HIVE_MONGO_TABLE_QPS", 50)
+
+    local MongoDB          = import("driver/mongo_new.lua")
+    local database         = config_mgr:init_table("database", "name")
     for _, conf in database:iterator() do
         local dconf = environ.driver(conf.url)
         if dconf then

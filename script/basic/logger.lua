@@ -83,11 +83,13 @@ local function logger_output(flag, feature, lvl, lvl_name, fmt, ...)
         return
     end
     if msg and (not dispatching) then
-        dispatching = true
+        dispatching  = true
+        local info   = dgetinfo(4, "nSl")
+        local source = sformat("[%s:%d(%s)]", info.short_src, info.currentline or 0, info.name or "")
         pcall(function()
             for monitor, mlvl in pairs(monitors) do
                 if lvl >= mlvl then
-                    monitor:dispatch_log(msg, lvl_name)
+                    monitor:dispatch_log(msg, lvl_name, source)
                 end
             end
         end)

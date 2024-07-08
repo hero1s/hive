@@ -4,17 +4,29 @@ import("network/http_client.lua")
 local sformat     = string.format
 
 local http_client = hive.get("http_client")
+local update_mgr  = hive.get("update_mgr")
+
+local LIMIT_TIME  = hive.enum("PeriodTime", "MINUTE_10_S")
+local LIMIT_COUNT = 5
 
 local Webhook     = singleton()
 local prop        = property(Webhook)
 prop:reader("hooks", {})            --webhook通知接口
 prop:reader("lan_ip", "")
+prop:reader("notify_limit", {})     --控制同样消息的发送频率
 
 function Webhook:__init()
     self.lan_ip           = hive.lan_ip
     self.hooks.lark_log   = environ.get("HIVE_LARK_URL")
     self.hooks.ding_log   = environ.get("HIVE_DING_URL")
     self.hooks.wechat_log = environ.get("HIVE_WECHAT_URL")
+
+    update_mgr:attach_minute(self)
+end
+
+--清理过期limit
+function Webhook:on_minute()
+    self:clear_due_limit()
 end
 
 --飞书
@@ -42,19 +54,48 @@ function Webhook:ding_log(url, title, context, at_mobiles, at_all)
     http_client:call_post(url, body)
 end
 
-function Webhook:notify(title, content, ...)
-    if next(self.hooks) then
-        title = title .. " host:" .. self.lan_ip
-        for hook_api, url in pairs(self.hooks) do
+function Webhook:notify(title, content, source, ...)
+    if self:count_msg(source) then
+        if next(self.hooks) then
+            title = title .. " host:" .. self.lan_ip
+            for hook_api, url in pairs(self.hooks) do
+                self[hook_api](self, url, title, content, ...)
+            end
+        end
+    end
+end
+
+function Webhook:send_log(hook_api, url, title, content, source, ...)
+    if self:count_msg(source) then
+        if self[hook_api] then
+            title = title .. " host:" .. self.lan_ip
             self[hook_api](self, url, title, content, ...)
         end
     end
 end
 
-function Webhook:send_log(hook_api, url, title, content, ...)
-    if self[hook_api] then
-        title = title .. " host:" .. self.lan_ip
-        self[hook_api](self, url, title, content, ...)
+function Webhook:count_msg(source)
+    if not source then
+        return true
+    end
+    local now    = hive.now
+    local notify = self.notify_limit[source]
+    if not notify then
+        notify                    = { time = now, count = 0 }
+        self.notify_limit[source] = notify
+    end
+    notify.count = notify.count + 1
+    return notify.count < LIMIT_COUNT
+end
+
+function Webhook:clear_due_limit()
+    for k, v in pairs(self.notify_limit) do
+        if v.time + LIMIT_TIME < hive.now then
+            self.notify_limit[k] = nil
+            if v.count >= LIMIT_COUNT then
+                self:notify("", sformat("statistic error msg source:%s,count:%s", k, v.count))
+            end
+        end
     end
 end
 

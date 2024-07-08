@@ -35,14 +35,14 @@ function ProxyAgent:__init()
 end
 
 --日志分发
-function ProxyAgent:dispatch_log(content, lvl_name)
+function ProxyAgent:dispatch_log(content, lvl_name, source)
     local title = sformat("[%s][%s][%s]", hive.name, lvl_name, self.cur_path)
-    return self:send("rpc_fire_webhook", title, content)
+    return self:send("rpc_fire_webhook", title, content, source)
 end
 
 function ProxyAgent:send_webhook_log(hook_api, url, content, ...)
     local title = sformat("[%s][%s]", hive.name, self.cur_path)
-    return self:send("rpc_send_webhook", hook_api, url, title, content, ...)
+    return self:send("rpc_send_webhook", hook_api, url, title, content, hive.where_call(), ...)
 end
 
 function ProxyAgent:http_get(url, querys, headers, datas, timeout, debug)

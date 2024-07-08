@@ -27,12 +27,12 @@ function ProxyMgr:setup()
 end
 
 --日志上报
-function ProxyMgr:rpc_fire_webhook(title, content, ...)
-    webhook:notify(title, content, ...)
+function ProxyMgr:rpc_fire_webhook(title, content, source, ...)
+    webhook:notify(title, content, source, ...)
 end
 
-function ProxyMgr:rpc_send_webhook(hook_api, url, title, content, ...)
-    webhook:send_log(hook_api, url, title, content, ...)
+function ProxyMgr:rpc_send_webhook(hook_api, url, title, content, source, ...)
+    webhook:send_log(hook_api, url, title, content, source, ...)
 end
 
 --通用http请求
