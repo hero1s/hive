@@ -37,7 +37,7 @@ function HttpClient:__init()
     end
     self.ca_path         = env_get("HIVE_CA_PATH")
     --counter
-    self.req_counter     = hive.make_sampling("http_req")
+    self.req_counter     = hive.make_sampling("http_req", nil, 1000)
     self.open_debug      = environ.status("HIVE_HTTP_OPEN_DEBUG")
 end
 

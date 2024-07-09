@@ -61,7 +61,7 @@ function HttpServer:setup(http_addr, induce)
     socket:set_codec(self.hcodec)
     log_info("[HttpServer][setup] listen({}:{}) success!", self.ip, self.port)
     self.listener    = socket
-    self.qps_counter = hive.make_sampling("http_qps")
+    self.qps_counter = hive.make_sampling("http_qps", nil, 2000)
 end
 
 function HttpServer:close(token, socket)

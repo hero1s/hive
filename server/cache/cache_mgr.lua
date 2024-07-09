@@ -62,7 +62,7 @@ function CacheMgr:__init()
     monitor:watch_service_close(self, "lobby")
     monitor:watch_service_ready(self, "lobby")
     --counter
-    self.req_counter = hive.make_sampling("cache_req")
+    self.req_counter = hive.make_sampling("cache_req", nil, 2000)
 end
 
 function CacheMgr:setup()

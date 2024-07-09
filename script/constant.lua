@@ -50,7 +50,6 @@ NetwkTime.RPCLINK_TIMEOUT        = 20000     --RPC连接超时时间
 NetwkTime.HEARTBEAT_TIME         = 10000     --RPC连接心跳时间
 NetwkTime.NETWORK_TIMEOUT        = 30000     --其他网络连接超时时间
 
-
 --常用时间周期
 local PeriodTime                 = enum("PeriodTime", 0)
 PeriodTime.FAST_MS               = 100       --0.1秒（ms）

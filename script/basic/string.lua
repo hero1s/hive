@@ -161,3 +161,25 @@ function string_ext.get_char_len(src)
     local chars = string_ext.chars(src)
     return #chars
 end
+
+
+-- 正则转义字符集
+--[[
+%a	字母a-z,A-Z
+%b	%bxy,以x和y进行成对匹配
+%c	控制字符ASCII码 十进制转义表示为\0 - \31
+%d	数字 0 - 9
+%f	%f[char-set]，边界匹配，前一个不在范围内，后一个在
+%g	除了空格以外的可打印字符 十进制转义表示为\33 - \126
+%l	小写字母 a - z
+%u	大写字母 A - Z
+%s	空格 十进制转义表示为\32
+%p	标点符号，即!@#$%^&*()`~-_=+{}:"<>?[];',./| 32个字符
+%w	字母数字 a - z, A - Z, 0 - 9
+%x	十六进制符号 0 - 9, a - f, A - F
+--]]
+
+-- 是否正则匹配成功
+function string_ext.is_regular_match(string, pattern)
+    return string.match(string, pattern)
+end

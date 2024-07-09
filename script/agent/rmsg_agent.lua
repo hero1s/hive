@@ -1,5 +1,6 @@
 local ReliableMsg = import("store/reliable_msg.lua")
 
+local log_warn    = logger.warn
 local config_mgr  = hive.get("config_mgr")
 local thread_mgr  = hive.get("thread_mgr")
 local sformat     = string.format
@@ -47,11 +48,14 @@ function RmsgAgent:list_message(rmsg_type, to, page_size)
     return self.rmsgs[rmsg_type]:list_message(to, page_size)
 end
 
-function RmsgAgent:safe_do_message(rmsg_type, to, do_func, msg_cnt_limit)
+function RmsgAgent:safe_do_message(rmsg_type, to, do_func, msg_cnt_limit, page_size)
+    if nil == page_size then
+        page_size = 100
+    end
     local _lock<close> = self:lock_msg(rmsg_type, to)
     local cnt          = 0
     for i = 1, 100 do
-        local records = self:list_message(rmsg_type, to, 100)
+        local records = self:list_message(rmsg_type, to, page_size)
         for _, record in ipairs(records) do
             do_func(record)
             self:delete_message_by_uuid(rmsg_type, record.uuid, record.to)
@@ -66,6 +70,8 @@ function RmsgAgent:safe_do_message(rmsg_type, to, do_func, msg_cnt_limit)
             return cnt
         end
     end
+
+    return cnt
 end
 
 function RmsgAgent:send_message(rmsg_type, from, to, body, typ, id)

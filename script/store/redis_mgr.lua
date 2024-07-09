@@ -13,6 +13,8 @@ local RedisMgr     = singleton()
 local prop         = property(RedisMgr)
 prop:accessor("redis_dbs", {})      -- redis_dbs
 prop:accessor("default_db", nil)    -- default_db
+prop:reader("db_counters", {})
+prop:reader("qps_warn_avg", 1000)
 
 function RedisMgr:__init()
     self:setup()
@@ -28,14 +30,16 @@ function RedisMgr:setup()
         local dconf = environ.driver(conf.url)
         if dconf then
             if dconf.driver == "redis" then
-                local redis_db            = RedisDB(dconf)
-                self.redis_dbs[conf.name] = redis_db
+                local redis_db              = RedisDB(dconf)
+                self.redis_dbs[conf.name]   = redis_db
+                self.db_counters[conf.name] = hive.make_sampling(sformat("redis [%s] qps", conf.name), nil, self.qps_warn_avg)
                 if conf.default then
                     self.default_db = redis_db
                 end
             end
         end
     end
+    self.db_counters["default"] = hive.make_sampling(sformat("redis [default] qps"), nil, self.qps_warn_avg)
 end
 
 --查找redis db
@@ -53,6 +57,7 @@ function RedisMgr:execute(db_name, cmd, ...)
         if not ok then
             log_err("[RedisMgr][execute] execute {} ({}) failed, because: {}", cmd, tpack(...), res_oe)
         end
+        self.db_counters[db_name or "default"]:count_increase()
         return ok and SUCCESS or REDIS_FAILED, res_oe
     end
     return REDIS_FAILED, sformat("redis db [%s] not exist", db_name)
