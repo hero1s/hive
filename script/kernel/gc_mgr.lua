@@ -133,6 +133,12 @@ function GcMgr:log_gc_end()
     self.gc_last_collect_time = lclock_ms()
 end
 
+function GcMgr:dump_mem_obj(less_count)
+    local obj_counts = class_review(less_count)
+    local info       = { objs = obj_counts, lua_mem = self:lua_mem_size(), mem = self:mem_size() }
+    logger.dump("[GcMgr][dump_mem_obj]:%s", info)
+end
+
 hive.gc_mgr = GcMgr()
 
 return GcMgr

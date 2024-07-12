@@ -25,7 +25,7 @@ namespace luakit {
 
     int decode_one(lua_State* L, slice* slice);
     void encode_one(lua_State* L, luabuf* buff, int idx, int depth);
-    void serialize_one(lua_State* L, luabuf* buff, int index, int depth, int line);
+    void serialize_one(lua_State* L, luabuf* buff, int index, int depth, int line, size_t max_len);
 
     template<typename T>
     void value_encode(luabuf* buff, T data) {
@@ -276,7 +276,13 @@ namespace luakit {
         serialize_value(buff, "'");
     }
 
-    inline void serialize_table(lua_State* L, luabuf* buff, int index, int depth, int line) {
+    inline void serialize_table(lua_State* L, luabuf* buff, int index, int depth, int line, size_t max_len) {
+        //限制格式化数据过大导致日志刷屏影响性能
+        if (max_len > 0 && buff->size() > max_len) {
+            serialize_value(buff, "{...}");
+            return;
+        }
+        
         int size = 0;
         index = lua_absindex(L, index);
         serialize_value(buff, "{");
@@ -288,7 +294,7 @@ namespace luakit {
                 }
                 serialize_crcn(buff, depth, line);
                 lua_rawgeti(L, index, i);
-                serialize_one(L, buff, -1, depth, line);
+                serialize_one(L, buff, -1, depth, line, max_len);
                 lua_pop(L, 1);
             }
         }
@@ -321,10 +327,10 @@ namespace luakit {
                         serialize_value(buff, "=");
                     }
                     else {
-                        serialize_one(L, buff, -2, depth, line);
+                        serialize_one(L, buff, -2, depth, line, max_len);
                         serialize_value(buff, "=");
                     }
-                    serialize_one(L, buff, -1, depth, line);
+                    serialize_one(L, buff, -1, depth, line, max_len);
                     lua_pop(L, 3);
                 }
             }
@@ -345,10 +351,10 @@ namespace luakit {
                         serialize_value(buff, "=");
                     }
                     else {
-                        serialize_one(L, buff, -2, depth, line);
+                        serialize_one(L, buff, -2, depth, line, max_len);
                         serialize_value(buff, "=");
                     }
-                    serialize_one(L, buff, -1, depth, line);
+                    serialize_one(L, buff, -1, depth, line, max_len);
                     lua_pop(L, 1);
                 }
             }
@@ -359,7 +365,7 @@ namespace luakit {
         serialize_value(buff, "}");
     }
 
-    inline void serialize_one(lua_State* L, luabuf* buff, int index, int depth, int line) {
+    inline void serialize_one(lua_State* L, luabuf* buff, int index, int depth, int line, size_t max_len) {
         if (depth > max_encode_depth) {
             luaL_error(L, "serialize can't pack too depth table");
         }
@@ -378,7 +384,7 @@ namespace luakit {
             serialize_value(buff, lua_tostring(L, index));
             break;
         case LUA_TTABLE:
-            serialize_table(L, buff, index, depth + 1, line);
+            serialize_table(L, buff, index, depth + 1, line, max_len);
             break;
         case LUA_TUSERDATA:
         case LUA_TLIGHTUSERDATA:
@@ -393,7 +399,7 @@ namespace luakit {
     inline int serialize(lua_State* L, luabuf* buff) {
         buff->clean();
         size_t data_len = 0;
-        serialize_one(L, buff, 1, 1, luaL_optinteger(L, 2, 0));
+        serialize_one(L, buff, 1, 1, luaL_optinteger(L, 2, 0), 0);
         const char* data = (const char*)buff->data(&data_len);
         lua_pushlstring(L, data, data_len);
         return 1;

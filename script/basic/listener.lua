@@ -1,7 +1,6 @@
 --_listener.lua
 local xpcall     = xpcall
 local ipairs     = ipairs
-local select     = select
 local tpack      = table.pack
 local tunpack    = table.unpack
 local tremove    = table.remove
@@ -16,7 +15,6 @@ function Listener:__init()
     self._listeners = {}     -- map<event, listener>
     self._commands  = {}     -- map<cmd, listener>
     self._ignores   = {}     -- map<cmd, bool>
-    self.thread_mgr = nil
 end
 
 function Listener:add_trigger(trigger, event, handler)
@@ -55,8 +53,7 @@ function Listener:remove_trigger(trigger, event)
     end
 end
 
---支持队列处理
-function Listener:add_listener(listener, event, handler, queue_param)
+function Listener:add_listener(listener, event, handler)
     if self._listeners[event] then
         log_err("[Listener][add_listener] event({}) repeat!,from({})", event, hive.where_call())
         return
@@ -67,10 +64,7 @@ function Listener:add_listener(listener, event, handler, queue_param)
         log_err("[Listener][add_listener] event({}) callback is nil!,from({})", event, hive.where_call())
         return
     end
-    self._listeners[event] = { listener, func_name, queue_param }
-    if queue_param and not self.thread_mgr then
-        self.thread_mgr = hive.get("thread_mgr")
-    end
+    self._listeners[event] = { listener, func_name }
 end
 
 function Listener:remove_listener(event)
@@ -131,28 +125,9 @@ function Listener:notify_listener(event, ...)
         end
         return tpack(false, "event handler is nil")
     end
-    local listener, func_name, queue_param = tunpack(listener_ctx)
-    local callback_func                    = listener[func_name]
-    local result
-    --队列派发
-    if queue_param and type(queue_param) == "number" then
-        if select('#', ...) < queue_param then
-            log_err("[Listener][notify_listener] less param to queue lock,rpc:{},queue_param:{}", event, queue_param)
-            result = tpack(xpcall(callback_func, dtraceback, listener, ...))
-            goto exit
-        end
-        local qparam = select(queue_param, ...)
-        if type(qparam) ~= "number" and type(qparam) ~= "string" then
-            log_err("[Listener][notify_listener] error param for queue lock,rpc:{},queue_param:{}", event, qparam)
-            result = tpack(xpcall(callback_func, dtraceback, listener, ...))
-            goto exit
-        end
-        local _<close> = self.thread_mgr:lock("rpc_queue-" .. qparam)
-        result         = tpack(xpcall(callback_func, dtraceback, listener, ...))
-    else
-        result = tpack(xpcall(callback_func, dtraceback, listener, ...))
-    end
-    :: exit ::
+    local listener, func_name = tunpack(listener_ctx)
+    local callback_func       = listener[func_name]
+    local result              = tpack(xpcall(callback_func, dtraceback, listener, ...))
     if not result[1] then
         log_err("[Listener][notify_listener] xpcall [{}:{}] failed: {},call from:{}", listener:source(), func_name, result[2], hive.where_call())
     end

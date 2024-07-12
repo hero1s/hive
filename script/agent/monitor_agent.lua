@@ -14,6 +14,7 @@ local time_str      = datetime_ext.time_str
 local event_mgr     = hive.get("event_mgr")
 local gc_mgr        = hive.get("gc_mgr")
 local thread_mgr    = hive.get("thread_mgr")
+local update_mgr    = hive.get("update_mgr")
 
 local RPC_FAILED    = hive.enum("KernCode", "RPC_FAILED")
 local ServiceStatus = enum("ServiceStatus")
@@ -50,6 +51,12 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "rpc_count_lua_obj")
 
     event_mgr:add_trigger(self, "on_router_connected")
+
+    update_mgr:attach_hour(self)
+end
+
+function MonitorAgent:on_hour()
+    gc_mgr:dump_mem_obj(50)
 end
 
 --检测是否可以自动退出
@@ -208,7 +215,7 @@ end
 
 function MonitorAgent:rpc_count_lua_obj(less_num)
     local obj_counts = class_review(less_num)
-    log_warn("rpc_count_lua_obj:{}", obj_counts)
+    gc_mgr:dump_mem_obj(less_num)
     return { objs = obj_counts, lua_mem = gc_mgr:lua_mem_size(), mem = gc_mgr:mem_size() }
 end
 

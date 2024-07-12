@@ -7,7 +7,6 @@ local ProxyAgent = singleton(thread)
 local prop       = property(ProxyAgent)
 prop:reader("ignore_statistics", {})
 prop:reader("statis_status", false)
-prop:reader("cur_path", "")
 
 function ProxyAgent:__init()
     self.service  = "proxy"
@@ -36,13 +35,12 @@ end
 
 --日志分发
 function ProxyAgent:dispatch_log(content, lvl_name, source)
-    local title = sformat("[%s][%s][%s]", hive.name, lvl_name, self.cur_path)
+    local title = sformat("[%s]", lvl_name)
     return self:send("rpc_fire_webhook", title, content, source)
 end
 
 function ProxyAgent:send_webhook_log(hook_api, url, content, ...)
-    local title = sformat("[%s][%s]", hive.name, self.cur_path)
-    return self:send("rpc_send_webhook", hook_api, url, title, content, hive.where_call(), ...)
+    return self:send("rpc_send_webhook", hook_api, url, "", content, hive.where_call(), ...)
 end
 
 function ProxyAgent:http_get(url, querys, headers, datas, timeout, debug)

@@ -1,11 +1,9 @@
 local ReliableMsg = import("store/reliable_msg.lua")
 
-local log_warn    = logger.warn
 local config_mgr  = hive.get("config_mgr")
 local thread_mgr  = hive.get("thread_mgr")
 local sformat     = string.format
 local tjoin       = table_ext.join
-local PeriodTime  = enum("PeriodTime")
 local RmsgAgent   = singleton()
 local prop        = property(RmsgAgent)
 prop:accessor("rmsgs", {})

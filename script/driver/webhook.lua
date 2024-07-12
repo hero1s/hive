@@ -12,11 +12,11 @@ local LIMIT_COUNT = 5
 local Webhook     = singleton()
 local prop        = property(Webhook)
 prop:reader("hooks", {})            --webhook通知接口
-prop:reader("lan_ip", "")
+prop:reader("title", "")
 prop:reader("notify_limit", {})     --控制同样消息的发送频率
 
 function Webhook:__init()
-    self.lan_ip           = hive.lan_ip
+    self.title            = sformat("[%s][%s][%s]", hive.name, hive.lan_ip, stdfs.current_path())
     self.hooks.lark_log   = environ.get("HIVE_LARK_URL")
     self.hooks.ding_log   = environ.get("HIVE_DING_URL")
     self.hooks.wechat_log = environ.get("HIVE_WECHAT_URL")
@@ -57,7 +57,7 @@ end
 function Webhook:notify(title, content, source, ...)
     if self:count_msg(source) then
         if next(self.hooks) then
-            title = title .. " host:" .. self.lan_ip
+            title = self.title .. title
             for hook_api, url in pairs(self.hooks) do
                 self[hook_api](self, url, title, content, ...)
             end
@@ -68,7 +68,7 @@ end
 function Webhook:send_log(hook_api, url, title, content, source, ...)
     if self:count_msg(source) then
         if self[hook_api] then
-            title = title .. " host:" .. self.lan_ip
+            title = self.title .. title
             self[hook_api](self, url, title, content, ...)
         end
     end

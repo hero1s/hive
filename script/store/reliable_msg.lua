@@ -1,7 +1,5 @@
 import("agent/mongo_agent.lua")
 local QueueFIFO     = import("container/queue_fifo.lua")
-local ltimer        = require("ltimer")
-local bson          = require("bson")
 local bdate         = bson.date
 local lnow_ms       = timer.now_ms
 local tinsert       = table.insert
