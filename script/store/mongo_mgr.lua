@@ -77,8 +77,8 @@ function MongoMgr:get_db(db_name, hash_key, coll_name)
             if queue > self.table_queue_size then
                 if queue > self.table_queue_limit then
                     log_err("[MongoMgr][get_db] table {} queue size {} > {} is too busy!!!,limit and refuse", coll_name, queue, self.table_queue_limit)
-                    --self:change_table_queue(coll_name, -1)
-                    --return nil 暂时先不拒绝 toney
+                    self:change_table_queue(coll_name, -1)
+                    return nil
                 end
                 log_err("[MongoMgr][get_db] table {} queue size {} > {} is too busy!!!,check logic is right ?", coll_name, queue, self.table_queue_size)
             end
