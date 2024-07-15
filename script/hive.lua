@@ -147,8 +147,8 @@ function hive.register_cmd_listener(doer, cmd_id, callback)
     protobuf_mgr:register(doer, cmd_id, callback)
 end
 
-function hive.make_clock(host, cost)
+function hive.make_clock(cost, ext)
     local ClockLog = import("feature/clock_log.lua")
-    return ClockLog(host, cost)
+    return ClockLog(cost, ext, 5)
 end
 
