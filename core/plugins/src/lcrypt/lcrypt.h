@@ -5,9 +5,6 @@
 extern "C" {
 #endif
 
-#define SMALL_CHUNK 256
-#define LZ_MAX_SIZE_CHUNK 65536
-
 #include "lz4.h"
 #include "md5.h"
 #include "rsa.h"

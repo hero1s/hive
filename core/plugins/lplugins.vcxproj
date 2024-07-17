@@ -46,7 +46,7 @@
     <ClCompile Include="src\lcodec\utf8.c"/>
     <ClCompile Include="src\lcrypt\base64.c"/>
     <ClCompile Include="src\lcrypt\des56.c"/>
-    <ClCompile Include="src\lcrypt\lcrypt.c"/>
+    <ClCompile Include="src\lcrypt\lcrypt.cpp"/>
     <ClCompile Include="src\lcrypt\lz4.c"/>
     <ClCompile Include="src\lcrypt\md5.c"/>
     <ClCompile Include="src\lcrypt\rsa.c"/>

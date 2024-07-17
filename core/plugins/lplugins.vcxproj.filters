@@ -114,7 +114,7 @@
     <ClCompile Include="src\lcrypt\des56.c">
       <Filter>lcrypt</Filter>
     </ClCompile>
-    <ClCompile Include="src\lcrypt\lcrypt.c">
+    <ClCompile Include="src\lcrypt\lcrypt.cpp">
       <Filter>lcrypt</Filter>
     </ClCompile>
     <ClCompile Include="src\lcrypt\lz4.c">

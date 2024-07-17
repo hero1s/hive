@@ -1,24 +1,24 @@
 --dbindex_mgr.lua
 import("agent/rmsg_agent.lua")
-local tinsert       = table.insert
-local tjoin         = table_ext.join
-local log_err       = logger.err
-local log_info      = logger.info
-local log_warn      = logger.warn
+local tinsert     = table.insert
+local tjoin       = table_ext.join
+local log_err     = logger.err
+local log_info    = logger.info
+local log_warn    = logger.warn
 
-local monitor       = hive.get("monitor")
-local mongo_agent   = hive.get("mongo_agent")
-local thread_mgr    = hive.get("thread_mgr")
-local gm_agent      = hive.get("gm_agent")
-local rmsg_agent    = hive.get("rmsg_agent")
-local config_mgr    = hive.get("config_mgr")
+local monitor     = hive.get("monitor")
+local mongo_agent = hive.get("mongo_agent")
+local thread_mgr  = hive.get("thread_mgr")
+local gm_agent    = hive.get("gm_agent")
+local rmsg_agent  = hive.get("rmsg_agent")
+local config_mgr  = hive.get("config_mgr")
 
-local GMType        = enum("GMType")
+local GMType      = enum("GMType")
 
-local dbindex_db    = config_mgr:init_table("dbindex", "db_name", "table_name", "name")
+local dbindex_db  = config_mgr:init_table("dbindex", "db_name", "table_name", "name")
 
-local DBIndexMgr    = singleton()
-local prop          = property(DBIndexMgr)
+local DBIndexMgr  = singleton()
+local prop        = property(DBIndexMgr)
 prop:accessor("status", 0)
 prop:accessor("sharding", false)
 prop:accessor("rebuild", false)
@@ -112,8 +112,12 @@ function DBIndexMgr:generate_index(conf)
     if conf.expireAfterSeconds > 0 then
         index.expireAfterSeconds = conf.expireAfterSeconds
     end
-    for _, v in ipairs(conf.keys) do
-        index.key[v] = 1
+    for k, v in ipairs(conf.keys) do
+        local v_type = 1
+        if #conf.types >= k then
+            v_type = conf.types[k]
+        end
+        index.key[v] = v_type
     end
     return index
 end
