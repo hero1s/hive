@@ -35,11 +35,14 @@ function ThreadMgr:__init()
     self.coroutine_pool = setmetatable({}, { __mode = "kv" })
 end
 
-function ThreadMgr:size()
-    local co_idle_size  = #self.coroutine_pool
+function ThreadMgr:idle_size()
+    return #self.coroutine_pool
+end
+
+function ThreadMgr:wait_size()
     local co_yield_size = tsize(self.coroutine_yields)
-    local co_wait_size  = tsize(self.coroutine_waitings)
-    return co_yield_size + co_wait_size + 1, co_idle_size
+    local co_wait_size = tsize(self.coroutine_waitings)
+    return co_yield_size + co_wait_size + 1
 end
 
 function ThreadMgr:lock_size()

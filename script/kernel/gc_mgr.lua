@@ -134,9 +134,20 @@ function GcMgr:log_gc_end()
 end
 
 function GcMgr:dump_mem_obj(less_count)
+    local thread_mgr = hive.get("thread_mgr")
     local obj_counts = class_review(less_count)
-    local info       = { objs = obj_counts, lua_mem = self:lua_mem_size(), mem = self:mem_size() }
-    logger.dump("[GcMgr][dump_mem_obj]:%s", info)
+    local info       = {
+        objs    = obj_counts,
+        lua_mem = self:lua_mem_size(),
+        mem     = self:mem_size(),
+        thread  = {
+            co_lock = thread_mgr:lock_size(),
+            co_wait = thread_mgr:wait_size(),
+            co_idle = thread_mgr:idle_size(),
+        }
+    }
+    logger.dump("[GcMgr][dump_mem_obj]:{}", info)
+    return info
 end
 
 hive.gc_mgr = GcMgr()

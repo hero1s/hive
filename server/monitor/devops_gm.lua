@@ -45,7 +45,6 @@ function DevopsGmMgr:register_gm()
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_hive_quit", desc = "关闭服务器", comment = "强踢玩家并停服", args = "reason|integer" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_cfg_reload", desc = "配置表热更新", comment = "(0 本地 1 远程)", args = "is_remote|integer" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_collect_gc", desc = "lua全量gc", comment = "", args = "" },
-        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_snapshot", desc = "lua内存快照", comment = "0开始1结束,服务/index", args = "snap|integer service_name|string index|integer" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_count_obj", desc = "lua对象计数", comment = "最小个数,服务/index", args = "less_num|integer service_name|string index|integer" },
         --工具
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_guid_view", desc = "guid信息", comment = "(拆解guid)", args = "guid|integer" },
@@ -179,10 +178,6 @@ end
 function DevopsGmMgr:gm_collect_gc()
     monitor_mgr:broadcast("rpc_collect_gc")
     return { code = 0 }
-end
-
-function DevopsGmMgr:gm_snapshot(snap, service_name, index)
-    return self:call_target_rpc(service_name, index, "rpc_snapshot", snap)
 end
 
 function DevopsGmMgr:gm_count_obj(less_num, service_name, index)

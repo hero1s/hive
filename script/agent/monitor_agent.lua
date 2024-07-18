@@ -47,7 +47,6 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "rpc_hive_quit")
     event_mgr:add_listener(self, "rpc_set_log_level")
     event_mgr:add_listener(self, "rpc_collect_gc")
-    event_mgr:add_listener(self, "rpc_snapshot")
     event_mgr:add_listener(self, "rpc_count_lua_obj")
 
     event_mgr:add_trigger(self, "on_router_connected")
@@ -203,20 +202,8 @@ function MonitorAgent:rpc_collect_gc()
     gc_mgr:collect_gc()
 end
 
-function MonitorAgent:rpc_snapshot(snap)
-    import("kernel/mem_monitor.lua")
-    local mem_monitor = hive.get("mem_monitor")
-    if snap == 0 then
-        return mem_monitor:start()
-    else
-        return mem_monitor:stop(true)
-    end
-end
-
 function MonitorAgent:rpc_count_lua_obj(less_num)
-    local obj_counts = class_review(less_num)
-    gc_mgr:dump_mem_obj(less_num)
-    return { objs = obj_counts, lua_mem = gc_mgr:lua_mem_size(), mem = gc_mgr:mem_size() }
+    return gc_mgr:dump_mem_obj(less_num)
 end
 
 function MonitorAgent:rpc_inject(code_string)
