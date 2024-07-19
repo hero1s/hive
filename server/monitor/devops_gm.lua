@@ -46,6 +46,8 @@ function DevopsGmMgr:register_gm()
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_cfg_reload", desc = "配置表热更新", comment = "(0 本地 1 远程)", args = "is_remote|integer" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_collect_gc", desc = "lua全量gc", comment = "", args = "" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_count_obj", desc = "lua对象计数", comment = "最小个数,服务/index", args = "less_num|integer service_name|string index|integer" },
+        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_check_endless_loop", desc = "检测死循环", comment = "开启/关闭,服务/index",
+          args  = "start|integer service_name|string index|integer" },
         --工具
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_guid_view", desc = "guid信息", comment = "(拆解guid)", args = "guid|integer" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_log_format", desc = "日志格式", comment = "0压缩,1格式化", args = "data|string swline|integer" },
@@ -182,6 +184,10 @@ end
 
 function DevopsGmMgr:gm_count_obj(less_num, service_name, index)
     return self:call_target_rpc(service_name, index, "rpc_count_lua_obj", less_num)
+end
+
+function DevopsGmMgr:gm_check_endless_loop(start, service_name, index)
+    return self:call_target_rpc(service_name, index, "rpc_check_endless_loop", start == 1 and true or false)
 end
 
 function DevopsGmMgr:gm_guid_view(guid)

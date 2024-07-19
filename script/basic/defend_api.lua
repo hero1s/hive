@@ -42,7 +42,12 @@ function hive.where_call(thread)
 end
 
 -- 启动死循环监控
-function hive.check_endless_loop()
+function hive.check_endless_loop(start)
+    if not start then
+        log_warn("close check_endless_loop !")
+        dsethook()
+        return
+    end
     log_warn("open check_endless_loop will degrade performance!")
     local debug_hook = function()
         local now = lclock_ms()

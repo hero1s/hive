@@ -48,6 +48,7 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "rpc_set_log_level")
     event_mgr:add_listener(self, "rpc_collect_gc")
     event_mgr:add_listener(self, "rpc_count_lua_obj")
+    event_mgr:add_listener(self, "rpc_check_endless_loop")
 
     event_mgr:add_trigger(self, "on_router_connected")
 
@@ -250,6 +251,12 @@ end
 function MonitorAgent:rpc_set_log_level(level)
     log_info("[MonitorAgent][rpc_set_log_level] level:{}", level)
     logger.filter(level)
+end
+
+function MonitorAgent:rpc_check_endless_loop(start)
+    log_info("[MonitorAgent][rpc_check_endless_loop] start:{}", start)
+    hive.check_endless_loop(start)
+    return { code = 0, msg = "ok", start = start }
 end
 
 hive.monitor = MonitorAgent()

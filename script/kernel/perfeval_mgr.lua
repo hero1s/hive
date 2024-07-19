@@ -6,6 +6,9 @@ local tsort       = table.sort
 local pairs       = pairs
 local co_running  = coroutine.running
 local hdefer      = hive.defer
+local log_err     = logger.err
+
+local HALF_MS     = hive.enum("PeriodTime", "HALF_MS")
 
 local proxy_agent = hive.get("proxy_agent")
 local update_mgr  = hive.get("update_mgr")
@@ -13,32 +16,27 @@ local update_mgr  = hive.get("update_mgr")
 local PerfevalMgr = singleton()
 local prop        = property(PerfevalMgr)
 prop:reader("eval_id", 0)
-prop:reader("perfeval", false)  --性能开关
 prop:reader("eval_list", {})    --协程评估表
 prop:reader("perfevals", {})    --性能统计
 
 function PerfevalMgr:__init()
-    self.perfeval = environ.status("HIVE_PERFEVAL")
-    if self.perfeval then
+    if environ.status("HIVE_PERFEVAL") then
         hive.hook_coroutine(self)
     end
     update_mgr:attach_quit(self)
-
 end
 
-function PerfevalMgr:yield()
+function PerfevalMgr:yield(yield_co)
     local clock_ms = lclock_ms()
-    local yield_co = co_running()
     local eval_cos = self.eval_list[yield_co]
     for _, eval_data in pairs(eval_cos or {}) do
         eval_data.yield_tick = clock_ms
     end
 end
 
-function PerfevalMgr:resume(co)
-    local clock_ms  = lclock_ms()
-    local resume_co = co or co_running()
-    local eval_cos  = self.eval_list[resume_co]
+function PerfevalMgr:resume(resume_co)
+    local clock_ms = lclock_ms()
+    local eval_cos = self.eval_list[resume_co]
     for _, eval_data in pairs(eval_cos or {}) do
         if eval_data.yield_tick > 0 then
             local pause_time     = clock_ms - eval_data.yield_tick
@@ -57,12 +55,10 @@ function PerfevalMgr:get_eval_id()
 end
 
 function PerfevalMgr:eval(eval_name)
-    if self.perfeval then
-        local edata = self:start(eval_name)
-        return hdefer(function()
-            self:stop(edata)
-        end)
-    end
+    local edata = self:start(eval_name)
+    return hdefer(function()
+        self:stop(edata)
+    end)
 end
 
 function PerfevalMgr:start(eval_name)
@@ -93,7 +89,7 @@ function PerfevalMgr:stop(eval_data)
         eval_time  = total_time - eval_data.yield_time
     }
     proxy_agent:statistics("on_perfeval", eval_data.eval_name, fields)
-    if total_time > 1 then
+    if fields.eval_time > 1 then
         self:write_perf(eval_data.eval_name, fields)
     end
     self.eval_list[eval_data.co][eval_data.eval_id] = nil
@@ -107,6 +103,9 @@ function PerfevalMgr:write_perf(eval_name, fields)
         eval.eval_time     = eval.eval_time + fields.eval_time
         eval.max_eval_time = (fields.eval_time > eval.max_eval_time) and fields.eval_time or eval.max_eval_time
         eval.count         = eval.count + 1
+        if fields.eval_time > HALF_MS then
+            log_err("[hive][write_perf] {},eval_time:{} !!!,please check you code!,must be error", eval_name, fields.eval_time)
+        end
     else
         self.perfevals[eval_name] = {
             total_time    = fields.total_time or 0,
@@ -132,10 +131,10 @@ function PerfevalMgr:dump_perf()
         tinsert(sort_infos, info)
     end
     tsort(sort_infos, function(a, b)
-        return a.total_time > b.total_time
+        return a.eval_time > b.eval_time
     end)
     if next(sort_infos) then
-        logger.dump("[StatisMgr][dump_perf] \n {}", sort_infos)
+        logger.dump("[PerfevalMgr][dump_perf] \n {}", sort_infos)
     end
 end
 

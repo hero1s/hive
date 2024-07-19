@@ -114,7 +114,7 @@ function DBIndexMgr:generate_index(conf)
     end
     for k, v in ipairs(conf.keys) do
         local v_type = 1
-        if #conf.types >= k then
+        if conf.types and #conf.types >= k then
             v_type = conf.types[k]
         end
         index.key[v] = v_type
