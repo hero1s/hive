@@ -4,7 +4,6 @@ local lclock_ms   = timer.clock_ms
 local tinsert     = table.insert
 local tsort       = table.sort
 local pairs       = pairs
-local co_running  = coroutine.running
 local hdefer      = hive.defer
 local log_err     = logger.err
 
@@ -54,15 +53,14 @@ function PerfevalMgr:get_eval_id()
     return self.eval_id
 end
 
-function PerfevalMgr:eval(eval_name)
-    local edata = self:start(eval_name)
+function PerfevalMgr:eval(eval_name, co)
+    local edata = self:start(eval_name, co)
     return hdefer(function()
         self:stop(edata)
     end)
 end
 
-function PerfevalMgr:start(eval_name)
-    local co        = co_running()
+function PerfevalMgr:start(eval_name, co)
     local eval_id   = self:get_eval_id()
     local eval_data = {
         co         = co,
