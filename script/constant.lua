@@ -107,6 +107,7 @@ CacheCode.CACHE_KEY_IS_NOT_EXIST = 10004  -- key不存在
 CacheCode.CACHE_FLUSH_FAILED     = 10005  -- flush失败
 CacheCode.CACHE_KEY_LOCK_FAILD   = 10006  -- 用户锁失败
 CacheCode.CACHE_DELETE_FAILD     = 10007  -- 缓存删除失败
+CacheCode.CACHE_PRIMARY_ID_ERROR = 10008  -- 主键不匹配
 
 -- robot类型
 local RobotType                  = enum("RobotType", 0)

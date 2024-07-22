@@ -172,6 +172,10 @@ function MongoAgent:remove_sheet_fields(sheet_name, primary_id, primary_key, fie
 end
 
 function MongoAgent:update_sheet(sheet_name, primary_id, primary_key, udata, db_name)
+    if udata == nil or udata[primary_key] ~= primary_id then
+        log_err("[MongoAgent][update_sheet] udata[%s] not equal primary_id(%s)", udata[primary_key], primary_id)
+        return false
+    end
     local ok, code, res = self:update({ sheet_name, udata, { [primary_key] = primary_id }, true }, primary_id, db_name)
     if check_failed(code, ok) then
         log_err("[MongoAgent][update_mongo_{}] update ({}) failed! primary_id({}), code({}), res({})", sheet_name, udata, primary_id, code, res)

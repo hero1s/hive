@@ -152,6 +152,10 @@ function CacheObj:destory()
 end
 
 function CacheObj:update(tab_data, flush, ignore_lmdb)
+    if tab_data == nil or tab_data[self.cache_key] ~= self.primary_value then
+        log_err("[CacheObj][update] data[{}] not equal primary_id({}:{})", tab_data, self.cache_key, self.primary_value)
+        return CacheCode.CACHE_PRIMARY_ID_ERROR
+    end
     self:active()
     self.update_count = self.update_count + 1
     if flush or self.data == nil or not next(self.data) then
