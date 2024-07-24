@@ -173,7 +173,7 @@ end
 
 function MongoAgent:update_sheet(sheet_name, primary_id, primary_key, udata, db_name)
     if udata == nil or udata[primary_key] ~= primary_id then
-        log_err("[MongoAgent][update_sheet] udata[%s] not equal primary_id(%s)", udata[primary_key], primary_id)
+        log_err("[MongoAgent][update_sheet] udata[%s] not equal primary_id(%s:%s:%s)", udata[primary_key], sheet_name, primary_key, primary_id)
         return false
     end
     local ok, code, res = self:update({ sheet_name, udata, { [primary_key] = primary_id }, true }, primary_id, db_name)
