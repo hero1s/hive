@@ -71,11 +71,9 @@ function RedisAgent:autoinc_id(key)
 end
 
 function RedisAgent:start_local_run()
-    if self.local_run then
-        return
+    if not self.local_run then
+        self.local_run = scheduler:startup(self.service, "worker.redis")
     end
-    --启动代理线程
-    self.local_run = scheduler:startup(self.service, "worker.redis")
 end
 
 --发送数据库请求

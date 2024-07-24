@@ -35,7 +35,7 @@ end
 --初始化统计
 local function init_statis()
     import("agent/proxy_agent.lua")
-    import("kernel/perfeval_mgr.lua")
+    import("internal/perfeval_mgr.lua")
 end
 
 --初始化路由
@@ -54,7 +54,7 @@ end
 local function init_mainloop()
     import("kernel/timer_mgr.lua")
     import("kernel/update_mgr.lua")
-    import("feature/scheduler.lua")
+    import("internal/scheduler.lua")
     event_mgr  = hive.get("event_mgr")
     update_mgr = hive.get("update_mgr")
     scheduler  = hive.get("scheduler")

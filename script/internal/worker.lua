@@ -38,7 +38,7 @@ end
 --初始化统计
 local function init_statis()
     import("agent/proxy_agent.lua")
-    import("kernel/perfeval_mgr.lua")
+    import("internal/perfeval_mgr.lua")
 end
 
 local function init_listener()

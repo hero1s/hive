@@ -22,11 +22,9 @@ function MongoAgent:__init()
 end
 
 function MongoAgent:start_local_run()
-    if self.local_run then
-        return
+    if not self.local_run then
+        self.local_run = scheduler:startup(self.service, "worker.mongo")
     end
-    --启动代理线程
-    self.local_run = scheduler:startup(self.service, "worker.mongo")
 end
 
 --db_query: {coll_name, selector, fields}

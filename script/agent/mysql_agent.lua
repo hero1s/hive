@@ -17,11 +17,9 @@ function MysqlAgent:__init()
 end
 
 function MysqlAgent:start_local_run()
-    if self.local_run then
-        return
+    if not self.local_run then
+        self.local_run = scheduler:startup(self.service, "worker.mysql")
     end
-    --启动代理线程
-    self.local_run = scheduler:startup(self.service, "worker.mysql")
 end
 
 function MysqlAgent:gen_condition_str(conditions)
