@@ -151,7 +151,7 @@ function ReliableMsg:retry_send_message(msg)
     if check_failed(code, ok) then
         return false
     end
-    log_info("[ReliableMsg][retry_send_message] succeed: uuid:%s, from:%s, to:%s, type:%s", msg.uuid, msg.from, msg.to, msg.type)
+    log_info("[ReliableMsg][retry_send_message] succeed: uuid:{}, from:{}, to:{}, type:{}", msg.uuid, msg.from, msg.to, msg.type)
     return true
 end
 

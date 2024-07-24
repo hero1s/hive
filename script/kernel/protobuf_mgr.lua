@@ -82,7 +82,7 @@ function ProtobufMgr:encode_byname(pb_name, data)
     if ok then
         return pb_str
     end
-    log_err("[ProtobufMgr][encode_byname] name:%s,data:%s,res:%s", pb_name, data, pb_str)
+    log_err("[ProtobufMgr][encode_byname] name:{},data:{},res:{}", pb_name, data, pb_str)
 end
 
 function ProtobufMgr:encode(cmd_id, data)
@@ -95,7 +95,7 @@ function ProtobufMgr:encode(cmd_id, data)
     if ok then
         return pb_str
     end
-    log_err("[ProtobufMgr][encode] cmd_id:%s,name:%s,data:%s,res:%s", cmd_id, proto_name, data, pb_str)
+    log_err("[ProtobufMgr][encode] cmd_id:{},name:{},data:{},res:{}", cmd_id, proto_name, data, pb_str)
 end
 
 function ProtobufMgr:decode_byname(pb_name, pb_str)
@@ -103,7 +103,7 @@ function ProtobufMgr:decode_byname(pb_name, pb_str)
     if ok then
         return pb_data
     end
-    log_err("[ProtobufMgr][decode_byname] name:%s,data:%s,res:%s", pb_name, pb_str, pb_data)
+    log_err("[ProtobufMgr][decode_byname] name:{},data:{},res:{}", pb_name, pb_str, pb_data)
 end
 
 function ProtobufMgr:decode(cmd_id, pb_str)
@@ -119,7 +119,7 @@ function ProtobufMgr:decode(cmd_id, pb_str)
     if ok then
         return pb_data, proto_name
     end
-    log_err("[ProtobufMgr][decode] cmd_id:%s,res:%s", cmd_id, pb_data)
+    log_err("[ProtobufMgr][decode] cmd_id:{},res:{}", cmd_id, pb_data)
 end
 
 local function pbenum(full_name)

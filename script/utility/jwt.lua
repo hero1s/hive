@@ -51,7 +51,7 @@ function JWT:decode(jwt_token, check)
     if check then
         local token = self:encode(payload)
         if token ~= jwt_token then
-            log_err("Invalid token:%s -- %s", jwt_token, token)
+            log_err("Invalid token:{} -- {}", jwt_token, token)
             return nil, "Invalid token"
         end
     end

@@ -15,7 +15,7 @@ end
 function ClockLog:__defer()
     local cost_ms = lclock_ms() - self.start_ms
     if cost_ms > self.cost then
-        log_err("[ClockLog][__defer] the [%s][%s],run cost:%s > %s,it maybe use up cpu !!!!!!", self.source, self.ext, cost_ms, self.cost)
+        log_err("[ClockLog][__defer] the [{}][{}],run cost:%s > %s,it maybe use up cpu !!!!!!", self.source, self.ext, cost_ms, self.cost)
     end
 end
 
