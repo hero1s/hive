@@ -79,6 +79,9 @@
     <ClInclude Include="src\lzset\zset.hpp">
       <Filter>lzset</Filter>
     </ClInclude>
+    <ClInclude Include="src\profiler\profiler.h">
+      <Filter>profiler</Filter>
+    </ClInclude>
     <ClInclude Include="src\protobuf\pb.h">
       <Filter>protobuf</Filter>
     </ClInclude>
@@ -153,6 +156,12 @@
     <ClCompile Include="src\lzset\lzset.cpp">
       <Filter>lzset</Filter>
     </ClCompile>
+    <ClCompile Include="src\profiler\lprofiler.cpp">
+      <Filter>profiler</Filter>
+    </ClCompile>
+    <ClCompile Include="src\profiler\profiler.cpp">
+      <Filter>profiler</Filter>
+    </ClCompile>
     <ClCompile Include="src\protobuf\luapb.cpp">
       <Filter>protobuf</Filter>
     </ClCompile>
@@ -193,6 +202,9 @@
     </Filter>
     <Filter Include="lzset">
       <UniqueIdentifier>{92721C52-59F1-B176-6453-2FAB63F219E9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="profiler">
+      <UniqueIdentifier>{308B35B5-3DFC-A91C-A2CA-2B8F450AB382}</UniqueIdentifier>
     </Filter>
     <Filter Include="protobuf">
       <UniqueIdentifier>{606EAF84-6C65-7991-6354-199B45953EE2}</UniqueIdentifier>

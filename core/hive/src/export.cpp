@@ -32,6 +32,7 @@ extern "C"
 		REGISTER_CUSTOM_LIBRARY("lzset", luaopen_lzset);
 		REGISTER_CUSTOM_LIBRARY("laoi", luaopen_laoi);
 		REGISTER_CUSTOM_LIBRARY("lrandom", luaopen_lrandom);
+		REGISTER_CUSTOM_LIBRARY("lprofiler", luaopen_lprofiler);
 
 		//optional
 
