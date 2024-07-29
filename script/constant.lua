@@ -17,6 +17,9 @@ KernCode.PLAYER_NOT_EXIST        = 5     --玩家不存在
 KernCode.TOKEN_ERROR             = 6     --登录token错误
 KernCode.RPC_UNREACHABLE         = 7     --RPC目标不可达
 KernCode.PUBLISH_ENV             = 8     --正式环境不可用
+KernCode.THREAD_TIMEOUT          = 9     --协程超时
+KernCode.NOT_ROUTER              = 10    --没有可用router
+
 KernCode.DB_NOTINIT              = 100   --数据库没有初始化
 KernCode.LOGIC_FAILED            = 101   --业务执行失败
 KernCode.MYSQL_FAILED            = 102   --MYSQL执行失败

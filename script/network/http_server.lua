@@ -177,6 +177,9 @@ function HttpServer:response(socket, status, response, headers)
     headers["connection"] = "close"
     socket:send_data(status, headers, response)
     self:close(token, socket)
+    if self.open_log then
+        log_debug("[HttpServer][response] head:{},response:{}", headers, response)
+    end
 end
 
 --取消url

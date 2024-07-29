@@ -152,3 +152,7 @@ function hive.make_clock(cost, ext)
     return ClockLog(cost, ext, 5)
 end
 
+function hive.make_limiter(name, warn_size, refuse_size, qps_warn)
+    local Limiter = import("feature/limiter.lua")
+    return Limiter(name, warn_size, refuse_size, qps_warn)
+end

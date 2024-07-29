@@ -1,28 +1,28 @@
 --thread_mgr.lua
-local select        = select
-local tsort         = table.sort
-local tunpack       = table.unpack
-local tpack         = table.pack
-local tremove       = table.remove
-local sformat       = string.format
-local co_yield      = coroutine.yield
-local co_create     = coroutine.create
-local co_resume     = coroutine.resume
-local co_running    = coroutine.running
+local select         = select
+local tsort          = table.sort
+local tunpack        = table.unpack
+local tpack          = table.pack
+local tremove        = table.remove
+local co_yield       = coroutine.yield
+local co_create      = coroutine.create
+local co_resume      = coroutine.resume
+local co_running     = coroutine.running
 
-local mrandom       = math_ext.random
-local tsize         = table_ext.size
-local hxpcall       = hive.xpcall
-local log_err       = logger.err
+local mrandom        = math_ext.random
+local tsize          = table_ext.size
+local hxpcall        = hive.xpcall
+local log_err        = logger.err
 
-local QueueFIFO     = import("container/queue_fifo.lua")
-local SyncLock      = import("kernel/internal/sync_lock.lua")
+local QueueFIFO      = import("container/queue_fifo.lua")
+local SyncLock       = import("kernel/internal/sync_lock.lua")
 
-local MINUTE_MS     = hive.enum("PeriodTime", "MINUTE_MS")
-local SYNC_PERFRAME = 5
+local MINUTE_MS      = hive.enum("PeriodTime", "MINUTE_MS")
+local THREAD_TIMEOUT = hive.enum("KernCode", "THREAD_TIMEOUT")
+local SYNC_PERFRAME  = 5
 
-local ThreadMgr     = singleton()
-local prop          = property(ThreadMgr)
+local ThreadMgr      = singleton()
+local prop           = property(ThreadMgr)
 prop:reader("session_id", 1)
 prop:reader("entry_map", {})
 prop:reader("syncqueue_map", {})
@@ -206,7 +206,7 @@ function ThreadMgr:on_second(clock_ms)
         end)
         for _, context in ipairs(timeout_coroutines) do
             local session_id = context.session_id
-            if self:try_response(session_id, false, sformat("%s timeout", context.title), session_id) then
+            if self:try_response(session_id, false, THREAD_TIMEOUT, session_id) then
                 if context.title then
                     log_err("[ThreadMgr][on_second][{}] session_id({}:{}) timeout:{} !", hive.frame, session_id, context.title, clock_ms - context.stime)
                 end

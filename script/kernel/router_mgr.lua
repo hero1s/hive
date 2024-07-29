@@ -19,6 +19,7 @@ local event_mgr        = hive.get("event_mgr")
 
 local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 local RPC_UNREACHABLE  = hive.enum("KernCode", "RPC_UNREACHABLE")
+local NOT_ROUTER       = hive.enum("KernCode", "NOT_ROUTER")
 
 local RouterMgr        = singleton()
 local prop             = property(RouterMgr)
@@ -135,7 +136,7 @@ function RouterMgr:forward_target(hash_key, method, rpc, session_id, ...)
     if router then
         return router:forward_socket(method, rpc, session_id, ...)
     end
-    return false, "router not connected"
+    return false, NOT_ROUTER
 end
 
 --通过router发送广播，并收集所有的结果
@@ -191,7 +192,7 @@ function RouterMgr:call_router(hash_key, rpc, ...)
     if router then
         return router:call(rpc, ...)
     end
-    return false, "router not connected"
+    return false, NOT_ROUTER
 end
 
 --发送给路由
