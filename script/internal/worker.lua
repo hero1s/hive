@@ -107,14 +107,16 @@ hive.run = function()
     hxpcall(function()
         local sclock_ms = lclock_ms()
         hive.update(sclock_ms)
+        local scheduler_ms = lclock_ms() - sclock_ms
         luabus.wait(sclock_ms, 10)
         local now_ms, clock_ms = ltime()
         update_mgr:update(nil, now_ms, clock_ms)
         --时间告警
         local work_ms = lclock_ms() - sclock_ms
         if work_ms > HALF_MS then
-            local io_ms = clock_ms - sclock_ms
-            log_err("[worker][run] last frame[{}:{}] too long => all:{}, net:{})!", hive.name, hive.frame, work_ms, io_ms)
+            local io_ms = clock_ms - sclock_ms - scheduler_ms
+            log_err("[hive][run] last frame[{}:{}] too long => all:{},thread:{},net:{},update:{},gc:{})!",
+                    hive.name, hive.frame, work_ms, scheduler_ms, io_ms, work_ms - scheduler_ms - io_ms, hive.gc_time)
         end
     end)
 end

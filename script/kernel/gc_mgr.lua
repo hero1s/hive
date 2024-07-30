@@ -71,19 +71,20 @@ function GcMgr:run_step(now_us)
     if not self.gc_running then
         self:log_gc_end()
     end
+    return costTime
 end
 
 function GcMgr:update()
     local now_us = lclock_ms()
     if self.gc_running then
-        self:run_step(now_us)
-        return
+        return self:run_step(now_us)
     end
     self.gc_start_mem = mfloor(collectgarbage("count"))
     local mem_cost    = self.gc_start_mem - self.gc_stop_mem
     if (mem_cost > self.gc_threshold) or self.gc_last_collect_time + MAX_IDLE_TIME < now_us then
         self:log_gc_start(now_us, mem_cost)
     end
+    return 0
 end
 
 function GcMgr:log_gc_start(now_us, mem_cost)

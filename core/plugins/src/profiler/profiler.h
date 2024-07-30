@@ -26,13 +26,10 @@ namespace lprofiler {
         float getPeakValue(void) const { return m_peak_value; };
         float getTotalTime(void) const { return m_total_time; };
         float getPercentInParent(void) const { return m_percent_in_parent; };
-        size_t getCurThreadID() const { return m_cur_threadid; };
-        void setCurThreadID(size_t threadid) { m_cur_threadid = threadid; };
         bool saveData(std::string& outStr, uint32_t layer /*= 0*/);
         void statInfo(uint32_t flag);
 
     private:
-        size_t      m_cur_threadid;         //当前线程ID
         uint32_t    m_total_calls;          //总调用次数
         int         m_recursion_counter;    //递归调用计数
         float       m_total_time;           //总时间
@@ -58,8 +55,8 @@ namespace lprofiler {
         virtual ~ProfileManager(void);
         void init();
         void shutdown();
-        int  startProfile(size_t thread_id, const char* node_name, std::string& err);
-        int  stopProfile(size_t thread_id, const char* node_name, std::string& err);
+        int  startProfile(const char* node_name, std::string& err);
+        int  stopProfile(const char* node_name, std::string& err);
         void statInfo(uint32_t flag /*= flag_stat_percentinparent */);
         void reset(void);
         void increaseFrameCount(void) { ++m_frame_counter; };

@@ -36,6 +36,8 @@ namespace lcodec {
 
     static const char letter[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
+    static thread_local uint64_t sequence[257] = { 0 };
+
     static uint64_t guid_new(uint32_t group, uint32_t index,uint32_t gtype){
         if (group == 0) {
             group = rand();
@@ -152,5 +154,9 @@ namespace lcodec {
         lua_pushinteger(L, ((guid >> (GROUP_BITS + INDEX_BITS + TYPE_BITS + SNUM_BITS)) & MAX_TIME) + BASE_TIME);
         lua_pushinteger(L, (guid >> (GROUP_BITS + INDEX_BITS + TYPE_BITS)) & MAX_SNUM);
         return 5;
+    }
+
+    static uint64_t next_id(uint8_t type) {
+        return ++sequence[type];
     }
 }

@@ -44,9 +44,15 @@ thread_mgr:fork(function()
     log_debug("encode-> aa: %d, %s", #es, lhex_encode(es))
     lprofiler.stop("lencode")
 
+    for i = 1, 10 do
+        log_debug("next_id1-> %d", lcodec.next_id(1))
+        log_debug("next_id2-> %d", lcodec.next_id(2))
+    end
+
     thread_mgr:sleep(2000)
     lprofiler.stop("lunserialize")
     log_dump("\t\n %s", lprofiler.info())
+
 end)
 
 --dump

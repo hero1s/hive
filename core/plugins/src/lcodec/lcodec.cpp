@@ -106,6 +106,7 @@ namespace lcodec {
         llcodec.set_function("guid_serial", guid_serial);
         llcodec.set_function("guid_time", guid_time);
         llcodec.set_function("guid_source", guid_source);
+        llcodec.set_function("next_id", next_id);
         llcodec.set_function("hash_code", hash_code);
         llcodec.set_function("jumphash", jumphash_l);
         llcodec.set_function("fnv_1_32", fnv_1_32_l);

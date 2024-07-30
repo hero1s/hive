@@ -8,7 +8,7 @@ namespace lprofiler {
     thread_local std::string err_msg;
 
     static int start(lua_State* L, const char* node_name) {
-        auto ret = thread_profiler.startProfile((size_t)L, node_name, err_msg);
+        auto ret = thread_profiler.startProfile(node_name, err_msg);
         if (ret == 0) {
             return luaL_error(L, "start error: %s!", err_msg.c_str());
         }
@@ -17,7 +17,7 @@ namespace lprofiler {
     }
 
     static int stop(lua_State* L, const char* node_name) {
-        auto ret = thread_profiler.stopProfile((size_t)L, node_name, err_msg);
+        auto ret = thread_profiler.stopProfile(node_name, err_msg);
         if (ret == 0) {
             return luaL_error(L, "stop error: %s!", err_msg.c_str());
         }
@@ -28,8 +28,6 @@ namespace lprofiler {
     luakit::lua_table open_lprofiler(lua_State* L) {
         luakit::kit_state kit_state(L);
         auto lprofiler = kit_state.new_table();
-        lprofiler.set_function("init", []() { thread_profiler.init(); });
-        lprofiler.set_function("shutdown", []() { thread_profiler.shutdown(); });
         lprofiler.set_function("start", start);
         lprofiler.set_function("stop", stop);
         lprofiler.set_function("info", []() { return thread_profiler.info(); });

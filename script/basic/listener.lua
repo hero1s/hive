@@ -106,6 +106,7 @@ function Listener:add_vote(trigger, event, handler)
 end
 
 function Listener:notify_trigger(event, ...)
+    local _<close> = hive.eval(event)
     for _, trigger_ctx in ipairs(self._triggers[event] or {}) do
         local trigger, func_name = tunpack(trigger_ctx)
         local callback_func      = trigger[func_name]

@@ -20,8 +20,7 @@ namespace lprofiler {
     }
 
     ProfileNode::ProfileNode(const char* node_name, ProfileNode* parent_node, ProfileManager* mgr)
-        :m_cur_threadid(0)
-        , m_total_calls(0)
+        : m_total_calls(0)
         , m_recursion_counter(0)
         , m_total_time(0.0f)
         , m_peak_value(0.0f)
@@ -60,10 +59,8 @@ namespace lprofiler {
         }
         //如果有没找到则新建
         ProfileNode* new_node = new ProfileNode(node_name, this, this->m_mgr);
-        new_node->m_sibling_node = m_child_node;
-        new_node->setCurThreadID(m_mgr->getRootNode()->getCurThreadID());
+        new_node->m_sibling_node = m_child_node;        
         m_child_node = new_node;
-        std::cout << fmt::format(" {} add new anazy node:{} ", getNodeName(), node_name) << std::endl;
         return new_node;
     }
 
@@ -220,17 +217,9 @@ namespace lprofiler {
         }
     }
 
-    int ProfileManager::startProfile(size_t thread_id, const char* node_name, std::string& err) {
+    int ProfileManager::startProfile(const char* node_name, std::string& err) {
         if (nullptr == node_name || nullptr == m_cur_node) {
             return 0;
-        }
-        if (thread_id != m_cur_node->getCurThreadID()) {
-            if (m_cur_node == m_root_node) {
-                m_root_node->setCurThreadID(thread_id);
-            } else {
-                err = fmt::format("start thread_id : {} != {}", thread_id, m_cur_node->getCurThreadID());
-                return 0;
-            }            
         }
         if (0 != strcmp(node_name, m_cur_node->getNodeName())) {
             m_cur_node = m_cur_node->getSubNode(node_name);
@@ -241,12 +230,8 @@ namespace lprofiler {
         return 1;
     }
 
-    int ProfileManager::stopProfile(size_t thread_id, const char* node_name, std::string& err) {
+    int ProfileManager::stopProfile(const char* node_name, std::string& err) {
         if (nullptr == m_cur_node || nullptr == node_name) {
-            return 0;
-        }
-        if (thread_id != m_cur_node->getCurThreadID()) {
-            err = fmt::format("stop thread_id : {} != {}", thread_id, m_cur_node->getCurThreadID());
             return 0;
         }
         if (0 != strcmp(node_name, m_cur_node->getNodeName())) {

@@ -8,10 +8,11 @@ struct thread_rand_context
 {
 	std::vector<int64_t>& get_w() { w.clear(); return w; }
 	std::vector<int64_t>& get_v() { v.clear(); return v; }
-	std::mt19937 generator{ std::random_device{}() };
+	std::mt19937& get_generator() { return generator; }
 private:
 	std::vector<int64_t> w;
 	std::vector<int64_t> v;
+	std::mt19937 generator{ std::random_device{}() };
 };
 
 static thread_local thread_rand_context thread_rng;
@@ -19,7 +20,7 @@ static thread_local thread_rand_context thread_rng;
 inline unsigned int rand_u32()
 {
 	std::uniform_int_distribution<unsigned int> dis(1, std::numeric_limits<unsigned int>::max());
-	return dis(thread_rng.generator);
+	return dis(thread_rng.get_generator());
 }
 
 ///[min.max]
@@ -27,7 +28,7 @@ template<typename IntType>
 IntType rand_range(IntType min, IntType max)
 {
 	std::uniform_int_distribution<IntType> dis(min, max);
-	return dis(thread_rng.generator);
+	return dis(thread_rng.get_generator());
 }
 
 ///[min,max)
@@ -35,7 +36,7 @@ template< class RealType = double >
 RealType randf_range(RealType min, RealType max)
 {
 	std::uniform_real_distribution<RealType> dis(min, max);
-	return dis(thread_rng.generator);
+	return dis(thread_rng.get_generator());
 }
 
 template< class RealType = double >
@@ -61,7 +62,7 @@ auto rand_weight(const Values& v, const Weights& w)
 	}
 
 	auto dist = std::discrete_distribution<int>(w.begin(), w.end());
-	int index = dist(thread_rng.generator);
+	int index = dist(thread_rng.get_generator());
 	return v[index];
 }
 

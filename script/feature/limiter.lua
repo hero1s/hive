@@ -22,7 +22,6 @@ function Limiter:__init(name, warn_size, refuse_size, qps_warn)
 end
 
 function Limiter:incr()
-    self.cur_req = self.cur_req + 1
     if self.cur_req > self.refuse_size then
         log_err("[Limiter][incr] name:%s,cur:%s > refuse:%s", self.name, self.cur_req, self.refuse_size)
         return false
@@ -30,6 +29,7 @@ function Limiter:incr()
     if self.cur_req > self.warn_size then
         log_err("[Limiter][incr] name:%s,cur:%s > warn:%s", self.name, self.cur_req, self.warn_size)
     end
+    self.cur_req = self.cur_req + 1
     self.qps_counter:count_increase()
     return true
 end
