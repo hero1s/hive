@@ -25,6 +25,7 @@ local event_mgr    = hive.get("event_mgr")
 local ProtobufMgr  = singleton()
 local prop         = property(ProtobufMgr)
 prop:accessor("pb_indexs", {})
+prop:reader("pb_callbacks", {})
 prop:accessor("allow_reload", false)
 
 function ProtobufMgr:__init()
@@ -150,13 +151,21 @@ function ProtobufMgr:define_command(full_name, proto_name)
     if not enum_set then
         return
     end
-    local msg_name = "NID_" .. supper(proto_name)
-    if sends_with(proto_name, "_req") or sends_with(proto_name, "_res") or sends_with(proto_name, "_ntf") then
+    local proto_isreq = sends_with(proto_name, "_req")
+    if proto_isreq or sends_with(proto_name, "_res") or sends_with(proto_name, "_ntf") then
+        local msg_name = "NID_" .. supper(proto_name)
         for enum_type, enum in pairs(enum_set) do
             local msg_id = pb_enum_id(package_name .. "." .. enum_type, msg_name)
             if msg_id then
                 self.pb_indexs[msg_id] = full_name
                 pb_bind_cmd(msg_id, full_name)
+                if proto_isreq then
+                    local msg_res_name = msg_name:sub(0, -2) .. "S"
+                    local msg_res_id   = pb_enum_id(package_name .. "." .. enum_type, msg_res_name)
+                    if msg_res_id then
+                        self.pb_callbacks[msg_id] = msg_res_id
+                    end
+                end
                 return
             end
         end
@@ -183,6 +192,15 @@ function ProtobufMgr:on_reload()
     protobuf.clear()
     -- register pb文件
     self:load_protos()
+end
+
+--返回回调id
+function ProtobufMgr:callback_id(cmd_id)
+    local pb_cbid = self.pb_callbacks[cmd_id]
+    if not pb_cbid then
+        log_warn("[ProtobufMgr][callback_id] cmdid [%s] find callback_id is nil", cmd_id)
+    end
+    return pb_cbid
 end
 
 -- 获取消息名称

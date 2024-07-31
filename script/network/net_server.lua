@@ -11,6 +11,7 @@ local luabus           = luabus
 local event_mgr        = hive.get("event_mgr")
 local update_mgr       = hive.get("update_mgr")
 local thread_mgr       = hive.get("thread_mgr")
+local protobuf_mgr     = hive.get("protobuf_mgr")
 local proxy_agent      = hive.get("proxy_agent")
 local heval            = hive.eval
 
@@ -18,6 +19,7 @@ local FLAG_REQ         = hive.enum("FlagMask", "REQ")
 local FLAG_RES         = hive.enum("FlagMask", "RES")
 local NETWORK_TIMEOUT  = hive.enum("NetwkTime", "NETWORK_TIMEOUT")
 local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
+local TOO_FAST         = hive.enum("KernCode", "TOO_FAST")
 
 local flow_ctrl        = environ.status("HIVE_FLOW_CTRL")
 local flow_cd          = env_number("HIVE_FLOW_CTRL_CD", 0)
@@ -178,6 +180,7 @@ function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
     if cmd_cd_time > 0 then
         if session.is_command_cd(cmd_id, cmd_cd_time, clock_ms) then
             log_warn("[NetServer][on_socket_recv] session({}) trigger cmd({}) cd ctrl, will be drop.", session.token, cmd_id)
+            self:callback_errcode(session, cmd_id, TOO_FAST, session_id)
             return
         end
     end
@@ -253,6 +256,16 @@ end
 -- 查询会话
 function NetServer:get_session_by_token(token)
     return self.sessions[token]
+end
+
+-- 回复错误码
+function NetServer:callback_errcode(session, cmd_id, code, session_id)
+    local callback_id = protobuf_mgr:callback_id(cmd_id)
+    if not callback_id then
+        return false
+    end
+    local data = { code = code }
+    return self:send_pack(session, callback_id, data, session_id or 0)
 end
 
 return NetServer

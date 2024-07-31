@@ -33,7 +33,7 @@ local update_mgr   = hive.get("update_mgr")
 local thread_mgr   = hive.get("thread_mgr")
 
 local SUCCESS      = hive.enum("KernCode", "SUCCESS")
-local FAST_MS      = hive.enum("PeriodTime", "FAST_MS")
+local SLOW_MS      = hive.enum("PeriodTime", "SLOW_MS")
 local SECOND_MS    = hive.enum("PeriodTime", "SECOND_MS")
 local SECOND_10_MS = hive.enum("PeriodTime", "SECOND_10_MS")
 local DB_TIMEOUT   = hive.enum("NetwkTime", "DB_CALL_TIMEOUT")
@@ -304,7 +304,7 @@ function MongoDB:op_msg(sock, session_id, cmd, ...)
     local _<close> = hdefer(function()
         sock.sessions[session_id] = nil
         local utime               = lclock_ms() - tick
-        if utime > FAST_MS then
+        if utime > SLOW_MS then
             log_warn("[MongoDB][op_msg] cmd ({}:{}) execute so big {}!", cmd, session_id, utime)
         end
     end)

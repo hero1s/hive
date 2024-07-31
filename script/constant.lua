@@ -19,7 +19,7 @@ KernCode.RPC_UNREACHABLE         = 7     --RPC目标不可达
 KernCode.PUBLISH_ENV             = 8     --正式环境不可用
 KernCode.THREAD_TIMEOUT          = 9     --协程超时
 KernCode.NOT_ROUTER              = 10    --没有可用router
-
+KernCode.TOO_FAST                = 11    --操作频繁
 KernCode.DB_NOTINIT              = 100   --数据库没有初始化
 KernCode.LOGIC_FAILED            = 101   --业务执行失败
 KernCode.MYSQL_FAILED            = 102   --MYSQL执行失败
@@ -56,6 +56,7 @@ NetwkTime.NETWORK_TIMEOUT        = 30000     --其他网络连接超时时间
 --常用时间周期
 local PeriodTime                 = enum("PeriodTime", 0)
 PeriodTime.FAST_MS               = 100       --0.1秒（ms）
+PeriodTime.SLOW_MS               = 120       --120毫秒（ms）
 PeriodTime.HALF_MS               = 500       --0.5秒（ms）
 PeriodTime.SECOND_MS             = 1000      --1秒（ms）
 PeriodTime.SECOND_2_MS           = 2000      --2秒（ms）
