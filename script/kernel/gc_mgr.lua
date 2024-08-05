@@ -12,8 +12,8 @@ local log_warn                   = logger.warn
 local cut_tail                   = math_ext.cut_tail
 
 local MAX_IDLE_TIME<const>       = 10 * 1000                  -- 空闲时间
-local GC_FAST_STEP<const>        = 500                        -- gc快速回收
-local GC_SLOW_STEP<const>        = 100                        -- gc慢回收
+local GC_FAST_STEP               = 200                        -- gc快速回收
+local GC_SLOW_STEP               = 50                         -- gc慢回收
 local MEM_ALLOC_SPEED_MAX<const> = 10 * 1000                  -- 每秒消耗内存超过10M，开启急速gc
 local PER_US_FOR_SECOND<const>   = 1000                       -- 1秒=1000ms
 
@@ -32,11 +32,31 @@ prop:reader("gc_start_mem", 0)
 prop:reader("gc_step_use_time_max", 0)
 prop:reader("gc_step_time50_cnt", 0)-- 一个周期内，单步执行超过50ms的次数
 prop:reader("mem_cost_speed", 0)
+prop:reader("open_gc_step", false)
 
 function GcMgr:__init()
-    collectgarbage("stop")
+
+end
+
+function GcMgr:set_gc_speed(pause, step_mul)
+    --当收集器在总使用内存数量达到上次垃圾收集时的(x/100)开启新收集周期。默认200
+    collectgarbage("setpause", pause)
+    --垃圾收集器的运行速度是内存分配的(x/100)倍,如果此值小于100可能会导致垃圾回收不能形成完整周期。默认200
+    collectgarbage("setstepmul", step_mul)
+end
+
+function GcMgr:set_gc_step(open, slow_step, fast_step)
+    self.open_gc_step = open
+    if open then
+        collectgarbage("stop")
+    else
+        collectgarbage("restart")
+    end
     self.gc_stop_mem = mfloor(collectgarbage("count"))
     self.gc_running  = false
+    GC_SLOW_STEP     = slow_step or GC_SLOW_STEP -- gc慢回收
+    GC_FAST_STEP     = fast_step or GC_FAST_STEP -- gc快速回收
+    log_warn("[GcMgr][set_gc_step] open:%s,slow_step:%s,fast_step:%s", open, slow_step, fast_step)
 end
 
 function GcMgr:lua_mem_size()
@@ -45,6 +65,10 @@ end
 
 function GcMgr:mem_size()
     return cut_tail(mem_usage(), 1)
+end
+
+function GcMgr:real_mem_size()
+    return cut_tail(mem_usage(true), 1)
 end
 
 function GcMgr:collect_gc()
@@ -75,6 +99,9 @@ function GcMgr:run_step(now_us)
 end
 
 function GcMgr:update()
+    if not self.open_gc_step then
+        return 0
+    end
     local now_us = lclock_ms()
     if self.gc_running then
         return self:run_step(now_us)
@@ -140,7 +167,6 @@ function GcMgr:dump_mem_obj(less_count)
     local info       = {
         objs    = obj_counts,
         lua_mem = self:lua_mem_size(),
-        mem     = self:mem_size(),
         thread  = {
             co_lock = thread_mgr:lock_size(),
             co_wait = thread_mgr:wait_size(),

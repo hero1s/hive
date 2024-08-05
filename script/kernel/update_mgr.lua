@@ -112,12 +112,12 @@ function UpdateMgr:update(scheduler, now_ms, clock_ms)
             obj:on_frame(clock_ms, frame)
         end)
     end
-    hive.frame   = frame
-    hive.gc_time = gc_mgr:update()
+    hive.frame = frame
     --快帧更新
     if clock_ms < self.next_frame then
         return
     end
+    hive.gc_time = gc_mgr:update()
     self:update_fast(clock_ms)
     --秒更新
     local now = now_ms // 1000

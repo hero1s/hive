@@ -109,6 +109,8 @@ function hive.after_start()
     if environ.status("HIVE_DEBUG") then
         hive.check_endless_loop()
     end
+    local gc_mgr = hive.get("gc_mgr")
+    gc_mgr:set_gc_speed(120, 500)
     environ.dump()
 end
 

@@ -252,7 +252,7 @@ void hive_app::run(int rtype) {
 	hive.set_function("worker_call", [&](lua_State* L, vstring name) {
 		return m_schedulor.call(L, name);
 		});
-	
+	hive.set_function("worker_names", [&]() { return m_schedulor.workers(); });
 	//end worker接口
 	
 	init_default_log(rtype);

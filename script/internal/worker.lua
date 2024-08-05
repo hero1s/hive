@@ -2,7 +2,6 @@
 import("basic/basic.lua")
 
 local hxpcall            = hive.xpcall
-local log_info           = logger.info
 local log_err            = logger.err
 local tunpack            = table.unpack
 local wcall              = hive.call
@@ -42,8 +41,7 @@ local function init_statis()
 end
 
 local function init_listener()
-    event_mgr:add_listener(hive, "on_reload")
-    event_mgr:add_listener(hive, "on_reload_env")
+    import("internal/worker_evt.lua")
 end
 
 --初始化loop
@@ -71,22 +69,6 @@ function hive.main()
     init_listener()
     --加载协议
     import("kernel/protobuf_mgr.lua")
-end
-
---热更新
-hive.on_reload     = function()
-    log_info("[Worker][on_reload]worker:{} reload for signal !", TITLE)
-    --重新加载脚本
-    update_mgr:check_hotfix()
-    --事件通知
-    event_mgr:notify_trigger("on_reload")
-end
-
---环境变量
-hive.on_reload_env = function(hive, key)
-    log_info("[Worker][on_reload_env]worker:{} reload env:{}", TITLE, key)
-    --事件通知
-    event_mgr:notify_trigger("evt_change_env", key)
 end
 
 --启动

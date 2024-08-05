@@ -122,6 +122,14 @@ namespace lworker {
             m_worker_map.clear();
         }
 
+        std::vector<std::string> workers() {
+            std::vector<std::string> vec;
+            for (auto it : m_worker_map) {
+                vec.push_back(it.first);
+            }
+            return vec;
+        }
+
     private:
         spin_mutex m_mutex;
         std::string m_service;

@@ -48,6 +48,7 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "rpc_set_log_level")
     event_mgr:add_listener(self, "rpc_collect_gc")
     event_mgr:add_listener(self, "rpc_count_lua_obj")
+    event_mgr:add_listener(self, "rpc_set_gc_step")
     event_mgr:add_listener(self, "rpc_check_endless_loop")
 
     event_mgr:add_trigger(self, "on_router_connected")
@@ -204,7 +205,33 @@ function MonitorAgent:rpc_collect_gc()
 end
 
 function MonitorAgent:rpc_count_lua_obj(less_num)
-    return gc_mgr:dump_mem_obj(less_num)
+    local worker_names = hive.scheduler:names()
+    local adata        = {}
+    local channel      = hive.make_channel("scheduler_collect")
+    for _, name in ipairs(worker_names or {}) do
+        channel:push(function()
+            local ok, data = hive.scheduler:call(name, "rpc_count_lua_obj", less_num)
+            if ok then
+                adata[name] = data
+                return true, 0
+            end
+            return false, 1
+        end)
+    end
+    channel:execute(true)
+    adata["hive"]     = gc_mgr:dump_mem_obj(less_num)
+    adata["mem"]      = gc_mgr:mem_size()
+    adata["real_mem"] = gc_mgr:real_mem_size()
+    return adata
+end
+
+function MonitorAgent:rpc_set_gc_step(open, slow_step, fast_step)
+    open      = open == 1 and true or false
+    slow_step = math_ext.region(slow_step, 1, 100)
+    fast_step = math_ext.region(fast_step, slow_step, 500)
+
+    gc_mgr:set_gc_step(open, slow_step, fast_step)
+    return { open = open, slow_step = slow_step, fast_step = fast_step }
 end
 
 function MonitorAgent:rpc_inject(code_string)

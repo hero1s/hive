@@ -110,11 +110,11 @@ headKeys:head里面需要校验的字段
 --]]
 
 function http_helper.check_param(securet, headKeys, querys, body, head)
-    local cli_sign = head["Sign"]
+    local cli_sign = head["Sign"] or head["sign"]
     if not cli_sign then
         return false, "not exist sign param"
     end
-    local ts     = head["Ts"]
+    local ts     = head["Ts"] or head["ts"]
     local params = {}
     for _, v in pairs(headKeys) do
         params[v] = head[v]

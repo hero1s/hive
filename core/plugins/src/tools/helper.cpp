@@ -116,7 +116,7 @@ namespace tools
 #endif
 	}
 
-	float CHelper::MemUsage(int pid) {
+	float CHelper::MemUsage(int pid, bool real) {
 #ifdef WIN32
 		uint64_t mem = 0;
 		PROCESS_MEMORY_COUNTERS pmc;
@@ -124,28 +124,31 @@ namespace tools
 		if (process == NULL)return 0;
 
 		if (GetProcessMemoryInfo(process, &pmc, sizeof(pmc))) {
-			mem = pmc.WorkingSetSize;
+			mem = real ? pmc.WorkingSetSize : pmc.PeakWorkingSetSize;
 		}
 		CloseHandle(process);
 		return float(mem / 1024.0 / 1024.0);
 #else
-#define VMRSS_LINE 22
 		char file_name[64] = { 0 };
 		FILE* fd;
 		char line_buff[512] = { 0 };
 		sprintf(file_name, "/proc/%d/status", pid);
 		fd = fopen(file_name, "r");
-		if (nullptr == fd)return 0;
-		char name[64];
-		int vmrss = 0;
-		for (int i = 0; i < VMRSS_LINE - 1; i++)
-			fgets(line_buff, sizeof(line_buff), fd);
-		fgets(line_buff, sizeof(line_buff), fd);
-		sscanf(line_buff, "%s %d", name, &vmrss);
+		if (fd == nullptr) return 0.0f;
+
+		int vmsize = 0;
+		const char* format = real ? "VmRSS:\t%d" : "VmSize:\t%d";
+		while (fgets(line_buff, sizeof(line_buff), fd)) {
+			if (sscanf(line_buff, format, &vmsize) == 1) {
+				break;
+			}
+		}
 		fclose(fd);
-		return float(vmrss / 1024.0);// cnvert VmRSS from KB to MB
+		// 将 VmSize 单位从 KB 转换为 MB
+		return float(vmsize) / 1024.0f;
 #endif
 	}
+
 	int CHelper::CpuCoreNum() {
 #ifdef WIN32
 		SYSTEM_INFO info;
@@ -167,8 +170,7 @@ namespace tools
 			});
 		helper.set_function("cpu_use_percent", []() { return CHelper::CpuUsePercent(); });
 		helper.set_function("cpu_core_num", []() { return CHelper::CpuCoreNum(); });
-		helper.set_function("mem_usage", []() { return CHelper::MemUsage(::getpid()); });
-
+		helper.set_function("mem_usage", [](bool real) { return CHelper::MemUsage(::getpid(),real); });
 		return helper;
 	}
 }

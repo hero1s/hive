@@ -7,6 +7,7 @@ local tunpack            = table.unpack
 local worker_call        = hive.worker_call
 local worker_broadcast   = hive.worker_broadcast
 local worker_update      = hive.worker_update
+local worker_names       = hive.worker_names
 
 local FLAG_REQ           = hive.enum("FlagMask", "REQ")
 local FLAG_RES           = hive.enum("FlagMask", "RES")
@@ -56,6 +57,10 @@ end
 --访问其他线程任务
 function Scheduler:send(name, rpc, ...)
     worker_call(name, 0, FLAG_REQ, "master", rpc, ...)
+end
+
+function Scheduler:names()
+    return worker_names()
 end
 
 --事件分发

@@ -45,7 +45,10 @@ function DevopsGmMgr:register_gm()
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_hive_quit", desc = "关闭服务器", comment = "强踢玩家并停服", args = "reason|integer" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_cfg_reload", desc = "配置表热更新", comment = "(0 本地 1 远程)", args = "is_remote|integer" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_collect_gc", desc = "lua全量gc", comment = "", args = "" },
-        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_count_obj", desc = "lua对象计数", comment = "最小个数,服务/index", args = "less_num|integer service_name|string index|integer" },
+        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_count_obj", desc = "lua对象计数", comment = "最小个数,服务/index",
+          args  = "less_num|integer service_name|string index|integer" },
+        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_set_gc_step", desc = "设置gc步长", comment = "服务/index",
+          args  = "service_name|string index|integer open|integer slow|integer fast|integer" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_check_endless_loop", desc = "检测死循环", comment = "开启/关闭,服务/index",
           args  = "start|integer service_name|string index|integer" },
         --工具
@@ -184,6 +187,10 @@ end
 
 function DevopsGmMgr:gm_count_obj(less_num, service_name, index)
     return self:call_target_rpc(service_name, index, "rpc_count_lua_obj", less_num)
+end
+
+function DevopsGmMgr:gm_set_gc_step(service_name, index, open, slow_step, fast_step)
+    return self:call_target_rpc(service_name, index, "rpc_set_gc_step", open, slow_step, fast_step)
 end
 
 function DevopsGmMgr:gm_check_endless_loop(start, service_name, index)

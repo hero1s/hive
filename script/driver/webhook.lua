@@ -55,7 +55,7 @@ function Webhook:ding_log(url, title, context, at_mobiles, at_all)
 end
 
 function Webhook:notify(title, content, source, ...)
-    if self:count_msg(source) then
+    if self:count_msg(source, content) then
         if next(self.hooks) then
             title = self.title .. title
             for hook_api, url in pairs(self.hooks) do
@@ -66,7 +66,7 @@ function Webhook:notify(title, content, source, ...)
 end
 
 function Webhook:send_log(hook_api, url, title, content, source, ...)
-    if self:count_msg(source) then
+    if self:count_msg(source, content) then
         if self[hook_api] then
             title = self.title .. title
             self[hook_api](self, url, title, content, ...)
@@ -74,14 +74,14 @@ function Webhook:send_log(hook_api, url, title, content, source, ...)
     end
 end
 
-function Webhook:count_msg(source)
+function Webhook:count_msg(source, content)
     if not source then
         return true
     end
     local now    = hive.now
     local notify = self.notify_limit[source]
     if not notify then
-        notify                    = { time = now, count = 0 }
+        notify                    = { time = now, count = 0, content = content }
         self.notify_limit[source] = notify
     end
     notify.count = notify.count + 1
@@ -93,7 +93,7 @@ function Webhook:clear_due_limit()
         if v.time + LIMIT_TIME < hive.now then
             self.notify_limit[k] = nil
             if v.count >= LIMIT_COUNT then
-                self:notify("", sformat("statistic error msg source:%s,count:%s", k, v.count))
+                self:notify("", sformat("statistic error msg source:%s,count:%s,content:%s", k, v.count, v.content))
             end
         end
     end
