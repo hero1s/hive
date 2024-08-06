@@ -25,6 +25,22 @@ local function cmp_key(a, b)
     end
     return a[1]:len() < b[1]:len()
 end
+--首字母大小写反转
+local function reverseFirstLetterCase(str)
+    if str == nil or str == "" then
+        return ""
+    end
+    local firstChar = str:sub(1, 1)
+    if firstChar:match("%u") then
+        return firstChar:lower() .. str:sub(2)
+    else
+        return firstChar:upper() .. str:sub(2)
+    end
+end
+
+function http_helper.head_value(heads, key)
+    return heads[key] or heads[reverseFirstLetterCase(key)]
+end
 
 function http_helper.url_query_concat(query, sort)
     if query and next(query) then

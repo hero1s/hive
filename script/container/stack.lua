@@ -32,12 +32,10 @@ function Stack:push(elem)
 end
 
 function Stack:pop()
-    local size = #self.datas
-    if size > 0 then
-        local elem       = self.datas[size]
-        self.datas[size] = nil
-        return elem
-    end
+    local size       = #self.datas
+    local elem       = self.datas[size]
+    self.datas[size] = nil
+    return elem
 end
 
 function Stack:clone()
