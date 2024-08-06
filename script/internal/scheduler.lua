@@ -12,6 +12,7 @@ local worker_names       = hive.worker_names
 local FLAG_REQ           = hive.enum("FlagMask", "REQ")
 local FLAG_RES           = hive.enum("FlagMask", "RES")
 local THREAD_RPC_TIMEOUT = hive.enum("NetwkTime", "THREAD_RPC_TIMEOUT")
+local KernCode           = enum("KernCode")
 
 local event_mgr          = hive.get("event_mgr")
 local thread_mgr         = hive.get("thread_mgr")
@@ -45,13 +46,32 @@ function Scheduler:broadcast(rpc, ...)
     worker_broadcast("", 0, FLAG_REQ, "master", rpc, ...)
 end
 
+function Scheduler:collect(rpc, ...)
+    local names   = self:names()
+    local adata   = {}
+    local params  = table.pack(...)
+    local channel = hive.make_channel("scheduler_collect")
+    for _, name in ipairs(names or {}) do
+        channel:push(function()
+            local ok, code, data = self:call(name, rpc, table.unpack(params))
+            if ok and code == KernCode.SUCCESS then
+                adata[name] = data
+                return true, KernCode.SUCCESS
+            end
+            return false, code
+        end)
+    end
+    channel:execute(true)
+    return adata
+end
+
 --访问其他线程任务
 function Scheduler:call(name, rpc, ...)
     local session_id = thread_mgr:build_session_id()
     if worker_call(name, session_id, FLAG_REQ, "master", rpc, ...) then
         return thread_mgr:yield(session_id, rpc, THREAD_RPC_TIMEOUT)
     end
-    return false, "call failed!"
+    return false, KernCode.RPC_FAILED
 end
 
 --访问其他线程任务

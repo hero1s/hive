@@ -44,7 +44,7 @@ function DevopsGmMgr:register_gm()
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_query_server_online", desc = "查询在线服务", comment = "", args = "service_name|string" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_hive_quit", desc = "关闭服务器", comment = "强踢玩家并停服", args = "reason|integer" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_cfg_reload", desc = "配置表热更新", comment = "(0 本地 1 远程)", args = "is_remote|integer" },
-        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_collect_gc", desc = "lua全量gc", comment = "", args = "" },
+        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_full_gc", desc = "lua全量gc", comment = "服务/index", args = "service_name|string index|integer" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_count_obj", desc = "lua对象计数", comment = "最小个数,服务/index",
           args  = "less_num|integer service_name|string index|integer" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_set_gc_step", desc = "设置gc步长", comment = "服务/index",
@@ -180,8 +180,8 @@ function DevopsGmMgr:gm_cfg_reload(is_remote)
     return { code = 0 }
 end
 
-function DevopsGmMgr:gm_collect_gc()
-    monitor_mgr:broadcast("rpc_collect_gc")
+function DevopsGmMgr:gm_full_gc(service_name, index)
+    self:call_service_index(service_name, index, "rpc_full_gc")
     return { code = 0 }
 end
 

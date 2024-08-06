@@ -98,6 +98,10 @@ function UpdateMgr:update_hour(clock_ms, cur_hour, time)
             obj:on_hour(clock_ms, cur_hour, time)
         end)
     end
+    --每日4点执行一次全量更新
+    if cur_hour == 4 then
+        gc_mgr:full_gc()
+    end
 end
 
 function UpdateMgr:update(scheduler, now_ms, clock_ms)

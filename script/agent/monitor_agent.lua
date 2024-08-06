@@ -46,7 +46,7 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "rpc_set_server_status")
     event_mgr:add_listener(self, "rpc_hive_quit")
     event_mgr:add_listener(self, "rpc_set_log_level")
-    event_mgr:add_listener(self, "rpc_collect_gc")
+    event_mgr:add_listener(self, "rpc_full_gc")
     event_mgr:add_listener(self, "rpc_count_lua_obj")
     event_mgr:add_listener(self, "rpc_set_gc_step")
     event_mgr:add_listener(self, "rpc_check_endless_loop")
@@ -200,25 +200,13 @@ function MonitorAgent:rpc_reload()
     signal.hotfix()
 end
 
-function MonitorAgent:rpc_collect_gc()
-    gc_mgr:collect_gc()
+function MonitorAgent:rpc_full_gc()
+    gc_mgr:full_gc()
+    hive.scheduler:broadcast("rpc_full_gc")
 end
 
 function MonitorAgent:rpc_count_lua_obj(less_num)
-    local worker_names = hive.scheduler:names()
-    local adata        = {}
-    local channel      = hive.make_channel("scheduler_collect")
-    for _, name in ipairs(worker_names or {}) do
-        channel:push(function()
-            local ok, data = hive.scheduler:call(name, "rpc_count_lua_obj", less_num)
-            if ok then
-                adata[name] = data
-                return true, 0
-            end
-            return false, 1
-        end)
-    end
-    channel:execute(true)
+    local adata       = hive.scheduler:collect("rpc_count_lua_obj", less_num)
     adata["hive"]     = gc_mgr:dump_mem_obj(less_num)
     adata["mem"]      = gc_mgr:mem_size()
     adata["real_mem"] = gc_mgr:real_mem_size()

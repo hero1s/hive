@@ -71,13 +71,14 @@ function GcMgr:real_mem_size()
     return cut_tail(mem_usage(true), 1)
 end
 
-function GcMgr:collect_gc()
+function GcMgr:full_gc()
     local clock_ms  = lclock_ms()
     local mem       = self:mem_size()
+    local real_mem  = self:real_mem_size()
     local lua_mem_s = self:lua_mem_size()
     collectgarbage("collect")
     local lua_mem_e = self:lua_mem_size()
-    log_warn("[GcMgr][collect_gc] {} m,lua:{} m --> {} m,cost time:{}", mem, lua_mem_s, lua_mem_e, lclock_ms() - clock_ms)
+    log_warn("[GcMgr][full_gc] {} m,{} m,lua:{} m --> {} m,cost time:{}", mem, real_mem, lua_mem_s, lua_mem_e, lclock_ms() - clock_ms)
     return lua_mem_e
 end
 
