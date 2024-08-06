@@ -79,7 +79,10 @@
     <ClInclude Include="src\lzset\zset.hpp">
       <Filter>lzset</Filter>
     </ClInclude>
-    <ClInclude Include="src\profiler\profiler.h">
+    <ClInclude Include="src\profiler\imap.h">
+      <Filter>profiler</Filter>
+    </ClInclude>
+    <ClInclude Include="src\profiler\profile.h">
       <Filter>profiler</Filter>
     </ClInclude>
     <ClInclude Include="src\protobuf\pb.h">
@@ -156,10 +159,10 @@
     <ClCompile Include="src\lzset\lzset.cpp">
       <Filter>lzset</Filter>
     </ClCompile>
-    <ClCompile Include="src\profiler\lprofiler.cpp">
+    <ClCompile Include="src\profiler\imap.c">
       <Filter>profiler</Filter>
     </ClCompile>
-    <ClCompile Include="src\profiler\profiler.cpp">
+    <ClCompile Include="src\profiler\profile.c">
       <Filter>profiler</Filter>
     </ClCompile>
     <ClCompile Include="src\protobuf\luapb.cpp">

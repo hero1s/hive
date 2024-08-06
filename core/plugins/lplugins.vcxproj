@@ -33,7 +33,8 @@
     <ClInclude Include="src\ltimer\croncpp.h"/>
     <ClInclude Include="src\ltimer\ltimer.h"/>
     <ClInclude Include="src\lzset\zset.hpp"/>
-    <ClInclude Include="src\profiler\profiler.h"/>
+    <ClInclude Include="src\profiler\imap.h"/>
+    <ClInclude Include="src\profiler\profile.h"/>
     <ClInclude Include="src\protobuf\pb.h"/>
     <ClInclude Include="src\protobuf\xor.h"/>
     <ClInclude Include="src\tools\helper.h"/>
@@ -60,8 +61,8 @@
     <ClCompile Include="src\lstdfs\lstdfs.cpp"/>
     <ClCompile Include="src\ltimer\ltimer.cpp"/>
     <ClCompile Include="src\lzset\lzset.cpp"/>
-    <ClCompile Include="src\profiler\lprofiler.cpp"/>
-    <ClCompile Include="src\profiler\profiler.cpp"/>
+    <ClCompile Include="src\profiler\imap.c"/>
+    <ClCompile Include="src\profiler\profile.c"/>
     <ClCompile Include="src\protobuf\luapb.cpp"/>
     <ClCompile Include="src\protobuf\pb.c"/>
     <ClCompile Include="src\tools\helper.cpp"/>
