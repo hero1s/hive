@@ -109,7 +109,12 @@ function hive.after_start()
     if environ.status("HIVE_DEBUG") then
         hive.check_endless_loop()
     end
-    local gc_mgr = hive.get("gc_mgr")
+    --设置gc参数
+    local gc_mgr    = hive.get("gc_mgr")
+    local open_gc   = environ.status("HIVE_GC_OPEN")
+    local slow_step = environ.number("HIVE_GC_SLOW_STEP", 100)
+    local fast_step = environ.number("HIVE_GC_FAST_STEP", 500)
+    gc_mgr:set_gc_step(open_gc, slow_step, fast_step)
     gc_mgr:set_gc_speed(120, 500)
     environ.dump()
 end

@@ -10,11 +10,12 @@ local collectgarbage             = collectgarbage
 local mfloor                     = math.floor
 local log_warn                   = logger.warn
 local cut_tail                   = math_ext.cut_tail
+local mregion                    = math_ext.region
 
-local MAX_IDLE_TIME<const>       = 10 * 1000                  -- 空闲时间
+local MAX_IDLE_TIME<const>       = 5 * 1000                   -- 空闲时间
 local GC_FAST_STEP               = 200                        -- gc快速回收
 local GC_SLOW_STEP               = 50                         -- gc慢回收
-local MEM_ALLOC_SPEED_MAX<const> = 10 * 1000                  -- 每秒消耗内存超过10M，开启急速gc
+local MEM_ALLOC_SPEED_MAX<const> = 10 * 1024                  -- 每秒消耗内存超过10M，开启急速gc
 local PER_US_FOR_SECOND<const>   = 1000                       -- 1秒=1000ms
 
 local GcMgr                      = singleton()
@@ -24,6 +25,7 @@ prop:reader("gc_stop_mem", 0)
 prop:reader("gc_running", true)
 prop:reader("gc_step_count", 0)
 prop:reader("gc_last_collect_time", 0)
+prop:reader("start_step_value", GC_SLOW_STEP)
 prop:reader("step_value", GC_SLOW_STEP)
 prop:reader("gc_use_time", 0)
 prop:reader("gc_start_time", 0)
@@ -40,9 +42,9 @@ end
 
 function GcMgr:set_gc_speed(pause, step_mul)
     --当收集器在总使用内存数量达到上次垃圾收集时的(x/100)开启新收集周期。默认200
-    collectgarbage("setpause", pause)
+    collectgarbage("setpause", mregion(mfloor(pause), 110, 200))
     --垃圾收集器的运行速度是内存分配的(x/100)倍,如果此值小于100可能会导致垃圾回收不能形成完整周期。默认200
-    collectgarbage("setstepmul", step_mul)
+    collectgarbage("setstepmul", mregion(mfloor(step_mul), 200, 1000))
 end
 
 function GcMgr:set_gc_step(open, slow_step, fast_step)
@@ -54,8 +56,8 @@ function GcMgr:set_gc_step(open, slow_step, fast_step)
     end
     self.gc_stop_mem = mfloor(collectgarbage("count"))
     self.gc_running  = false
-    GC_SLOW_STEP     = slow_step or GC_SLOW_STEP -- gc慢回收
-    GC_FAST_STEP     = fast_step or GC_FAST_STEP -- gc快速回收
+    GC_SLOW_STEP     = mregion(slow_step or GC_SLOW_STEP, 50, 1000) -- gc慢回收
+    GC_FAST_STEP     = mregion(fast_step or GC_FAST_STEP, 50, 1000) -- gc快速回收
     log_warn("[GcMgr][set_gc_step] open:%s,slow_step:%s,fast_step:%s", open, slow_step, fast_step)
 end
 
@@ -96,6 +98,7 @@ function GcMgr:run_step(now_us)
     if not self.gc_running then
         self:log_gc_end()
     end
+    self:calc_step_value(costTime)
     return costTime
 end
 
@@ -115,32 +118,33 @@ function GcMgr:update()
     return 0
 end
 
+function GcMgr:calc_step_value(cost_time)
+    if cost_time > 25 then
+        self.step_value = mregion(mfloor(self.step_value / 2), self.start_step_value, GC_FAST_STEP)
+    elseif cost_time < 5 then
+        self.step_value = mregion(self.step_value * 2, GC_SLOW_STEP, GC_FAST_STEP)
+    end
+end
+
 function GcMgr:log_gc_start(now_us, mem_cost)
     self.gc_running     = true
     self.gc_start_time  = now_us
-    self.step_value     = GC_SLOW_STEP
-
     self.mem_cost_speed = 0
     if self.gc_last_collect_time > 0 then
         self.gc_free_time   = self.gc_start_time - self.gc_last_collect_time
         self.mem_cost_speed = (self.gc_free_time > PER_US_FOR_SECOND) and mem_cost / (self.gc_free_time / PER_US_FOR_SECOND) or MEM_ALLOC_SPEED_MAX
     end
-
-    if self.mem_cost_speed >= MEM_ALLOC_SPEED_MAX then
-        self.step_value = GC_FAST_STEP
-    end
-
+    local ratio             = MAX_IDLE_TIME / 1000
+    self.step_value         = mregion(mfloor(self.mem_cost_speed / ratio), GC_SLOW_STEP, GC_FAST_STEP)
+    self.start_step_value   = self.step_value
     self.gc_step_time50_cnt = 0
-    if self.step_value > GC_SLOW_STEP then
-        log_warn("[GcMgr][log_gc_start] count is:{},last mem is:{},step value is:{}", self.gc_start_mem, self.gc_stop_mem, self.step_value)
-    end
 end
 
 function GcMgr:log_gc_end()
     self.gc_stop_mem = mfloor(collectgarbage("count"))
     local gc_cycle   = lclock_ms() - self.gc_start_time
     local avg_time   = mfloor(self.gc_use_time / self.gc_step_count)
-    if self.step_value > GC_SLOW_STEP then
+    if self.start_step_value > GC_SLOW_STEP then
         local gc_info = {
             step_count      = self.gc_step_count,
             curr_mem        = self.gc_stop_mem,
@@ -151,6 +155,7 @@ function GcMgr:log_gc_end()
             step_time_avg   = avg_time,
             free_time       = self.gc_free_time,
             step_value      = self.step_value,
+            start_value     = self.start_step_value,
             step_time50_cnt = self.gc_step_time50_cnt,
             mem_cost_speed  = self.mem_cost_speed,
         }
