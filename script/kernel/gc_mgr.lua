@@ -19,7 +19,7 @@ local PER_US_FOR_SECOND<const>   = 1000                       -- 1秒=1000ms
 
 local GcMgr                      = singleton()
 local prop                       = property(GcMgr)
-prop:reader("gc_threshold", 32 * 1024)
+prop:reader("gc_threshold", 10 * 1024)
 prop:reader("gc_stop_mem", 0)
 prop:reader("gc_running", true)
 prop:reader("gc_step_count", 0)
