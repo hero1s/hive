@@ -84,7 +84,7 @@ local function logger_output(flag, feature, lvl, lvl_name, fmt, ...)
     end
     if msg and (not dispatching) then
         dispatching  = true
-        local info   = dgetinfo(4, "nSl")
+        local info   = dgetinfo(4, "nSl") or {}
         local source = sformat("[%s:%d(%s)]", info.short_src, info.currentline or 0, info.name or "")
         pcall(function()
             for monitor, mlvl in pairs(monitors) do

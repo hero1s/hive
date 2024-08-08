@@ -37,8 +37,8 @@ function hive.try_call(func, time, ...)
 end
 
 function hive.where_call(thread)
-    local info = dgetinfo(thread or 3, "nSl")
-    return sformat("[%s:%d(%s)]", info.short_src, info.currentline or 0, info.name or "")
+    local info = dgetinfo(thread or 3, "nSl") or {}
+    return sformat("[%s:%d(%s)]", info.short_src or "C", info.currentline or 0, info.name or "")
 end
 
 -- 启动死循环监控

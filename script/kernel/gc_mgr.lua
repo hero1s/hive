@@ -19,7 +19,7 @@ local PER_US_FOR_SECOND<const>   = 1000                       -- 1秒=1000ms
 
 local GcMgr                      = singleton()
 local prop                       = property(GcMgr)
-prop:reader("gc_threshold", 10 * 1024)
+prop:reader("gc_threshold", 20 * 1024)
 prop:reader("gc_stop_mem", 0)
 prop:reader("gc_running", true)
 prop:reader("gc_step_count", 0)
@@ -130,8 +130,7 @@ function GcMgr:log_gc_start(now_us, mem_cost)
     self.gc_running     = true
     self.gc_start_time  = now_us
     self.mem_cost_speed = 0
-    --上次回收步数
-    local ratio         = 5 --MAX_IDLE_TIME / 1000
+    local ratio         = 10
     if self.gc_step_count <= ratio then
         self.step_value = GC_SLOW_STEP
     else
