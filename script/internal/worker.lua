@@ -18,6 +18,7 @@ local FLAG_REQ           = hive.enum("FlagMask", "REQ")
 local FLAG_RES           = hive.enum("FlagMask", "RES")
 local THREAD_RPC_TIMEOUT = hive.enum("NetwkTime", "THREAD_RPC_TIMEOUT")
 local HALF_MS            = hive.enum("PeriodTime", "HALF_MS")
+local KernCode           = enum("KernCode")
 
 --初始化核心
 local function init_core()
@@ -126,7 +127,7 @@ hive.call_master = function(rpc, ...)
     if wcall("master", session_id, FLAG_REQ, TITLE, rpc, ...) then
         return thread_mgr:yield(session_id, rpc, THREAD_RPC_TIMEOUT)
     end
-    return false, "call failed!"
+    return false, KernCode.RPC_FAILED
 end
 
 --通知主线程
@@ -140,7 +141,7 @@ hive.call_worker = function(name, rpc, ...)
     if wcall(name, session_id, FLAG_REQ, TITLE, rpc, ...) then
         return thread_mgr:yield(session_id, rpc, THREAD_RPC_TIMEOUT)
     end
-    return false, "call failed!"
+    return false,  KernCode.RPC_FAILED
 end
 
 --通知其他线程
