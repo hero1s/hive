@@ -3,13 +3,11 @@
 
 namespace luakit {
 
-    const size_t BUFFER_DEF = 64 * 1024;        //64K
-    const size_t BUFFER_MAX = 16 * 1024 * 1024; //16M
-    const size_t ALIGN_SIZE = 16;               //水位
+    constexpr size_t BUFFER_DEF = 64 * 1024;        //64K
 
     class luabuf {
     public:
-        luabuf() { _alloc(); }
+        luabuf(size_t align = 16, size_t max_align = 16) { _alloc(align, max_align); }
         ~luabuf() { free(m_data); }
 
         void reset() {
@@ -39,7 +37,7 @@ namespace luakit {
 
         void clean() {
             size_t data_len = m_tail - m_head;
-            if (m_size > m_max && data_len < BUFFER_DEF) {
+            if (m_size > m_align && data_len < BUFFER_DEF) {
                 _resize(m_size / 2);
             }
             m_head = m_tail = m_data;
@@ -78,7 +76,7 @@ namespace luakit {
             if (m_head + erase_len <= m_tail) {
                 m_head += erase_len;
                 size_t data_len = (size_t)(m_tail - m_head);
-                if (m_size > m_max && data_len < BUFFER_DEF) {
+                if (m_size > m_align && data_len < BUFFER_DEF) {
                     _regularize();
                     _resize(m_size / 2);
                 }
@@ -119,7 +117,7 @@ namespace luakit {
                     while (nsize - data_len < len) {
                         nsize *= 2;
                     }
-                    if (nsize >= BUFFER_MAX) {
+                    if (nsize >= m_align_max) {
                         return nullptr;
                     }
                     space_len = _resize(nsize);
@@ -183,7 +181,7 @@ namespace luakit {
         //重新设置长度
         size_t _resize(size_t size) {
             size_t data_len = (size_t)(m_tail - m_head);
-            if (m_size == size || size < data_len || size > BUFFER_MAX) {
+            if (m_size == size || size < data_len || size > m_align_max) {
                 return m_end - m_tail;
             }
             m_data = (uint8_t*)realloc(m_data, size);
@@ -194,16 +192,18 @@ namespace luakit {
             return size - data_len;
         }
 
-        void _alloc() {
+        void _alloc(size_t align, size_t max_align) {
             m_data = (uint8_t*)malloc(BUFFER_DEF);
             m_size = BUFFER_DEF;
             m_head = m_tail = m_data;
             m_end = m_data + BUFFER_DEF;
-            m_max = m_size * ALIGN_SIZE;
+            m_align = m_size * align;
+            m_align_max = m_align * max_align;
         }
 
     private:
-        size_t m_max;
+        size_t m_align;
+        size_t m_align_max;
         size_t m_size;
         uint8_t* m_head;
         uint8_t* m_tail;

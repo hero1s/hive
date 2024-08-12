@@ -135,8 +135,8 @@ namespace lworker {
         std::string m_service;
         codec_base* m_codec = nullptr;
         std::shared_ptr<kit_state> m_lua = nullptr;        
-        std::shared_ptr<luabuf> m_read_buf = std::make_shared<luabuf>();
-        std::shared_ptr<luabuf> m_write_buf = std::make_shared<luabuf>();
+        std::shared_ptr<luabuf> m_read_buf = std::make_shared<luabuf>(32,32);
+        std::shared_ptr<luabuf> m_write_buf = std::make_shared<luabuf>(32,32);
         std::map<std::string, std::shared_ptr<worker>, std::less<>> m_worker_map;
     };
 }
