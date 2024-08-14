@@ -13,6 +13,9 @@
     <ClInclude Include="src\lbson\bson.h">
       <Filter>lbson</Filter>
     </ClInclude>
+    <ClInclude Include="src\lcache\lrucache.hpp">
+      <Filter>lcache</Filter>
+    </ClInclude>
     <ClInclude Include="src\lcodec\bitarray.h">
       <Filter>lcodec</Filter>
     </ClInclude>
@@ -108,6 +111,9 @@
     <ClCompile Include="src\lbson\lbson.cpp">
       <Filter>lbson</Filter>
     </ClCompile>
+    <ClCompile Include="src\lcache\lcache.cpp">
+      <Filter>lcache</Filter>
+    </ClCompile>
     <ClCompile Include="src\lcodec\lcodec.cpp">
       <Filter>lcodec</Filter>
     </ClCompile>
@@ -184,6 +190,9 @@
     </Filter>
     <Filter Include="lbson">
       <UniqueIdentifier>{15BEA432-628B-E5CF-E5DE-A95D2DB86C4F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lcache">
+      <UniqueIdentifier>{C0F7EC70-4C6E-0C26-294D-D6AD96AF4A0B}</UniqueIdentifier>
     </Filter>
     <Filter Include="lcodec">
       <UniqueIdentifier>{E24CB1AD-193A-E647-45BE-564E7264711B}</UniqueIdentifier>

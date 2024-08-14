@@ -10,7 +10,7 @@ stds.hive = {
         "import", "class", "enum", "enum_kv_list", "mixin", "property", "singleton", "super", "implemented","logfeature",
         "classof", "is_class", "is_subclass", "instanceof","conv_class","class_review",
         --library
-        "luakit","codec", "crypt", "stdfs", "luabus", "json", "curl", "timer", "log", "http", "bson","protobuf",
+        "luakit","codec", "crypt", "stdfs", "luabus", "json", "curl", "timer", "log", "http", "bson","protobuf","lcache",
     }
 }
 std = "max+hive"

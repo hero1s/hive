@@ -21,6 +21,8 @@ codec         = require("lcodec")
 crypt         = require("lcrypt")
 --网络库
 luabus        = require("luabus")
+--cache库
+lcache        = require("lcache")
 
 --特定模块
 if hgetenv("HIVE_SERVICE") then

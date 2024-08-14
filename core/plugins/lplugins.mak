@@ -116,6 +116,11 @@ OBJS += $(patsubst $(SRC_DIR)/lbson/%.m, $(INT_DIR)/lbson/%.o, $(filter-out $(EX
 OBJS += $(patsubst $(SRC_DIR)/lbson/%.cc, $(INT_DIR)/lbson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lbson/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/lbson/%.cpp, $(INT_DIR)/lbson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lbson/*.cpp)))
 #子目录
+OBJS += $(patsubst $(SRC_DIR)/lcache/%.c, $(INT_DIR)/lcache/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcache/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/lcache/%.m, $(INT_DIR)/lcache/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcache/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/lcache/%.cc, $(INT_DIR)/lcache/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcache/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/lcache/%.cpp, $(INT_DIR)/lcache/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcache/*.cpp)))
+#子目录
 OBJS += $(patsubst $(SRC_DIR)/lcodec/%.c, $(INT_DIR)/lcodec/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcodec/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lcodec/%.m, $(INT_DIR)/lcodec/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcodec/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/lcodec/%.cc, $(INT_DIR)/lcodec/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcodec/*.cc)))
@@ -199,6 +204,7 @@ pre_build:
 	mkdir -p $(INT_DIR)/laes
 	mkdir -p $(INT_DIR)/laoi
 	mkdir -p $(INT_DIR)/lbson
+	mkdir -p $(INT_DIR)/lcache
 	mkdir -p $(INT_DIR)/lcodec
 	mkdir -p $(INT_DIR)/lcrypt
 	mkdir -p $(INT_DIR)/lmongo
