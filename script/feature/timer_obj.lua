@@ -1,5 +1,4 @@
 local log_debug = logger.debug
-local log_err   = logger.err
 local timer_mgr = hive.get("timer_mgr")
 
 local TimerObj  = class()
@@ -24,8 +23,6 @@ function TimerObj:remove_timer(timer_id)
         timer_mgr:unregister(timer_id)
         self.timers[timer_id] = nil
         return true
-    else
-        log_err("[TimerObj][remove_timer] not exist timer:{}", timer_id)
     end
     return false
 end

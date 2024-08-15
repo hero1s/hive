@@ -42,6 +42,16 @@ namespace cache {
 		return 1;
 	}
 
+	static int ldel(lua_State* L) {
+		cache_type* cache = (cache_type*)lua_touserdata(L, 1);
+		if (nullptr == cache) {
+			return luaL_argerror(L, 1, "invalid lua-cache pointer");
+		}
+		auto key = luakit::lua_to_native<std::string>(L, 2);
+		lua_pushboolean(L, cache->remove(key) ? 1 : 0);
+		return 1;
+	}
+
 	static int lexist(lua_State* L) {
 		cache_type* cache = (cache_type*)lua_touserdata(L, 1);
 		if (nullptr == cache) {
@@ -82,6 +92,7 @@ namespace cache {
 			luaL_Reg l[] = {
 				{ "put", lput},
 				{ "get", lget},
+				{ "del", ldel},
 				{ "exist", lexist},				
 				{ "size", lsize},				
 				{ NULL,NULL }

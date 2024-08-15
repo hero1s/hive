@@ -46,6 +46,16 @@ namespace cache {
 				return it->second->second;
 			}
 		}
+
+		bool remove(const key_t& key) {
+			auto it = _cache_items_map.find(key);
+			if (it == _cache_items_map.end()) {
+				return false; 
+			}
+			_cache_items_list.erase(it->second);
+			_cache_items_map.erase(it);
+			return true;
+		}
 	
 		bool exist(const key_t& key) const {
 			return _cache_items_map.find(key) != _cache_items_map.end();

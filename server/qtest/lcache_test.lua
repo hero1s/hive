@@ -1,4 +1,3 @@
-
 local QueueLRU   = import("container/queue_lru.lua")
 local log_debug  = logger.debug
 
@@ -30,10 +29,14 @@ thread_mgr:fork(function()
         log_debug("size-> %d,value:%s", cache:size(), cache:get(i))
     end
     for i = 1, 10 do
+        log_debug("%s del-> %s,size:%s", i, cache:del(i), cache:size())
+        log_debug("size-> %d,value:%s", cache:size(), cache:get(i))
+    end
+    for i = 1, 10 do
         log_debug("%s exist-> %s,value:%s", i, cache:exist(i), cache:get(i))
     end
 
-    test_gc("lua")
+    --test_gc("lua")
     --test_gc("cpp")
     thread_mgr:sleep(2000)
 end)
