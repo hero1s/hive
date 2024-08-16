@@ -75,9 +75,7 @@ function NetServer:setup(ip, port, induce)
     -- 安装回调
     self.listener.set_codec(self.codec)
     self.listener.on_accept = function(session)
-        thread_mgr:fork(function()
-            hxpcall(self.on_socket_accept, "on_socket_accept: %s", self, session)
-        end)
+        hxpcall(self.on_socket_accept, "on_socket_accept: %s", self, session)
     end
 end
 
@@ -100,16 +98,12 @@ function NetServer:on_socket_accept(session)
             return -1
         end
         session.seq_id = (session.seq_id + 1) & 0xff
-        thread_mgr:fork(function()
-            proxy_agent:statistics("on_proto_recv", cmd_id, recv_len)
-            hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, cmd_id, flag, session_id, data)
-        end)
+        proxy_agent:statistics("on_proto_recv", cmd_id, recv_len)
+        hxpcall(self.on_socket_recv, "on_socket_recv: %s", self, session, cmd_id, flag, session_id, data)
     end
     -- 绑定网络错误回调（断开）
     session.on_error      = function(token, err)
-        thread_mgr:fork(function()
-            hxpcall(self.on_socket_error, "on_socket_error: %s", self, token, err)
-        end)
+        hxpcall(self.on_socket_error, "on_socket_error: %s", self, token, err)
     end
     session.command_times = {}
     session.seq_id        = 0

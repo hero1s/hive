@@ -59,10 +59,8 @@ function NetClient:connect(block)
         end
     end
     socket.on_call_pb = function(recv_len, cmd_id, flag, session_id, seq_id, data)
-        thread_mgr:fork(function()
-            proxy_agent:statistics("on_proto_recv", cmd_id, recv_len)
-            hxpcall(self.on_socket_rpc, "on_socket_rpc: %s", self, socket, cmd_id, flag, session_id, data)
-        end)
+        proxy_agent:statistics("on_proto_recv", cmd_id, recv_len)
+        hxpcall(self.on_socket_rpc, "on_socket_rpc: %s", self, socket, cmd_id, flag, session_id, data)
     end
     socket.on_error   = function(token, err)
         thread_mgr:fork(function()
@@ -87,14 +85,14 @@ function NetClient:on_socket_rpc(socket, cmd_id, flag, session_id, body)
         local function dispatch_rpc_message()
             local _<close> = heval(cmd_id)
             self.holder:on_socket_rpc(self, cmd_id, body, session_id)
+            --等待协议处理
+            local wait_session_id = self.wait_list[cmd_id]
+            if wait_session_id then
+                self.wait_list[cmd_id] = nil
+                thread_mgr:response(wait_session_id, true, body)
+            end
         end
         thread_mgr:fork(dispatch_rpc_message)
-        --等待协议处理
-        local wait_session_id = self.wait_list[cmd_id]
-        if wait_session_id then
-            self.wait_list[cmd_id] = nil
-            thread_mgr:response(wait_session_id, true, body)
-        end
         return
     end
     --异步回执
@@ -148,7 +146,7 @@ end
 
 -- 连接成回调
 function NetClient:on_socket_connect(socket)
-    self.alive      = true
+    self.alive = true
     self.holder:on_socket_connect(self)
 end
 
