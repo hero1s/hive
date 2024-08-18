@@ -173,7 +173,8 @@ function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
     local cmd_cd_time = self:get_cmd_cd(cmd_id)
     if cmd_cd_time > 0 then
         if session.is_command_cd(cmd_id, cmd_cd_time, clock_ms) then
-            log_warn("[NetServer][on_socket_recv] session({}) trigger cmd({}) cd ctrl, will be drop.", session.token, cmd_id)
+            log_warn("[NetServer][on_socket_recv] session({}),open_id:{},player_id:{} trigger cmd({}) cd ctrl, will be drop.",
+                    session.token, session.open_id, session.player_id, cmd_id)
             self:callback_errcode(session, cmd_id, TOO_FAST, session_id)
             return
         end

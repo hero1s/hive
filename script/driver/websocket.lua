@@ -93,7 +93,7 @@ function WebSocket:on_socket_recv(session, token, opcode, message)
         end
         if opcode == 0x9 then
             --Ping
-            self:send_frame(0xA, "PONG")
+            self:send_data(0xA, "PONG")
             return
         end
         if opcode <= 0X02 then

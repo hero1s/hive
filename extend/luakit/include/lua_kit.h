@@ -25,6 +25,7 @@ namespace luakit {
             luakit.set_function("decode", [&](lua_State* L) { return decode(L, m_buf); });
             luakit.set_function("unserialize", [&](lua_State* L) {  return unserialize(L); });
             luakit.set_function("serialize", [&](lua_State* L) { return serialize(L, m_buf); });
+            luakit.set_function("codec", [&](lua_State* L) { return create_codec(); });
         }
         kit_state(lua_State* L) : m_L(L) {}
 

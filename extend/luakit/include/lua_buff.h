@@ -147,6 +147,10 @@ namespace luakit {
             return push_data((const uint8_t*)src.c_str(), src.size());
         }
 
+        size_t write(std::string_view src) {
+            return push_data((const uint8_t*)src.data(), src.size());
+        }
+
         template<typename T>
         size_t write(T value) {
             return push_data((const uint8_t*)&value, sizeof(T));

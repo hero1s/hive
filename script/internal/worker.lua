@@ -101,7 +101,7 @@ hive.run = function()
             log_err("[hive][run] last frame[{}:{}] too long => all:{},thread:{},net:{},update:{},gc:{})!",
                     hive.name, hive.frame, work_ms, scheduler_ms, io_ms, work_ms - scheduler_ms - io_ms, hive.gc_time)
         end
-    end)
+    end, "worker run err:{}")
 end
 
 --事件分发
@@ -141,7 +141,7 @@ hive.call_worker = function(name, rpc, ...)
     if wcall(name, session_id, FLAG_REQ, TITLE, rpc, ...) then
         return thread_mgr:yield(session_id, rpc, THREAD_RPC_TIMEOUT)
     end
-    return false,  KernCode.RPC_FAILED
+    return false, KernCode.RPC_FAILED
 end
 
 --通知其他线程
