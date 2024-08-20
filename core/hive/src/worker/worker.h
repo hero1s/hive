@@ -58,7 +58,7 @@ namespace lworker {
     public:
         worker(ischeduler* schedulor, vstring name, vstring entry, vstring incl, vstring service)
             : m_schedulor(schedulor), m_name(name), m_entry(entry), m_service(service), m_include(incl) { 
-            m_codec = m_lua->create_codec();
+            m_codec = luakit::create_codec();
         }
 
         virtual ~worker() {

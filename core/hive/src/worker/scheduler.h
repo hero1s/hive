@@ -15,7 +15,7 @@ namespace lworker {
         void setup(lua_State* L, vstring service) {
             m_service = service;
             m_lua = std::make_shared<kit_state>(L);
-            m_codec = m_lua->create_codec();
+            m_codec = luakit::create_codec();
         }
 
         std::shared_ptr<worker> find_worker(vstring name) {

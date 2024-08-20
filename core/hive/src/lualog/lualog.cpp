@@ -6,7 +6,6 @@ using namespace luakit;
 
 namespace logger {
 
-    thread_local luabuf buf;
     size_t log_limit_len(log_level logLv) {
         if (logLv < log_level::LOG_LEVEL_DEBUG || logLv > log_level::LOG_LEVEL_WARN)return 65536;
         return 4096;
@@ -22,9 +21,9 @@ namespace logger {
         case LUA_TBOOLEAN: return lua_toboolean(L, index) ? "true" : "false";
         case LUA_TTABLE:
             if ((flag & 0x01) == 0x01) {
-                buf.clean();
-                serialize_one(L, &buf, index, 1, (flag & 0x02) == 0x02, max_len);
-                return string((char*)buf.head(), buf.size());
+                thread_buff.clean();
+                serialize_one(L, &thread_buff, index, 1, (flag & 0x02) == 0x02, max_len);
+                return string((char*)thread_buff.head(), thread_buff.size());
             }
             return luaL_tolstring(L, index, nullptr);
         case LUA_TNUMBER:

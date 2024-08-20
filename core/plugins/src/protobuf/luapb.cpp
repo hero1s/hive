@@ -7,8 +7,6 @@ using namespace std;
 using namespace luakit;
 
 namespace luapb {
-
-    thread_local luabuf thread_buff;
     thread_local std::unordered_map<uint32_t,std::string> pb_cmd_ids;
 
     #pragma pack(1)

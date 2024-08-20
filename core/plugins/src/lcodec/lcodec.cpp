@@ -3,8 +3,6 @@
 
 namespace lcodec {
 
-    thread_local luakit::luabuf thread_buff;
-
     static codec_base* rds_codec(codec_base* codec) {
         rdscodec* rcodec = new rdscodec();
         rcodec->set_codec(codec);

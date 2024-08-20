@@ -5,7 +5,7 @@ local thread_mgr = hive.get("thread_mgr")
 
 local a = { a = 1, c = { a = 2 } }
 
-local cache = lcache.new(5, luakit.codec())
+local cache = lcache.new(5)
 local lua_cache = QueueLRU(500000)
 local function test_gc(cache_type)
     log_debug("test gc %s", cache_type)

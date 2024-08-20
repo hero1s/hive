@@ -260,7 +260,16 @@ function NetServer:callback_errcode(session, cmd_id, code, session_id)
         return false
     end
     local data = { code = code }
-    return self:send_pack(session, callback_id, data, session_id or 0)
+    return self:send_pack(session, callback_id, data, session_id)
+end
+
+-- 回复数据
+function NetServer:callback_by_id(session, cmd_id, data, session_id)
+    local callback_id = protobuf_mgr:callback_id(cmd_id)
+    if not callback_id then
+        return false
+    end
+    return self:send_pack(session, callback_id, data, session_id)
 end
 
 return NetServer
