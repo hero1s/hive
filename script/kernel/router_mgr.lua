@@ -313,7 +313,10 @@ function RouterMgr:on_forward_error(session_id, error_msg, source_id, msg_type)
 end
 
 function RouterMgr:reply_forward_error(session_id, error_msg, msg_type)
-    log_err("[RouterMgr][reply_forward_error] {},{},{}", thread_mgr:get_title(session_id), error_msg, msg_type)
+    --player 消息
+    if msg_type ~= 5 then
+        log_err("[RouterMgr][reply_forward_error] {},{},{}", thread_mgr:get_title(session_id), error_msg, msg_type)
+    end
     thread_mgr:response(session_id, false, RPC_UNREACHABLE, error_msg)
 end
 

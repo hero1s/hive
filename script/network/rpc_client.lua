@@ -140,7 +140,7 @@ function RpcClient:connect()
             hxpcall(self.on_socket_error, "on_socket_error: %s", self, socket.token, res)
         end
     end
-    --集群转发失败后回调
+    --router容灾的主动连接转发失败后回调,通过router_mgr-->reply源目标
     socket.on_forward_error = function(session_id, error_msg, source_id, msg_type)
         thread_mgr:fork(function()
             event_mgr:notify_listener("on_forward_error", session_id, error_msg, source_id, msg_type)
@@ -171,22 +171,10 @@ function RpcClient:on_heartbeat(hid, send_time)
     end
 end
 
---路由失败
-function RpcClient:on_forward_error(session_id, code, error_msg, msg_type)
-    if msg_type ~= 5 then
-        log_err("[RpcClient][on_forward_error] rpc:{},code:{},error_msg:{},msg_type:{}",
-                thread_mgr:get_title(session_id), code, error_msg, msg_type)
-    end
-    thread_mgr:response(session_id, false, code, error_msg, msg_type)
-end
-
 --rpc事件
 function RpcClient:on_socket_rpc(socket, session_id, rpc_flag, source, rpc, ...)
     if rpc == "on_heartbeat" then
         return self:on_heartbeat(...)
-    end
-    if rpc == "on_forward_error" then
-        return self:on_forward_error(session_id, ...)
     end
     if session_id == 0 or rpc_flag == FLAG_REQ then
         local btime = hive.clock_ms
