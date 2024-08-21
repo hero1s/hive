@@ -34,12 +34,12 @@ namespace laes {
         uint8_t  valueOfByteForPadding;  /* used for padding byte value */
     };
 
-    std::shared_ptr<PKCS7_Padding> addPadding(const void* const data, const uint64_t dataLength, const uint8_t BLOCK_SIZE) {
+    std::unique_ptr<PKCS7_Padding> addPadding(const void* const data, const uint64_t dataLength, const uint8_t BLOCK_SIZE) {
         if (0 == BLOCK_SIZE) {
             puts("ERROR: block size value must be 0 < BLOCK_SIZE < 256");
             return nullptr;
         }
-        auto paddingResult = std::make_shared<PKCS7_Padding>();
+        auto paddingResult = std::make_unique<PKCS7_Padding>();
         uint8_t paddingBytesAmount = BLOCK_SIZE - (dataLength % BLOCK_SIZE);  /* number of bytes to be appended */
         paddingResult->valueOfByteForPadding = paddingBytesAmount;                      /* according to the PKCS7 */
         paddingResult->dataLengthWithPadding = dataLength + paddingBytesAmount;         /* size of the final result */
@@ -84,8 +84,8 @@ namespace laes {
         Remove PKCS7 padding from data.
         Your data at the provided address does not change. A copy is created, to which the removing padding is applied.
     */
-    std::shared_ptr<PKCS7_unPadding> removePadding(const void* const data, const uint64_t dataLength) {
-        auto unpaddingResult = std::make_shared<PKCS7_unPadding>();
+    std::unique_ptr<PKCS7_unPadding> removePadding(const void* const data, const uint64_t dataLength) {
+        auto unpaddingResult = std::make_unique<PKCS7_unPadding>();
         uint8_t paddingBytesAmount = *((uint8_t*)data + dataLength - 1);  /* last byte contains length of data to be deleted */
         unpaddingResult->valueOfRemovedByteFromData = paddingBytesAmount;                   /* according to the PKCS7 */
         unpaddingResult->dataLengthWithoutPadding = dataLength - paddingBytesAmount;      /* size of the final result */

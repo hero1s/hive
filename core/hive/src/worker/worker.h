@@ -172,7 +172,7 @@ namespace lworker {
         codec_base* m_codec = nullptr;
         ischeduler* m_schedulor = nullptr;
         std::string m_name, m_entry, m_service, m_include;
-        std::shared_ptr<kit_state> m_lua = std::make_shared<kit_state>();
+        std::unique_ptr<kit_state> m_lua = std::make_unique<kit_state>();
         std::shared_ptr<luabuf> m_read_buf = std::make_shared<luabuf>(32,32);
         std::shared_ptr<luabuf> m_write_buf = std::make_shared<luabuf>(32,32);
     };
