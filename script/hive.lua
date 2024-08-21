@@ -1,9 +1,10 @@
 --hive.lua
-local guid_new  = codec.guid_new
-local hash_code = codec.hash_code
-local odate     = os.date
-local log_err   = logger.err
-local dgetinfo  = debug.getinfo
+local guid_new     = codec.guid_new
+local hash_code    = codec.hash_code
+local odate        = os.date
+local log_err      = logger.err
+local dgetinfo     = debug.getinfo
+local setmetatable = setmetatable
 
 function hive.get(name)
     local global_obj = hive[name]
@@ -111,8 +112,7 @@ function hive.hash(key, mod)
 end
 
 function hive.defer(handler)
-    local Defer = import("feature/defer.lua")
-    return Defer(handler)
+    return setmetatable({}, { __close = handler })
 end
 
 --创建普通计数器
