@@ -41,6 +41,7 @@ function ConfigTable:set_records(file_name)
         log_err("[ConfigTable][set_records] config is not correct:{}", file_name)
         return
     end
+    self.rows = {}
     self:check_index(records)
     for _, row in pairs(records) do
         self:upsert(row)
