@@ -153,8 +153,8 @@ int lua_socket_node::forward_player(lua_State* L, uint32_t session_id, uint8_t f
 }
 
 int lua_socket_node::forward_group_player(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id, uint16_t service_id) {
-	std::vector<uint32_t> player_ids;
-	if (!lua_to_native(L, 5, player_ids) || player_ids.size() < 1 || player_ids.size() > 250) {
+	bus_ids.clear();
+	if (!lua_to_native(L, 5, bus_ids) || bus_ids.size() < 1 || bus_ids.size() > 250) {
 		lua_pushinteger(L, 0);
 		return 1;
 	}
@@ -171,7 +171,7 @@ int lua_socket_node::forward_group_player(lua_State* L, uint32_t session_id, uin
 			header.target_pid = 0;			
 			//Íæ¼Òids
 			size_t ids_len = 0;
-			auto ids_data = m_router->encode_player_ids(player_ids, &ids_len);
+			auto ids_data = m_router->encode_player_ids(bus_ids, &ids_len);
 			header.len = data_len + ids_len + sizeof(router_header);
 			sendv_item items[] = { {&header, sizeof(router_header)},{ids_data, ids_len}, {data, data_len} };
 			auto send_len = m_mgr->sendv(m_token, items, _countof(items));

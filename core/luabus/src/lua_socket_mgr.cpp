@@ -80,15 +80,15 @@ const std::string lua_socket_mgr::get_rpc_key() {
 }
 int lua_socket_mgr::broad_group(lua_State* L, codec_base* codec) {
 	size_t data_len = 0;
-	std::vector<uint32_t> groups;
-	if (!lua_to_native(L, 2, groups)) {
+	bus_ids.clear();
+	if (!lua_to_native(L, 2, bus_ids)) {
 		lua_pushboolean(L, false);
 		return 1;
 	}
 	char* data = (char*)codec->encode(L, 3, &data_len);
 	if (data_len > 1 && data_len < NET_PACKET_MAX_LEN) {
 		//·¢ËÍÊý¾Ý
-		m_mgr->broadgroup(groups, data, data_len);
+		m_mgr->broadgroup(bus_ids, data, data_len);
 		lua_pushboolean(L, true);
 		return 1;
 	}
@@ -97,8 +97,8 @@ int lua_socket_mgr::broad_group(lua_State* L, codec_base* codec) {
 }
 int lua_socket_mgr::broad_rpc(lua_State* L) {
 	if (m_codec) {
-		std::vector<uint32_t> groups;
-		if (!lua_to_native(L, 1, groups)) {
+		bus_ids.clear();
+		if (!lua_to_native(L, 1, bus_ids)) {
 			lua_pushboolean(L, false);
 			return 1;
 		}
@@ -114,7 +114,7 @@ int lua_socket_mgr::broad_rpc(lua_State* L) {
 			header.msg_id = (uint8_t)rpc_type::remote_call;
 			header.len = data_len + sizeof(router_header);
 			sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
-			m_mgr->broadgroupv(groups, items, _countof(items));
+			m_mgr->broadgroupv(bus_ids, items, _countof(items));
 			lua_pushboolean(L, true);
 			return 1;
 		}

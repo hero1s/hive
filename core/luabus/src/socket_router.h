@@ -6,6 +6,8 @@
 #include "socket_mgr.h"
 #include "socket_helper.h"
 
+static thread_local std::vector<uint32_t> bus_ids;
+
 enum class rpc_type : uint8_t {
 	remote_call,
 	forward_target,
@@ -151,6 +153,8 @@ private:
 	std::unordered_map<uint32_t, stdsptr<router_node>>::iterator m_router_iter = m_routers.begin();
 	int16_t m_router_idx = -1;
 	uint32_t m_node_id = 0;
-	std::unique_ptr<luabuf> m_buf = std::make_unique<luabuf>();
+	luabuf m_buf;
+	//收集玩家指定服务所在id
+	std::set<uint32_t> m_target_ids;
 };
 
