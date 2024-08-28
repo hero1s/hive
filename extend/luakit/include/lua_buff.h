@@ -185,7 +185,7 @@ namespace luakit {
         }
 
         template<typename T = int64_t>
-        uint64_t read_var64(T* value) {
+        size_t read_var64(T* value) {
             size_t data_len = 0;
             size_t len = 0;
             auto buff = data(&data_len);
