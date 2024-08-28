@@ -13,6 +13,7 @@ enum class rpc_type : uint8_t {
 	forward_broadcast,
 	forward_hash,
 	forward_player,
+	forward_group_player,
 	forward_router,//must be max 	
 };
 
@@ -110,6 +111,7 @@ public:
 	socket_router(stdsptr<socket_mgr>& mgr) : m_mgr(mgr) { }
 
 	uint32_t map_token(uint32_t node_id, uint32_t token, uint16_t hash);
+	uint32_t hash_value(uint32_t service_id);
 	uint32_t set_node_status(uint32_t node_id, uint8_t status);
 	void set_service_name(uint32_t service_id, std::string service_name);
 	void map_router_node(uint32_t router_id, uint32_t target_id, uint8_t status);	
@@ -119,6 +121,7 @@ public:
 
 	bool do_forward_target(router_header* header, char* data, size_t data_len, std::string& error, bool router);
 	bool do_forward_player(router_header* header, char* data, size_t data_len, std::string& error, bool router);
+	bool do_forward_group_player(router_header* header, char* data, size_t data_len, std::string& error, bool router);
 	bool do_forward_master(router_header* header, char* data, size_t data_len, std::string& error, bool router);
 	bool do_forward_broadcast(router_header* header, int source, char* data, size_t data_len, size_t& broadcast_num);
 	bool do_forward_hash(router_header* header, char* data, size_t data_len, std::string& error, bool router);	
@@ -129,6 +132,9 @@ public:
 	void set_player_service(uint32_t player_id, uint32_t sid, uint8_t login);
 	uint32_t find_player_sid(uint32_t player_id, uint16_t service_id);
 	void clean_player_sid(uint32_t sid);
+	//序列化玩家id
+	void* encode_player_ids(std::vector<uint32_t>& player_ids, size_t* len);
+	char* decode_player_ids(std::vector<uint32_t>& player_ids, char* data, size_t* data_len);
 
 protected:
 	uint32_t find_transfer_router(uint32_t target_id, uint16_t service_id);
@@ -145,5 +151,6 @@ private:
 	std::unordered_map<uint32_t, stdsptr<router_node>>::iterator m_router_iter = m_routers.begin();
 	int16_t m_router_idx = -1;
 	uint32_t m_node_id = 0;
+	std::unique_ptr<luabuf> m_buf = std::make_unique<luabuf>();
 };
 

@@ -84,8 +84,8 @@ function UpdateMgr:update_fast(clock_ms)
 end
 
 function UpdateMgr:update_minute(clock_ms, cur_minute)
-    for obj in pairs(self.minute_objs) do
-        thread_mgr:fork(function()
+    for obj, key in pairs(self.minute_objs) do
+        thread_mgr:entry(key, function()
             obj:on_minute(clock_ms, cur_minute)
         end)
     end
@@ -158,7 +158,7 @@ function UpdateMgr:update_by_time(now, clock_ms)
         return
     end
     for obj, key in pairs(self.second30_objs) do
-        thread_mgr:fork(function()
+        thread_mgr:entry(key, function()
             obj:on_second30(clock_ms)
         end)
     end
@@ -266,7 +266,7 @@ function UpdateMgr:attach_minute(obj)
         log_warn("[UpdateMgr][attach_minute] obj({}) isn't on_minute method!", obj:source())
         return
     end
-    self.minute_objs[obj] = true
+    self.minute_objs[obj] = guid_new()
 end
 
 function UpdateMgr:detach_minute(obj)

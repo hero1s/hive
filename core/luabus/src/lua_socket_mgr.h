@@ -14,6 +14,7 @@ public:
 	int listen(lua_State* L, const char* ip, int port);
 	int connect(lua_State* L, const char* ip, const char* port, int timeout);
 	int map_token(uint32_t node_id, uint32_t token, uint16_t hash);
+	int hash_value(uint32_t service_id);
 	int set_node_status(uint32_t node_id, uint8_t status);
 	void map_router_node(uint32_t router_id, uint32_t target_id, uint8_t status);
 	void set_router_id(int id);

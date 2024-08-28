@@ -71,6 +71,10 @@ end
 function OnlineAgent:send_lobby(player_id, rpc, ...)
     return router_mgr:send_lobby_player(player_id, rpc, ...)
 end
+--player_id在线的lobby将收到rpc
+function OnlineAgent:send_group_lobby(player_ids, rpc, ...)
+    router_mgr:group_lobby_player(player_ids, rpc, ...)
+end
 
 function OnlineAgent:call_client(player_id, cmd_id, msg)
     msg = self:encode_msg(player_id, cmd_id, msg)
@@ -82,16 +86,12 @@ function OnlineAgent:send_client(player_id, cmd_id, msg)
     return router_mgr:send_lobby_player(player_id, "rpc_forward_client", player_id, cmd_id, msg)
 end
 
-function OnlineAgent:send_group_client(players, cmd_id, msg)
+function OnlineAgent:send_group_client(player_ids, cmd_id, msg)
     msg = self:encode_msg(0, cmd_id, msg)
-    if players and #players < 5 then
-        --人少直接1v1转发
-        for _, player_id in pairs(players) do
-            router_mgr:send_lobby_player(player_id, "rpc_forward_client", player_id, cmd_id, msg)
-        end
-    else
-        router_mgr:send_lobby_all_self("rpc_forward_group_client", players, cmd_id, msg)
+    if not player_ids or next(player_ids) == nil then
+        return router_mgr:send_lobby_all("rpc_forward_group_client", player_ids, cmd_id, msg)
     end
+    router_mgr:group_lobby_player(player_ids, "rpc_forward_group_client", player_ids, cmd_id, msg)
 end
 
 function OnlineAgent:send_lobby_client(lobby_id, player_id, cmd_id, msg)

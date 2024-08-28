@@ -47,6 +47,10 @@ function RouterServer:setup()
     end
 end
 
+function RouterServer:hash_value(service_id)
+    return luabus.hash_value(service_id)
+end
+
 --其他服务器节点关闭
 function RouterServer:on_client_error(client, client_token, err)
     local master_id = luabus.map_token(client.id, 0)

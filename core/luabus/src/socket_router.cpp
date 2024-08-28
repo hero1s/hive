@@ -33,6 +33,13 @@ uint32_t socket_router::map_token(uint32_t node_id, uint32_t token, uint16_t has
 	return choose_master(service_id);
 }
 
+uint32_t socket_router::hash_value(uint32_t service_id) {
+	if (service_id < m_services.size()) {
+		return m_services[service_id].hash;	
+	}
+	return 0;
+}
+
 uint32_t socket_router::set_node_status(uint32_t node_id, uint8_t status) {
 	auto service_id = get_service_id(node_id);
 	auto group = get_node_group(node_id);
@@ -157,6 +164,31 @@ bool socket_router::do_forward_player(router_header* header, char* data, size_t 
 	return true;
 }
 
+bool socket_router::do_forward_group_player(router_header* header, char* data, size_t data_len, std::string& error, bool router) {
+	std::vector<uint32_t> player_ids;
+	data = decode_player_ids(player_ids, data, &data_len);
+	uint32_t service_id = header->target_sid;
+	//收集玩家指定服务所在id
+	std::set<uint32_t> target_ids;
+	for (auto player_id : player_ids) {
+		uint32_t target_id = find_player_sid(player_id, service_id);
+		if (target_id != 0) {
+			target_ids.insert(target_id);
+		}
+	}
+	header->msg_id = (uint8_t)rpc_type::remote_call;
+	header->len = data_len + sizeof(router_header);
+	auto& services = m_services[service_id];
+	for (auto target_id : target_ids) {		
+		auto pTarget = services.get_target(target_id);
+		if (pTarget != nullptr) {			
+			sendv_item items[] = { {header, sizeof(router_header)}, {data, data_len} };
+			m_mgr->sendv(pTarget->token, items, _countof(items));
+		}
+	}
+	return true;
+}
+
 bool socket_router::do_forward_master(router_header* header, char* data, size_t data_len, std::string& error, bool router) {
 	uint32_t service_id = header->target_sid;
 	if (service_id >= m_services.size()) {
@@ -262,6 +294,24 @@ void socket_router::clean_player_sid(uint32_t sid) {
 	}
 	auto& players = m_players[service_id];
 	players.clean_sid(sid);
+}
+
+//序列化玩家id
+void* socket_router::encode_player_ids(std::vector<uint32_t>& player_ids, size_t* len) {	
+	m_buf->clean();
+	m_buf->write((uint8_t)player_ids.size());
+	for (auto id : player_ids) {
+		m_buf->write(id);
+	}
+	return m_buf->data(len);
+}
+char* socket_router::decode_player_ids(std::vector<uint32_t>& player_ids, char* data, size_t* data_len) {
+	auto s = slice((uint8_t*)data, *data_len);
+	auto num = *s.read<uint8_t>();
+	for (uint8_t i = 0; i < num; i++) {
+		player_ids.push_back(*s.read<uint32_t>());
+	}
+	return (char*)s.data(data_len);
 }
 
 //轮流负载转发

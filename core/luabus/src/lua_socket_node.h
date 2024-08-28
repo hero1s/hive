@@ -34,6 +34,7 @@ struct lua_socket_node final
 
 	int forward_target(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id,uint32_t target);
 	int forward_player(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id, uint16_t service_id, uint32_t player_id);
+	int forward_group_player(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id, uint16_t service_id);
 	int forward_hash(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id, uint16_t service_id,uint16_t hash);
 
 	template <rpc_type forward_method>
@@ -67,7 +68,7 @@ private:
 	void on_call(router_header* header, slice* slice);
 	void on_forward_broadcast(router_header* header, size_t target_size);
 	void on_forward_error(router_header* header);
-
+	
 	stdsptr<kit_state> m_luakit;
 	stdsptr<socket_mgr> m_mgr;
 	codec_base* m_codec = nullptr;

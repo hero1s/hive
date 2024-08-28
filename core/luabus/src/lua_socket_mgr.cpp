@@ -51,6 +51,10 @@ int lua_socket_mgr::map_token(uint32_t node_id, uint32_t token,uint16_t hash) {
 	return m_router->map_token(node_id, token, hash);
 }
 
+int lua_socket_mgr::hash_value(uint32_t service_id) {
+	return m_router->hash_value(service_id);
+}
+
 int lua_socket_mgr::set_node_status(uint32_t node_id, uint8_t status) {
 	return m_router->set_node_status(node_id, status);
 }

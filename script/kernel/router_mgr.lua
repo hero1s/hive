@@ -20,6 +20,7 @@ local event_mgr        = hive.get("event_mgr")
 local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 local RPC_UNREACHABLE  = hive.enum("KernCode", "RPC_UNREACHABLE")
 local NOT_ROUTER       = hive.enum("KernCode", "NOT_ROUTER")
+local SECOND_MS        = hive.enum("PeriodTime", "SECOND_MS")
 
 local RouterMgr        = singleton()
 local prop             = property(RouterMgr)
@@ -40,6 +41,7 @@ function RouterMgr:setup()
     event_mgr:add_listener(self, "rpc_service_kickout")
     event_mgr:add_listener(self, "on_forward_error")
     event_mgr:add_listener(self, "reply_forward_error")
+    event_mgr:add_listener(self, "on_heartbeat")
 end
 
 --服务关闭
@@ -240,6 +242,10 @@ function RouterMgr:send_player(service_id, player_id, rpc, ...)
     return self:forward_target(player_id, "call_player", rpc, 0, service_id, player_id, rpc, ...)
 end
 
+function RouterMgr:group_player(service_id, player_ids, rpc, ...)
+    return self:forward_target(service_id + hive.id, "group_player", rpc, 0, service_id, player_ids, rpc, ...)
+end
+
 --生成针对服务的访问接口
 function RouterMgr:build_service_method(service, service_id)
     local method_list = {
@@ -254,6 +260,9 @@ function RouterMgr:build_service_method(service, service_id)
         end,
         ["send_%s_player"]   = function(obj, player_id, rpc, ...)
             return obj:send_player(service_id, player_id, rpc, ...)
+        end,
+        ["group_%s_player"]  = function(obj, player_ids, rpc, ...)
+            return obj:group_player(service_id, player_ids, rpc, ...)
         end,
         ["call_%s_random"]   = function(obj, rpc, ...)
             return obj:call_hash(service_id, mrandom(), rpc, ...)
@@ -318,6 +327,14 @@ function RouterMgr:reply_forward_error(session_id, error_msg, msg_type)
         log_err("[RouterMgr][reply_forward_error] {},{},{}", thread_mgr:get_title(session_id), error_msg, msg_type)
     end
     thread_mgr:response(session_id, false, RPC_UNREACHABLE, error_msg)
+end
+
+--心跳回复
+function RouterMgr:on_heartbeat(hid, send_time)
+    local netlag = hive.clock_ms - send_time
+    if netlag > SECOND_MS then
+        log_err("[RouterMgr][on_heartbeat] ({} <--> {}),netlag:{} ms", id2nick(hive.id), id2nick(hid), netlag)
+    end
 end
 
 hive.router_mgr = RouterMgr()

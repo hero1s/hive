@@ -54,6 +54,7 @@ namespace luabus {
         lluabus.set_function("listen", listen);
         lluabus.set_function("connect", connect);
         lluabus.set_function("map_token", [](uint32_t node_id, uint32_t token, uint16_t hash) { return socket_mgr.map_token(node_id, token, hash); });
+        lluabus.set_function("hash_value", [](uint32_t service_id) { return socket_mgr.hash_value(service_id); });
         lluabus.set_function("set_node_status", [](uint32_t node_id, uint8_t status) { return socket_mgr.set_node_status(node_id, status); });
         lluabus.set_function("map_router_node", [](uint32_t router_id, uint32_t target_id, uint8_t status) { return socket_mgr.map_router_node(router_id, target_id, status); });
         lluabus.set_function("set_router_id", [](int id) { return socket_mgr.set_router_id(id); });
@@ -95,6 +96,7 @@ namespace luabus {
             "call_data", &lua_socket_node::call_data,
             "forward_hash", &lua_socket_node::forward_hash,
             "forward_player",&lua_socket_node::forward_player,
+            "forward_group_player",&lua_socket_node::forward_group_player,
             "forward_target", &lua_socket_node::forward_target,
             "forward_master", &lua_socket_node::forward_by_group<rpc_type::forward_master>,
             "forward_broadcast", &lua_socket_node::forward_by_group < rpc_type::forward_broadcast>,

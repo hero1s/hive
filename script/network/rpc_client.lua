@@ -11,7 +11,6 @@ local thread_mgr          = hive.get("thread_mgr")
 local proxy_agent         = hive.get("proxy_agent")
 local timer_mgr           = hive.get("timer_mgr")
 local heval               = hive.eval
-local id2nick             = service.id2nick
 
 local FLAG_REQ            = hive.enum("FlagMask", "REQ")
 local FLAG_RES            = hive.enum("FlagMask", "RES")
@@ -104,6 +103,11 @@ function RpcClient:connect()
         local send_len = socket.forward_player(session_id, FLAG_REQ, hive.id, service_id, player_id, rpc, ...)
         return self:on_call_router(rpc, send_len, ...)
     end
+    --仅支持send
+    socket.group_player     = function(session_id, service_id, player_ids, rpc, ...)
+        local send_len = socket.forward_group_player(session_id, FLAG_REQ, hive.id, service_id, player_ids, rpc, ...)
+        return self:on_call_router(rpc, send_len, ...)
+    end
     socket.callback_target  = function(session_id, target, rpc, ...)
         if target == 0 then
             local send_len = socket.call(session_id, FLAG_RES, hive.id, rpc, ...)
@@ -163,19 +167,8 @@ function RpcClient:close()
     end
 end
 
---心跳回复
-function RpcClient:on_heartbeat(hid, send_time)
-    local netlag = hive.clock_ms - send_time
-    if netlag > SECOND_MS then
-        log_err("[RpcClient][on_heartbeat] ({}),netlag:{} ms", id2nick(hid), netlag)
-    end
-end
-
 --rpc事件
 function RpcClient:on_socket_rpc(socket, session_id, rpc_flag, source, rpc, ...)
-    if rpc == "on_heartbeat" then
-        return self:on_heartbeat(...)
-    end
     if session_id == 0 or rpc_flag == FLAG_REQ then
         local btime = hive.clock_ms
         local function dispatch_rpc_message(...)
