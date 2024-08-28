@@ -1,5 +1,6 @@
 #pragma once
 #include "lua_slice.h"
+#include "var_int.h"
 
 namespace luakit {
 
@@ -166,6 +167,37 @@ namespace luakit {
                 return (T*)head;
             }
             return nullptr;
+        }
+
+        template<typename T = int64_t>
+        size_t write_var64(T value) {
+           auto buffer = peek_space(MAX_VARINT_SIZE);
+           size_t len = 0;
+           if constexpr (std::is_same<T, int64_t>::value) {
+               len = encode_s64(buffer, MAX_VARINT_SIZE, value);
+           } else if constexpr (std::is_same<T, uint64_t>::value) {
+               len = encode_u64(buffer, MAX_VARINT_SIZE, value);
+           } else {
+               static_assert(std::is_same<T, uint64_t>::value || std::is_same<T, int64_t>::value, "Unsupported type");
+           }
+           m_tail += len;
+           return len;
+        }
+
+        template<typename T = int64_t>
+        uint64_t read_var64(T* value) {
+            size_t data_len = 0;
+            size_t len = 0;
+            auto buff = data(&data_len);
+            if constexpr (std::is_same<T, int64_t>::value) {
+                len = decode_s64(value, buff, data_len);
+            } else if constexpr (std::is_same<T, uint64_t>::value) {
+                len = decode_u64(value, buff, data_len);
+            } else {
+                static_assert(std::is_same<T, uint64_t>::value || std::is_same<T, int64_t>::value, "Unsupported type");
+            }
+            m_head += len;
+            return len;
         }
 
     protected:

@@ -294,8 +294,30 @@ void socket_router::clean_player_sid(uint32_t sid) {
 	players.clean_sid(sid);
 }
 
+#ifdef VAR_INT_IDS  //变长整形[暂时不需要]
 //序列化玩家id
-void* socket_router::encode_player_ids(std::vector<uint32_t>& player_ids, size_t* len) {	
+void* socket_router::encode_player_ids(std::vector<uint32_t>& player_ids, size_t* len) {
+	m_buf.clean();
+	m_buf.write_var64((uint64_t)player_ids.size());
+	for (auto id : player_ids) {
+		m_buf.write_var64((uint64_t)id);
+	}
+	return m_buf.data(len);
+}
+char* socket_router::decode_player_ids(std::vector<uint32_t>& player_ids, char* data, size_t* data_len) {
+	player_ids.clear();
+	auto s = slice((uint8_t*)data, *data_len);
+	uint64_t num = 0, player_id = 0;
+	s.read_var64(&num);
+	for (uint8_t i = 0; i < num; i++) {
+		s.read_var64(&player_id);
+		player_ids.push_back(player_id);
+	}
+	return (char*)s.data(data_len);
+}
+#else
+//序列化玩家id
+void* socket_router::encode_player_ids(std::vector<uint32_t>& player_ids, size_t* len) {
 	m_buf.clean();
 	m_buf.write((uint8_t)player_ids.size());
 	for (auto id : player_ids) {
@@ -312,6 +334,7 @@ char* socket_router::decode_player_ids(std::vector<uint32_t>& player_ids, char* 
 	}
 	return (char*)s.data(data_len);
 }
+#endif // DEBUG
 
 //轮流负载转发
 uint32_t socket_router::find_transfer_router(uint32_t target_id, uint16_t service_id) {

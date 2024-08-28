@@ -1,5 +1,6 @@
 #pragma once
 #include "lua_base.h"
+#include "var_int.h"
 
 namespace luakit {
 
@@ -66,6 +67,22 @@ namespace luakit {
                 return (T*)head;
             }
             return nullptr;
+        }
+
+        template<typename T = int64_t>
+        uint64_t read_var64(T* value) {
+            size_t data_len = 0;
+            size_t len = 0;
+            auto buff = data(&data_len);
+            if constexpr (std::is_same<T, int64_t>::value) {
+                len = decode_s64(value, buff, data_len);
+            } else if constexpr (std::is_same<T, uint64_t>::value) {
+                len = decode_u64(value, buff, data_len);
+            } else {
+                static_assert(std::is_same<T, uint64_t>::value || std::is_same<T, int64_t>::value, "Unsupported type");
+            }
+            m_head += len;
+            return len;
         }
 
         uint8_t* data(size_t* len) {
