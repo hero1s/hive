@@ -58,6 +58,7 @@ function MonitorMgr:on_client_beat(client, status_info)
             --广播其它服务
             if status_info.is_ready then
                 self:add_service(node.service_name, node)
+                self:send_all_service_status(client, node.is_ready)
             else
                 self:remove_service(node.service_name, node.id, hive.now + delay_time, node.pid)
             end
@@ -74,7 +75,7 @@ function MonitorMgr:on_client_register(client, node_info, watch_services)
     self.monitor_nodes[client.token]      = node_info
     self.monitor_lost_nodes[node_info.id] = nil
     --返回所有服务
-    self:send_all_service_status(client)
+    self:send_all_service_status(client, node_info.is_ready)
     --广播其它服务
     if node_info.is_ready then
         self:add_service(node_info.service_name, node_info)
@@ -221,7 +222,7 @@ function MonitorMgr:remove_service(service_name, id, lost_time, pid)
 end
 
 -- 通知服务变更
-function MonitorMgr:send_all_service_status(client)
+function MonitorMgr:send_all_service_status(client, is_ready)
     if self.open_nacos then
         return
     end
@@ -229,14 +230,17 @@ function MonitorMgr:send_all_service_status(client)
     local readys
     for service_name, curr_services in pairs(self.services) do
         if client.watch_services[service_name] then
-            readys = {}
-            for id, info in pairs(curr_services) do
-                if id ~= client.id and info.is_ready then
-                    readys[id] = info
+            --未准备状态仅通知router,防止逻辑层事件处理失败
+            if is_ready or service_name == "router" then
+                readys = {}
+                for id, info in pairs(curr_services) do
+                    if id ~= client.id and info.is_ready then
+                        readys[id] = info
+                    end
                 end
-            end
-            if next(readys) then
-                self.rpc_server:send(client, "rpc_service_changed", service_name, readys, {})
+                if next(readys) then
+                    self.rpc_server:send(client, "rpc_service_changed", service_name, readys, {})
+                end
             end
         end
     end
