@@ -1,51 +1,81 @@
-local profile      = import("utility/profile.lua")
-local lcodec       = require("lcodec")
-local lcrypt       = require("lcrypt")
+--profile_test.lua
+import("feature/profile.lua")
 
-local log_debug    = logger.debug
-local log_dump     = logger.dump
-local lhex_encode  = lcrypt.hex_encode
-local lencode      = luakit.encode
-local ldecode      = luakit.decode
-local lserialize   = luakit.serialize
-local lunserialize = luakit.unserialize
+local log_debug     = logger.debug
+local lhex_encode   = crypt.hex_encode
+local guid_new      = codec.guid_new
+local encode        = luakit.encode
+local decode        = luakit.decode
+local serialize     = luakit.serialize
+local unserialize   = luakit.unserialize
 
-local timer_mgr    = hive.get("timer_mgr")
-local thread_mgr   = hive.get("thread_mgr")
+hive.profile()
+hive.perfwatch("qtest/profile_test.lua")
+if hive.index == 1 then
+    local m  = { f = 3 }
+    local t  = {
+        [3.63] = 1, 2, 3, 4,
+        a      = 2,
+        b      = {
+            s = 3, d = "4"
+        },
+        e      = true,
+        g      = m,
+    }
 
---serialize
-----------------------------------------------------------------
-local m            = { f = 3 }
-local t            = {
-    [3.63] = 1, 2, 3, 4,
-    a      = 2,
-    b      = {
-        s = 3, d = "4"
-    },
-    e      = true,
-    g      = m,
-}
+    local ss = serialize(t)
+    log_debug("serialize-> aaa: {}", ss)
 
-local a            = { a = 1, c = { a = 2 } }
-profile.start()
-thread_mgr:fork(function()
-    for i = 1, 10 do
-        log_debug("next_id1-> %d", lcodec.next_id(1))
-        log_debug("next_id2-> %d", lcodec.next_id(2))
+    local tt = unserialize(ss)
+    for k, v in pairs(tt) do
+        log_debug("unserialize k={}, v={}", k, v)
     end
-    for i = 0, 1000 do
-        lcodec.next_id(1)
-        lcodec.next_id(2)
-        local aa = json.encode(a)
-        json.decode(aa)
-        local ss = lserialize(a)
-        local tt = lunserialize(ss)
+
+    --encode
+    local e    = { a = 1, c = { ab = 2 } }
+    local bufe = encode(e)
+    log_debug("encode-> bufe: {}, {}", #bufe, lhex_encode(bufe))
+
+    local datae = decode(bufe, #bufe)
+    log_debug("decode-> {}", datae)
+
+    for i = 1, 1000 do
+        local ss1 = serialize(t)
+        unserialize(ss1)
+        local bufe1 = encode(e)
+        decode(bufe1, #bufe1)
+
+        local guid = guid_new(5, 512)
     end
-    thread_mgr:sleep(2000)
-end)
+end
 
---dump
-profile.dstop(10)
+if hive.index == 2 then
+    local function test(a)
+        timer.sleep(1000)
+    end
+    local function test2()
+        log_debug("===============test2-1")
+        coroutine.yield()
+        test(3)
+        log_debug("===============test2-2")
+    end
+    local function test1()
+        log_debug("===============test1-1")
+        local co = coroutine.create(test2)
+        coroutine.resume(co)
+        log_debug("===============test1-2")
+        test(2)
+        coroutine.resume(co)
+        log_debug("===============test1-3")
+    end
 
+    local function prof()
+        test(1)
+        test1()
+    end
+    local t1 = timer.now_ms()
+    prof()
+    log_debug("prof-> {}", timer.now_ms() - t1)
+end
 
-
+hive.perfdump(50)
