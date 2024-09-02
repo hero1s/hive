@@ -27,6 +27,13 @@ function TimerObj:remove_timer(timer_id)
     return false
 end
 
+function TimerObj:has_timer(timer_id)
+    if self.timers[timer_id] then
+        return true
+    end
+    return false
+end
+
 function TimerObj:clear_timer()
     for timer_id, _ in pairs(self.timers) do
         timer_mgr:unregister(timer_id)

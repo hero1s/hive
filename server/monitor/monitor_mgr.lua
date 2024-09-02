@@ -27,14 +27,10 @@ prop:reader("http_server", nil)
 prop:reader("monitor_nodes", {})
 prop:reader("monitor_lost_nodes", {})
 prop:reader("services", {})
-prop:reader("open_nacos", false)
 prop:reader("changes", {})
 prop:reader("close_services", {})
 
 function MonitorMgr:__init()
-    --是否nacos做服务发现
-    self.open_nacos = environ.status("HIVE_NACOS_OPEN")
-
     --创建rpc服务器
     local ip, port  = env_addr("HIVE_MONITOR_HOST")
     self.rpc_server = RpcServer(self, ip, port, environ.status("HIVE_ADDR_INDUCE"))
@@ -223,10 +219,7 @@ end
 
 -- 通知服务变更
 function MonitorMgr:send_all_service_status(client, is_ready)
-    if self.open_nacos then
-        return
-    end
-    log_debug("[MonitorMgr][send_all_service_status] {}", client.name)
+    log_debug("[MonitorMgr][send_all_service_status] %s", client.name)
     local readys
     for service_name, curr_services in pairs(self.services) do
         if client.watch_services[service_name] then
@@ -247,9 +240,6 @@ function MonitorMgr:send_all_service_status(client, is_ready)
 end
 
 function MonitorMgr:broadcast_service_status(service_name, readys, closes)
-    if self.open_nacos then
-        return
-    end
     log_debug("[MonitorMgr][broadcast_service_status] {},{},{}", service_name, readys, closes)
     self.rpc_server:broadcast(function(client)
         return client.id and client.watch_services[service_name]

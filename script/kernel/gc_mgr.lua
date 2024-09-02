@@ -12,7 +12,7 @@ local cut_tail                   = math_ext.cut_tail
 local mregion                    = math_ext.region
 
 local MAX_IDLE_TIME<const>       = 5 * 1000                   -- 空闲时间
-local GC_FAST_STEP               = 512                        -- gc快速回收
+local GC_FAST_STEP               = 200                        -- gc快速回收
 local GC_SLOW_STEP               = 50                         -- gc慢回收
 local MEM_ALLOC_SPEED_MAX<const> = 10 * 1024                  -- 每秒消耗内存超过10M，开启急速gc
 local PER_US_FOR_SECOND<const>   = 1000                       -- 1秒=1000ms
@@ -34,6 +34,8 @@ prop:reader("gc_step_use_time_max", 0)
 prop:reader("gc_step_time50_cnt", 0)-- 一个周期内，单步执行超过50ms的次数
 prop:reader("mem_cost_speed", 0)
 prop:reader("open_gc_step", false)
+prop:reader("is_step_gc", false)
+prop:reader("cycle_need", 2)
 
 function GcMgr:__init()
 
@@ -49,15 +51,11 @@ end
 
 function GcMgr:set_gc_step(open, slow_step, fast_step)
     self.open_gc_step = open
-    if open then
-        collectgarbage("stop")
-    else
-        collectgarbage("restart")
-    end
+    self:switch_gc(open)
     self.gc_stop_mem = mfloor(collectgarbage("count"))
     self.gc_running  = false
-    GC_SLOW_STEP     = mregion(slow_step or GC_SLOW_STEP, 50, 1000) -- gc慢回收
-    GC_FAST_STEP     = mregion(fast_step or GC_FAST_STEP, 50, 1000) -- gc快速回收
+    GC_SLOW_STEP     = mfloor(mregion(slow_step or GC_SLOW_STEP, 50, 100)) -- gc慢回收
+    GC_FAST_STEP     = mfloor(mregion(fast_step or GC_FAST_STEP, 100, 300)) -- gc快速回收
     log_warn("[GcMgr][set_gc_step] open:%s,slow_step:%s,fast_step:%s", open, slow_step, fast_step)
 end
 
@@ -103,8 +101,8 @@ function GcMgr:run_step(now_us)
 end
 
 function GcMgr:update()
-    if not self.open_gc_step then
-        return 0
+    if not self.is_step_gc then
+        return -1
     end
     local now_us = lclock_ms()
     if self.gc_running then
@@ -119,11 +117,11 @@ function GcMgr:update()
 end
 
 function GcMgr:calc_step_value(cost_time)
-    if cost_time > 25 and self.step_inc > 0 then
-        self.step_value = mregion(mfloor(self.step_value / 2), GC_SLOW_STEP, GC_FAST_STEP)
+    if cost_time > 50 and self.step_inc > 0 then
+        self.step_value = mregion(mfloor(self.step_value * 0.7), GC_SLOW_STEP, GC_FAST_STEP)
         self.step_inc   = self.step_inc - 1
-    elseif cost_time < 5 and self.step_inc < 2 then
-        self.step_value = mregion(self.step_value * 2, GC_SLOW_STEP, GC_FAST_STEP)
+    elseif cost_time < 5 and self.step_inc < 3 then
+        self.step_value = mregion(mfloor(self.step_value * 1.5), GC_SLOW_STEP, GC_FAST_STEP)
         self.step_inc   = self.step_inc + 1
     end
 end
@@ -169,6 +167,10 @@ function GcMgr:log_gc_end()
         log_warn("[GcMgr][log_gc_end] {}", gc_info)
     end
     self.gc_last_collect_time = lclock_ms()
+    self.cycle_need           = self.cycle_need - 1
+    if self.cycle_need < 0 or self.gc_step_time50_cnt > 2 then
+        self:switch_gc(false)
+    end
 end
 
 function GcMgr:dump_mem_obj(less_count)
@@ -185,6 +187,25 @@ function GcMgr:dump_mem_obj(less_count)
     }
     logger.dump("[GcMgr][dump_mem_obj]:{}", info)
     return info
+end
+
+--切换gc
+function GcMgr:switch_gc(step_gc)
+    self.is_step_gc = step_gc
+    if step_gc then
+        collectgarbage("stop")
+        self.cycle_need = 2
+    else
+        collectgarbage("restart")
+    end
+end
+
+--检测退出快速gc
+function GcMgr:check_enter_step_gc()
+    if not self.open_gc_step or self.is_step_gc then
+        return
+    end
+    self:switch_gc(true)
 end
 
 hive.gc_mgr = GcMgr()

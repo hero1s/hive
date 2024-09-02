@@ -90,6 +90,7 @@ function UpdateMgr:update_minute(clock_ms, cur_minute)
         end)
     end
     self:check_new_day()
+    gc_mgr:check_enter_step_gc()
 end
 
 function UpdateMgr:update_hour(clock_ms, cur_hour, time)

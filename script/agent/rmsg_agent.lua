@@ -72,6 +72,38 @@ function RmsgAgent:safe_do_message(rmsg_type, to, do_func, msg_cnt_limit, page_s
     return cnt
 end
 
+function RmsgAgent:safe_do_message_timestamp(rmsg_type, to, do_func, msg_cnt_limit, page_size)
+    if nil == page_size then
+        page_size = 100
+    end
+    local _lock<close> = self:lock_msg(rmsg_type, to)
+    local cnt          = 0
+    local last_msg_tm  = 0
+    for i = 1, 100 do
+        local records = self:list_message(rmsg_type, to, page_size)
+        for _, record in ipairs(records) do
+            last_msg_tm = record.time
+            do_func(record)
+            cnt = cnt + 1
+            if msg_cnt_limit and msg_cnt_limit > 0 then
+                if cnt >= msg_cnt_limit then
+                    goto recycle
+                end
+            end
+        end
+        if #records < 100 then
+            goto recycle
+        end
+    end
+
+    :: recycle ::
+    if last_msg_tm > 0 then
+        self:delete_message(rmsg_type, to, last_msg_tm)
+    end
+
+    return cnt
+end
+
 function RmsgAgent:send_message(rmsg_type, from, to, body, typ, id)
     return self.rmsgs[rmsg_type]:send_message(from, to, body, typ or rmsg_type, id)
 end

@@ -215,9 +215,6 @@ end
 
 function MonitorAgent:rpc_set_gc_step(open, slow_step, fast_step)
     open      = open == 1 and true or false
-    slow_step = math_ext.region(slow_step, 1, 100)
-    fast_step = math_ext.region(fast_step, slow_step, 500)
-
     gc_mgr:set_gc_step(open, slow_step, fast_step)
     return { open = open, slow_step = slow_step, fast_step = fast_step }
 end

@@ -43,9 +43,9 @@ end
 
 --初始化
 function MongoMgr:setup()
-    self.table_queue_size  = environ.number("HIVE_MONGO_TABLE_QUEUE", 50)
-    self.table_queue_limit = environ.number("HIVE_MONGO_TABLE_QUEUE_LIMIT", 500)
-    self.qps_warn_avg      = environ.number("HIVE_MONGO_TABLE_QPS", 120)
+    self.table_queue_size  = environ.number("HIVE_MONGO_TABLE_QUEUE", 100)
+    self.table_queue_limit = environ.number("HIVE_MONGO_TABLE_QUEUE_LIMIT", 1000)
+    self.qps_warn_avg      = environ.number("HIVE_MONGO_TABLE_QPS", 150)
 
     local MongoDB          = import("driver/mongo_new.lua")
     local database         = config_mgr:init_table("database", "name")

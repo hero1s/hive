@@ -97,11 +97,8 @@ function DevopsGmMgr:gm_inject(service_name, index, file_name, code_content)
         func = load(code_content)
     end
     if func and func ~= "" then
-        if index == 0 then
-            return monitor_mgr:broadcast("rpc_inject", service_name, sdump(func))
-        else
-            return self:call_target_rpc(service_name, index, "rpc_inject", sdump(func))
-        end
+        self:call_service_index(service_name, index, "rpc_inject", sdump(func))
+        return { code = 0 }
     end
     log_err("[DevopsGmMgr][gm_inject] error file_name:{}, code_content:{}", file_name, code_content)
     return { code = -1 }
@@ -190,11 +187,13 @@ function DevopsGmMgr:gm_count_obj(less_num, service_name, index)
 end
 
 function DevopsGmMgr:gm_set_gc_step(service_name, index, open, slow_step, fast_step)
-    return self:call_target_rpc(service_name, index, "rpc_set_gc_step", open, slow_step, fast_step)
+    self:call_service_index(service_name, index, "rpc_set_gc_step", open, slow_step, fast_step)
+    return { code = 0 }
 end
 
 function DevopsGmMgr:gm_check_endless_loop(start, service_name, index)
-    return self:call_target_rpc(service_name, index, "rpc_check_endless_loop", start == 1 and true or false)
+    self:call_service_index(service_name, index, "rpc_check_endless_loop", start == 1 and true or false)
+    return { code = 0 }
 end
 
 function DevopsGmMgr:gm_guid_view(guid)

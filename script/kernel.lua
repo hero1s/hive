@@ -47,7 +47,6 @@ end
 --加载monitor
 local function init_monitor()
     import("agent/monitor_agent.lua")
-    import("agent/discovery_agent.lua")
 end
 
 --初始化loop
@@ -112,8 +111,8 @@ function hive.after_start()
     --设置gc参数
     local gc_mgr    = hive.get("gc_mgr")
     local open_gc   = environ.status("HIVE_GC_OPEN")
-    local slow_step = environ.number("HIVE_GC_SLOW_STEP", 100)
-    local fast_step = environ.number("HIVE_GC_FAST_STEP", 500)
+    local slow_step = environ.number("HIVE_GC_SLOW_STEP", 50)
+    local fast_step = environ.number("HIVE_GC_FAST_STEP", 300)
     local pause     = environ.number("HIVE_GC_PAUSE", 120)
     local stepmul   = environ.number("HIVE_GC_STEPMUL", 500)
     gc_mgr:set_gc_step(open_gc, slow_step, fast_step)

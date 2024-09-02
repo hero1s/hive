@@ -150,7 +150,6 @@ function CacheMgr:on_service_ready(id, service_name)
 end
 
 function CacheMgr:on_fast(clock_ms)
-    local _clock<close> = hive.make_clock(50)
     self.save_count     = 0
     for _, dirty_map in pairs(self.dirty_maps) do
         for _, obj in dirty_map:wheel_iterator() do
@@ -168,7 +167,6 @@ end
 
 --清理超时的记录
 function CacheMgr:on_second(clock_ms)
-    local _clock<close> = hive.make_clock(100)
     for cache_name, obj_list in pairs(self.cache_lists) do
         for primary_key, obj in obj_list:wheel_iterator() do
             if obj:expired(clock_ms, self.flush) then
