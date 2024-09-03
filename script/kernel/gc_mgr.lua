@@ -38,7 +38,13 @@ prop:reader("is_step_gc", false)
 prop:reader("cycle_need", 2)
 
 function GcMgr:__init()
-
+    local open_gc   = environ.status("HIVE_GC_OPEN")
+    local slow_step = environ.number("HIVE_GC_SLOW_STEP", GC_SLOW_STEP)
+    local fast_step = environ.number("HIVE_GC_FAST_STEP", GC_FAST_STEP)
+    local pause     = environ.number("HIVE_GC_PAUSE", 120)
+    local stepmul   = environ.number("HIVE_GC_STEPMUL", 500)
+    self:set_gc_step(open_gc, slow_step, fast_step)
+    self:set_gc_speed(pause, stepmul)
 end
 
 function GcMgr:set_gc_speed(pause, step_mul)
