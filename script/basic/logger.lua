@@ -10,6 +10,7 @@ local dgetinfo    = debug.getinfo
 local tunpack     = table.unpack
 local fsstem      = stdfs.stem
 local lprint      = log.print
+local lformat     = log.format
 local lfilter     = log.filter
 
 local LOG_LEVEL   = log.LOG_LEVEL
@@ -55,6 +56,10 @@ function logger.filter(level)
         --log.filter(level, on/off)
         lfilter(lvl, lvl >= level)
     end
+end
+
+function logger.format(fmt, ...)
+    return lformat(fmt, 0x01, ...)
 end
 
 local function trim_src(short_src)

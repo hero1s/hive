@@ -46,6 +46,15 @@ local function test1()
     return test2()
 end
 
+local function test2()
+    log_debug("test2 call------------")
+    local str = logger.format("{:<25} {:^9} {:^9} {:^9} {:^12} {:^8} {:^12} {:<10}", "name", "avg", "min", "max", "all", "per(%)", "count", "source")
+    log_debug("%s", str)
+    str = logger.format("1:{1} 2:{2} 1:{1} 2:{2} 0:{0}", 0, 1, 2)
+    log_debug("%s", str)
+end
+
 test1()
+test2()
 
 --os.exit()

@@ -1,5 +1,4 @@
 ﻿---devops_gm_mgr.lua
-local sdump         = string.dump
 local log_err       = logger.err
 local log_warn      = logger.warn
 local log_debug     = logger.debug
@@ -33,8 +32,6 @@ function DevopsGmMgr:register_gm()
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_set_log_level", desc = "设置日志等级", comment = "(all/全部,日志等级debug[1]-fatal[6])", args = "svr_name|string level|integer" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_offset_time", desc = "服务器时间偏移(秒)", args = "offset|integer" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_hotfix", desc = "代码热更新", args = "" },
-        { group = "运维", gm_type = GMType.GLOBAL, name = "gm_inject", desc = "代码注入",
-          args  = "service_name|string index|integer file_name|string code_content|string" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_set_env", desc = "设置环境变量", comment = "临时修改环境变量",
           args  = "key|string value|string service_name|string index|integer" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_reload_env", desc = "reload环境变量", comment = "reload环境变量",
@@ -86,22 +83,6 @@ function DevopsGmMgr:gm_hotfix()
     log_warn("[DevopsGmMgr][gm_hotfix]")
     monitor_mgr:broadcast("rpc_reload")
     return { code = 0 }
-end
-
-function DevopsGmMgr:gm_inject(service_name, index, file_name, code_content)
-    log_debug("[DevopsGmMgr][gm_inject] svr_name:{}:{}, file_name:{}, code_content:{}", service_name, index, file_name, code_content)
-    local func = nil
-    if file_name ~= "" then
-        func = loadfile(file_name)
-    elseif code_content ~= "" then
-        func = load(code_content)
-    end
-    if func and func ~= "" then
-        self:call_service_index(service_name, index, "rpc_inject", sdump(func))
-        return { code = 0 }
-    end
-    log_err("[DevopsGmMgr][gm_inject] error file_name:{}, code_content:{}", file_name, code_content)
-    return { code = -1 }
 end
 
 function DevopsGmMgr:gm_set_env(key, value, service_name, index)

@@ -57,8 +57,21 @@ namespace logger {
         return 0;
     }
 
-#ifdef SUPPORT_FORMAT_LUA
+    template<size_t... integers>
+    int fformat(lua_State* L, int flag, vstring vfmt, std::index_sequence<integers...>&&) {
+        try {
+            auto msg = fmt::format(vfmt, read_args(L, flag, integers + 3, 0)...);
+            lua_pushlstring(L, msg.c_str(), msg.size());
+            return 1;
+        }
+        catch (const exception& e) {
+            luaL_error(L, "log format failed: %s!", e.what());
+        }
+        return 0;
+    }
+
     void replace_fmt(vstring vfmt) {
+#ifdef SUPPORT_FORMAT_LUA
         char* pfmt = const_cast<char*>(vfmt.data());
         if (vfmt.size() > 1) {
             for (auto i = 0; i < vfmt.size() - 1; ++i) {
@@ -69,8 +82,8 @@ namespace logger {
                 }
             }
         }
-    }
 #endif // SUPPORT_FORMAT_LUA
+    }
 
     luakit::lua_table open_lualog(lua_State* L) {
         luakit::kit_state kit_state(L);
@@ -84,7 +97,6 @@ namespace logger {
             "FATAL", log_level::LOG_LEVEL_FATAL
         );
         log_service::instance()->start();
-
         lualog.set_function("print", [](lua_State* L) {
             log_level lvl = (log_level)lua_tointeger(L, 1);
             if (log_service::instance()->is_filter(lvl)) return 0;
@@ -92,9 +104,7 @@ namespace logger {
             sstring tag = lua_to_native<sstring>(L, 3);
             sstring feature = lua_to_native<sstring>(L, 4);
             vstring vfmt = lua_to_native<vstring>(L, 5);
-#ifdef SUPPORT_FORMAT_LUA
-            replace_fmt(vfmt);
-#endif // SUPPORT_FORMAT_LUA            
+            replace_fmt(vfmt);          
             int arg_num = lua_gettop(L) - 5;
             auto max_len = log_limit_len(lvl);
             switch (arg_num) {
@@ -112,6 +122,28 @@ namespace logger {
             case 11: return tformat(L, lvl, tag, feature, flag, vfmt, max_len, make_index_sequence<11>{});
             case 12: return tformat(L, lvl, tag, feature, flag, vfmt, max_len, make_index_sequence<12>{});
             default: luaL_error(L, "log format args is error : %d !",arg_num); break;
+            }
+            return 0;
+            });
+        lualog.set_function("format", [](lua_State* L) {
+            vstring vfmt = lua_to_native<vstring>(L, 1);
+            size_t flag = lua_tointeger(L, 2);
+            int arg_num = lua_gettop(L) - 2;
+            switch (arg_num) {
+            case 0: lua_pushstring(L, vfmt.data()); return 1;
+            case 1: return fformat(L, flag, vfmt, make_index_sequence<1>{});
+            case 2: return fformat(L, flag, vfmt, make_index_sequence<2>{});
+            case 3: return fformat(L, flag, vfmt, make_index_sequence<3>{});
+            case 4: return fformat(L, flag, vfmt, make_index_sequence<4>{});
+            case 5: return fformat(L, flag, vfmt, make_index_sequence<5>{});
+            case 6: return fformat(L, flag, vfmt, make_index_sequence<6>{});
+            case 7: return fformat(L, flag, vfmt, make_index_sequence<7>{});
+            case 8: return fformat(L, flag, vfmt, make_index_sequence<8>{});
+            case 9: return fformat(L, flag, vfmt, make_index_sequence<9>{});
+            case 10: return fformat(L, flag, vfmt, make_index_sequence<10>{});
+            case 11: return fformat(L, flag, vfmt, make_index_sequence<11>{});
+            case 12: return fformat(L, flag, vfmt, make_index_sequence<12>{});
+            default: luaL_error(L, "log format args is error : %d !", arg_num); break;
             }
             return 0;
             });

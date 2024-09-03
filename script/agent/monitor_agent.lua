@@ -40,7 +40,6 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "on_remote_message")
     event_mgr:add_listener(self, "rpc_offset_time")
     event_mgr:add_listener(self, "rpc_reload")
-    event_mgr:add_listener(self, "rpc_inject")
     event_mgr:add_listener(self, "rpc_set_env")
     event_mgr:add_listener(self, "rpc_reload_env")
     event_mgr:add_listener(self, "rpc_set_server_status")
@@ -217,11 +216,6 @@ function MonitorAgent:rpc_set_gc_step(open, slow_step, fast_step)
     open      = open == 1 and true or false
     gc_mgr:set_gc_step(open, slow_step, fast_step)
     return { open = open, slow_step = slow_step, fast_step = fast_step }
-end
-
-function MonitorAgent:rpc_inject(code_string)
-    local func = load(code_string)
-    return func()
 end
 
 function MonitorAgent:notify_change_env(key)
