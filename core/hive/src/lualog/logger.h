@@ -17,6 +17,7 @@
 
 #include "fmt/core.h"
 #include "thread_name.hpp"
+#include "spin_mutex.h"
 
 #ifdef WIN32
 #include <process.h>
@@ -30,6 +31,7 @@ using namespace std::filesystem;
 using sstring = std::string;
 using vstring = std::string_view;
 using cstring = const std::string;
+using spin_mutex = luakit::spin_mutex;
 
 template <class T>
 using sptr = std::shared_ptr<T>;
@@ -53,21 +55,6 @@ namespace logger {
     const size_t QUEUE_SIZE      = 300;
     const size_t MAX_LOG_SIZE    = 50*1024*1024;//50M
     const size_t CLEAN_TIME      = 7 * 24 * 3600;
-
-    class spin_mutex {
-    public:
-        spin_mutex() = default;
-        spin_mutex(const spin_mutex&) = delete;
-        spin_mutex& operator = (const spin_mutex&) = delete;
-        void lock() {
-            while(flag.test_and_set(std::memory_order_acquire));
-        }
-        void unlock() {
-            flag.clear(std::memory_order_release);
-        }
-    private:
-        std::atomic_flag flag = ATOMIC_FLAG_INIT;
-    }; //spin_mutex
 
     template <typename T>
     struct level_names {};

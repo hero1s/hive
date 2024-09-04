@@ -7,11 +7,13 @@
 #include "ltimer/ltimer.h"
 #include "fmt/core.h"
 #include "thread_name.hpp"
+#include "spin_mutex.h"
 #include "lua_kit.h"
 #include "../lualog/logger.h"
 
 using namespace luakit;
 using vstring = std::string_view;
+using spin_mutex = luakit::spin_mutex;
 
 extern "C" void open_custom_libs(lua_State * L);
 
@@ -29,21 +31,6 @@ namespace lworker {
         }
         return nullptr;
     }
-
-    class spin_mutex {
-    public:
-        spin_mutex() = default;
-        spin_mutex(const spin_mutex&) = delete;
-        spin_mutex& operator = (const spin_mutex&) = delete;
-        void lock() {
-            while(flag.test_and_set(std::memory_order_acquire));
-        }
-        void unlock() {
-            flag.clear(std::memory_order_release);
-        }
-    private:
-        std::atomic_flag flag = ATOMIC_FLAG_INIT;
-    }; //spin_mutex
 
     class worker;
     class ischeduler {
