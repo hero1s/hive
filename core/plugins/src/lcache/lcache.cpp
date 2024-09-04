@@ -6,6 +6,8 @@
 namespace cache {
     using cache_type = cache::lru_cache<std::string, std::string>;
 
+	static thread_local luakit::codec_base* codec = nullptr;
+
 	static int lput(lua_State* L) {
 		cache_type* cache = (cache_type*)lua_touserdata(L, 1);
 		if (nullptr == cache) {
@@ -13,7 +15,7 @@ namespace cache {
 		}
 		auto key = luakit::lua_to_native<std::string>(L, 2);
 		size_t data_len;
-		char* data = (char*)luakit::create_codec()->encode(L, 3, &data_len);
+		char* data = (char*)codec->encode(L, 3, &data_len);
 		if (data) {
 			cache->put(key, std::string(data, data_len));
 		} else {
@@ -31,7 +33,7 @@ namespace cache {
 		try
 		{
 			auto value = cache->get(key);
-			luakit::create_codec()->decode(L,(uint8_t*)value.c_str(),value.size());
+			codec->decode(L,(uint8_t*)value.c_str(),value.size());
 		}
 		catch (const std::exception&)
 		{
@@ -79,10 +81,21 @@ namespace cache {
 	}
 
     static int lcreate(lua_State* L) {
+		int n = lua_gettop(L);
+		if (n < 2) {
+			luaL_error(L, "create(max_count, codec)");
+			return 0;
+		}
         size_t max_count = (size_t)luaL_checkinteger(L, 1);
 		if (max_count < 1) {
 			return luaL_argerror(L, 1, "cache size < 1");
 		}
+		if (n > 1) {
+			codec = luakit::lua_to_native<luakit::codec_base*>(L, 2);
+		}
+		if (codec == nullptr) {
+			return luaL_argerror(L, 2, "codec is nullptr");
+		}		
 		void* p = lua_newuserdatauv(L, sizeof(cache_type), 0);
 		new (p) cache_type(max_count);
 		if (luaL_newmetatable(L, "lcache"))//mt

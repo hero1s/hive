@@ -45,7 +45,7 @@ namespace lworker {
     public:
         worker(ischeduler* schedulor, vstring name, vstring entry, vstring incl, vstring service)
             : m_schedulor(schedulor), m_name(name), m_entry(entry), m_service(service), m_include(incl) { 
-            m_codec = luakit::create_codec();
+            m_codec = m_lua->create_codec();
         }
 
         virtual ~worker() {
@@ -160,8 +160,8 @@ namespace lworker {
         ischeduler* m_schedulor = nullptr;
         std::string m_name, m_entry, m_service, m_include;
         std::unique_ptr<kit_state> m_lua = std::make_unique<kit_state>();
-        std::shared_ptr<luabuf> m_read_buf = std::make_shared<luabuf>(32,32);
-        std::shared_ptr<luabuf> m_write_buf = std::make_shared<luabuf>(32,32);
+        std::shared_ptr<luabuf> m_read_buf = std::make_shared<luabuf>(64,32);
+        std::shared_ptr<luabuf> m_write_buf = std::make_shared<luabuf>(64,32);
     };
 }
 

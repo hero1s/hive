@@ -77,3 +77,15 @@ function math_ext.random_str(len)
     return tconcat(result_arr, "")
 end
 
+-- 用于从数组中随机多个，数组要发生变化，取数值前cnt个即为结果
+function math_ext.random_some(arr, cnt)
+    if cnt >= #arr then
+        return
+    end
+    for i = 1, cnt do
+        local x   = random(i, #arr)
+        local tmp = arr[i]
+        arr[i]    = arr[x]
+        arr[x]    = tmp
+    end
+end

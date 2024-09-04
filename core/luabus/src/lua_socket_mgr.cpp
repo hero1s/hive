@@ -5,7 +5,7 @@
 bool lua_socket_mgr::setup(lua_State* L, uint32_t max_fd) {
 	m_luakit = std::make_shared<kit_state>(L);
 	m_mgr = std::make_shared<socket_mgr>();
-	m_codec = luakit::create_codec();
+	m_codec = m_luakit->create_codec();
 	m_router = std::make_shared<socket_router>(m_mgr);
 	return m_mgr->setup(max_fd);
 }

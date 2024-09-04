@@ -1,12 +1,14 @@
-local QueueLRU = import("container/queue_lru.lua")
-local log_debug = logger.debug
+local QueueLRU   = import("container/queue_lru.lua")
+local log_debug  = logger.debug
 
 local thread_mgr = hive.get("thread_mgr")
 
-local a = { a = 1, c = { a = 2 } }
+local a          = { a = 1, c = { a = 2 } }
 
-local cache = lcache.new(5)
-local lua_cache = QueueLRU(500000)
+local jcodec     = json.jsoncodec()
+
+local cache      = lcache.new(5, jcodec)
+local lua_cache  = QueueLRU(500000)
 local function test_gc(cache_type)
     log_debug("test gc %s", cache_type)
     if cache_type == "lua" then

@@ -4,11 +4,11 @@
 
 namespace luakit {
 
-    constexpr size_t BUFFER_DEF = 64 * 1024;        //64K
+    constexpr size_t BUFFER_DEF = 16 * 1024;        //16K
 
     class luabuf {
     public:
-        luabuf(size_t align = 16, size_t max_align = 16) { _alloc(align, max_align); }
+        luabuf(size_t align = 64, size_t max_align = 16) { _alloc(align, max_align); }
         ~luabuf() { free(m_data); }
 
         void reset() {
