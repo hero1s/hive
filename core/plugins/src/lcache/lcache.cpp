@@ -8,7 +8,7 @@ namespace cache {
 
 	static thread_local luakit::codec_base* codec = nullptr;
 
-	static int lput(lua_State* L) {
+	static int lset(lua_State* L) {
 		cache_type* cache = (cache_type*)lua_touserdata(L, 1);
 		if (nullptr == cache) {
 			return luaL_argerror(L, 1, "invalid lua-cache pointer");
@@ -17,7 +17,7 @@ namespace cache {
 		size_t data_len;
 		char* data = (char*)codec->encode(L, 3, &data_len);
 		if (data) {
-			cache->put(key, std::string(data, data_len));
+			cache->set(key, std::string(data, data_len));
 		} else {
 			return luaL_argerror(L, 3, "not data prama");
 		}
@@ -82,7 +82,7 @@ namespace cache {
 
     static int lcreate(lua_State* L) {
 		int n = lua_gettop(L);
-		if (n < 2) {
+		if (n < 2 && !codec) {
 			luaL_error(L, "create(max_count, codec)");
 			return 0;
 		}
@@ -101,7 +101,7 @@ namespace cache {
 		if (luaL_newmetatable(L, "lcache"))//mt
 		{
 			luaL_Reg l[] = {
-				{ "put", lput},
+				{ "set", lset},
 				{ "get", lget},
 				{ "del", ldel},
 				{ "exist", lexist},				

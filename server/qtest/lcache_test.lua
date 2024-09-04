@@ -18,7 +18,7 @@ local function test_gc(cache_type)
     else
         cache = lcache.new(500000)
         for i = 1, 500000 do
-            cache:put(i, a)
+            cache:set(i, a)
         end
     end
     local gc_mgr = hive.get("gc_mgr")
@@ -27,7 +27,7 @@ end
 
 thread_mgr:fork(function()
     for i = 1, 10 do
-        cache:put(i, a)
+        cache:set(i, a)
         log_debug("size-> %d,value:%s", cache:size(), cache:get(i))
     end
     for i = 1, 10 do

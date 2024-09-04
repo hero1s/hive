@@ -19,7 +19,7 @@ namespace cache {
 			_max_size(max_size > 0 ? max_size : 1) {
 		}
 	
-		void put(const key_t& key, const value_t& value) {
+		void set(const key_t& key, const value_t& value) {
 			auto it = _cache_items_map.find(key);
 			if (it != _cache_items_map.end()) {			
 				it->second->second = value;
