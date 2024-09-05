@@ -4,10 +4,8 @@
 #include <atomic>
 #include <thread>
 #include "../sandbox.h"
-#include "ltimer/ltimer.h"
 #include "fmt/core.h"
 #include "thread_name.hpp"
-#include "spin_mutex.h"
 #include "lua_kit.h"
 #include "../lualog/logger.h"
 
@@ -94,8 +92,8 @@ namespace lworker {
                 }
                 m_read_buf->pop_size(plen);
                 ++pcount;
-                auto cost_time = ltimer::steady_ms() - clock_ms;
-                if (ltimer::steady_ms() - clock_ms > 100) {
+                auto cost_time = steady_ms() - clock_ms;
+                if (steady_ms() - clock_ms > 100) {
                     LOG_ERROR(fmt::format("on_worker [{}]  is busy,cost:{},pcount:{},remain:{}", m_name, cost_time, pcount, m_read_buf->size()));
                     break;
                 }

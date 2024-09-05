@@ -1,10 +1,13 @@
 #pragma once
 #include "lua_buff.h"
+#include "lua_time.h"
 #include "lua_codec.h"
 #include "lua_table.h"
 #include "lua_class.h"
 
 namespace luakit {
+    static thread_local luabuf thread_buff;
+
     class kit_state {
     public:
         kit_state() {
@@ -20,6 +23,7 @@ namespace luakit {
                 "string", &slice::string
             );
             m_buf = new luabuf();
+            lua_checkstack(m_L, 1024);
             lua_table luakit = new_table("luakit");
             luakit.set_function("encode", [&](lua_State* L) { return encode(L, m_buf); });
             luakit.set_function("decode", [&](lua_State* L) { return decode(L, m_buf); });

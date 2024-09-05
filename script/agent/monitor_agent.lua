@@ -120,6 +120,14 @@ function MonitorAgent:exist_service(service_name, index)
     return false
 end
 
+function MonitorAgent:query_services(service_name)
+    if self.client then
+        local ok, info = self.client:call("rpc_query_services", service_name)
+        return ok and info or nil
+    end
+    return nil
+end
+
 -- 连接关闭回调
 function MonitorAgent:on_socket_error(client, token, err)
     log_info("[MonitorAgent][on_socket_error] disconnect monitor fail!:[{}:{}],err:{}", self.client.ip, self.client.port, err)
@@ -213,7 +221,7 @@ function MonitorAgent:rpc_count_lua_obj(less_num)
 end
 
 function MonitorAgent:rpc_set_gc_step(open, slow_step, fast_step)
-    open      = open == 1 and true or false
+    open = open == 1 and true or false
     gc_mgr:set_gc_step(open, slow_step, fast_step)
     return { open = open, slow_step = slow_step, fast_step = fast_step }
 end

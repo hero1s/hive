@@ -199,7 +199,7 @@ local function class_constructor(class, super, ...)
         class.__props  = {}
         class.__mixins = {}
         class.__vtbl   = vtbl
-        class.__name   = sgmatch(source, ".+/(.+).lua")()
+        class.__name   = sgmatch(source, ".+[/\\](.+).lua")()
         class_tpl      = setmetatable(class, classMT)
         implemented(class, ...)
         class_tpls[source] = class_tpl

@@ -136,6 +136,10 @@ namespace luakit {
     inline slice* encode_slice(lua_State* L, luabuf* buff) {
         buff->clean();
         int n = lua_gettop(L);
+        if (n > UCHAR_MAX) {
+            luaL_error(L, "encode can't pack too many args");
+        }
+        buff->write<uint8_t>(n);
         for (int i = 1; i <= n; i++) {
             encode_one(L, buff, i, 0);
         }
@@ -223,15 +227,22 @@ namespace luakit {
     inline int decode_slice(lua_State* L, slice* slice) {
         int top = lua_gettop(L);
         try {
+            uint8_t argnum = value_decode<uint8_t>(L, slice);
+            lua_checkstack(L, argnum);
             while (1) {
                 uint8_t* type = slice->read();
                 if (type == nullptr) break;
                 decode_value(L, slice, *type);
             }
+            int getnum = lua_gettop(L) - top;
+            if (argnum != getnum) {
+                throw lua_exception("decode arg num expect %d, but get %d", argnum, getnum);
+            }
+            return getnum;
         } catch (const std::exception& e){
             luaL_error(L, e.what());
         }
-        return lua_gettop(L) - top;
+        return 0;
     }
 
     inline int decode(lua_State* L, luabuf* buff) {
@@ -282,7 +293,7 @@ namespace luakit {
             serialize_value(buff, "{...}");
             return;
         }
-        
+
         int size = 0;
         index = lua_absindex(L, index);
         serialize_value(buff, "{");
@@ -442,6 +453,7 @@ namespace luakit {
             m_failed = false;
         }
         virtual bool failed() { return m_failed; }
+        virtual luabuf* get_buff() { return m_buf; }
         virtual const char* err() { return m_err.c_str(); }
         virtual size_t get_packet_len() { return m_packet_len; }
         virtual void set_buff(luabuf* buf) { m_buf = buf; }
@@ -470,6 +482,10 @@ namespace luakit {
         virtual uint8_t* encode(lua_State* L, int index, size_t* len) {
             m_buf->clean();
             int n = lua_gettop(L);
+            if (n > UCHAR_MAX) {
+                luaL_error(L, "encode can't pack too many args");
+            }
+            m_buf->write<uint8_t>(n - index + 1);
             for (int i = index; i <= n; i++) {
                 encode_one(L, m_buf, i, 0);
             }
@@ -479,14 +495,19 @@ namespace luakit {
         virtual size_t decode(lua_State* L) {
             if (!m_slice) return 0;
             int top = lua_gettop(L);
+            uint8_t argnum = value_decode<uint8_t>(L, m_slice);
+            lua_checkstack(L, argnum);
             while (1) {
                 uint8_t* type = m_slice->read();
                 if (type == nullptr) break;
                 decode_value(L, m_slice, *type);
             }
-            size_t argnum = lua_gettop(L) - top;
+            int getnum = lua_gettop(L) - top;
+            if (argnum != getnum) {
+                throw lua_exception("decode arg num expect %d, but get %d", argnum, getnum);
+            }
             m_slice = nullptr;
-            return argnum;
+            return getnum;
         }
     };
 }

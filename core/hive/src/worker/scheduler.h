@@ -97,7 +97,7 @@ namespace lworker {
                 }
                 m_read_buf->pop_size(plen);
                 ++pcount;
-                auto cost_time = ltimer::steady_ms() - clock_ms;
+                auto cost_time = steady_ms() - clock_ms;
                 if (cost_time > 100) {
                     LOG_ERROR(fmt::format("on_scheduler is busy,cost:{},pcount:{},remain:{}", cost_time, pcount, m_read_buf->size()));
                     break;

@@ -73,9 +73,5 @@ void set_reuseaddr(socket_t fd);
 char* get_error_string(char buffer[], int len, int no);
 void get_error_string(std::string& err, int no);
 
-inline uint64_t steady_ms() {
-	return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
-}
-
 void init_socket_option(socket_t fd);
 

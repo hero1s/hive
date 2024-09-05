@@ -4,6 +4,8 @@
 #include <map>
 #include <list>
 #include <tuple>
+#include <mutex>
+#include <atomic>
 #include <string>
 #include <vector>
 #include <memory>
@@ -13,7 +15,6 @@
 #include <functional>
 #include <type_traits>
 #include <string.h>
-#include <unordered_map>
 
 extern "C"
 {
@@ -24,21 +25,16 @@ extern "C"
 
 namespace luakit {
 
-    static thread_local std::unordered_map<size_t, std::string> meta_name_cache;
+    #define MAX_LUA_META_KEY 128
+
     //错误函数
     using error_fn = std::function<void(std::string_view err)>;
 
     template<typename T>
     const char* lua_get_meta_name() {
-        thread_local char meta_name[128];
+        thread_local char meta_name[MAX_LUA_META_KEY];
         using OT = std::remove_cv_t<std::remove_pointer_t<T>>;
-        auto type_hash = typeid(OT).hash_code();
-        auto it = meta_name_cache.find(type_hash);
-        if (it != meta_name_cache.end()) {
-            return it->second.c_str();
-        }
-        snprintf(meta_name, 128, "__lua_class_meta_%zu__", type_hash);
-        meta_name_cache[type_hash] = meta_name;
+        snprintf(meta_name, MAX_LUA_META_KEY, "__lua_class_meta_%zu__", typeid(OT).hash_code());
         return meta_name;
     }
 
@@ -84,17 +80,27 @@ namespace luakit {
     protected:
         template <class... Args>
         std::string format(const char* fmt, Args&&... args) {
-            int required_size = std::snprintf(nullptr, 0, fmt, std::forward<Args>(args)...);
-            if (required_size < 0) return "unknown error!";
-            std::string result;
-            result.reserve(required_size + 1);
-            char* buffer = &result[0];
-            int actual_size = std::snprintf(buffer, required_size + 1, fmt, std::forward<Args>(args)...);
-            if (actual_size < 0 || actual_size > required_size) {
-                return "format error: snprintf reported an unexpected result";
-            }
-            return result;
+            int buf_size = std::snprintf(nullptr, 0, fmt, std::forward<Args>(args)...) + 1;
+            if (buf_size < 0) return "unknown error!";
+            std::unique_ptr<char[]> buf = std::make_unique<char[]>(buf_size);
+            std::snprintf(buf.get(), buf_size, fmt, std::forward<Args>(args)...);
+            return std::string(buf.get(), buf_size - 1);
         }
     };
+
+    class spin_mutex {
+    public:
+        spin_mutex() = default;
+        spin_mutex(const spin_mutex&) = delete;
+        spin_mutex& operator = (const spin_mutex&) = delete;
+        void lock() {
+            while(flag.test_and_set(std::memory_order_acquire));
+        }
+        void unlock() {
+            flag.clear(std::memory_order_release);
+        }
+    private:
+        std::atomic_flag flag = ATOMIC_FLAG_INIT;
+    }; //spin_mutex
 
 }
