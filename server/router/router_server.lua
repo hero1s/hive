@@ -1,7 +1,6 @@
 --router_server.lua
 local luabus        = luabus
 local log_info      = logger.info
-local log_debug     = logger.debug
 local sidhash       = service.hash
 local id2nick       = service.id2nick
 local sname2sid     = service.name2sid
@@ -101,7 +100,7 @@ end
 --rpc事件处理
 ------------------------------------------------------------------
 function RouterServer:rpc_sync_router_info(router_id, target_ids, status)
-    log_debug("[RouterServer][rpc_sync_router_info] router_id:{},target_ids:{},status:{}", id2nick(router_id), #target_ids, status)
+    log_info("[RouterServer][rpc_sync_router_info] router_id:{},target_ids:{},status:{}", id2nick(router_id), #target_ids, status)
     if #target_ids > 1 then
         luabus.map_router_node(router_id, 0, 0)
     end
@@ -127,7 +126,7 @@ end
 
 -- 会话信息
 function RouterServer:on_client_register(client, node_info)
-    log_debug("[RouterServer][on_client_register] {}", node_info)
+    log_info("[RouterServer][on_client_register] {}", node_info)
     local service_hash = sidhash(client.service_id)
     --固定hash自动设置为最大index服务[约定固定hash服务的index为连续的1-n,且运行过程中不能扩容]
     local hash_value   = service_hash > 0 and client.index or 0

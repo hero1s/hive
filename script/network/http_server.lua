@@ -43,7 +43,7 @@ end
 
 function HttpServer:on_quit()
     if self.listener then
-        log_debug("[HttpServer][on_quit]")
+        log_info("[HttpServer][on_quit]")
         self.listener:close()
     end
 end
@@ -103,25 +103,25 @@ end
 
 --注册get回调
 function HttpServer:register_get(url, handler, target, decode)
-    log_debug("[HttpServer][register_get] url: {}", url)
+    log_info("[HttpServer][register_get] url: {}", url)
     self.handlers.GET[url] = { handler, target, decode == nil and true or decode }
 end
 
 --注册post回调
 function HttpServer:register_post(url, handler, target, decode)
-    log_debug("[HttpServer][register_post] url: {}", url)
+    log_info("[HttpServer][register_post] url: {}", url)
     self.handlers.POST[url] = { handler, target, decode == nil and true or decode }
 end
 
 --注册put回调
 function HttpServer:register_put(url, handler, target, decode)
-    log_debug("[HttpServer][register_put] url: {}", url)
+    log_info("[HttpServer][register_put] url: {}", url)
     self.handlers.PUT[url] = { handler, target, decode == nil and true or decode }
 end
 
 --注册del回调
 function HttpServer:register_del(url, handler, target, decode)
-    log_debug("[HttpServer][register_del] url: {}", url)
+    log_info("[HttpServer][register_del] url: {}", url)
     self.handlers.DELETE[url] = { handler, target, decode == nil and true or decode }
 end
 

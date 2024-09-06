@@ -126,7 +126,7 @@ function ConfigTable:upsert(row)
         row_indexs[#row_indexs + 1] = row[index]
     end
     if #row_indexs ~= #self.indexs then
-        log_err("[ConfigTable][upsert] row data index lost. row={}, indexs={}", row, self.indexs)
+        log_err("[ConfigTable][upsert] ({}) row data index lost. row={}, indexs={}", self.name, row, self.indexs)
         return
     end
     local row_index = self:build_index(tunpack(row_indexs))
@@ -152,7 +152,7 @@ function ConfigTable:init_group(key_name)
             group_keys[#group_keys + 1] = row[index]
         end
         if #group_keys ~= #keys then
-            log_err("[ConfigTable][upsert_group] row data index lost. row={}, group_keys={}", row, keys)
+            log_err("[ConfigTable][upsert_group]({}) row data index lost. row={}, group_keys={}", self.name, row, keys)
             return
         end
         local group_index = self:build_index(tunpack(group_keys))
@@ -224,7 +224,7 @@ function ConfigTable:create_group_index(key_name, ...)
         self:init_group(key_name)
         return true
     else
-        log_err("[ConfigTable][create_group_index] keys len illegal. group_index={}", { ... })
+        log_err("[ConfigTable][create_group_index]({}) keys len illegal. group_index={}", self.name, { ... })
     end
     return false
 end
@@ -238,7 +238,7 @@ function ConfigTable:find_group(key_name, ...)
     end
     local groups = self.groups[key_name]
     if not groups then
-        log_err("[ConfigTable][find_group] the group key is not init:{}", key_name)
+        log_err("[ConfigTable][find_group]({}) the group key is not init:{}", self.name, key_name)
         return
     end
     local group = groups[group_index]

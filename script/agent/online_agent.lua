@@ -60,7 +60,7 @@ end
 
 function OnlineAgent:query_player(player_id)
     local ok, lobby_id = router_mgr:call_router(player_id, "rpc_query_player_service", player_id, self.lobby_sid)
-    return ok, ok and lobby_id or 0
+    return ok, ok and SUCCESS or LOGIC_FAILED, ok and lobby_id or 0
 end
 
 --有序

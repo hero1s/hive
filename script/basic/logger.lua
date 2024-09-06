@@ -106,7 +106,7 @@ local LOG_LEVEL_OPTIONS = {
     { LOG_LEVEL.TRACE, "dump", 0x01 | 0x02 },
     { LOG_LEVEL.TRACE, "trace", 0x01 },
     { LOG_LEVEL.DEBUG, "debug", 0x01 },
-    { LOG_LEVEL.INFO, "info", 0x00 },
+    { LOG_LEVEL.INFO, "info", 0x01 },
     { LOG_LEVEL.WARN, "warn", 0x01 },
     { LOG_LEVEL.ERROR, "err", 0x01 },
     { LOG_LEVEL.FATAL, "fatal", 0x01 | 0x02 }

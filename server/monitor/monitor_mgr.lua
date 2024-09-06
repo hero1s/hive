@@ -7,7 +7,6 @@ local RpcServer          = import("network/rpc_server.lua")
 local env_addr           = environ.addr
 local log_warn           = logger.warn
 local log_info           = logger.info
-local log_debug          = logger.debug
 local log_err            = logger.err
 local tinsert            = table.insert
 local tsize              = table_ext.size
@@ -66,7 +65,7 @@ end
 -- 会话信息
 function MonitorMgr:on_client_register(client, node_info, watch_services)
     client.watch_services = watch_services
-    log_debug("[MonitorMgr][on_client_register] node token:{},{},{}", client.token, id2nick(node_info.id), node_info)
+    log_info("[MonitorMgr][on_client_register] node token:{},{},{}", client.token, id2nick(node_info.id), node_info)
     node_info.token                       = client.token
     self.monitor_nodes[client.token]      = node_info
     self.monitor_lost_nodes[node_info.id] = nil
@@ -182,7 +181,7 @@ end
 
 -- 添加服务
 function MonitorMgr:add_service(service_name, node)
-    log_debug("[MonitorMgr][add_service] {},{}", id2nick(node.id), node)
+    log_info("[MonitorMgr][add_service] {},{}", id2nick(node.id), node)
     local services   = self.services[service_name] or {}
     --检测ip唯一
     local service_id = sname2sid(service_name)
@@ -219,7 +218,7 @@ end
 
 -- 通知服务变更
 function MonitorMgr:send_all_service_status(client, is_ready)
-    log_debug("[MonitorMgr][send_all_service_status] %s", client.name)
+    log_info("[MonitorMgr][send_all_service_status] %s", client.name)
     local readys
     for service_name, curr_services in pairs(self.services) do
         if client.watch_services[service_name] then
@@ -240,7 +239,7 @@ function MonitorMgr:send_all_service_status(client, is_ready)
 end
 
 function MonitorMgr:broadcast_service_status(service_name, readys, closes)
-    log_debug("[MonitorMgr][broadcast_service_status] {},{},{}", service_name, readys, closes)
+    log_info("[MonitorMgr][broadcast_service_status] {},{},{}", service_name, readys, closes)
     self.rpc_server:broadcast(function(client)
         return client.id and client.watch_services[service_name]
     end, "rpc_service_changed", service_name, readys, closes)
@@ -268,7 +267,7 @@ function MonitorMgr:show_change_services_info()
     if next(self.changes) then
         for service_name, _ in pairs(self.changes) do
             local sids = self:query_services(service_name)
-            log_debug("[MonitorMgr][show_services_info] [{}],count:{},list:{}", service_name, #sids, sids)
+            log_info("[MonitorMgr][show_services_info] [{}],count:{},list:{}", service_name, #sids, sids)
         end
         self.changes = {}
     end

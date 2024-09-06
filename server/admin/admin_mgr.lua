@@ -7,7 +7,7 @@ local HttpServer   = import("network/http_server.lua")
 local tunpack      = table.unpack
 local env_get      = environ.get
 local log_err      = logger.err
-local log_debug    = logger.debug
+local log_info     = logger.info
 local readfile     = io_ext.readfile
 local json_decode  = hive.json_decode
 
@@ -48,7 +48,7 @@ function AdminMgr:__init()
     end
     if next(ips) then
         self.http_server:set_limit_ips(ips)
-        log_debug("admin limit ips:{}", ips)
+        log_info("admin limit ips:{}", ips)
     end
     --用户密码
     self.user = environ.get("HIVE_ADMIN_USER", "admin")
@@ -114,13 +114,13 @@ end
 
 --后台GM调用，字符串格式
 function AdminMgr:on_command(url, body, querys, headers)
-    log_debug("[AdminMgr][on_command] body: {}", body)
+    log_info("[AdminMgr][on_command] body: {}", body)
     return self:exec_command(body.data)
 end
 
 --后台GM调用，table格式
 function AdminMgr:on_message(url, body, querys, headers)
-    log_debug("[AdminMgr][on_message] curl cmd: {}", self:format_curl_cmd(body))
+    log_info("[AdminMgr][on_message] curl cmd: {}", self:format_curl_cmd(body))
     local cmd_req = json_decode(body)
     local data    = cmd_req.data
     return self:exec_message(data)
@@ -203,7 +203,7 @@ function AdminMgr:exec_player_cmd(cmd_name, player_id, ...)
         end
         return { code = codeoe, msg = res }
     end
-    local ok1, lobby_id = online_agent:query_player(player_id)
+    local ok1, _, lobby_id = online_agent:query_player(player_id)
     if ok1 and lobby_id == 0 then
         --离线处理
         router_mgr:call_lobby_hash(player_id, "rpc_offline_player_gm", cmd_name, player_id, ...)

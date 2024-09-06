@@ -3,7 +3,6 @@ local jumphash         = codec.jumphash
 local pairs            = pairs
 local log_err          = logger.err
 local log_info         = logger.info
-local log_debug        = logger.debug
 local signal_quit      = signal.quit
 local tsort            = table.sort
 local tunpack          = table.unpack
@@ -46,12 +45,12 @@ end
 
 --服务关闭
 function RouterMgr:on_service_close(id, name)
-    log_debug("[RouterMgr][on_service_close] node: {}", id2nick(id))
+    log_info("[RouterMgr][on_service_close] node: {}", id2nick(id))
 end
 
 --服务上线
 function RouterMgr:on_service_ready(id, name, info)
-    log_debug("[RouterMgr][on_service_ready] node: {}, info: {}", id2nick(id), info)
+    log_info("[RouterMgr][on_service_ready] node: {}, info: {}", id2nick(id), info)
     self:add_router(info.id, info.ip, info.port)
 end
 
@@ -75,7 +74,7 @@ function RouterMgr:add_router(router_id, host, port)
             return
         end
     end
-    log_debug("[RouterMgr][add_router] {} --> {},{}:{}", hive.name, id2nick(router_id), host, port)
+    log_info("[RouterMgr][add_router] {} --> {},{}:{}", hive.name, id2nick(router_id), host, port)
     local RpcClient         = import("network/rpc_client.lua")
     self.routers[router_id] = RpcClient(self, host, port, router_id)
 end
