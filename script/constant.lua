@@ -34,7 +34,7 @@ HiveMode.SERVICE                 = 1     --服务模式(加载全量)
 HiveMode.ROUTER                  = 2     --路由模式(加载路由)
 HiveMode.TOOL                    = 3     --工具模式(加载基础和网络)
 
---协议投flag掩码
+--协议头flag掩码
 local FlagMask                   = enum("FlagMask", 0)
 FlagMask.REQ                     = 0x01  -- 请求
 FlagMask.RES                     = 0x02  -- 响应

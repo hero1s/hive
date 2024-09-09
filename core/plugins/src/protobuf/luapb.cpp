@@ -73,7 +73,7 @@ namespace luapb {
             ((pb_header*)data)->len = *len;
             //encrypt
             if (encrypt(header.flag)) {
-                xor_code(data, *len);
+                xor_code(data+sizeof(header), *len - sizeof(header));
             }
             return data;
         }

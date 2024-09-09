@@ -69,7 +69,7 @@ function hive.main()
     --事件
     init_listener()
     --加载协议
-    import("kernel/protobuf_mgr.lua")
+    --import("kernel/protobuf_mgr.lua")
 end
 
 --启动
@@ -77,8 +77,6 @@ function hive.startup(entry)
     hive.frame                 = 0
     hive.now_ms, hive.clock_ms = ltime()
     hive.now                   = hive.now_ms // 1000
-    --初始化随机种子
-    math.randomseed(hive.now_ms)
     --初始化hive
     hive.main()
     --启动服务器

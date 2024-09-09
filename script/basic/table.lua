@@ -332,18 +332,35 @@ local function tweak(src, mode)
     return setmetatable(src, { __mode = mode or "kv" })
 end
 
-local function set_const_table(tbl)
-    for key, value in pairs(tbl) do
-        if type(value) == "table" then
-            tbl[key] = set_const_table(value)
+--仅限Lua逻辑层使用(不支持通信交互及日志输出)
+local function set_const_table(t)
+    for k, v in pairs(t) do
+        if type(v) == "table" then
+            t[k] = set_const_table(v)
         end
     end
-    return setmetatable({}, {
-        __index    = tbl,
-        __newindex = function(t, key, value)
-            error("attempting to change constant " .. tostring(key) .. " to " .. tostring(value), 2)
+    local paris_func = function(tbl, key)
+        local next_key, next_value = next(t, key)
+        if next_key then
+            next_value = tbl[next_key]
         end
-    })
+        return next_key, next_value
+    end
+    local nt         = {}
+    local mt         = {
+        __index    = t,
+        __newindex = function(tbl, key, value)
+            error("attempt to update a read-only table", 3)
+        end,
+        __pairs    = function(tbl, key)
+            return paris_func, tbl, nil
+        end,
+        __len      = function()
+            return #t
+        end
+    }
+    setmetatable(nt, mt)
+    return nt
 end
 
 table_ext                   = _ENV.table_ext or {}

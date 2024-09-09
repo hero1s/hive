@@ -16,6 +16,8 @@ local pattern   = "(%a+)://([^:]-):([^@]-)@([^/]+)/?([^?]*)[%?]?(.*)"
 function environ.init()
     hive.lan_ip   = luabus.host()
     hive.timezone = timer.timezone()
+    --初始化随机种子
+    math.randomseed(hive.now_ms)
 end
 
 function environ.get(key, def)

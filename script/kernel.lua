@@ -92,8 +92,6 @@ function hive.startup(entry)
     hive.now_ms, hive.clock_ms = ltime()
     hive.now                   = hive.now_ms // 1000
     hive.service_status        = ServiceStatus.READY
-    --初始化随机种子
-    math.randomseed(hive.now_ms)
     --初始化hive
     hive.main()
     --启动服务器

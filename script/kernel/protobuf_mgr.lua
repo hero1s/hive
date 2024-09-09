@@ -30,6 +30,9 @@ prop:accessor("allow_reload", false)
 
 function ProtobufMgr:__init()
     self:load_protos()
+    --设置加密串
+    local xor_key = environ.number("HIVE_PROTO_XOR", 123456789)
+    protobuf.xor_init(xor_key)
     --监听热更新
     event_mgr:add_trigger(self, "on_reload")
 end

@@ -17,10 +17,14 @@ local heval            = hive.eval
 
 local FLAG_REQ         = hive.enum("FlagMask", "REQ")
 local FLAG_RES         = hive.enum("FlagMask", "RES")
+local FLAG_ZIP         = hive.enum("FlagMask", "ZIP")
+local FLAG_ENCRYPT     = hive.enum("FlagMask", "ENCRYPT")
 local NETWORK_TIMEOUT  = hive.enum("NetwkTime", "NETWORK_TIMEOUT")
 local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 local TOO_FAST         = hive.enum("KernCode", "TOO_FAST")
 
+local out_press        = environ.status("HIVE_OUT_PRESS")
+local out_encrypt      = environ.status("HIVE_OUT_ENCRYPT")
 local flow_ctrl        = environ.status("HIVE_FLOW_CTRL")
 local flow_cd          = env_number("HIVE_FLOW_CTRL_CD", 0)
 local fc_package       = env_number("HIVE_FLOW_CTRL_PACKAGE")
@@ -112,6 +116,14 @@ function NetServer:on_socket_accept(session)
 end
 
 function NetServer:write(session, cmd_id, data, session_id, flag)
+    -- 加密处理
+    if out_encrypt then
+        flag = flag | FLAG_ENCRYPT
+    end
+    -- 压缩处理
+    if out_press then
+        flag = flag | FLAG_ZIP
+    end
     -- call luabus
     local send_len = session.call_pb(cmd_id, flag, session_id or 0, data)
     if send_len > 0 then

@@ -7,6 +7,9 @@ local thread_mgr       = hive.get("thread_mgr")
 local heval            = hive.eval
 
 local FlagMask         = enum("FlagMask")
+local out_press        = environ.status("HIVE_OUT_PRESS")
+local out_encrypt      = environ.status("HIVE_OUT_ENCRYPT")
+
 local CONNECT_TIMEOUT  = hive.enum("NetwkTime", "CONNECT_TIMEOUT")
 local RPC_CALL_TIMEOUT = hive.enum("NetwkTime", "RPC_CALL_TIMEOUT")
 
@@ -112,6 +115,14 @@ function NetClient:write(cmd_id, data, session_id, flag)
     if not self.alive then
         log_err("[NetClient][write] the socket is not alive! cmd_id:{}", cmd_id)
         return false
+    end
+    -- 加密处理
+    if out_encrypt then
+        flag = flag | FlagMask.ENCRYPT
+    end
+    -- 压缩处理
+    if out_press then
+        flag = flag | FlagMask.ZIP
     end
     -- call luabus
     local send_len = self.socket.call_pb(cmd_id, flag, session_id or 0, data)
