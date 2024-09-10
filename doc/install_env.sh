@@ -13,3 +13,6 @@ source /opt/rh/devtoolset-10/enable
 yum install libcurl-devel -y
 yum install zlib-devel -y
 
+#修改.git/config文件
+#   [core]
+#     hooksPath = .githooks

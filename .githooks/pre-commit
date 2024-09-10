@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# 定义 luacheck 命令路径
+LUACHECK=./tools/luacheck/luacheck.exe 
+CONFIG_PATH=./tools/luacheck/.luacheckrc
+
+# 获取所有将被提交的 Lua 文件列表
+FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.lua$')
+
+# 如果没有 Lua 文件被修改则直接退出
+if [ -z "$FILES" ]; then
+    exit 0
+fi
+
+# 运行 luacheck 检查
+$LUACHECK --config=$CONFIG_PATH $FILES
+
+# 根据 luacheck 返回值决定是否继续提交
+if [ $? -ne 0 ]; then
+    echo "Luacheck found errors. Please fix them before committing."
+    exit 1
+else
+    echo "Luacheck passed successfully."
+    exit 0
+fi
