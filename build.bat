@@ -30,4 +30,11 @@ for /f "usebackq tokens=*" %%i in (`!vswherestr!`) do (
 :break
 move .\bin\*.dll .\bin\lib
 
+:: copy hooks
+if not exist .git\hooks (
+   md .git\hooks
+)
+xcopy .githooks\*  .git\hooks\  /y /s
+echo "copy hooks"
+
 pause
