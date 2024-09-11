@@ -1,16 +1,16 @@
 --profile_test.lua
 import("feature/profile.lua")
 
-local log_debug     = logger.debug
-local lhex_encode   = crypt.hex_encode
-local guid_new      = codec.guid_new
-local encode        = luakit.encode
-local decode        = luakit.decode
-local serialize     = luakit.serialize
-local unserialize   = luakit.unserialize
+local log_debug   = logger.debug
+local lhex_encode = crypt.hex_encode
+local guid_new    = codec.guid_new
+local encode      = luakit.encode
+local decode      = luakit.decode
+local serialize   = luakit.serialize
+local unserialize = luakit.unserialize
 
-hive.profile()
-hive.perfwatch("qtest/profile_test.lua")
+hive.profile(true)
+--hive.perfwatch("qtest/profile_test.lua")
 if hive.index == 1 then
     local m  = { f = 3 }
     local t  = {
@@ -45,7 +45,7 @@ if hive.index == 1 then
         local bufe1 = encode(e)
         decode(bufe1, #bufe1)
 
-        local guid = guid_new(5, 512)
+        guid_new(5, 512)
     end
 end
 
@@ -78,4 +78,6 @@ if hive.index == 2 then
     log_debug("prof-> {}", timer.now_ms() - t1)
 end
 
-hive.perfdump(50)
+hive.perfdump(10)
+
+

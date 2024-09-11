@@ -1,21 +1,25 @@
 --profile.lua
 local log_debug = logger.debug
-
-local PROFILE   = true --hive.getenv("HIVE_PROFILE")
+local PROFILE   = false
+local profile   = nil
 
 local PROFDUMP  = "{:<25} {:^9} {:^9} {:^9} {:^12} {:^8} {:^12} [{}]{}:{}]"
-local profile   = nil
---是否启动监控
-if PROFILE then
-    profile = require("lprofile")
-    --开启hook
-    profile.hook()
-end
 
 --开始监控
-function hive.profile()
-    if PROFILE then
+function hive.profile(start)
+    if start then
+        if not profile then
+            profile = require("lprofile")
+            --开启hook
+            profile.hook()
+        end
         profile.enable()
+        PROFILE = true
+    else
+        PROFILE = false
+        if profile then
+            profile.disable()
+        end
     end
 end
 
