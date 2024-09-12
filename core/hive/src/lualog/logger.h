@@ -28,6 +28,7 @@
 
 using namespace std::chrono;
 using namespace std::filesystem;
+
 using sstring = std::string;
 using vstring = std::string_view;
 using cstring = const std::string;
@@ -112,7 +113,7 @@ namespace logger {
         vstring source() const { return source_; }
         vstring feature() const { return feature_; }
         const log_time& get_log_time()const { return log_time_; }
-        void option(log_level level, cstring& msg, cstring& tag, cstring& feature, cstring& source, int line) {
+        void option(log_level level, sstring&& msg, cstring& tag, cstring& feature, cstring& source, int line) {
             log_time_ = log_time::now();
             msg_ = std::move(msg);
             tag_ = std::move(tag);
@@ -513,10 +514,10 @@ namespace logger {
             return &service;
         }
 
-        void output(log_level level, cstring& msg, cstring& tag, cstring& feature, cstring& source = "", int line = 0) {
+        void output(log_level level, sstring&& msg, cstring& tag, cstring& feature, cstring& source = "", int line = 0) {
             if (!log_filter_.is_filter(level)) {
                 auto logmsg_ = message_pool_->allocate();
-                logmsg_->option(level, msg, tag, feature, source, line);
+                logmsg_->option(level, std::move(msg), tag, feature, source, line);
                 submit(logmsg_);
             }
         }

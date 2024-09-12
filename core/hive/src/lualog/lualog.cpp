@@ -4,6 +4,9 @@ using namespace std;
 using namespace luakit;
 
 namespace logger {
+    constexpr int LOG_FLAG_FORMAT  = 1;
+    constexpr int LOG_FLAG_PRETTY  = 2;
+    constexpr int LOG_FLAG_MONITOR = 4;
 
     size_t log_limit_len(log_level logLv) {
         if (logLv < log_level::LOG_LEVEL_DEBUG || logLv > log_level::LOG_LEVEL_WARN)return 65536;
@@ -19,9 +22,9 @@ namespace logger {
         case LUA_TSTRING: return lua_tostring(L, index);
         case LUA_TBOOLEAN: return lua_toboolean(L, index) ? "true" : "false";
         case LUA_TTABLE:
-            if ((flag & 0x01) == 0x01) {
+            if ((flag & LOG_FLAG_FORMAT) == LOG_FLAG_FORMAT) {
                 thread_buff.clean();
-                serialize_one(L, &thread_buff, index, 1, (flag & 0x02) == 0x02, max_len);
+                serialize_one(L, &thread_buff, index, 1, (flag & LOG_FLAG_PRETTY) == LOG_FLAG_PRETTY, max_len);
                 return string((char*)thread_buff.head(), thread_buff.size());
             }
             return luaL_tolstring(L, index, nullptr);
@@ -34,13 +37,13 @@ namespace logger {
         return "unsuppert data type";
     }
 
-    int zformat(lua_State* L, log_level lvl, cstring& tag, cstring& feature, cstring& msg) {
-        if (log_service::instance()->need_hook(lvl) ) {
+    int zformat(lua_State* L, log_level lvl, cstring& tag, cstring& feature, int flag, sstring&& msg) {
+        if (log_service::instance()->need_hook(lvl) || (flag & LOG_FLAG_MONITOR) == LOG_FLAG_MONITOR) {
             lua_pushlstring(L, msg.c_str(), msg.size());
-            log_service::instance()->output(lvl, msg, tag, feature);
+            log_service::instance()->output(lvl, std::move(msg), tag, feature);
             return 1;
         }
-        log_service::instance()->output(lvl, msg, tag, feature);
+        log_service::instance()->output(lvl, std::move(msg), tag, feature);
         return 0;
     }
 
@@ -48,7 +51,7 @@ namespace logger {
     int tformat(lua_State* L, log_level lvl, cstring& tag, cstring& feature, int flag, vstring vfmt, size_t max_len, std::index_sequence<integers...>&&) {
         try {
             auto msg = fmt::format(vfmt, read_args(L, flag, integers + 6, max_len)...);
-            return zformat(L, lvl, tag, feature, msg);
+            return zformat(L, lvl, tag, feature, flag, std::move(msg));
         }
         catch (const exception& e) {
             luaL_error(L, "log format failed: %s!", e.what());
@@ -95,6 +98,12 @@ namespace logger {
             "ERROR", log_level::LOG_LEVEL_ERROR,
             "FATAL", log_level::LOG_LEVEL_FATAL
         );
+        lualog.new_enum("LOG_FLAG",
+            "NULL", 0,
+            "FORMAT", LOG_FLAG_FORMAT,
+            "PRETTY", LOG_FLAG_PRETTY,
+            "MONITOR", LOG_FLAG_MONITOR
+        );
         log_service::instance()->start();
         lualog.set_function("print", [](lua_State* L) {
             log_level lvl = (log_level)lua_tointeger(L, 1);
@@ -107,7 +116,7 @@ namespace logger {
             int arg_num = lua_gettop(L) - 5;
             auto max_len = log_limit_len(lvl);
             switch (arg_num) {
-            case 0: return zformat(L, lvl, tag, feature, string(vfmt.data(), vfmt.size()));
+            case 0: return zformat(L, lvl, tag, feature, flag, string(vfmt.data(), vfmt.size()));
             case 1: return tformat(L, lvl, tag, feature, flag, vfmt, max_len, make_index_sequence<1>{});
             case 2: return tformat(L, lvl, tag, feature, flag, vfmt, max_len, make_index_sequence<2>{});
             case 3: return tformat(L, lvl, tag, feature, flag, vfmt, max_len, make_index_sequence<3>{});

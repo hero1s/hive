@@ -14,6 +14,7 @@ local lformat     = log.format
 local lfilter     = log.filter
 
 local LOG_LEVEL   = log.LOG_LEVEL
+local LOG_FLAG    = log.LOG_FLAG
 
 logger            = {}
 logfeature        = {}
@@ -103,13 +104,13 @@ local function logger_output(flag, feature, lvl, lvl_name, fmt, ...)
 end
 
 local LOG_LEVEL_OPTIONS = {
-    { LOG_LEVEL.TRACE, "dump", 0x01 | 0x02 },
-    { LOG_LEVEL.TRACE, "trace", 0x01 },
-    { LOG_LEVEL.DEBUG, "debug", 0x01 },
-    { LOG_LEVEL.INFO, "info", 0x01 },
-    { LOG_LEVEL.WARN, "warn", 0x01 },
-    { LOG_LEVEL.ERROR, "err", 0x01 },
-    { LOG_LEVEL.FATAL, "fatal", 0x01 | 0x02 }
+    { LOG_LEVEL.TRACE, "dump", LOG_FLAG.FORMAT | LOG_FLAG.PRETTY },
+    { LOG_LEVEL.TRACE, "trace", LOG_FLAG.FORMAT },
+    { LOG_LEVEL.DEBUG, "debug", LOG_FLAG.FORMAT },
+    { LOG_LEVEL.INFO, "info", LOG_FLAG.FORMAT },
+    { LOG_LEVEL.WARN, "warn", LOG_FLAG.FORMAT },
+    { LOG_LEVEL.ERROR, "err", LOG_FLAG.FORMAT },
+    { LOG_LEVEL.FATAL, "fatal", LOG_FLAG.FORMAT | LOG_FLAG.PRETTY }
 }
 for _, conf in pairs(LOG_LEVEL_OPTIONS) do
     local lvl, lvl_name, flag = tunpack(conf)

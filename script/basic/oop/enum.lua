@@ -48,12 +48,7 @@ local function enum_new(emobj, field, value)
 end
 
 local function enum_index(emobj, field)
-    local value = emobj.__vlist[field]
-    if not value then
-        log_err("the enum field is nil:{}.{},from:{}", emobj.__name, field, hive.where_call())
-        return -1 --防止返回nil变0导致逻辑错误
-    end
-    return value
+    return emobj.__vlist[field]
 end
 
 local function enum_newindex(emobj, field, value)
