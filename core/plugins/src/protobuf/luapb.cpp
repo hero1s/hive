@@ -10,6 +10,11 @@ namespace luapb {
 
     thread_local std::unordered_map<uint32_t,std::string> pb_cmd_ids;
 
+    constexpr int FlagMask_REQ      = 0x01;
+    constexpr int FlagMask_RES      = 0x02;
+    constexpr int FlagMask_Encrypt  = 0x04;
+    constexpr int FlagMask_Zip      = 0x08;
+
     #pragma pack(1)
     struct pb_header {
         uint16_t    len;            // 整个包的长度
@@ -130,8 +135,13 @@ namespace luapb {
         }
 
         bool encrypt(uint8_t flag) {
-            return (flag & 0x04) == 0x04;
+            return (flag & FlagMask_Encrypt) == FlagMask_Encrypt;
         }
+
+        bool is_zip(uint8_t flag) {
+            return (flag & FlagMask_Zip) == FlagMask_Zip;
+        }
+
     protected:
     };
     

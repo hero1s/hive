@@ -57,6 +57,7 @@ function MongoAgent:unsafe_update(db_query, hash_key, db_name)
     return self:execute("rpc_mongo_unsafe_update", db_query, hash_key, db_name)
 end
 
+--db_query: {coll_name, update, selector, upsert, fields, new}
 function MongoAgent:find_and_modify(db_query, hash_key, db_name)
     return self:execute("rpc_mongo_find_and_modify", db_query, hash_key, db_name)
 end
