@@ -220,7 +220,6 @@ function MonitorAgent:rpc_count_lua_obj(less_num)
 end
 
 function MonitorAgent:rpc_set_gc_step(open, slow_step, fast_step)
-    open = open == 1 and true or false
     gc_mgr:set_gc_step(open, slow_step, fast_step)
     return { open = open, slow_step = slow_step, fast_step = fast_step }
 end

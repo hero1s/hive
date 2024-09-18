@@ -44,7 +44,7 @@ function DevopsGmMgr:register_gm()
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_full_gc", desc = "lua全量gc", comment = "服务/index", args = "service_name|string index|integer" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_count_obj", desc = "lua对象计数", comment = "最小个数,服务/index",
           args  = "less_num|integer service_name|string index|integer" },
-        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_set_gc_step", desc = "设置gc步长", comment = "服务/index",
+        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_set_gc_step", desc = "设置gc步长,open[0,1,2],自动|混合|手动", comment = "服务/index",
           args  = "service_name|string index|integer open|integer slow|integer fast|integer" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_check_endless_loop", desc = "检测死循环", comment = "开启/关闭,服务/index",
           args  = "start|integer service_name|string index|integer" },

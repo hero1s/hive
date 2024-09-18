@@ -33,12 +33,12 @@ prop:reader("gc_start_mem", 0)
 prop:reader("gc_step_use_time_max", 0)
 prop:reader("gc_step_time50_cnt", 0)-- 一个周期内，单步执行超过50ms的次数
 prop:reader("mem_cost_speed", 0)
-prop:reader("open_gc_step", false)
+prop:reader("open_gc_step", 1)
 prop:reader("is_step_gc", false)
 prop:reader("cycle_need", 2)
 
 function GcMgr:__init()
-    local open_gc   = environ.status("HIVE_GC_OPEN")
+    local open_gc   = environ.number("HIVE_GC_OPEN", 1)
     local slow_step = environ.number("HIVE_GC_SLOW_STEP", GC_SLOW_STEP)
     local fast_step = environ.number("HIVE_GC_FAST_STEP", GC_FAST_STEP)
     local pause     = environ.number("HIVE_GC_PAUSE", 120)
@@ -57,7 +57,7 @@ end
 
 function GcMgr:set_gc_step(open, slow_step, fast_step)
     self.open_gc_step = open
-    self:switch_gc(open)
+    self:switch_gc(open > 0)
     self.gc_stop_mem = mfloor(collectgarbage("count"))
     self.gc_running  = false
     GC_SLOW_STEP     = mfloor(mregion(slow_step or GC_SLOW_STEP, 50, 100)) -- gc慢回收
@@ -174,7 +174,7 @@ function GcMgr:log_gc_end()
     end
     self.gc_last_collect_time = lclock_ms()
     self.cycle_need           = self.cycle_need - 1
-    if self.cycle_need < 0 or self.gc_step_time50_cnt > 2 then
+    if self.open_gc_step == 1 and self.cycle_need < 0 or self.gc_step_time50_cnt > 2 then
         self:switch_gc(false)
     end
 end
@@ -206,9 +206,9 @@ function GcMgr:switch_gc(step_gc)
     end
 end
 
---检测退出快速gc
+--检测进入快速gc
 function GcMgr:check_enter_step_gc()
-    if not self.open_gc_step or self.is_step_gc then
+    if self.open_gc_step == 0 or self.is_step_gc then
         return
     end
     self:switch_gc(true)
