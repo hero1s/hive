@@ -154,7 +154,7 @@ int lua_socket_node::forward_player(lua_State* L, uint32_t session_id, uint8_t f
 
 int lua_socket_node::forward_group_player(lua_State* L, uint32_t session_id, uint8_t flag, uint32_t source_id, uint16_t service_id) {
 	bus_ids.clear();
-	if (!lua_to_native(L, 5, bus_ids) || bus_ids.size() < 1 || bus_ids.size() > 250) {
+	if (!lua_to_native(L, 5, bus_ids) || bus_ids.size() < 1 || bus_ids.size() > GROUP_PLAYER_MAX) {
 		lua_pushinteger(L, 0);
 		return 1;
 	}

@@ -10,6 +10,7 @@ constexpr int NET_PACKET_MAX_LEN	= (64 * 1024 - 1);
 constexpr int SOCKET_RECV_LEN		= 16*1024;
 constexpr int IO_BUFFER_SEND		= 8*1024;
 constexpr int SOCKET_PACKET_MAX		= 1024 * 1024 * 16; //16m
+constexpr int GROUP_PLAYER_MAX		= 1000;
 
 #if defined(__linux) || defined(__APPLE__)
 #include <errno.h>

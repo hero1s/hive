@@ -319,7 +319,7 @@ char* socket_router::decode_player_ids(std::vector<uint32_t>& player_ids, char* 
 //序列化玩家id
 void* socket_router::encode_player_ids(std::vector<uint32_t>& player_ids, size_t* len) {
 	m_buf.clean();
-	m_buf.write((uint8_t)player_ids.size());
+	m_buf.write((uint16_t)player_ids.size());
 	for (auto id : player_ids) {
 		m_buf.write(id);
 	}
@@ -328,7 +328,7 @@ void* socket_router::encode_player_ids(std::vector<uint32_t>& player_ids, size_t
 char* socket_router::decode_player_ids(std::vector<uint32_t>& player_ids, char* data, size_t* data_len) {
 	player_ids.clear();
 	auto s = slice((uint8_t*)data, *data_len);
-	auto num = *s.read<uint8_t>();
+	auto num = *s.read<uint16_t>();
 	for (uint8_t i = 0; i < num; i++) {
 		player_ids.push_back(*s.read<uint32_t>());
 	}

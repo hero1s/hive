@@ -540,7 +540,7 @@ void socket_stream::dispatch_package(bool reset) {
 				return;
 			}
 			package_size = header->len;
-			if (data_len < package_size) break;
+			if (data_len < package_size) return;
 			m_package_cb(m_recv_buffer.get_slice(package_size));
 			m_recv_buffer.pop_size(package_size);
 		}break;
