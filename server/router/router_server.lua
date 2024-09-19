@@ -109,15 +109,22 @@ function RouterServer:rpc_sync_router_info(router_id, target_ids, status)
     end
 end
 
-function RouterServer:rpc_sync_player_service(player_id, sid, login)
-    log_info("[RpcServer][rpc_sync_player_service] player_id:{},sid:{},login:{}", player_id, sid, login)
-    luabus.set_player_service(player_id, sid, login)
+function RouterServer:rpc_sync_player_service(player_ids, sid, login)
+    log_info("[RpcServer][rpc_sync_player_service] player_ids:{},sid:{},login:{}", player_ids, sid, login)
+    for _, player_id in pairs(player_ids) do
+        luabus.set_player_service(player_id, sid, login)
+    end
 end
 
-function RouterServer:rpc_set_player_service(client, player_id, sid, login)
-    log_info("[RpcServer][rpc_set_player_service] player_id:{},sid:{},login:{}", player_id, sid, login)
-    luabus.set_player_service(player_id, sid, login)
-    self:broadcast_router("rpc_sync_player_service", player_id, sid, login)
+function RouterServer:rpc_set_player_service(client, player_ids, sid, login)
+    log_info("[RpcServer][rpc_set_player_service] player_id:{},sid:{},login:{}", player_ids, sid, login)
+    if #player_ids == 0 then
+        return
+    end
+    for _, player_id in pairs(player_ids) do
+        luabus.set_player_service(player_id, sid, login)
+    end
+    self:broadcast_router("rpc_sync_player_service", player_ids, sid, login)
 end
 
 function RouterServer:rpc_query_player_service(client, player_id, service_id)

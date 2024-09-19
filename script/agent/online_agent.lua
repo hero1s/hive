@@ -2,7 +2,7 @@
 local log_info      = logger.info
 local log_debug     = logger.debug
 local tunpack       = table.unpack
-
+local tinsert       = table.insert
 local sname2sid     = service.name2sid
 
 local event_mgr     = hive.get("event_mgr")
@@ -22,9 +22,12 @@ prop:reader("player_ids", {})
 function OnlineAgent:__init()
     event_mgr:add_listener(self, "rpc_forward_client")
     event_mgr:add_listener(self, "rpc_forward_group_client")
-    monitor:watch_service_ready(self, "login")
-    monitor:watch_service_ready(self, "router")
     self.lobby_sid = sname2sid("lobby")
+
+    if hive.service_name == "lobby" then
+        monitor:watch_service_ready(self, "login")
+        monitor:watch_service_ready(self, "router")
+    end
 end
 
 --执行远程rpc消息
@@ -46,12 +49,12 @@ function OnlineAgent:rm_dispatch_lobby(open_id)
 end
 
 function OnlineAgent:login_player(player_id)
-    router_mgr:call_router(player_id, "rpc_set_player_service", player_id, hive.id, 1)
+    router_mgr:call_router(player_id, "rpc_set_player_service", { player_id }, hive.id, 1)
     return true, SUCCESS
 end
 
 function OnlineAgent:logout_player(player_id)
-    router_mgr:call_router(player_id, "rpc_set_player_service", player_id, hive.id, 0)
+    router_mgr:call_router(player_id, "rpc_set_player_service", { player_id }, hive.id, 0)
 end
 
 function OnlineAgent:query_openid(open_id)
@@ -127,13 +130,19 @@ end
 -- online数据恢复
 function OnlineAgent:on_rebuild_online(id, service_name)
     if service_name == "login" then
+        local open_ids = {}
         for open_id, _ in pairs(self.open_ids) do
-            router_mgr:send_login_hash(open_id, "rpc_login_dispatch_lobby", open_id, hive.id)
+            tinsert(open_ids, open_id)
         end
+        log_info("[OnlineAgent][on_rebuild_online]->rebuild login_lobby:{}", #open_ids)
+        router_mgr:send_target(id, "rpc_rebuild_login_lobby", open_ids, hive.id)
     else
+        local player_ids = {}
         for player_id, _ in pairs(self.player_ids) do
-            router_mgr:send_router(player_id, "rpc_set_player_service", player_id, hive.id, 1)
+            tinsert(player_ids, player_id)
         end
+        log_info("[OnlineAgent][on_rebuild_online]->rebuild router_lobby:{}", #player_ids)
+        router_mgr:send_router(hive.id, "rpc_set_player_service", player_ids, hive.id, 1)
     end
 end
 

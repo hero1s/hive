@@ -174,7 +174,7 @@ function GcMgr:log_gc_end()
     end
     self.gc_last_collect_time = lclock_ms()
     self.cycle_need           = self.cycle_need - 1
-    if self.open_gc_step == 1 and self.cycle_need < 0 or self.gc_step_time50_cnt > 2 then
+    if self.open_gc_step == 1 and (self.cycle_need < 0 or self.gc_step_time50_cnt > 2) then
         self:switch_gc(false)
     end
 end

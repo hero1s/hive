@@ -53,6 +53,7 @@ function logger.remove_monitor(monitor)
 end
 
 function logger.filter(level)
+    log_lvl = level
     for lvl = LOG_LEVEL.TRACE, LOG_LEVEL.FATAL do
         --log.filter(level, on/off)
         lfilter(lvl, lvl >= level)

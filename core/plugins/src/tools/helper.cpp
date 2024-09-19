@@ -21,6 +21,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <pwd.h>
 #endif
 
 
@@ -159,6 +160,20 @@ namespace tools
 #endif
 	}
 
+	//获取当前进程启动用户名
+	const char* CHelper::GetCurUser() {
+#ifdef WIN32
+
+#else
+		uid_t uid = geteuid();
+		struct passwd* pw = getpwuid(uid);
+		if (pw != NULL) {
+			return pw->pw_name;
+		}
+#endif // WIN32
+		return "unknown";
+	}
+
 	luakit::lua_table open_lhelper(lua_State* L) {
 		luakit::kit_state lua(L);
 		auto helper = lua.new_table();
@@ -171,6 +186,7 @@ namespace tools
 		helper.set_function("cpu_use_percent", []() { return CHelper::CpuUsePercent(); });
 		helper.set_function("cpu_core_num", []() { return CHelper::CpuCoreNum(); });
 		helper.set_function("mem_usage", [](bool real) { return CHelper::MemUsage(::getpid(),real); });
+		helper.set_function("pwuser", []() { return CHelper::GetCurUser(); });
 		return helper;
 	}
 }

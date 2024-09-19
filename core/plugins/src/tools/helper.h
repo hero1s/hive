@@ -14,6 +14,8 @@ namespace tools
 		static double CpuUsePercent();
 		static float MemUsage(int pid, bool real);
 		static int CpuCoreNum();
+		//获取当前进程启动用户名
+		static const char* GetCurUser();
 	private:
 
 	};

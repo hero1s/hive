@@ -131,7 +131,9 @@ function UpdateMgr:update(scheduler, now_ms, clock_ms)
     end
     hive.now = now
     --检测服务状态
-    self:check_service_status(scheduler)
+    thread_mgr:entry("check_service_status", function()
+        self:check_service_status(scheduler)
+    end)
     --检查信号
     if self:check_signal(scheduler) then
         return
