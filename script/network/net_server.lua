@@ -128,9 +128,7 @@ function NetServer:write(session, cmd_id, data, session_id, flag)
     local send_len = session.call_pb(cmd_id, flag, session_id or 0, data)
     if send_len > 0 then
         proxy_agent:statistics("on_proto_send", cmd_id, send_len)
-        if self.log_client_msg then
-            self.log_client_msg(session, cmd_id, data, session_id, send_len, false)
-        end
+        self:log_msg(session, cmd_id, data, session_id, send_len, false)
         return true
     end
     if send_len < 0 then
@@ -148,9 +146,7 @@ function NetServer:broadcast(cmd_id, data, filter)
         end
     end
     luabus.broad_group(self.codec, tokens, cmd_id, FLAG_REQ, 0, data)
-    if self.log_client_msg then
-        self.log_client_msg({}, cmd_id, data, 0, 0, false)
-    end
+    self:log_msg({}, cmd_id, data, 0, 0, false)
     return true
 end
 
@@ -194,9 +190,7 @@ function NetServer:on_socket_recv(session, cmd_id, flag, session_id, data)
     if session_id == 0 or (flag & FLAG_REQ == FLAG_REQ) then
         local function dispatch_rpc_message(_session, cmd, bd)
             local _<close> = heval(cmd_id)
-            if self.log_client_msg then
-                self.log_client_msg(_session, cmd, bd, session_id, 0, true)
-            end
+            self:log_msg(_session, cmd, bd, session_id, 0, true)
             local result = event_mgr:notify_listener("on_session_cmd", _session, cmd, bd, session_id)
             if not result[1] then
                 log_err("[NetServer][on_socket_recv] on_session_cmd failed! cmd_id:{}", cmd_id)
@@ -282,6 +276,13 @@ function NetServer:callback_by_id(session, cmd_id, data, session_id)
         return false
     end
     return self:send_pack(session, callback_id, data, session_id)
+end
+
+-- 打印消息日志
+function NetServer:log_msg(session, cmd_id, data, session_id, data_len, recv)
+    if self.log_client_msg then
+        self.log_client_msg(session, cmd_id, data, session_id, data_len, recv)
+    end
 end
 
 return NetServer
