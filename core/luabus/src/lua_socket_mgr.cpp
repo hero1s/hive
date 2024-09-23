@@ -134,3 +134,6 @@ uint32_t lua_socket_mgr::find_player_sid(uint32_t player_id, uint16_t service_id
 void lua_socket_mgr::clean_player_sid(uint32_t sid) {
 	m_router->clean_player_sid(sid);
 }
+std::vector<FlowInfo*> lua_socket_mgr::clac_flow_info() {
+	return m_router->clac_flow_info(steady());
+}

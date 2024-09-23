@@ -4,9 +4,9 @@ local log_info      = logger.info
 local sidhash       = service.hash
 local id2nick       = service.id2nick
 local sname2sid     = service.name2sid
+local sid2name      = service.sid2name
 
 local FlagMask      = enum("FlagMask")
-local PeriodTime    = enum("PeriodTime")
 local ServiceStatus = enum("ServiceStatus")
 local RpcServer     = import("network/rpc_server.lua")
 
@@ -14,7 +14,7 @@ local SUCCESS       = hive.enum("KernCode", "SUCCESS")
 
 local thread_mgr    = hive.get("thread_mgr")
 local event_mgr     = hive.get("event_mgr")
-local timer_mgr     = hive.get("timer_mgr")
+local update_mgr    = hive.get("update_mgr")
 
 local RouterServer  = singleton()
 local prop          = property(RouterServer)
@@ -27,9 +27,12 @@ function RouterServer:__init()
     event_mgr:add_listener(self, "rpc_set_player_service")
     event_mgr:add_listener(self, "rpc_query_player_service")
 
-    timer_mgr:loop(PeriodTime.MINUTE_MS, function()
-        self:sync_all_node_info()
-    end)
+    update_mgr:attach_minute(self)
+end
+
+function RouterServer:on_minute()
+    self:sync_all_node_info()
+    self:log_forward_flow()
 end
 
 function RouterServer:setup()
@@ -117,7 +120,7 @@ function RouterServer:rpc_sync_player_service(player_ids, sid, login)
 end
 
 function RouterServer:rpc_set_player_service(client, player_ids, sid, login)
-    log_info("[RpcServer][rpc_set_player_service] player_id:{},sid:{},login:{}", player_ids, sid, login)
+    log_info("[RouterServer][rpc_set_player_service] player_id:{},sid:{},login:{}", player_ids, sid, login)
     if #player_ids == 0 then
         return
     end
@@ -158,6 +161,14 @@ function RouterServer:on_client_beat(client, status_info)
             client.ban_hash = false
             log_info("[RouterServer][on_client_beat] remove ban hash server {}", client.name)
         end
+    end
+end
+
+--转发流量
+function RouterServer:log_forward_flow()
+    local flows = luabus.router_flow_info()
+    for _, flow in pairs(flows) do
+        log_info("[RouterServer][log_forward_flow] [{}][recv:{} k/s, send:{} k/s]", sid2name(flow.service_id), flow.flow_in, flow.flow_out)
     end
 end
 

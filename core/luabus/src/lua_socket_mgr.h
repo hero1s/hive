@@ -28,6 +28,9 @@ public:
 	void set_player_service(uint32_t player_id, uint32_t sid, uint8_t login);
 	uint32_t find_player_sid(uint32_t player_id, uint16_t service_id);
 	void clean_player_sid(uint32_t sid);
+	//Á÷Á¿
+	std::vector<FlowInfo*> clac_flow_info();
+
 private:
 	stdsptr<kit_state> m_luakit = nullptr;
 	stdsptr<socket_mgr> m_mgr;

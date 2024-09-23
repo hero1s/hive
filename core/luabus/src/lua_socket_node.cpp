@@ -234,6 +234,10 @@ int lua_socket_node::on_recv(slice* slice) {
 		is_router = true;
 	}
 	auto data = (char*)slice->data(&data_len);
+	//inc router flow 
+	if (msg > (uint8_t)rpc_type::remote_call) {
+		m_router->inc_flow_in(header, header_len + data_len);
+	}
 	switch ((rpc_type)msg) {
 	case rpc_type::remote_call:
 		on_call(header, slice);
@@ -269,7 +273,7 @@ int lua_socket_node::on_recv(slice* slice) {
 		break;
 	default:
 		break;
-	}
+	}	
 	return 0;
 }
 

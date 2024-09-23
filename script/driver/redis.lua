@@ -4,7 +4,6 @@ local Socket       = import("driver/socket.lua")
 local tonumber     = tonumber
 local log_err      = logger.err
 local log_info     = logger.info
-local log_debug    = logger.debug
 local sformat      = string.format
 local slower       = string.lower
 local tinsert      = table.insert
@@ -174,7 +173,7 @@ end
 
 function RedisDB:set_options(opts)
     if opts.cluster then
-        log_debug("[RedisDB][set_options] cluster status open")
+        log_info("[RedisDB][set_options] cluster status open")
         self.cluster = true
     end
 end

@@ -62,6 +62,8 @@ struct service_list {
 	stdsptr<service_node> master = nullptr;
 	std::vector<uint32_t> hash_ids;
 	std::unordered_map<uint32_t, stdsptr<service_node>> mp_nodes;
+	int64_t flow_in  = 0;
+	int64_t flow_out = 0;
 	inline stdsptr<service_node> get_target(uint32_t id) {
 		auto it = mp_nodes.find(id);
 		if (it != mp_nodes.end()) {
@@ -79,6 +81,14 @@ struct service_list {
 			}
 		}
 		return nullptr;
+	}
+	inline void flow_inc(int64_t in,int64_t out = 0) {
+		flow_in += in;
+		flow_out += out;
+	}
+	inline void flow_clear() {
+		flow_in  = 0;
+		flow_out = 0;
 	}
 };
 
@@ -106,6 +116,13 @@ struct player_list
 		}
 	}
 };
+
+struct FlowInfo {
+	uint16_t service_id;
+	int64_t  flow_in;
+	int64_t  flow_out;
+};
+
 
 class socket_router
 {
@@ -137,7 +154,9 @@ public:
 	//序列化玩家id
 	void* encode_player_ids(std::vector<uint32_t>& player_ids, size_t* len);
 	char* decode_player_ids(std::vector<uint32_t>& player_ids, char* data, size_t* data_len);
-
+	//流量统计
+	void inc_flow_in(router_header* header, int64_t value);
+	std::vector<FlowInfo*> clac_flow_info(uint64_t now_s);
 protected:
 	uint32_t find_transfer_router(uint32_t target_id, uint16_t service_id);
 	uint16_t cur_index() { return get_node_index(m_node_id); };
@@ -156,5 +175,6 @@ private:
 	luabuf m_buf;
 	//收集玩家指定服务所在id
 	std::set<uint32_t> m_target_ids;
+	uint64_t m_last_flow_time = steady();
 };
 

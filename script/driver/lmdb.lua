@@ -1,6 +1,7 @@
 --lmdb.lua
 local lmdb         = require("lmdb")
 local log_debug    = logger.debug
+local log_info     = logger.info
 local sformat      = string.format
 
 local update_mgr   = hive.get("update_mgr")
@@ -39,7 +40,7 @@ function Lmdb:close()
     if self.driver then
         self.driver.close()
         self.driver = nil
-        log_debug("[Lmdb][close] close lmdb {}", self.dbname)
+        log_info("[Lmdb][close] close lmdb {}", self.dbname)
     end
 end
 
@@ -53,7 +54,7 @@ function Lmdb:open(name, dbname)
         self.jcodec = jcodec
         self.dbname = dbname
         local rc    = driver.open(sformat("%s%s.mdb", LMDB_PATH, name), MDB_NOSUBDIR, tonumber("0644", 8))
-        log_debug("[Lmdb][open] open lmdb {}:{}!", name, rc)
+        log_info("[Lmdb][open] open lmdb {}:{}!", name, rc)
     end
 end
 

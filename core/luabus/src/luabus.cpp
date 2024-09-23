@@ -66,6 +66,7 @@ namespace luabus {
         lluabus.set_function("set_player_service", [](uint32_t player_id, uint32_t sid, uint8_t login) { return socket_mgr.set_player_service(player_id, sid,login); });
         lluabus.set_function("find_player_sid", [](uint32_t player_id, uint16_t service_id) { return socket_mgr.find_player_sid(player_id, service_id); });
         lluabus.set_function("clean_player_sid", [](uint32_t sid) { return socket_mgr.clean_player_sid(sid); });
+        lluabus.set_function("router_flow_info", []() { return socket_mgr.clac_flow_info(); });
 
         lluabus.new_enum("eproto_type",
             "rpc", eproto_type::proto_rpc,
@@ -86,6 +87,11 @@ namespace luabus {
             "listen", &socket_tcp::listen,
             "invalid", &socket_tcp::invalid,
             "connect", &socket_tcp::connect
+            );
+        kit_state.new_class<FlowInfo>(
+            "service_id", &FlowInfo::service_id,
+            "flow_in", &FlowInfo::flow_in,
+            "flow_out",&FlowInfo::flow_out
             );
         kit_state.new_class<lua_socket_node>(
             "ip", &lua_socket_node::m_ip,

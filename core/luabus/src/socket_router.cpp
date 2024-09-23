@@ -141,6 +141,7 @@ bool socket_router::do_forward_target(router_header* header, char* data, size_t 
 	header->msg_id = (uint8_t)rpc_type::remote_call;
 	sendv_item items[] = { {header, sizeof(router_header)}, {data, data_len} };
 	m_mgr->sendv(pTarget->token, items, _countof(items));
+	services.flow_inc(sizeof(router_header) + data_len);
 	return true;
 }
 
@@ -161,6 +162,7 @@ bool socket_router::do_forward_player(router_header* header, char* data, size_t 
 	header->msg_id = (uint8_t)rpc_type::remote_call;
 	sendv_item items[] = { {header, sizeof(router_header)}, {data, data_len} };
 	m_mgr->sendv(pTarget->token, items, _countof(items));
+	services.flow_inc(sizeof(router_header) + data_len);
 	return true;
 }
 
@@ -182,6 +184,7 @@ bool socket_router::do_forward_group_player(router_header* header, char* data, s
 		if (pTarget != nullptr) {			
 			sendv_item items[] = { {header, sizeof(router_header)}, {data, data_len} };
 			m_mgr->sendv(pTarget->token, items, _countof(items));
+			services.flow_inc(sizeof(router_header) + data_len);
 		}
 	}
 	return true;
@@ -193,7 +196,8 @@ bool socket_router::do_forward_master(router_header* header, char* data, size_t 
 		error = fmt::format("router[{}] forward-master not decode", cur_index());
 		return false;
 	}
-	auto master = m_services[service_id].master;
+	auto& services = m_services[service_id];
+	auto master = services.master;
 	if (master == nullptr) {
 		error = fmt::format("router[{}] forward-master:{} token=0", cur_index(),get_service_name(service_id));
 		return router ? false : do_forward_router(header, data, data_len, error, rpc_type::forward_master, 0, service_id);
@@ -201,6 +205,7 @@ bool socket_router::do_forward_master(router_header* header, char* data, size_t 
 	header->msg_id = (uint8_t)rpc_type::remote_call;
 	sendv_item items[] = { {header, sizeof(router_header)}, {data, data_len} };
 	m_mgr->sendv(master->token, items, _countof(items));
+	services.flow_inc(sizeof(router_header) + data_len);
 	return true;
 }
 
@@ -217,6 +222,7 @@ bool socket_router::do_forward_broadcast(router_header* header, int source, char
 		if (target->token != 0 && target->token != source) {
 			m_mgr->sendv(target->token, items, _countof(items));
 			broadcast_num++;
+			group.flow_inc(sizeof(router_header) + data_len);
 		}
 	}
 	return true;
@@ -235,6 +241,7 @@ bool socket_router::do_forward_hash(router_header* header, char* data, size_t da
 		header->msg_id = (uint8_t)rpc_type::remote_call;
 		sendv_item items[] = { {header, sizeof(router_header)}, {data, data_len} };
 		m_mgr->sendv(pTarget->token, items, _countof(items));
+		services.flow_inc(sizeof(router_header) + data_len);
 		return true;
 	} else {
 		error = fmt::format("router[{}] forward-hash not nodes:{},hash:{}", cur_index(), get_service_name(service_id),hash);
@@ -249,7 +256,8 @@ bool socket_router::do_forward_router(router_header* header, char* data, size_t 
 		error += fmt::format(" | not router can find:{},{}",get_service_nick(target_id),get_service_name(service_id));
 		return false;
 	}
-	auto ptarget = m_services[m_router_idx].get_target(router_id);
+	auto& services = m_services[m_router_idx];
+	auto ptarget = services.get_target(router_id);
 	if (ptarget == nullptr) {
 		error += fmt::format(" | not this router:{},{},{}",get_service_nick(router_id),get_service_nick(target_id),get_service_name(service_id));
 		return false;
@@ -259,6 +267,7 @@ bool socket_router::do_forward_router(router_header* header, char* data, size_t 
 	if (ptarget->token != 0) {
 		m_mgr->sendv(ptarget->token, items, _countof(items));
 		//std::cout << fmt::format("forward router:{} msg:{},{},data_len:{}",ptarget->index,get_service_nick(target_id),get_service_name(service_id),data_len) << std::endl;
+		services.flow_inc(sizeof(router_header) + data_len);
 		return true;
 	}
 	error += fmt::format(" | all router is disconnect");
@@ -336,6 +345,36 @@ char* socket_router::decode_player_ids(std::vector<uint32_t>& player_ids, char* 
 }
 #endif // DEBUG
 
+void socket_router::inc_flow_in(router_header* header, int64_t value) {
+	auto service_id = get_service_id(header->source_id);
+	auto& services = m_services[service_id];
+	services.flow_inc(0, value);
+}
+
+//流量统计
+std::vector<FlowInfo*> socket_router::clac_flow_info(uint64_t now_s) {
+	auto diff_time   = now_s - m_last_flow_time;
+	m_last_flow_time = now_s;
+
+	std::vector<FlowInfo*> flows;
+	for (auto i = 0; i < MAX_SERVICE_GROUP; ++i) {
+		auto& s = m_services[i];
+		if (s.flow_in > 0 || s.flow_out > 0) {
+			auto flow_in = (s.flow_in / diff_time) / 1024;
+			auto flow_out = (s.flow_out / diff_time) / 1024;
+			if (flow_in > 0 || flow_out > 0) {
+				auto info = new FlowInfo();
+				info->service_id = i;
+				info->flow_in  = flow_in;
+				info->flow_out = flow_out;
+				flows.push_back(info);
+			}
+		}
+		s.flow_clear();
+	}
+	return flows;
+}
+
 //轮流负载转发
 uint32_t socket_router::find_transfer_router(uint32_t target_id, uint16_t service_id) {
 	if (m_router_iter != m_routers.end()) {
@@ -382,6 +421,7 @@ std::string socket_router::get_service_name(uint32_t service_id) {
 	}
 	return fmt::format("{}", service_id);
 }
+
 std::string socket_router::get_service_nick(uint32_t target_id) {
 	auto service_id = get_service_id(target_id);
 	auto group = get_node_group(target_id);
