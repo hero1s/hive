@@ -56,6 +56,7 @@ struct router_header {
 	uint32_t target_pid = 0;
 };
 #pragma pack()
+constexpr size_t ROUTER_HEAD_SIZE = sizeof(router_header);
 
 struct service_list {
 	uint16_t hash = 0;

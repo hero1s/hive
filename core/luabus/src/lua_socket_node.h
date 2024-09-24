@@ -48,8 +48,8 @@ struct lua_socket_node final
 			header.source_id = source_id;
 			header.msg_id = (uint8_t)forward_method;
 			header.target_sid = service_id;
-			header.len = data_len + sizeof(router_header);
-			sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
+			header.len = data_len + ROUTER_HEAD_SIZE;
+			sendv_item items[] = { {&header, ROUTER_HEAD_SIZE}, {data, data_len} };
 			auto send_len = m_mgr->sendv(m_token, items, _countof(items));
 			lua_pushinteger(L, send_len);
 			return 1;

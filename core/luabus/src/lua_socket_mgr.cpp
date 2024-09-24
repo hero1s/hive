@@ -112,8 +112,8 @@ int lua_socket_mgr::broad_rpc(lua_State* L) {
 			header.rpc_flag = flag;
 			header.source_id = source_id;
 			header.msg_id = (uint8_t)rpc_type::remote_call;
-			header.len = data_len + sizeof(router_header);
-			sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
+			header.len = data_len + ROUTER_HEAD_SIZE;
+			sendv_item items[] = { {&header, ROUTER_HEAD_SIZE}, {data, data_len} };
 			m_mgr->broadgroupv(bus_ids, items, _countof(items));
 			lua_pushboolean(L, true);
 			return 1;

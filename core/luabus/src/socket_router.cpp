@@ -139,9 +139,9 @@ bool socket_router::do_forward_target(router_header* header, char* data, size_t 
 		return router ? false : do_forward_router(header, data, data_len, error, rpc_type::forward_target, target_id, 0);
 	}
 	header->msg_id = (uint8_t)rpc_type::remote_call;
-	sendv_item items[] = { {header, sizeof(router_header)}, {data, data_len} };
+	sendv_item items[] = { {header, ROUTER_HEAD_SIZE}, {data, data_len} };
 	m_mgr->sendv(pTarget->token, items, _countof(items));
-	services.flow_inc(sizeof(router_header) + data_len);
+	services.flow_inc(ROUTER_HEAD_SIZE + data_len);
 	return true;
 }
 
@@ -160,9 +160,9 @@ bool socket_router::do_forward_player(router_header* header, char* data, size_t 
 		return router ? false : do_forward_router(header, data, data_len, error, rpc_type::forward_target, target_id, 0);
 	}
 	header->msg_id = (uint8_t)rpc_type::remote_call;
-	sendv_item items[] = { {header, sizeof(router_header)}, {data, data_len} };
+	sendv_item items[] = { {header, ROUTER_HEAD_SIZE}, {data, data_len} };
 	m_mgr->sendv(pTarget->token, items, _countof(items));
-	services.flow_inc(sizeof(router_header) + data_len);
+	services.flow_inc(ROUTER_HEAD_SIZE + data_len);
 	return true;
 }
 
@@ -177,7 +177,7 @@ bool socket_router::do_forward_group_player(router_header* header, char* data, s
 		}
 	}
 	header->msg_id = (uint8_t)rpc_type::remote_call;
-	header->len = data_len + sizeof(router_header);
+	header->len = data_len + ROUTER_HEAD_SIZE;
 	auto& services = m_services[service_id];
 	for (auto target_id : m_target_ids) {
 		auto pTarget = services.get_target(target_id);

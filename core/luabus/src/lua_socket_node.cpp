@@ -96,8 +96,8 @@ int lua_socket_node::call(lua_State* L, uint32_t session_id, uint8_t flag, uint3
 			header.rpc_flag = flag;
 			header.source_id = source_id;
 			header.msg_id = (uint8_t)rpc_type::remote_call;
-			header.len = data_len + sizeof(router_header);
-			sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
+			header.len = data_len + ROUTER_HEAD_SIZE;
+			sendv_item items[] = { {&header, ROUTER_HEAD_SIZE}, {data, data_len} };
 			auto send_len = m_mgr->sendv(m_token, items, _countof(items));
 			lua_pushinteger(L, send_len);
 			return 1;
@@ -118,8 +118,8 @@ int lua_socket_node::forward_target(lua_State* L, uint32_t session_id, uint8_t f
 			header.source_id = source_id;
 			header.msg_id = (uint8_t)rpc_type::forward_target;
 			header.target_sid = target;
-			header.len = data_len + sizeof(router_header);
-			sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
+			header.len = data_len + ROUTER_HEAD_SIZE;
+			sendv_item items[] = { {&header, ROUTER_HEAD_SIZE}, {data, data_len} };
 			auto send_len = m_mgr->sendv(m_token, items, _countof(items));
 			lua_pushinteger(L, send_len);
 			return 1;
@@ -141,8 +141,8 @@ int lua_socket_node::forward_player(lua_State* L, uint32_t session_id, uint8_t f
 			header.msg_id = (uint8_t)rpc_type::forward_player;
 			header.target_sid = service_id;
 			header.target_pid = player_id;
-			header.len = data_len + sizeof(router_header);
-			sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
+			header.len = data_len + ROUTER_HEAD_SIZE;
+			sendv_item items[] = { {&header, ROUTER_HEAD_SIZE}, {data, data_len} };
 			auto send_len = m_mgr->sendv(m_token, items, _countof(items));
 			lua_pushinteger(L, send_len);
 			return 1;
@@ -172,8 +172,8 @@ int lua_socket_node::forward_group_player(lua_State* L, uint32_t session_id, uin
 			//Íæ¼Òids
 			size_t ids_len = 0;
 			auto ids_data = m_router->encode_player_ids(bus_ids, &ids_len);
-			header.len = data_len + ids_len + sizeof(router_header);
-			sendv_item items[] = { {&header, sizeof(router_header)},{ids_data, ids_len}, {data, data_len} };
+			header.len = data_len + ids_len + ROUTER_HEAD_SIZE;
+			sendv_item items[] = { {&header, ROUTER_HEAD_SIZE},{ids_data, ids_len}, {data, data_len} };
 			auto send_len = m_mgr->sendv(m_token, items, _countof(items));
 			lua_pushinteger(L, send_len);
 			return 1;
@@ -195,8 +195,8 @@ int lua_socket_node::forward_hash(lua_State* L, uint32_t session_id, uint8_t fla
 			header.msg_id = (uint8_t)rpc_type::forward_hash;
 			header.target_sid = service_id;
 			header.target_pid = hash;
-			header.len = data_len + sizeof(router_header);
-			sendv_item items[] = { {&header, sizeof(router_header)}, {data, data_len} };
+			header.len = data_len + ROUTER_HEAD_SIZE;
+			sendv_item items[] = { {&header, ROUTER_HEAD_SIZE}, {data, data_len} };
 			auto send_len = m_mgr->sendv(m_token, items, _countof(items));
 			lua_pushinteger(L, send_len);
 			return 1;
@@ -221,11 +221,10 @@ int lua_socket_node::on_recv(slice* slice) {
 		return on_call_data(slice);
 	}
 	size_t data_len;
-	size_t header_len = sizeof(router_header);
-	auto hdata = slice->peek(header_len);
+	auto hdata = slice->peek(ROUTER_HEAD_SIZE);
 	router_header* header = (router_header*)hdata;
 
-	slice->erase(header_len);
+	slice->erase(ROUTER_HEAD_SIZE);
 	m_error_msg = "";
 	bool is_router = false;
 	auto msg = header->msg_id;
@@ -236,7 +235,7 @@ int lua_socket_node::on_recv(slice* slice) {
 	auto data = (char*)slice->data(&data_len);
 	//inc router flow 
 	if (msg > (uint8_t)rpc_type::remote_call) {
-		m_router->inc_flow_in(header, header_len + data_len);
+		m_router->inc_flow_in(header, ROUTER_HEAD_SIZE + data_len);
 	}
 	switch ((rpc_type)msg) {
 	case rpc_type::remote_call:
