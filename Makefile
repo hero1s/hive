@@ -28,7 +28,6 @@ luaext:
 	cd extend/lcurl; make -j4 SOLUTION_DIR=$(CUR_DIR) -f lcurl.mak;
 	cd extend/ljson; make -j4 SOLUTION_DIR=$(CUR_DIR) -f ljson.mak;
 	cd extend/lmdb; make -j4 SOLUTION_DIR=$(CUR_DIR) -f lmdb.mak;
-	cd extend/lprofile; make -j4 SOLUTION_DIR=$(CUR_DIR) -f lprofile.mak;
 	cd extend/luaxlsx; make -j4 SOLUTION_DIR=$(CUR_DIR) -f luaxlsx.mak;
 	cd extend/luaxml; make -j4 SOLUTION_DIR=$(CUR_DIR) -f luaxml.mak;
 	cd extend/lyaml; make -j4 SOLUTION_DIR=$(CUR_DIR) -f lyaml.mak;
