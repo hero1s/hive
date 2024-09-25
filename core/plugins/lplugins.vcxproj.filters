@@ -141,12 +141,6 @@
     <ClCompile Include="src\lcrypt\xxtea.c">
       <Filter>lcrypt</Filter>
     </ClCompile>
-    <ClCompile Include="src\lmongo\lua-bson.c">
-      <Filter>lmongo</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lmongo\lua-mongo.c">
-      <Filter>lmongo</Filter>
-    </ClCompile>
     <ClCompile Include="src\lrandom\lrandom.cpp">
       <Filter>lrandom</Filter>
     </ClCompile>
@@ -187,9 +181,6 @@
     </Filter>
     <Filter Include="lcrypt">
       <UniqueIdentifier>{6779B38A-0EC6-088E-3974-E2A164AE1520}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lmongo">
-      <UniqueIdentifier>{E019DA7E-EC0A-AA36-71A6-A73542E75A70}</UniqueIdentifier>
     </Filter>
     <Filter Include="lrandom">
       <UniqueIdentifier>{3FF84F4B-3548-31CF-586F-ADCF4C5716CF}</UniqueIdentifier>

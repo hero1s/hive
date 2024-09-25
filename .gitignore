@@ -71,3 +71,4 @@ temp
 bin/luac
 bin/lua
 bin/hive
+/bin/lmdb

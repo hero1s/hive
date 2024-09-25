@@ -47,7 +47,7 @@ function MongoMgr:setup()
     self.table_queue_limit = environ.number("HIVE_MONGO_TABLE_QUEUE_LIMIT", 1000)
     self.qps_warn_avg      = environ.number("HIVE_MONGO_TABLE_QPS", 150)
 
-    local MongoDB          = import("driver/mongo_new.lua")
+    local MongoDB          = import("driver/mongo.lua")
     local database         = config_mgr:init_table("database", "name")
     for _, conf in database:iterator() do
         local dconf = environ.driver(conf.url)
