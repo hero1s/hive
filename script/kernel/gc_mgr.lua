@@ -12,14 +12,15 @@ local cut_tail                   = math_ext.cut_tail
 local mregion                    = math_ext.region
 
 local MAX_IDLE_TIME<const>       = 5 * 1000                   -- 空闲时间
-local GC_FAST_STEP               = 200                        -- gc快速回收
+local GC_FAST_STEP               = 300                        -- gc快速回收
 local GC_SLOW_STEP               = 50                         -- gc慢回收
 local MEM_ALLOC_SPEED_MAX<const> = 10 * 1024                  -- 每秒消耗内存超过10M，开启急速gc
 local PER_US_FOR_SECOND<const>   = 1000                       -- 1秒=1000ms
+local CYCLE_COUNT<const>         = 2
 
 local GcMgr                      = singleton()
 local prop                       = property(GcMgr)
-prop:reader("gc_threshold", 20 * 1024)
+prop:reader("gc_threshold", 10 * 1024)
 prop:reader("gc_stop_mem", 0)
 prop:reader("gc_running", true)
 prop:reader("gc_step_count", 0)
@@ -31,28 +32,18 @@ prop:reader("gc_start_time", 0)
 prop:reader("gc_free_time", 0)
 prop:reader("gc_start_mem", 0)
 prop:reader("gc_step_use_time_max", 0)
+prop:reader("gc_step_max_value", 0)
 prop:reader("gc_step_time50_cnt", 0)-- 一个周期内，单步执行超过50ms的次数
 prop:reader("mem_cost_speed", 0)
 prop:reader("open_gc_step", 1)
 prop:reader("is_step_gc", false)
-prop:reader("cycle_need", 2)
+prop:reader("cycle_need", CYCLE_COUNT)
 
 function GcMgr:__init()
     local open_gc   = environ.number("HIVE_GC_OPEN", 1)
     local slow_step = environ.number("HIVE_GC_SLOW_STEP", GC_SLOW_STEP)
     local fast_step = environ.number("HIVE_GC_FAST_STEP", GC_FAST_STEP)
-    local pause     = environ.number("HIVE_GC_PAUSE", 120)
-    local stepmul   = environ.number("HIVE_GC_STEPMUL", 500)
     self:set_gc_step(open_gc, slow_step, fast_step)
-    self:set_gc_speed(pause, stepmul)
-end
-
-function GcMgr:set_gc_speed(pause, step_mul)
-    pause    = mregion(mfloor(pause), 110, 200)
-    step_mul = mregion(mfloor(step_mul), 200, 1000)
-    collectgarbage("setpause", pause)
-    collectgarbage("setstepmul", step_mul)
-    log_warn("[GcMgr][set_gc_speed] pause:%s,step_mul:%s", pause, step_mul)
 end
 
 function GcMgr:set_gc_step(open, slow_step, fast_step)
@@ -89,7 +80,8 @@ function GcMgr:full_gc()
 end
 
 function GcMgr:run_step(now_us)
-    self.gc_running    = not collectgarbage("step", self.step_value)
+    local step_value   = self.step_value
+    self.gc_running    = not collectgarbage("step", step_value)
     local costTime     = lclock_ms() - now_us
     self.gc_use_time   = self.gc_use_time + costTime
     self.gc_step_count = self.gc_step_count + 1
@@ -103,12 +95,12 @@ function GcMgr:run_step(now_us)
         self:log_gc_end()
     end
     self:calc_step_value(costTime)
-    return costTime
+    return costTime, step_value
 end
 
 function GcMgr:update()
     if not self.is_step_gc then
-        return -1
+        return -1, 0
     end
     local now_us = lclock_ms()
     if self.gc_running then
@@ -119,16 +111,22 @@ function GcMgr:update()
     if (mem_cost > self.gc_threshold) or self.gc_last_collect_time + MAX_IDLE_TIME < now_us then
         self:log_gc_start(now_us, mem_cost)
     end
-    return 0
+    return 0, 0
 end
 
 function GcMgr:calc_step_value(cost_time)
-    if cost_time > 50 and self.step_inc > 0 then
-        self.step_value = mregion(mfloor(self.step_value * 0.7), GC_SLOW_STEP, GC_FAST_STEP)
+    if cost_time > 300 then
+        self:log_gc_status()
+    end
+    if cost_time > 25 and self.step_inc > 0 then
+        self.step_value = mregion(mfloor(self.step_value / 2), GC_SLOW_STEP, GC_FAST_STEP)
         self.step_inc   = self.step_inc - 1
     elseif cost_time < 5 and self.step_inc < 3 then
-        self.step_value = mregion(mfloor(self.step_value * 1.5), GC_SLOW_STEP, GC_FAST_STEP)
+        self.step_value = mregion(mfloor(self.step_value * 2), GC_SLOW_STEP, GC_FAST_STEP)
         self.step_inc   = self.step_inc + 1
+    end
+    if self.step_value > self.gc_step_max_value then
+        self.gc_step_max_value = self.step_value
     end
 end
 
@@ -149,6 +147,7 @@ function GcMgr:log_gc_start(now_us, mem_cost)
     self.gc_step_count        = 0
     self.gc_use_time          = 0
     self.gc_step_use_time_max = 0
+    self.gc_step_max_value    = 0
 end
 
 function GcMgr:log_gc_end()
@@ -167,15 +166,18 @@ function GcMgr:log_gc_end()
             step_time_avg   = avg_time,
             free_time       = self.gc_free_time,
             step_value      = self.step_value,
+            step_max_value  = self.gc_step_max_value,
             step_time50_cnt = self.gc_step_time50_cnt,
             mem_cost_speed  = self.mem_cost_speed,
         }
         log_warn("[GcMgr][log_gc_end] {}", gc_info)
     end
     self.gc_last_collect_time = lclock_ms()
-    self.cycle_need           = self.cycle_need - 1
-    if self.open_gc_step == 1 and (self.cycle_need < 0 or self.gc_step_time50_cnt > 2) then
-        self:switch_gc(false)
+    if self.open_gc_step == 1 then
+        self.cycle_need = self.cycle_need - 1
+        if self.cycle_need < 0 or self.gc_step_time50_cnt > 2 then
+            self:switch_gc(false)
+        end
     end
 end
 
@@ -200,7 +202,7 @@ function GcMgr:switch_gc(step_gc)
     self.is_step_gc = step_gc
     if step_gc then
         collectgarbage("stop")
-        self.cycle_need = 2
+        self.cycle_need = CYCLE_COUNT
     else
         collectgarbage("restart")
     end
@@ -212,6 +214,23 @@ function GcMgr:check_enter_step_gc()
         return
     end
     self:switch_gc(true)
+end
+
+function GcMgr:log_gc_status()
+    local info = {
+        is_step_gc        = self.is_step_gc,
+        gc_running        = self.gc_running,
+        step_value        = self.step_value,
+        step_value_max    = self.gc_step_max_value,
+        step_inc          = self.step_inc,
+        cycle_need        = self.cycle_need,
+        step_time50_cnt   = self.gc_step_time50_cnt,
+        step_count        = self.gc_step_count,
+        use_time          = self.gc_use_time,
+        step_use_time_max = self.gc_step_use_time_max,
+        mem_cost_speed    = self.mem_cost_speed,
+    }
+    log_warn("[GcMgr][log_gc_status] %s", info)
 end
 
 hive.gc_mgr = GcMgr()

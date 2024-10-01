@@ -11,7 +11,6 @@ local mtointeger     = math.tointeger
 
 local event_mgr      = hive.get("event_mgr")
 local thread_mgr     = hive.get("thread_mgr")
-local timer_mgr      = hive.get("timer_mgr")
 local http_client    = hive.get("http_client")
 
 local WORD_SEPARATOR = "\x02"
@@ -62,7 +61,8 @@ function Nacos:__init()
         log_info("[Nacos][setup] setup ({}:{}) success!", ip, port)
     end
     --定时获取token
-    self.timer_id = timer_mgr:register(0, SECOND_MS, -1, function()
+    self.timer = hive.make_timer()
+    self.timer:loop(SECOND_MS, function()
         self:check_auth()
     end)
 end
@@ -70,7 +70,7 @@ end
 function Nacos:check_auth()
     thread_mgr:entry(self:address(), function()
         local ok = self:auth()
-        timer_mgr:set_period(self.timer_id, ok and HOUR_MS or SECOND_MS)
+        self.timer:set_period(ok and HOUR_MS or SECOND_MS)
     end)
 end
 

@@ -84,8 +84,9 @@ function hive.try_json_decode(json_str, result, numkeyable)
     end
 end
 
-function hive.json_encode(body, empty_as_arr)
-    local ok, jstr = xpcall_ret(json.encode, "[hive.json_encode] error:%s", body, empty_as_arr)
+function hive.json_encode(body, empty_as_arr, swline)
+    local call_func = swline and json.pretty or json.encode
+    local ok, jstr  = xpcall_ret(call_func, "[hive.json_encode] error:%s", body, empty_as_arr)
     if not ok then
         log_err("[hive][json_encode] err body:[{}],from:[{}]", body, hive.where_call())
     end

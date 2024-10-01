@@ -13,7 +13,7 @@ function WorkerEvt:__init()
     event_mgr:add_listener(self, "on_reload_env")
     event_mgr:add_listener(self, "rpc_count_lua_obj")
     event_mgr:add_listener(self, "rpc_full_gc")
-    event_mgr:add_listener(self, "rpc_set_gc_speed")
+    event_mgr:add_listener(self, "rpc_set_gc_step")
 end
 
 --热更新
@@ -40,8 +40,8 @@ function WorkerEvt:rpc_full_gc()
     gc_mgr:full_gc()
 end
 
-function WorkerEvt:rpc_set_gc_speed(pause, step_mul)
-    gc_mgr:set_gc_speed(pause, step_mul)
+function WorkerEvt:rpc_set_gc_step(open_gc, slow_step, fast_step)
+    gc_mgr:set_gc_step(open_gc, slow_step, fast_step)
 end
 
 hive.worker_evt = WorkerEvt()

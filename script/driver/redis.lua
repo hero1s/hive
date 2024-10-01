@@ -15,7 +15,6 @@ local makechan     = hive.make_channel
 local jsoncodec    = json.jsoncodec
 local rediscodec   = codec.rediscodec
 
-local timer_mgr    = hive.get("timer_mgr")
 local thread_mgr   = hive.get("thread_mgr")
 local event_mgr    = hive.get("event_mgr")
 local update_mgr   = hive.get("update_mgr")
@@ -122,13 +121,15 @@ function RedisDB:close()
     for _, sock in pairs(self.connections) do
         sock:close()
     end
+    self.timer:unregister()
     self.connections = {}
     self.alives      = {}
 end
 
 function RedisDB:setup(conf)
     self:setup_pool(conf.hosts)
-    self.timer_id    = timer_mgr:register(0, SECOND_MS, -1, function()
+    self.timer = hive.make_timer()
+    self.timer:loop(SECOND_MS, function()
         self:check_alive()
     end)
     self.req_counter = hive.make_sampling(sformat("redis %s req", conf.db))
@@ -225,7 +226,7 @@ function RedisDB:check_alive()
                 end)
             end
             if channel:execute(true) then
-                timer_mgr:set_period(self.timer_id, SECOND_10_MS)
+                self.timer:set_period(SECOND_10_MS)
                 self:check_clusters()
             end
         end)
@@ -279,7 +280,7 @@ end
 function RedisDB:on_socket_error(sock, token, err)
     --设置重连
     self:delive(sock)
-    timer_mgr:set_period(self.timer_id, SECOND_MS)
+    self.timer:set_period(SECOND_MS)
     event_mgr:fire_second(function()
         self:check_alive()
     end)

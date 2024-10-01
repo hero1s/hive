@@ -50,7 +50,7 @@ function DevopsGmMgr:register_gm()
           args  = "start|integer service_name|string index|integer" },
         --工具
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_guid_view", desc = "guid信息", comment = "(拆解guid)", args = "guid|integer" },
-        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_log_format", desc = "日志格式", comment = "0压缩,1格式化", args = "data|string swline|integer" },
+        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_log_format", desc = "日志格式", comment = "0压缩,1格式化", args = "data|string swline|integer json|integer" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_db_get", desc = "数据库查询",
           args  = "db_name|string table_name|string key_name|string key_value|string" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_db_set", desc = "数据库更新",
@@ -182,7 +182,7 @@ function DevopsGmMgr:gm_guid_view(guid)
     return { group = group, gtype = gtype, index = index, time = time_str(time), serial = serial }
 end
 
-function DevopsGmMgr:gm_log_format(data, swline)
+function DevopsGmMgr:gm_log_format(data, swline, json)
     if type(data) ~= "string" then
         return "格式错误"
     end
@@ -190,6 +190,9 @@ function DevopsGmMgr:gm_log_format(data, swline)
         swline = 0
     end
     local data_t = luakit.unserialize(data)
+    if json == 1 then
+        return hive.json_encode(data_t, nil, swline == 1)
+    end
     return luakit.serialize(data_t, swline)
 end
 

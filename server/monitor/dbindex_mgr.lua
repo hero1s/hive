@@ -149,7 +149,7 @@ function DBIndexMgr:on_service_ready(id, service_name)
         thread_mgr:success_call(5000, function()
             log_err("[DBIndexMgr][on_service_ready] not create dbindex:{},please fast repair !!!", res)
             return false
-        end, 1000, 3)
+        end, 30000, 1000)
     end
 end
 

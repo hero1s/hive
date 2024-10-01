@@ -76,7 +76,9 @@ function OnlineAgent:send_lobby(player_id, rpc, ...)
 end
 --player_id在线的lobby将收到rpc
 function OnlineAgent:send_group_lobby(player_ids, rpc, ...)
-    router_mgr:group_lobby_player(player_ids, rpc, ...)
+    if next(player_ids) then
+        router_mgr:group_lobby_player(player_ids, rpc, ...)
+    end
 end
 
 function OnlineAgent:call_client(player_id, cmd_id, msg)
@@ -91,10 +93,12 @@ end
 
 function OnlineAgent:send_group_client(player_ids, cmd_id, msg)
     msg = self:encode_msg(0, cmd_id, msg)
-    if not player_ids or next(player_ids) == nil then
+    if not player_ids then
         return router_mgr:send_lobby_all("rpc_forward_group_client", player_ids, cmd_id, msg)
     end
-    router_mgr:group_lobby_player(player_ids, "rpc_forward_group_client", player_ids, cmd_id, msg)
+    if next(player_ids) then
+        router_mgr:group_lobby_player(player_ids, "rpc_forward_group_client", player_ids, cmd_id, msg)
+    end
 end
 
 function OnlineAgent:send_lobby_client(lobby_id, player_id, cmd_id, msg)

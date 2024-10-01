@@ -91,7 +91,7 @@ DBLoading.SUCCESS                = 2
 
 -- GM命令类型
 local GMType                     = enum("GMType", 0)
-GMType.GLOBAL                    = 0       -- 全局相关
+GMType.GLOBAL                    = 0       -- 全局相关,master服务分发
 GMType.PLAYER                    = 1       -- 玩家相关,ID为玩家的ID
 GMType.SERVICE                   = 2       -- 服务相关,ID按hash分发
 GMType.SYSTEM                    = 3       -- 系统相关,全服务分发

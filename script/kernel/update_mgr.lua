@@ -122,7 +122,7 @@ function UpdateMgr:update(scheduler, now_ms, clock_ms)
     if clock_ms < self.next_frame then
         return
     end
-    hive.gc_time = gc_mgr:update()
+    hive.gc_time, hive.gc_step_value = gc_mgr:update()
     self:update_fast(clock_ms)
     --秒更新
     local now = now_ms // 1000

@@ -9,7 +9,6 @@ local hxpcall             = hive.xpcall
 local event_mgr           = hive.get("event_mgr")
 local thread_mgr          = hive.get("thread_mgr")
 local proxy_agent         = hive.get("proxy_agent")
-local timer_mgr           = hive.get("timer_mgr")
 local heval               = hive.eval
 
 local FLAG_REQ            = hive.enum("FlagMask", "REQ")
@@ -31,11 +30,12 @@ prop:reader("socket", nil)
 prop:reader("holder", nil)    --持有者
 
 function RpcClient:__init(holder, ip, port, id)
-    self.holder   = holder
-    self.port     = port
-    self.ip       = ip
-    self.id       = id or 0
-    self.timer_id = timer_mgr:loop(SECOND_MS, function()
+    self.holder = holder
+    self.port   = port
+    self.ip     = ip
+    self.id     = id or 0
+    self.timer  = hive.make_timer()
+    self.timer:loop(SECOND_MS, function()
         self:check_heartbeat()
     end)
 end
@@ -46,10 +46,10 @@ function RpcClient:check_heartbeat()
     end
     if self.alive then
         self:heartbeat()
-        timer_mgr:set_period(self.timer_id, HEARTBEAT_TIME)
+        self.timer:set_period(HEARTBEAT_TIME)
     else
         self:connect()
-        timer_mgr:set_period(self.timer_id, SECOND_MS)
+        self.timer:set_period(SECOND_MS)
     end
 end
 
@@ -161,10 +161,7 @@ function RpcClient:close()
         self.alive  = false
         self.socket = nil
     end
-    if self.timer_id then
-        timer_mgr:unregister(self.timer_id)
-        self.timer_id = nil
-    end
+    self.timer:unregister()
 end
 
 --rpc事件
@@ -221,7 +218,7 @@ function RpcClient:forward_socket(method, rpc, session_id, ...)
             end
             return true, SUCCESS
         end
-        log_err("[RpcClient][forward_socket] send failed:ip:{},port:{}", self.ip, self.port)
+        log_err("[RpcClient][forward_socket] send failed:ip:{},port:{},method:{},rpc:{}", self.ip, self.port, method, rpc)
         return false, "socket send failed"
     end
     return false, "socket not connected"

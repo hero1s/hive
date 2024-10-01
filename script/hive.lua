@@ -156,3 +156,8 @@ function hive.make_limiter(name, warn_size, refuse_size, qps_warn)
     local Limiter = import("feature/limiter.lua")
     return Limiter(name, warn_size, refuse_size, qps_warn)
 end
+
+function hive.make_timer()
+    local Timer = import("feature/timer.lua")
+    return Timer()
+end

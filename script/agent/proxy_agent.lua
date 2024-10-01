@@ -1,5 +1,6 @@
 local sformat    = string.format
 local log_warn   = logger.warn
+local log_err    = logger.err
 local scheduler  = hive.load("scheduler")
 
 local thread     = import("feature/worker_agent.lua")
@@ -7,6 +8,7 @@ local ProxyAgent = singleton(thread)
 local prop       = property(ProxyAgent)
 prop:reader("ignore_statistics", {})
 prop:reader("statis_status", false)
+prop:reader("warns", {})
 
 function ProxyAgent:__init()
     self.service  = "proxy"
@@ -31,6 +33,10 @@ function ProxyAgent:__init()
             logger.add_monitor(self, wlvl)
         end
     end
+    --添加告警限制
+    self:add_warn("on_proto_recv", 8192)
+    self:add_warn("on_proto_send", 8192)
+    self:add_warn("on_rpc_send", 8192)
 end
 
 --日志分发
@@ -63,14 +69,18 @@ function ProxyAgent:ignore_statis(name)
     self.ignore_statistics[name] = true
 end
 
-function ProxyAgent:statistics(event, name, ...)
-    if not self.statis_status then
-        return
+function ProxyAgent:statistics(event, name, len)
+    local wlen = self.warns[name]
+    if wlen and len > wlen then
+        log_err("[ProxyAgent][statistics] [%s:%s],send len:%s,please check the logic is right?", event, name, len)
     end
-    if self.ignore_statistics[name] then
-        return
+    if self.statis_status and not self.ignore_statistics[name] then
+        self:send(event, name, len)
     end
-    self:send(event, name, ...)
+end
+
+function ProxyAgent:add_warn(name, len)
+    self.warns[name] = len
 end
 
 hive.proxy_agent = ProxyAgent()

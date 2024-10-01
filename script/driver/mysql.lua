@@ -15,7 +15,6 @@ local mysqlcodec       = codec.mysqlcodec
 local makechan         = hive.make_channel
 
 local event_mgr        = hive.get("event_mgr")
-local timer_mgr        = hive.get("timer_mgr")
 local thread_mgr       = hive.get("thread_mgr")
 local update_mgr       = hive.get("update_mgr")
 
@@ -66,6 +65,7 @@ function MysqlDB:close()
     for _, sock in pairs(self.connections) do
         sock:close()
     end
+    self.timer:unregister()
     self.connections = {}
     self.alives      = {}
 end
@@ -104,7 +104,8 @@ function MysqlDB:setup_pool(hosts)
             count = count + 1
         end
     end
-    self.timer_id = timer_mgr:register(0, SECOND_MS, -1, function()
+    self.timer = hive.make_timer()
+    self.timer:loop(SECOND_MS, function()
         self:check_alive()
     end)
 end
@@ -119,7 +120,7 @@ function MysqlDB:check_alive()
                 end)
             end
             if channel:execute(true) then
-                timer_mgr:set_period(self.timer_id, SECOND_10_MS)
+                self.timer:set_period(SECOND_10_MS)
             end
             self:set_executer()
         end)
@@ -171,7 +172,7 @@ function MysqlDB:on_socket_error(sock, token, err)
         self:set_executer()
     end
     self:delive(sock)
-    timer_mgr:set_period(self.timer_id, SECOND_MS)
+    self.timer:set_period(SECOND_MS)
     event_mgr:fire_second(function()
         self:check_alive()
     end)

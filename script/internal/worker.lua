@@ -96,8 +96,8 @@ hive.run = function()
         local work_ms = lclock_ms() - sclock_ms
         if work_ms > HALF_MS then
             local io_ms = clock_ms - sclock_ms - scheduler_ms
-            log_err("[hive][run] last frame[{}:{}] too long => all:{},thread:{},net:{},update:{},gc:{})!",
-                    hive.name, hive.frame, work_ms, scheduler_ms, io_ms, work_ms - scheduler_ms - io_ms, hive.gc_time)
+            log_err("[hive][run] last frame[{}:{}] too long => all:{},thread:{},net:{},update:{},gc:{}-{})!",
+                    hive.name, hive.frame, work_ms, scheduler_ms, io_ms, work_ms - scheduler_ms - io_ms, hive.gc_time, hive.gc_step_value)
         end
     end, "worker run err:{}")
 end

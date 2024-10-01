@@ -8,8 +8,6 @@ local hdefer      = hive.defer
 local log_err     = logger.err
 
 local HALF_MS     = hive.enum("PeriodTime", "HALF_MS")
-
-local proxy_agent = hive.get("proxy_agent")
 local update_mgr  = hive.get("update_mgr")
 
 local PerfevalMgr = singleton()
@@ -86,7 +84,6 @@ function PerfevalMgr:stop(eval_data)
         yield_time = eval_data.yield_time,
         eval_time  = total_time - eval_data.yield_time
     }
-    proxy_agent:statistics("on_perfeval", eval_data.eval_name, fields)
     if fields.eval_time > 1 then
         self:write_perf(eval_data.eval_name, fields)
     end

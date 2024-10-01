@@ -165,7 +165,7 @@ end
 
 --GLOBAL command
 function AdminMgr:exec_global_cmd(service_id, cmd_name, ...)
-    local ok, codeoe, res = router_mgr:call_hash(service_id, service_id, "rpc_command_execute", cmd_name, ...)
+    local ok, codeoe, res = router_mgr:call_master(service_id, "rpc_command_execute", cmd_name, ...)
     if not ok then
         log_err("[AdminMgr][exec_global_cmd] call_random(rpc_command_execute) failed! service_id={}", service_id)
         return { code = 1, msg = codeoe }
