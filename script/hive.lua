@@ -1,6 +1,7 @@
 --hive.lua
 local guid_new     = codec.guid_new
 local hash_code    = codec.hash_code
+local next_id      = codec.next_id
 local odate        = os.date
 local log_err      = logger.err
 local dgetinfo     = debug.getinfo
@@ -105,6 +106,10 @@ end
 
 function hive.new_guid()
     return guid_new(hive.service_id, hive.index)
+end
+
+function hive.next_id(t)
+    return next_id(t or 1)
 end
 
 function hive.hash(key, mod)

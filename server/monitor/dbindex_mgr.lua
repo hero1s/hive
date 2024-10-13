@@ -144,13 +144,13 @@ function DBIndexMgr:on_service_ready(id, service_name)
         self:build_index(self.rebuild)
     end
     --启动检测索引
-    local ok, res = self:check_dbindexes()
-    if not ok then
-        thread_mgr:success_call(5000, function()
-            log_err("[DBIndexMgr][on_service_ready] not create dbindex:{},please fast repair !!!", res)
-            return false
-        end, 30000, 1000)
-    end
+    thread_mgr:success_call(300000, function()
+        local ok, res = self:check_dbindexes()
+        if not ok then
+            log_err("[DBIndexMgr][on_service_ready] not create dbindex:%s,please fast repair !!!", res)
+        end
+        return ok
+    end, 1000, 100000)
 end
 
 hive.db_index_mgr = DBIndexMgr()

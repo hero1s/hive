@@ -12,7 +12,7 @@
 --service_nick:   服务别名    lobby.1
 
 import("kernel/config_mgr.lua")
-
+local log_err       = logger.err
 local sformat       = string.format
 
 --服务组常量
@@ -37,6 +37,18 @@ function service.make_node(port, domain)
         is_ready     = false,
         status       = hive.service_status
     }
+    if not hive.node_info.host or hive.node_info.host == "" then
+        hive.node_info.host = "127.0.0.1"
+    end
+    --检测合法性
+    if hive.index > 4095 or hive.index < 1 then
+        log_err("service index is invalid:%s,1~4095", hive.index)
+        signal.quit()
+    end
+    if hive.service_id > 255 or hive.service_id < 1 then
+        log_err("service_id  is invalid:%s,1~255", hive.service_id)
+        signal.quit()
+    end
 end
 
 function service.modify_node(key, val)

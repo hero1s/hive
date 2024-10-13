@@ -1,9 +1,8 @@
 --lmdb.lua
 local lmdb         = require("lmdb")
-local log_debug    = logger.debug
 local log_info     = logger.info
 local sformat      = string.format
-
+local xpcall_ret   = hive.xpcall_ret
 local update_mgr   = hive.get("update_mgr")
 
 local MDB_SUCCESS  = lmdb.MDB_CODE.MDB_SUCCESS
@@ -59,42 +58,50 @@ function Lmdb:open(name, dbname)
 end
 
 function Lmdb:puts(objects, dbname)
-    return self.driver.batch_put(objects, dbname or self.dbname) == MDB_SUCCESS
+    local ok, res = xpcall_ret(self.driver.batch_put, "Lmdb:puts:%s", objects, dbname or self.dbname)
+    if ok and res == MDB_SUCCESS then
+        return true
+    end
+    return false
 end
 
 function Lmdb:put(key, value, dbname)
-    log_debug("[Lmdb][put] {}.{}", key, dbname)
-    return self.driver.quick_put(key, value, dbname or self.dbname) == MDB_SUCCESS
+    local ok, res = xpcall_ret(self.driver.quick_put, "Lmdb:put:%s", key, value, dbname or self.dbname)
+    if ok and res == MDB_SUCCESS then
+        return true
+    end
+    return false
 end
 
 function Lmdb:get(key, dbname)
-    local data, rc = self.driver.quick_get(key, dbname or self.dbname)
-    if rc == MDB_NOTFOUND or rc == MDB_SUCCESS then
+    local ok, data, rc = xpcall_ret(self.driver.quick_get, "Lmdb:get:%s", key, dbname or self.dbname)
+    if ok and (rc == MDB_NOTFOUND or rc == MDB_SUCCESS) then
         return data, true
     end
     return nil, false
 end
 
 function Lmdb:gets(keys, dbname)
-    local res, rc = self.driver.batch_get(keys, dbname or self.dbname)
-    if rc == MDB_NOTFOUND or rc == MDB_SUCCESS then
+    local ok, res, rc = xpcall_ret(self.driver.batch_get, "Lmdb:gets:%s", keys, dbname or self.dbname)
+    if ok and (rc == MDB_NOTFOUND or rc == MDB_SUCCESS) then
         return res, true
     end
     return nil, false
 end
 
 function Lmdb:del(key, dbname)
-    local rc = self.driver.quick_del(key, dbname or self.dbname)
-    return rc == MDB_NOTFOUND or rc == MDB_SUCCESS
+    local ok, rc = xpcall_ret(self.driver.quick_del, "Lmdb:del:%s", key, dbname or self.dbname)
+    return ok and (rc == MDB_NOTFOUND or rc == MDB_SUCCESS) or false
 end
 
 function Lmdb:dels(keys, dbname)
-    local rc = self.driver.batch_del(keys, dbname or self.dbname)
-    return rc == MDB_NOTFOUND or rc == MDB_SUCCESS
+    local ok, rc = xpcall_ret(self.driver.batch_del, "Lmdb:dels:%s", keys, dbname or self.dbname)
+    return ok and (rc == MDB_NOTFOUND or rc == MDB_SUCCESS) or false
 end
 
 function Lmdb:drop(dbname)
-    return self.driver.quick_drop(dbname or self.dbname)
+    local ok, rc = xpcall_ret(self.driver.quick_drop, "Lmdb:drop:%s", dbname or self.dbname)
+    return ok and (rc == MDB_NOTFOUND or rc == MDB_SUCCESS) or false
 end
 
 --迭代器

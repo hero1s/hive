@@ -196,6 +196,10 @@ function CacheObj:save_lmdb()
     lmdb_mgr:save_cache(self.cache_name, self.primary_value, self.data)
 end
 
+function CacheObj:load_lmdb()
+    return lmdb_mgr:load_cache(self.cache_name, self.primary_value)
+end
+
 function CacheObj:remove_lmdb()
     lmdb_mgr:delete_cache(self.cache_name, self.primary_value)
 end

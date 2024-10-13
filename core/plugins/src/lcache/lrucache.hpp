@@ -65,6 +65,12 @@ namespace cache {
 			return _cache_items_map.size();
 		}
 	
+		bool clear() {
+			_cache_items_list.clear();
+			_cache_items_map.clear();
+			return true;
+		}
+
 	private:
 		std::list<key_value_pair_t> _cache_items_list;
 		std::unordered_map<key_t, list_iterator_t> _cache_items_map;

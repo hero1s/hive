@@ -1,9 +1,9 @@
-local LMDB       = import("driver/lmdb.lua")
-local log_debug  = logger.debug
-local sformat    = string.format
+local LMDB      = import("driver/lmdb.lua")
+local log_debug = logger.debug
+local sformat   = string.format
 
-local LmdbMgr    = singleton()
-local prop       = property(LmdbMgr)
+local LmdbMgr   = singleton()
+local prop      = property(LmdbMgr)
 prop:reader("open_status", false)
 prop:reader("db", nil)
 
@@ -26,6 +26,14 @@ function LmdbMgr:save_cache(cache_name, primary_key, data)
     end
     log_debug("[LmdbMgr][save_cache] {},{}", cache_name, primary_key)
     self.db:put(primary_key, data, cache_name)
+end
+
+function LmdbMgr:load_cache(cache_name, primary_key)
+    if not self.open_status then
+        return nil, false
+    end
+    log_debug("[LmdbMgr][load_cache] {},{}", cache_name, primary_key)
+    return self.db:get(primary_key, cache_name)
 end
 
 function LmdbMgr:delete_cache(cache_name, primary_key)

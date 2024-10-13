@@ -57,7 +57,7 @@ namespace llmdb {
             int rc = begin_txn(name);
             if (rc != MDB_SUCCESS) return rc;
             rc = mdb_drop(_txn, _dbi, del ? 1 : 0);
-            mdb_txn_commit(_txn);
+            commit_txn();
             return rc;
         }
         int32_t begin_txn(const char* name) {
@@ -85,6 +85,7 @@ namespace llmdb {
         }
         int quick_put(lua_State* L) {
             int rc = begin_txn(luaL_optstring(L, 3, nullptr));
+            AutoCommit ac(this);
             if (rc != MDB_SUCCESS) goto exit;
             MDB_val mkey, mval;
             read_key(L, 1, mkey);
@@ -92,13 +93,14 @@ namespace llmdb {
             rc = mdb_put(_txn, _dbi, &mkey, &mval, 0);
             if (rc != MDB_SUCCESS) goto exit;
         exit:
-            mdb_txn_commit(_txn);
+            ac.commit();
             lua_pushinteger(L, rc);
             return 1;
         }
         int batch_put(lua_State* L) {
             luaL_checktype(L, 1, LUA_TTABLE);
             int rc = begin_txn(luaL_optstring(L, 2, nullptr));
+            AutoCommit ac(this);
             if (rc != MDB_SUCCESS) goto exit;
             lua_pushnil(L);
             MDB_val mkey, mval;
@@ -110,7 +112,7 @@ namespace llmdb {
                 if (rc != MDB_SUCCESS) goto exit;
             }
         exit:
-            mdb_txn_commit(_txn);
+            ac.commit();
             lua_pushinteger(L, rc);
             return 1;
         }
@@ -182,6 +184,7 @@ namespace llmdb {
         }
         int quick_del(lua_State* L) {
             int rc = begin_txn(luaL_optstring(L, 2, nullptr));
+            AutoCommit ac(this);
             if (rc != MDB_SUCCESS) goto exit;
             MDB_val mkey;
             read_key(L, 1, mkey);
@@ -193,7 +196,7 @@ namespace llmdb {
                 rc = mdb_del(_txn, _dbi, &mkey, &mval);
             }
         exit:
-            mdb_txn_commit(_txn);
+            ac.commit();
             lua_pushinteger(L, rc);
             return 1;
         }
@@ -201,6 +204,7 @@ namespace llmdb {
             MDB_val mkey;
             luaL_checktype(L, 1, LUA_TTABLE);
             int rc = begin_txn(luaL_optstring(L, 2, nullptr));
+            AutoCommit ac(this);
             if (rc != MDB_SUCCESS) goto exit;
             lua_pushnil(L);
             while (lua_next(L, 1) != 0) {
@@ -210,7 +214,7 @@ namespace llmdb {
                 if ((rc != MDB_SUCCESS && rc != MDB_NOTFOUND)) goto exit;
             }
         exit:
-            mdb_txn_commit(_txn);
+            ac.commit();
             lua_pushinteger(L, rc);
             return 1;
         }
@@ -221,7 +225,7 @@ namespace llmdb {
         }
         void cursor_close() {
             mdb_cursor_close(_cur);
-            mdb_txn_commit(_txn);
+            commit_txn();
         }
         int cursor_put(lua_State* L) {
             MDB_val mkey, mval;
@@ -332,6 +336,24 @@ namespace llmdb {
                 lua_pushlstring(L, (const char*)buf.c_str(), buf.size());
             }
         }
+    protected:
+        class AutoCommit
+        {
+        public:
+            AutoCommit(mdb_driver* host) { _host = host; }
+            ~AutoCommit() {
+                if (!_commit) {
+                    _host->abort_txn();
+                }
+            }
+            void commit() {
+                _host->commit_txn();
+                _commit = true;
+            }
+        private:
+            mdb_driver* _host = nullptr;
+            bool _commit = false;
+        };
 
     protected:
         MDB_dbi _dbi = 0;

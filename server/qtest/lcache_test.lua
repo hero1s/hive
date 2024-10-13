@@ -1,13 +1,12 @@
 local QueueLRU   = import("container/queue_lru.lua")
+local CacheMap   = import("container/cache_map.lua")
 local log_debug  = logger.debug
 
 local thread_mgr = hive.get("thread_mgr")
 
 local a          = { a = 1, c = { a = 2 } }
 
-local jcodec     = json.jsoncodec()
-
-local cache      = lcache.new(5, jcodec)
+local cache      = CacheMap(5)
 local lua_cache  = QueueLRU(500000)
 local function test_gc(cache_type)
     log_debug("test gc %s", cache_type)
@@ -16,7 +15,7 @@ local function test_gc(cache_type)
             lua_cache:set(i, a)
         end
     else
-        cache = lcache.new(500000)
+        cache = CacheMap(500000)
         for i = 1, 500000 do
             cache:set(i, a)
         end
@@ -38,8 +37,8 @@ thread_mgr:fork(function()
         log_debug("%s exist-> %s,value:%s", i, cache:exist(i), cache:get(i))
     end
 
-    --test_gc("lua")
-    --test_gc("cpp")
+    test_gc("lua")
+    test_gc("cpp")
     thread_mgr:sleep(2000)
 end)
 

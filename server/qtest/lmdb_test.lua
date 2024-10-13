@@ -10,7 +10,7 @@ local MDB_SET      = lmdb.MDB_CUR_OP.MDB_SET
 
 local driver       = lmdb.create()
 local jcodec       = jsoncodec()
-
+stdfs.mkdir("./lmdb")
 driver.set_max_dbs(10)
 driver.set_codec(jcodec)
 driver.open("./lmdb/xxx.mdb", MDB_NOSUBDIR, 0644)
@@ -38,7 +38,7 @@ while v do
 end
 driver.cursor_close()
 
-a = driver.quick_put("abc4", { a = 234 }, "test")
+a = hive.xpcall_ret(driver.quick_put, "exception call:%s", "abc4", { a = 234, b = 0.0 / 0.0 }, "test")
 b = driver.quick_put("abc5", "235", "test")
 log_debug("quick_put: {}-{}", a, b)
 for i = 1, 6 do
@@ -82,7 +82,7 @@ local LMDB = import("driver/lmdb.lua")
 local db   = LMDB()
 db:open("abcd", "aaa")
 
-local cc = db:put(11, "abc")
+local cc = db:put(11, { a = 123, b = 0.0 / 0.0 })
 local c2 = db:put("a", "abc")
 
 local gv = db:get("11")
@@ -95,7 +95,7 @@ log_debug("puts: {}", cc)
 local gv2, e = db:get(2)
 log_debug("get: {} code: {}", gv2, e)
 
-local gs = db:gets(1, 2, 3, 11)
+local gs = db:gets({ 1, 2, 3, 11 })
 log_debug("gets: {}", gs)
 
 for _k, _v in db:iter() do
@@ -108,7 +108,7 @@ log_debug("del: {}", ee)
 gv2, e = db:get(2)
 log_debug("get: {} code: {}", gv2, e)
 
-ee = db:dels(1, 2)
+ee = db:dels({ 1, 2 })
 log_debug("dels: {}", ee)
 
 for _k, _v in db:iter() do

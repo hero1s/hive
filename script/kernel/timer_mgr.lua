@@ -4,7 +4,7 @@ local log_info        = logger.info
 local ipairs          = ipairs
 local tpack           = table.pack
 local tunpack         = table.unpack
-local new_guid        = codec.guid_new
+local next_id         = codec.next_id
 local lclock_ms       = timer.clock_ms
 local lnow_ms         = timer.now_ms
 local lcron_next      = timer.cron_next
@@ -82,7 +82,7 @@ end
 function TimerMgr:register(interval, period, times, cb, ...)
     --生成id并注册
     local reg_ms   = lclock_ms()
-    local timer_id = new_guid(period, interval)
+    local timer_id = next_id(2)
     --矫正时间误差
     interval       = interval + (reg_ms - self.last_ms)
     ltinsert(timer_id, interval // TIMER_ACCURYACY)

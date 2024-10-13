@@ -7,6 +7,7 @@ local tunpack    = table.unpack
 local dgetinfo   = debug.getinfo
 local dsethook   = debug.sethook
 local dtraceback = debug.traceback
+local xpcall     = xpcall
 
 --函数装饰器: 保护性的调用指定函数,如果出错则写日志
 --主要用于一些C回调函数,它们本身不写错误日志
