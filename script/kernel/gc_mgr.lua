@@ -53,7 +53,7 @@ function GcMgr:set_gc_step(open, slow_step, fast_step)
     self.gc_running  = false
     GC_SLOW_STEP     = mfloor(mregion(slow_step or GC_SLOW_STEP, 50, 100)) -- gc慢回收
     GC_FAST_STEP     = mfloor(mregion(fast_step or GC_FAST_STEP, 100, 300)) -- gc快速回收
-    log_warn("[GcMgr][set_gc_step] open:%s,slow_step:%s,fast_step:%s", open, slow_step, fast_step)
+    log_warn("[GcMgr][set_gc_step] open:{},slow_step:{},fast_step:{}", open, slow_step, fast_step)
 end
 
 function GcMgr:lua_mem_size()
@@ -230,7 +230,7 @@ function GcMgr:log_gc_status()
         step_use_time_max = self.gc_step_use_time_max,
         mem_cost_speed    = self.mem_cost_speed,
     }
-    log_warn("[GcMgr][log_gc_status] %s", info)
+    log_warn("[GcMgr][log_gc_status] {}", info)
 end
 
 hive.gc_mgr = GcMgr()

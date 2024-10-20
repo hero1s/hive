@@ -54,7 +54,7 @@ namespace luapb {
             header.cmd_id = (uint32_t)lua_tointeger(L, index++);
             header.flag = (uint8_t)lua_tointeger(L, index++);
             header.session_id = (uint32_t)lua_tointeger(L, index++);
-            header.seq_id = 0xff;//服务端包不检测序号
+            header.seq_id = (uint8_t)lua_tointeger(L, index++);
             //string类型直接发送
             int type = lua_type(L, index);
             if (type != LUA_TSTRING && type != LUA_TTABLE) {
@@ -147,7 +147,7 @@ namespace luapb {
     
     static codec_base* pb_codec() {
         pbcodec* codec = new pbcodec();
-        codec->set_buff(&thread_buff);
+        codec->set_buff(luakit::get_buff());
         return codec;
     }
 

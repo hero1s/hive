@@ -2,9 +2,12 @@
 local jumphash            = codec.jumphash
 local tunpack             = table.unpack
 local tpack               = table.pack
+local tinsert             = table.insert
 local log_err             = logger.err
 local log_info            = logger.info
 local hxpcall             = hive.xpcall
+local tremove_out         = table_ext.tremove_out
+local mfloor              = math.floor
 
 local event_mgr           = hive.get("event_mgr")
 local thread_mgr          = hive.get("thread_mgr")
@@ -28,6 +31,8 @@ prop:reader("port", nil)
 prop:reader("alive", false)
 prop:reader("socket", nil)
 prop:reader("holder", nil)    --持有者
+prop:reader("netlags", {})
+prop:reader("netlag_avg", 0)
 
 function RpcClient:__init(holder, ip, port, id)
     self.holder = holder
@@ -249,6 +254,17 @@ function RpcClient:call(rpc, ...)
         end
     end
     return false, "socket not connected"
+end
+
+--添加延迟
+function RpcClient:add_netlag(netlag)
+    tinsert(self.netlags, netlag)
+    tremove_out(self.netlags, 10)
+    local netlag_sum = 0
+    for _, v in ipairs(self.netlags) do
+        netlag_sum = netlag_sum + v
+    end
+    self.netlag_avg = mfloor(netlag_sum / #self.netlags)
 end
 
 return RpcClient

@@ -220,7 +220,7 @@ end
 -----------------------------------------------------------------------------
 --服务器心跳协议
 function RpcServer:rpc_heartbeat(client, status_info, send_time)
-    self:send(client, "on_heartbeat", hive.id, send_time)
+    self:send(client, "on_heartbeat", hive.id, send_time, hive.now)
     if client.id then
         self.holder:on_client_beat(client, status_info)
     else

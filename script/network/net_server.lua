@@ -97,7 +97,7 @@ function NetServer:on_socket_accept(session)
         if session.disable then
             return -2
         end
-        if seq_id ~= session.seq_id and seq_id ~= 0xff then
+        if seq_id ~= session.seq_id then
             log_warn("[NetServer][on_socket_accept] seq_id:{} != cur:{},ip:{}", seq_id, session.seq_id, session.ip)
             return -1
         end
@@ -125,7 +125,7 @@ function NetServer:write(session, cmd_id, data, session_id, flag)
         flag = flag | FLAG_ZIP
     end
     -- call luabus
-    local send_len = session.call_pb(cmd_id, flag, session_id or 0, data)
+    local send_len = session.call_pb(cmd_id, flag, session_id or 0, 0, data)
     if send_len > 0 then
         proxy_agent:statistics("on_proto_send", cmd_id, send_len)
         self:log_msg(session, cmd_id, data, session_id, send_len, false)

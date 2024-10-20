@@ -1,14 +1,10 @@
 --cache_map.lua
-local codec = json.jsoncodec()
-lcache.set_codec(codec)
 
 local CacheMap = class()
 local prop     = property(CacheMap)
 prop:reader("cache", nil)
-prop:reader("codec", nil)
 function CacheMap:__init(max_size)
     self.cache = lcache.new(max_size)
-    self.codec = codec
 end
 
 function CacheMap:clear()

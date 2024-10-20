@@ -62,6 +62,18 @@ static void daemon() {
 #endif
 }
 
+static std::string add_lua_cpath(vstring path) {
+	auto p = getenv("LUA_CPATH");
+	std::string cur_path = (p != NULL) ? p : "";
+#ifdef WIN32
+	cur_path.append("!/").append(path).append("?.dll;");
+#else
+	cur_path.append(path).append("?.so;");
+#endif // #if WIN32	
+	setenv("LUA_CPATH", cur_path.c_str(), 1);
+	return cur_path;
+}
+
 static std::string add_lua_path(vstring path) {
 	auto p = getenv("LUA_PATH");
 	std::string cur_path = (p != NULL) ? p : "";
@@ -162,12 +174,6 @@ int hive_app::load(int argc, const char* argv[]) {
 		}
 	}
 
-	//默认lib目录
-#if defined(__linux) || defined(__APPLE__)
-	setenv("LUA_CPATH", "./lib/?.so;", 0);
-#else
-	setenv("LUA_CPATH", "!/lib/?.dll;", 0);
-#endif
 	//检测缺失参数
 	if (getenv("HIVE_ENTRY") == NULL) {
 		std::cout << "HIVE_ENTRY is null" << std::endl;
@@ -186,6 +192,7 @@ int hive_app::load_conf(int iRet, bool reload) {
 			return set_env(key, value, 1); 
 		});
 	lua.set_function("add_lua_path", add_lua_path);
+	lua.set_function("add_lua_cpath", add_lua_cpath);
 
 	lua.run_file(m_lua_conf, [&](vstring err) {
 		std::cout << "load lua config err: " << err << std::endl;
@@ -250,7 +257,9 @@ void hive_app::run(int rtype) {
 		return m_schedulor.startup(name, entry, incl);
 		});
 	hive.set_function("worker_call", [&](lua_State* L, vstring name) {
-		return m_schedulor.call(L, name);
+		size_t data_len;
+		uint8_t* data = m_schedulor.encode(L, data_len);
+		return m_schedulor.call(L, name, data, data_len);
 		});
 	hive.set_function("worker_names", [&]() { return m_schedulor.workers(); });
 	//end worker接口

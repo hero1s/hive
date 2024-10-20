@@ -3,10 +3,8 @@ local log_err       = logger.err
 local log_warn      = logger.warn
 local log_debug     = logger.debug
 local time_str      = datetime_ext.time_str
-local ssplit        = string_ext.split
 local sname2sid     = service.name2sid
 
-local env_get       = environ.get
 local json_decode   = hive.json_decode
 local check_success = hive.success
 
@@ -16,7 +14,6 @@ local timer_mgr     = hive.get("timer_mgr")
 local thread_mgr    = hive.get("thread_mgr")
 local mongo_agent   = hive.get("mongo_agent")
 local redis_agent   = hive.get("redis_agent")
-local http_client   = hive.get("http_client")
 
 local GMType        = enum("GMType")
 local ServiceStatus = enum("ServiceStatus")
@@ -40,7 +37,6 @@ function DevopsGmMgr:register_gm()
           args  = "status|integer delay|integer service_name|string index|integer" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_query_server_online", desc = "查询在线服务", comment = "", args = "service_name|string" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_hive_quit", desc = "关闭服务器", comment = "强踢玩家并停服", args = "reason|integer" },
-        { group = "运维", gm_type = GMType.GLOBAL, name = "gm_cfg_reload", desc = "配置表热更新", comment = "(0 本地 1 远程)", args = "is_remote|integer" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_full_gc", desc = "lua全量gc", comment = "服务/index", args = "service_name|string index|integer" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_count_obj", desc = "lua对象计数", comment = "最小个数,服务/index",
           args  = "less_num|integer service_name|string index|integer" },
@@ -48,6 +44,8 @@ function DevopsGmMgr:register_gm()
           args  = "service_name|string index|integer open|integer slow|integer fast|integer" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_check_endless_loop", desc = "检测死循环", comment = "开启/关闭,服务/index",
           args  = "start|integer service_name|string index|integer" },
+        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_table_find_one", desc = "查询表格配置", comment = "表名/索引,服务/index",
+          args  = "tname|string tindex|string service_name|string index|integer" },
         --工具
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_guid_view", desc = "guid信息", comment = "(拆解guid)", args = "guid|integer" },
         { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_log_format", desc = "日志格式", comment = "0压缩,1格式化", args = "data|string swline|integer json|integer" },
@@ -119,45 +117,6 @@ function DevopsGmMgr:gm_hive_quit(reason)
     return { code = 0 }
 end
 
-function DevopsGmMgr:gm_cfg_reload(is_remote)
-    log_debug("[DevopsGmMgr][gm_cfg_reload] is_remote:{}", is_remote)
-    local flag = (is_remote == 1)
-    if flag then
-        if hive.is_publish then
-            return { code = 0, msg = "仅限开发环境可用" }
-        end
-
-        local url = env_get("HIVE_CONFIG_RELOAD_URL", "")
-        if url == "" then
-            log_err("[DevopsGmMgr][gm_cfg_reload] HIVE_CONFIG_RELOAD_URL not set")
-            return
-        end
-        -- 查看本地文件路径下的所有配置文件
-        -- 遍历配置表，依次查询本地文件是否存在远端
-        -- 存在则拉取并覆盖
-
-        local current_path = stdfs.current_path()
-        local cfg_path     = current_path .. "/../server/config/"
-        local cur_dirs     = stdfs.dir(cfg_path)
-        for _, file in pairs(cur_dirs) do
-            thread_mgr:fork(function()
-                local full_file_name  = file.name
-                local split_arr       = ssplit(full_file_name, "/")
-                local file_name       = split_arr[#split_arr]
-                local remote_file_url = url .. "/" .. file_name
-                http_client:load_save_file(remote_file_url, full_file_name)
-            end)
-        end
-    end
-
-    local notify_time = flag and 10000 or 1
-    timer_mgr:once(notify_time, function()
-        monitor_mgr:broadcast("rpc_reload")
-    end)
-
-    return { code = 0 }
-end
-
 function DevopsGmMgr:gm_full_gc(service_name, index)
     self:call_service_index(service_name, index, "rpc_full_gc")
     return { code = 0 }
@@ -175,6 +134,10 @@ end
 function DevopsGmMgr:gm_check_endless_loop(start, service_name, index)
     self:call_service_index(service_name, index, "rpc_check_endless_loop", start == 1 and true or false)
     return { code = 0 }
+end
+
+function DevopsGmMgr:gm_table_find_one(tname, tindex, service_name, index)
+    return self:call_target_rpc(service_name, index, "rpc_table_find_one", tname, tindex)
 end
 
 function DevopsGmMgr:gm_guid_view(guid)

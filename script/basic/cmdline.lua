@@ -7,6 +7,7 @@ local tpack        = table.pack
 local smatch       = string.match
 local sgmatch      = string.gmatch
 local sformat      = string.format
+local strim        = string_ext.trim
 local conv_number  = math_ext.conv_number
 local conv_integer = math_ext.conv_integer
 
@@ -80,6 +81,7 @@ function Cmdline:register_command(name, command, desc, comment, cmd_type, servic
     if self.command_defines[name] then
         return false
     end
+    command          = strim(command)
     local def_args   = {}
     local cmd_define = { type = cmd_type, desc = desc, comment = comment, command = command, service = service, group = group }
     for arg_name, arg_type in sgmatch(command, "([%a%d%_]+)|([%a%d%_]+)") do

@@ -201,7 +201,7 @@ end
 function ProtobufMgr:callback_id(cmd_id)
     local pb_cbid = self.pb_callbacks[cmd_id]
     if not pb_cbid then
-        log_warn("[ProtobufMgr][callback_id] cmdid [%s] find callback_id is nil", cmd_id)
+        log_warn("[ProtobufMgr][callback_id] cmdid [{}] find callback_id is nil", cmd_id)
     end
     return pb_cbid
 end

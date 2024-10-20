@@ -15,7 +15,7 @@ namespace lworker {
         void setup(lua_State* L, vstring service) {
             m_service = service;
             m_lua = std::make_unique<kit_state>(L);
-            m_codec = m_lua->create_codec();
+            m_codec = luakit::get_codec();
         }
 
         std::shared_ptr<worker> find_worker(vstring name) {
@@ -39,34 +39,45 @@ namespace lworker {
             LOG_ERROR(fmt::format("thread [{}] work is repeat startup", name));
             return false;
         }
-
+        uint8_t* encode(lua_State* L, size_t& data_len) {
+            return m_codec->encode(L, 2, &data_len);
+        }
+        //call by self thread
         int broadcast(lua_State* L) {
-            std::unique_lock<spin_mutex> lock(m_mutex);
-            for (auto it : m_worker_map) {
-                it.second->call(L);
+            size_t data_len;
+            uint8_t* data = m_codec->encode(L, 2, &data_len);
+            if (data) {
+                std::unique_lock<spin_mutex> lock(m_mutex);
+                for (auto it : m_worker_map) {
+                    it.second->call(L, data, data_len);
+                }
+            } else {
+                LOG_ERROR(fmt::format("broadcast encode faild"));
             }
             return 0;
         }
-        
-        int call(lua_State* L, vstring name) {
-            if (name == "master") {
-                lua_pushboolean(L, call(L));
-                return 1;
+        //call by other thread or self
+        int call(lua_State* L, vstring name, uint8_t* data, size_t data_len) {
+            if (data) {
+                if (name == "master") {
+                    lua_pushboolean(L, call(L, data, data_len));
+                    return 1;
+                }
+                auto workor = find_worker(name);
+                if (workor) {
+                    lua_pushboolean(L, workor->call(L, data, data_len));
+                    return 1;
+                }
+                LOG_ERROR(fmt::format("thread call [{}] work is not exist", name));
+            } else {
+                LOG_ERROR(fmt::format("thread call [{}] encode faild", name));
             }
-            auto workor = find_worker(name);
-            if (workor) {
-                lua_pushboolean(L, workor->call(L));
-                return 1;
-            }
-            LOG_ERROR(fmt::format("thread call [{}] work is not exist", name));
             lua_pushboolean(L, false);
             return 1;
         }
-
-        bool call(lua_State* L) {
-            size_t data_len;
+        //call by other thread or self
+        bool call(lua_State* L, uint8_t* data, size_t data_len) {
             std::unique_lock<spin_mutex> lock(m_mutex);
-            uint8_t* data = m_codec->encode(L, 2, &data_len);
             uint8_t* target = m_write_buf->peek_space(data_len + sizeof(uint32_t));
             if (target) {
                 m_write_buf->write<uint32_t>(data_len);
@@ -76,7 +87,7 @@ namespace lworker {
             LOG_ERROR(fmt::format("master thread call buffer is full!,size:{}",m_write_buf->size()));
             return false;
         }
-
+        //call by self thread
         void update(uint64_t clock_ms) {
             if (m_read_buf->empty()) {
                 if (m_write_buf->empty()) {

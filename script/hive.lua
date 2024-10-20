@@ -108,8 +108,8 @@ function hive.new_guid()
     return guid_new(hive.service_id, hive.index)
 end
 
-function hive.next_id(t)
-    return next_id(t or 1)
+function hive.next_id()
+    return next_id()
 end
 
 function hive.hash(key, mod)

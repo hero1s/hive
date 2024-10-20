@@ -48,6 +48,7 @@ function NetClient:connect(block)
     -- 调用成功，开始安装回调函数
     socket.set_codec(self.codec)
     socket.on_connect = function(res)
+        self.seq_id  = 0
         local succes = (res == "ok")
         thread_mgr:fork(function()
             if not succes then
@@ -125,7 +126,8 @@ function NetClient:write(cmd_id, data, session_id, flag)
         flag = flag | FlagMask.ZIP
     end
     -- call luabus
-    local send_len = self.socket.call_pb(cmd_id, flag, session_id or 0, data)
+    local send_len = self.socket.call_pb(cmd_id, flag, session_id or 0, self.seq_id, data)
+    self.seq_id    = (self.seq_id + 1) & 0xff
     if send_len < 0 then
         log_err("[NetClient][write] call_pack failed! code:{},cmd_id:{}", send_len, cmd_id)
         return false

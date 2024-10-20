@@ -11,6 +11,7 @@ local id2nick          = service.id2nick
 local id2group         = service.id2group
 local check_success    = hive.success
 local mrandom          = math_ext.random
+local time_str         = datetime_ext.time_str
 
 local monitor          = hive.get("monitor")
 local thread_mgr       = hive.get("thread_mgr")
@@ -329,10 +330,15 @@ function RouterMgr:reply_forward_error(session_id, error_msg, msg_type)
 end
 
 --心跳回复
-function RouterMgr:on_heartbeat(hid, send_time)
+function RouterMgr:on_heartbeat(hid, send_time, back_time)
     local netlag = hive.clock_ms - send_time
-    if netlag > SECOND_MS then
-        log_err("[RouterMgr][on_heartbeat] ({} <--> {}),netlag:{} ms", id2nick(hive.id), id2nick(hid), netlag)
+    local router = self.routers[hid]
+    if router then
+        router:add_netlag(netlag)
+        if netlag > SECOND_MS then
+            log_err("[RouterMgr][on_heartbeat] ({} <--> {}),netlag:{} ms,avg:{} ms,back_time:{}",
+                    id2nick(hive.id), id2nick(hid), netlag, router:get_netlag_avg(), time_str(back_time))
+        end
     end
 end
 

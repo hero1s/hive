@@ -12,7 +12,7 @@ end
 
 -- 查询服务信息
 function MonitorServlet:rpc_query_services(client, service_name)
-    log_debug("[MonitorServlet][rpc_query_services] %s", service_name)
+    log_debug("[MonitorServlet][rpc_query_services] {}", service_name)
     local sids, count = monitor_mgr:query_services(service_name)
     return { sids = sids, count = count }
 end

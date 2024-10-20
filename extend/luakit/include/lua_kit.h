@@ -6,7 +6,19 @@
 #include "lua_class.h"
 
 namespace luakit {
-    static thread_local luabuf thread_buff;
+    static thread_local luabuf lbuf;
+    static thread_local luacodec lcodec;
+
+    static luabuf* get_buff() {
+        return &lbuf;
+    }
+
+    static codec_base* get_codec() {
+        if (!lcodec.get_buff()) {
+            lcodec.set_buff(&lbuf);
+        }
+        return &lcodec;
+    }
 
     class kit_state {
     public:
@@ -22,29 +34,20 @@ namespace luakit {
                 "peek", &slice::check,
                 "string", &slice::string
             );
-            m_buf = new luabuf();
             lua_checkstack(m_L, 1024);
             lua_table luakit = new_table("luakit");
-            luakit.set_function("encode", [&](lua_State* L) { return encode(L, m_buf); });
-            luakit.set_function("decode", [&](lua_State* L) { return decode(L, m_buf); });
+            luakit.set_function("encode", [&](lua_State* L) { return encode(L, &lbuf); });
+            luakit.set_function("decode", [&](lua_State* L) { return decode(L, &lbuf); });
             luakit.set_function("unserialize", [&](lua_State* L) {  return unserialize(L); });
-            luakit.set_function("serialize", [&](lua_State* L) { return serialize(L, m_buf); });
+            luakit.set_function("serialize", [&](lua_State* L) { return serialize(L, &lbuf); });
         }
         kit_state(lua_State* L) : m_L(L) {}
 
         void close() {
-            lua_close(m_L);
-            if (m_buf) { delete m_buf; }
-            if (m_codec) { delete m_codec; }
-        }
-
-        codec_base* create_codec() {
-            if (!m_codec) {
-                if (!m_buf) m_buf = new luabuf();
-                m_codec = new luacodec();
-                m_codec->set_buff(m_buf);
+            if (m_L) {
+                lua_close(m_L);
+                m_L = nullptr;
             }
-            return m_codec;
         }
 
         template<typename T>
@@ -58,6 +61,13 @@ namespace luakit {
             lua_guard g(m_L);
             lua_getglobal(m_L, name);
             return lua_to_native<T>(m_L, -1);
+        }
+
+        template<typename RET>
+        bool get(const char* name, RET& ret) {
+            lua_guard g(m_L);
+            lua_getglobal(m_L, name);
+            return lua_to_native(m_L, -1, ret);
         }
 
         template <typename F>
@@ -234,8 +244,6 @@ namespace luakit {
         }
 
     protected:
-        luabuf* m_buf = nullptr; 
-        luacodec* m_codec = nullptr;
         lua_State* m_L = nullptr;
     };
 

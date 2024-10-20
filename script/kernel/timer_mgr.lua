@@ -82,7 +82,7 @@ end
 function TimerMgr:register(interval, period, times, cb, ...)
     --生成id并注册
     local reg_ms   = lclock_ms()
-    local timer_id = next_id(2)
+    local timer_id = next_id()
     --矫正时间误差
     interval       = interval + (reg_ms - self.last_ms)
     ltinsert(timer_id, interval // TIMER_ACCURYACY)

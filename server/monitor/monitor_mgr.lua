@@ -218,7 +218,7 @@ end
 
 -- 通知服务变更
 function MonitorMgr:send_all_service_status(client, is_ready)
-    log_info("[MonitorMgr][send_all_service_status] %s", client.name)
+    log_info("[MonitorMgr][send_all_service_status] {}", client.name)
     local readys
     for service_name, curr_services in pairs(self.services) do
         if client.watch_services[service_name] then

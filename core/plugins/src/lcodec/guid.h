@@ -6,8 +6,8 @@
 
 //i  - group，8位，(0~255)
 //g  - index，12位  (0~4095)
-//t  - gtype, 4位   (0~15) 
-//s  - 序号，  9位  (0~511)
+//t  - gtype, 5位   (0~31) 
+//s  - 序号，  8位  (0~255)
 //ts - 时间戳，30位
 //共63位，防止出现负数
 
@@ -15,8 +15,8 @@ namespace lcodec {
 
     const uint32_t GROUP_BITS   = 8;
     const uint32_t INDEX_BITS   = 12;
-    const uint32_t TYPE_BITS    = 4;
-    const uint32_t SNUM_BITS    = 9; 
+    const uint32_t TYPE_BITS    = 5;
+    const uint32_t SNUM_BITS    = 8; 
 
     const uint32_t LETTER_LEN   = 12;
     const uint32_t LETTER_SIZE  = 62;
@@ -26,8 +26,8 @@ namespace lcodec {
 
     const int32_t MAX_GROUP    = ((1 << GROUP_BITS) - 1);      //256 - 1
     const int32_t MAX_INDEX    = ((1 << INDEX_BITS) - 1);      //4096 - 1
-    const int32_t MAX_TYPE     = ((1 << TYPE_BITS) - 1);       //16   - 1
-    const int32_t MAX_SNUM     = ((1 << SNUM_BITS) - 1);       //512  - 1
+    const int32_t MAX_TYPE     = ((1 << TYPE_BITS) - 1);       //32   - 1
+    const int32_t MAX_SNUM     = ((1 << SNUM_BITS) - 1);       //256  - 1
     const int32_t MAX_TIME     = ((1 << 30) - 1);              //30   - 1
 
     //每一group独享一个id生成种子
@@ -36,7 +36,7 @@ namespace lcodec {
 
     static const char letter[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-    static thread_local uint64_t sequence[257] = { 0 };
+    static thread_local uint64_t sequence = 0;
 
     static uint64_t guid_new(uint32_t group, uint32_t index,uint32_t gtype){
         if (group == 0) {
@@ -156,7 +156,7 @@ namespace lcodec {
         return 5;
     }
 
-    static uint64_t next_id(uint8_t type) {
-        return ++sequence[type];
+    static uint64_t next_id() {
+        return ++sequence;
     }
 }

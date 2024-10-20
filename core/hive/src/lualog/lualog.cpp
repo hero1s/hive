@@ -23,9 +23,10 @@ namespace logger {
         case LUA_TBOOLEAN: return lua_toboolean(L, index) ? "true" : "false";
         case LUA_TTABLE:
             if ((flag & LOG_FLAG_FORMAT) == LOG_FLAG_FORMAT) {
-                thread_buff.clean();
-                serialize_one(L, &thread_buff, index, 1, (flag & LOG_FLAG_PRETTY) == LOG_FLAG_PRETTY, max_len);
-                return string((char*)thread_buff.head(), thread_buff.size());
+                auto buff = luakit::get_buff();
+                buff->clean();
+                serialize_one(L, buff, index, 1, (flag & LOG_FLAG_PRETTY) == LOG_FLAG_PRETTY, max_len);
+                return string((char*)buff->head(), buff->size());
             }
             return luaL_tolstring(L, index, nullptr);
         case LUA_TNUMBER:

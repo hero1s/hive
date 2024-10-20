@@ -34,7 +34,7 @@ namespace lworker {
     class ischeduler {
     public:
         virtual int broadcast(lua_State* L) = 0;
-        virtual int call(lua_State* L, vstring name) = 0;
+        virtual int call(lua_State* L, vstring name, uint8_t* data, size_t data_len) = 0;
         virtual void destory(vstring name) = 0;
     };
 
@@ -43,7 +43,7 @@ namespace lworker {
     public:
         worker(ischeduler* schedulor, vstring name, vstring entry, vstring incl, vstring service)
             : m_schedulor(schedulor), m_name(name), m_entry(entry), m_service(service), m_include(incl) { 
-            m_codec = m_lua->create_codec();
+
         }
 
         virtual ~worker() {
@@ -57,11 +57,9 @@ namespace lworker {
         const char* get_env(const char* key) {
             return getenv(key);
         }
-
-        bool call(lua_State* L) {
-            size_t data_len;
+        //call by other thread
+        bool call(lua_State* L, uint8_t* data, size_t data_len) {
             std::unique_lock<spin_mutex> lock(m_mutex);
-            uint8_t* data = m_codec->encode(L, 2, &data_len);
             uint8_t* target = m_write_buf->peek_space(data_len + sizeof(uint32_t));
             if (target) {
                 m_write_buf->write<uint32_t>(data_len);
@@ -71,7 +69,7 @@ namespace lworker {
             LOG_ERROR(fmt::format("[{}] thread call buffer is full!,size:{}", m_name, m_write_buf->size()));
             return false;
         }
-
+        //call by self thread
         void update(uint64_t clock_ms) {
             if (m_read_buf->empty()) {
                 if (m_write_buf->empty()) {
@@ -108,13 +106,18 @@ namespace lworker {
         }
 
         void run(){
+            m_codec = luakit::get_codec();
             auto hive = m_lua->new_table(m_service.c_str());
             hive.set("pid", ::getpid());
             hive.set("title", m_name);
             hive.set_function("stop", [&]() { m_running = false; });
             hive.set_function("update", [&](uint64_t clock_ms) { update(clock_ms); });
             hive.set_function("getenv", [&](const char* key) { return get_env(key); });
-            hive.set_function("call", [&](lua_State* L, vstring name) { return m_schedulor->call(L, name); });
+            hive.set_function("call", [&](lua_State* L, vstring name) { 
+                size_t data_len;
+                uint8_t* data = m_codec->encode(L, 2, &data_len);
+                return m_schedulor->call(L, name, data, data_len);
+            });
             m_lua->run_script(g_sandbox, [&](vstring err) {
                 LOG_ERROR(fmt::format("worker load sandbox failed, because: {}", err.data()));
                 m_schedulor->destory(m_name);

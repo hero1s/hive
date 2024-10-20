@@ -6,27 +6,27 @@ namespace lcodec {
     static codec_base* rds_codec(codec_base* codec) {
         rdscodec* rcodec = new rdscodec();
         rcodec->set_codec(codec);
-        rcodec->set_buff(&thread_buff);
+        rcodec->set_buff(luakit::get_buff());
         return rcodec;
     }
 
     static codec_base* wss_codec(codec_base* codec) {
         wsscodec* wcodec = new wsscodec();
         wcodec->set_codec(codec);
-        wcodec->set_buff(&thread_buff);
+        wcodec->set_buff(luakit::get_buff());
         return wcodec;
     }
 
     static codec_base* http_codec(codec_base* codec) {
         httpcodec* hcodec = new httpcodec();
         hcodec->set_codec(codec);
-        hcodec->set_buff(&thread_buff);
+        hcodec->set_buff(luakit::get_buff());
         return hcodec;
     }
 
     static codec_base* mysql_codec(size_t session_id) {
         mysqlscodec* codec = new mysqlscodec(session_id);
-        codec->set_buff(&thread_buff);
+        codec->set_buff(luakit::get_buff());
         return codec;
     }
 

@@ -269,7 +269,7 @@ function UpdateMgr:attach_minute(obj)
         log_warn("[UpdateMgr][attach_minute] obj({}) isn't on_minute method!", obj:source())
         return
     end
-    self.minute_objs[obj] = next_id(1)
+    self.minute_objs[obj] = next_id()
 end
 
 function UpdateMgr:detach_minute(obj)
@@ -282,7 +282,7 @@ function UpdateMgr:attach_second(obj)
         log_warn("[UpdateMgr][attach_second] obj({}) isn't on_second method!", obj:source())
         return
     end
-    self.second_objs[obj] = next_id(1)
+    self.second_objs[obj] = next_id()
 end
 
 function UpdateMgr:detach_second(obj)
@@ -295,7 +295,7 @@ function UpdateMgr:attach_second5(obj)
         log_warn("[UpdateMgr][attach_second5] obj({}) isn't on_second5 method!", obj:source())
         return
     end
-    self.second5_objs[obj] = next_id(1)
+    self.second5_objs[obj] = next_id()
 end
 
 function UpdateMgr:detach_second5(obj)
@@ -308,7 +308,7 @@ function UpdateMgr:attach_second30(obj)
         log_warn("[UpdateMgr][attach_second30] obj({}) isn't on_second30 method!", obj:source())
         return
     end
-    self.second30_objs[obj] = next_id(1)
+    self.second30_objs[obj] = next_id()
 end
 
 function UpdateMgr:detach_second30(obj)
@@ -321,7 +321,7 @@ function UpdateMgr:attach_frame(obj)
         log_warn("[UpdateMgr][attach_frame] obj({}) isn't on_frame method!", obj:source())
         return
     end
-    self.frame_objs[obj] = next_id(1)
+    self.frame_objs[obj] = next_id()
 end
 
 function UpdateMgr:detach_frame(obj)
@@ -334,7 +334,7 @@ function UpdateMgr:attach_fast(obj)
         log_warn("[UpdateMgr][attach_fast] obj({}) isn't on_fast method!", obj:source())
         return
     end
-    self.fast_objs[obj] = next_id(1)
+    self.fast_objs[obj] = next_id()
 end
 
 function UpdateMgr:detach_fast(obj)

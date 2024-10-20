@@ -14,6 +14,7 @@ local event_mgr     = hive.get("event_mgr")
 local gc_mgr        = hive.get("gc_mgr")
 local thread_mgr    = hive.get("thread_mgr")
 local update_mgr    = hive.get("update_mgr")
+local config_mgr    = hive.get("config_mgr")
 
 local RPC_FAILED    = hive.enum("KernCode", "RPC_FAILED")
 local ServiceStatus = enum("ServiceStatus")
@@ -28,11 +29,7 @@ prop:reader("services", {})
 function MonitorAgent:__init()
     --创建连接
     local ip, port = env_addr("HIVE_MONITOR_ADDR")
-    --过滤clb不能自己连自己
-    if hive.service_name == "monitor" then
-        ip = "127.0.0.1"
-    end
-    self.client = RpcClient(self, ip, port)
+    self.client    = RpcClient(self, ip, port)
     --注册事件
     event_mgr:add_vote(self, "vote_stop_service")
     event_mgr:add_listener(self, "rpc_service_changed")
@@ -48,6 +45,7 @@ function MonitorAgent:__init()
     event_mgr:add_listener(self, "rpc_count_lua_obj")
     event_mgr:add_listener(self, "rpc_set_gc_step")
     event_mgr:add_listener(self, "rpc_check_endless_loop")
+    event_mgr:add_listener(self, "rpc_table_find_one")
 
     event_mgr:add_trigger(self, "on_router_connected")
 
@@ -182,11 +180,11 @@ function MonitorAgent:rpc_service_changed(service_name, readys, closes)
 end
 
 --执行远程rpc消息
-function MonitorAgent:on_remote_message(data, message)
+function MonitorAgent:on_remote_message(message, ...)
     if not message then
         return { code = RPC_FAILED, msg = "message is nil !" }
     end
-    local ok, code, res = tunpack(event_mgr:notify_listener(message, data))
+    local ok, code, res = tunpack(event_mgr:notify_listener(message, ...))
     if check_failed(code, ok) then
         log_err("[MonitorAgent][on_remote_message] web_rpc faild: ok={}, ec={}", ok, code)
         return { code = ok and code or RPC_FAILED, msg = ok and "" or code }
@@ -269,6 +267,15 @@ function MonitorAgent:rpc_check_endless_loop(start)
     log_info("[MonitorAgent][rpc_check_endless_loop] start:{}", start)
     hive.check_endless_loop(start)
     return { code = 0, msg = "ok", start = start }
+end
+
+function MonitorAgent:rpc_table_find_one(tname, index)
+    local db = config_mgr:get_table(tname)
+    if db then
+        local cfg = db:find_one(tonumber(index) or index)
+        return 0, cfg or "row not find"
+    end
+    return 1, "table not find"
 end
 
 hive.monitor = MonitorAgent()

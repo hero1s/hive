@@ -147,7 +147,7 @@ function DBIndexMgr:on_service_ready(id, service_name)
     thread_mgr:success_call(300000, function()
         local ok, res = self:check_dbindexes()
         if not ok then
-            log_err("[DBIndexMgr][on_service_ready] not create dbindex:%s,please fast repair !!!", res)
+            log_err("[DBIndexMgr][on_service_ready] not create dbindex:{},please fast repair !!!", res)
         end
         return ok
     end, 1000, 100000)

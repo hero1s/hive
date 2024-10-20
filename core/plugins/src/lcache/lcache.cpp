@@ -6,8 +6,6 @@
 namespace cache {
     using cache_type = cache::lru_cache<std::string, std::string>;
 
-	static thread_local luakit::codec_base* codec = nullptr;
-
 	static int lset(lua_State* L) {
 		cache_type* cache = (cache_type*)lua_touserdata(L, 1);
 		if (nullptr == cache) {
@@ -15,15 +13,7 @@ namespace cache {
 		}
 		auto key = luakit::lua_to_native<std::string>(L, 2);
 		size_t data_len;
-		const char* data = NULL;
-		if (codec) {
-			data = (char*)codec->encode(L, 3, &data_len);
-		} else {
-			if (LUA_TSTRING != lua_type(L, 3)) {
-				return luaL_argerror(L, 3, "not codec must put string data");
-			}
-			data = lua_tolstring(L, 3, &data_len);
-		}		
+		const char* data = (char*)luakit::get_codec()->encode(L, 3, &data_len);		
 		if (data) {
 			cache->set(key, std::string(data, data_len));
 		} else {
@@ -40,12 +30,8 @@ namespace cache {
 		auto key = luakit::lua_to_native<std::string>(L, 2);
 		try
 		{
-			auto value = cache->get(key);
-			if (codec) {
-				codec->decode(L, (uint8_t*)value.c_str(), value.size());
-			} else {
-				lua_pushlstring(L, value.c_str(), value.size());
-			}
+			auto value = cache->get(key);			
+			luakit::get_codec()->decode(L, (uint8_t*)value.c_str(), value.size());
 		}
 		catch (const std::exception&)
 		{
@@ -127,13 +113,6 @@ namespace cache {
 		lua_setmetatable(L, -2);// set userdata metatable
 		return 1;
     }
-
-	static int lset_codec(lua_State* L) {
-		codec = luakit::lua_to_native<luakit::codec_base*>(L, 1);
-		lua_pushboolean(L, codec != nullptr);
-		return 1;
-	}
-
 }
 
 extern "C" {
@@ -142,7 +121,6 @@ extern "C" {
 		luaL_Reg l[] = {
 			{"new",cache::lcreate},
 			{"release",cache::lrelease},
-			{"set_codec",cache::lset_codec},
 			{NULL,NULL}
 		};
 		luaL_newlib(L, l);
