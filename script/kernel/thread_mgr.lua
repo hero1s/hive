@@ -88,6 +88,9 @@ function ThreadMgr:lock(key, waiting)
         --等待则挂起
         local lock = SyncLock(self, key)
         queue:push(lock)
+        if queue:size() > SYNC_PERFRAME then
+            log_err("[ThreadMgr][lock] the lock is waiting:{},queue:{}", key, queue:size())
+        end
         co_yield()
         return lock
     end

@@ -509,5 +509,26 @@ namespace luakit {
             m_slice = nullptr;
             return getnum;
         }
+
+        size_t decode_index(lua_State* L, uint8_t* data, size_t len) {
+            slice mslice(data, len);
+            m_slice = &mslice;
+            int top = lua_gettop(L);
+            while (1) {
+                uint8_t* type = m_slice->read();
+                if (type == nullptr) break;
+                decode_value(L, m_slice, *type);
+            }
+            int getnum = lua_gettop(L) - top;
+            m_slice = nullptr;
+            return getnum;
+        }
+        uint8_t* encode_index(lua_State* L, int index, size_t* len) {
+            m_buf->clean();
+            encode_one(L, m_buf, index, 0);            
+            return m_buf->data(len);
+        }
+
+
     };
 }

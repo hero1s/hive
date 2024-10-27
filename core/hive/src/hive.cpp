@@ -174,6 +174,9 @@ int hive_app::load(int argc, const char* argv[]) {
 		}
 	}
 
+	if (!get_env("LUA_CPATH")) {
+		add_lua_cpath("./lib/");
+	}
 	//检测缺失参数
 	if (getenv("HIVE_ENTRY") == NULL) {
 		std::cout << "HIVE_ENTRY is null" << std::endl;

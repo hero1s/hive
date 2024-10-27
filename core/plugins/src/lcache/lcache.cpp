@@ -13,7 +13,7 @@ namespace cache {
 		}
 		auto key = luakit::lua_to_native<std::string>(L, 2);
 		size_t data_len;
-		const char* data = (char*)luakit::get_codec()->encode(L, 3, &data_len);		
+		const char* data = (char*)luakit::get_codec()->encode_index(L, 3, &data_len);		
 		if (data) {
 			cache->set(key, std::string(data, data_len));
 		} else {
@@ -30,8 +30,8 @@ namespace cache {
 		auto key = luakit::lua_to_native<std::string>(L, 2);
 		try
 		{
-			auto value = cache->get(key);			
-			luakit::get_codec()->decode(L, (uint8_t*)value.c_str(), value.size());
+			auto value = cache->get(key);
+			luakit::get_codec()->decode_index(L, (uint8_t*)value.c_str(), value.size());
 		}
 		catch (const std::exception&)
 		{

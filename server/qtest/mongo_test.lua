@@ -38,6 +38,6 @@ timer_mgr:once(2000, function()
     icode, ierr = mongo_mgr:aggregate("default", nil, "test_mongo_1", {
         { ["$match"] = { pid = 123456 } },
         { ["$group"] = { _id = "date", count = { ["$sum"] = 1 } } }
-    }, { cursor = {} })
+    }, { "cursor", { batchSize = count } })
     log_debug("aggregate:{},{}", icode, ierr)
 end)

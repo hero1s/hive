@@ -13,7 +13,7 @@ namespace luakit {
         return &lbuf;
     }
 
-    static codec_base* get_codec() {
+    static luacodec* get_codec() {
         if (!lcodec.get_buff()) {
             lcodec.set_buff(&lbuf);
         }

@@ -143,6 +143,7 @@ namespace ltimer {
 		luatimer.set_function("clock_ms", []() { return steady_ms(); });
 		luatimer.set_function("sleep", [](uint64_t ms) { return sleep(ms); });
 		luatimer.set_function("offset", [](int64_t v) { offset(v); });
+		luatimer.set_function("offset_value", []() { return offset_; });
 		luatimer.set_function("cron_next", cron_next);
 		luatimer.set_function("timezone", []() { return timezone(); });
 		luatimer.set_function("make_time", [](int year, int month, int day, int hour, int min, int sec) { return make_time(year, month, day, hour, min, sec); });

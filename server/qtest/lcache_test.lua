@@ -42,6 +42,12 @@ thread_mgr:fork(function()
     thread_mgr:sleep(2000)
 end)
 
+local function test_table_size()
+    local TableMem  = import("feature/table_mem.lua")
+    local table_mem = TableMem(3, 0)
+    local testa     = { a = 1, b = 2, c = 3, d = { 1, 2, 3 }, e = { a = 1, b = 2, c = { 1, 2, 3 } } }
+    table_mem:table_size_dump(testa, "testa")
+end
 
-
+test_table_size()
 

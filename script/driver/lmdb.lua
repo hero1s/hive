@@ -1,6 +1,7 @@
 --lmdb.lua
 local lmdb         = require("lmdb")
 local log_info     = logger.info
+local log_err      = logger.err
 local sformat      = string.format
 local xpcall_ret   = hive.xpcall_ret
 local update_mgr   = hive.get("update_mgr")
@@ -62,6 +63,7 @@ function Lmdb:puts(objects, dbname)
     if ok and res == MDB_SUCCESS then
         return true
     end
+    log_err("[Lmdb][puts] {},{} fail", objects, dbname)
     return false
 end
 
@@ -70,6 +72,7 @@ function Lmdb:put(key, value, dbname)
     if ok and res == MDB_SUCCESS then
         return true
     end
+    log_err("[Lmdb][put] {},{},{} fail", key, value, dbname)
     return false
 end
 
@@ -110,14 +113,14 @@ function Lmdb:iter(dbname, key)
     local driver = self.driver
     driver.cursor_open(dbname or self.dbname)
     local function iter()
-        local _, k, v
+        local ok, _, k, v
         if not flag then
-            flag    = MDB_NEXT
-            _, k, v = driver.cursor_get(key, key and MDB_SET or MDB_FIRST)
+            flag        = MDB_NEXT
+            ok, _, k, v = xpcall_ret(driver.cursor_get, "Lmdb:iter:%s", key, key and MDB_SET or MDB_FIRST)
         else
-            _, k, v = driver.cursor_get(key, flag)
+            ok, _, k, v = xpcall_ret(driver.cursor_get, "Lmdb:iter:%s", key, flag)
         end
-        if not v then
+        if not ok or not v then
             driver.cursor_close()
         end
         return k, v

@@ -4,7 +4,8 @@ local log_warn      = logger.warn
 local log_debug     = logger.debug
 local time_str      = datetime_ext.time_str
 local sname2sid     = service.name2sid
-
+local smatch        = string.match
+local otime         = os.time
 local json_decode   = hive.json_decode
 local check_success = hive.success
 
@@ -27,7 +28,9 @@ end
 function DevopsGmMgr:register_gm()
     local cmd_list = {
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_set_log_level", desc = "设置日志等级", comment = "(all/全部,日志等级debug[1]-fatal[6])", args = "svr_name|string level|integer" },
-        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_offset_time", desc = "服务器时间偏移(秒)", args = "offset|integer" },
+        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_offset_time", desc = "设置服务偏移时间(s)", args = "offset|integer" },
+        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_offset_value", desc = "获取偏移时间(s)", args = "" },
+        { group = "开发工具", gm_type = GMType.GLOBAL, name = "gm_set_time", desc = "设置服务器时间为指定时间", comment = " 格式：2024-08-23 12:00:00", args = "cur_time|string" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_hotfix", desc = "代码热更新", args = "" },
         { group = "运维", gm_type = GMType.GLOBAL, name = "gm_set_env", desc = "设置环境变量", comment = "临时修改环境变量",
           args  = "key|string value|string service_name|string index|integer" },
@@ -58,6 +61,19 @@ function DevopsGmMgr:register_gm()
     gm_agent:insert_command(cmd_list, self)
 end
 
+function DevopsGmMgr:gm_set_time(cur_time)
+    local target_time                      = 0
+    local year, month, day, hour, min, sec = smatch(cur_time, "(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)")
+    if year and month and day and hour and min and sec then
+        target_time = otime({ day = day, month = month, year = year, hour = hour, min = min, sec = sec })
+    end
+    if target_time <= 0 then
+        return { code = 1, msg = "time format error" }
+    end
+    local offset = target_time - os.time()
+    return self:gm_offset_time(offset)
+end
+
 -- 设置日志等级
 function DevopsGmMgr:gm_set_log_level(svr_name, level)
     log_warn("[DevopsGmMgr][gm_set_log_level] gm_set_log_level {}, {}", svr_name, level)
@@ -73,7 +89,11 @@ function DevopsGmMgr:gm_offset_time(offset)
     monitor_mgr:broadcast("rpc_offset_time", 0, offset)
     timer.offset(offset)
     thread_mgr:sleep(100)
-    return { code = 0, time = time_str(hive.now) }
+    return { code = 0, time = time_str(hive.now), offset = offset }
+end
+
+function DevopsGmMgr:gm_offset_value()
+    return { code = 0, offset = timer.offset_value(), hive_now = time_str(hive.now), sys_now = time_str(os.time()) }
 end
 
 -- 热更新

@@ -6,6 +6,7 @@ local log_info     = logger.info
 local qhash        = hive.hash
 local hdefer       = hive.defer
 local makechan     = hive.make_channel
+local type         = type
 local tinsert      = table.insert
 local tunpack      = table.unpack
 local tdelete      = table_ext.delete
@@ -27,7 +28,6 @@ local lhmac_sha1   = crypt.hmac_sha1
 local lxor_byte    = crypt.xor_byte
 local lclock_ms    = timer.clock_ms
 
-local timer_mgr    = hive.get("timer_mgr")
 local event_mgr    = hive.get("event_mgr")
 local update_mgr   = hive.get("update_mgr")
 local thread_mgr   = hive.get("thread_mgr")
@@ -80,7 +80,7 @@ function MongoDB:close()
     for sock in pairs(self.connections) do
         sock:close()
     end
-    timer_mgr:unregister(self.timer_id)
+    self.timer:unregister()
     self.connections = {}
     self.alives      = {}
 end
@@ -110,7 +110,8 @@ function MongoDB:setup_pool(hosts)
             count = count + 1
         end
     end
-    self.timer_id = timer_mgr:register(0, SECOND_MS, -1, function()
+    self.timer = hive.make_timer()
+    self.timer:loop(SECOND_MS, function()
         self:check_alive()
     end)
 end
@@ -139,7 +140,7 @@ function MongoDB:check_alive()
                 end)
             end
             if channel:execute(true) then
-                timer_mgr:set_period(self.timer_id, SECOND_10_MS)
+                self.timer:set_period(SECOND_10_MS)
             end
             self:set_executer()
         end)
@@ -259,7 +260,7 @@ function MongoDB:on_socket_error(sock, token, err)
     end
     self:delive(sock)
     --设置重连
-    timer_mgr:set_period(self.timer_id, SECOND_MS)
+    self.timer:set_period(SECOND_MS)
     event_mgr:fire_second(function()
         self:check_alive()
     end)
@@ -456,17 +457,19 @@ function MongoDB:find_and_modify(co_name, update, selector, upsert, fields, new)
 end
 
 -- https://docs.mongodb.com/manual/reference/command/aggregate/
--- collection:aggregate({ { ["$project"] = {tags = 1} } }, {cursor={}})
+-- collection:aggregate({ { ["$project"] = {tags = 1} } }, {{"cursor",{}})
 -- @param pipeline: array
--- @param options: map
+-- @param options: { [key, value] ... }
 -- @return
 function MongoDB:aggregate(co_name, pipeline, options)
-    local cmd = { "aggregate", co_name, "pipeline", pipeline }
-    for k, v in pairs(options) do
-        tinsert(cmd, k)
-        tinsert(cmd, v)
+    local succ, reply = self:runCommand("aggregate", co_name, "pipeline", pipeline, tunpack(options))
+    if not succ then
+        return succ, reply
     end
-    return self:runCommand(tunpack(cmd))
+    if type(reply) == "table" and reply.cursor then
+        return succ, reply.cursor.firstBatch
+    end
+    return succ
 end
 
 return MongoDB

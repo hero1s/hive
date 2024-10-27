@@ -5,6 +5,7 @@
     ...
 --]]
 local co_running = coroutine.running
+local log_warn   = logger.warn
 
 local SyncLock   = class()
 local prop       = property(SyncLock)
@@ -25,6 +26,9 @@ end
 
 function SyncLock:lock()
     self.count = self.count + 1
+    if self.count > 2 then
+        log_warn("[SyncLock][lock] lock count too much:{},key:{},from:{}", self.count, self.key, hive.where_call(4))
+    end
 end
 
 function SyncLock:unlock()
