@@ -19,8 +19,12 @@ namespace logger {
         case LUA_TFUNCTION: return "function";
         case LUA_TUSERDATA:  return "userdata";
         case LUA_TLIGHTUSERDATA: return "userdata";
-        case LUA_TSTRING: return lua_tostring(L, index);
         case LUA_TBOOLEAN: return lua_toboolean(L, index) ? "true" : "false";
+        case LUA_TSTRING: {
+            size_t len;
+            const char* buf = lua_tolstring(L, index, &len);
+            return string(buf, len);
+        }
         case LUA_TTABLE:
             if ((flag & LOG_FLAG_FORMAT) == LOG_FLAG_FORMAT) {
                 auto buff = luakit::get_buff();

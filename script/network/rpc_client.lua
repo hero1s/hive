@@ -179,7 +179,7 @@ function RpcClient:on_socket_rpc(socket, session_id, rpc_flag, source, rpc, ...)
             if session_id > 0 then
                 local cost_time = hive.clock_ms - btime
                 if cost_time > RPC_PROCESS_TIMEOUT then
-                    log_err("[RpcClient][on_socket_rpc] rpc:{}, session:{},cost_time:{}", rpc, session_id, cost_time)
+                    log_err("[RpcClient][on_socket_rpc] rpc:{}, session:{},cost_time:{},from:{}", rpc, session_id, cost_time, service.id2nick(source))
                 end
                 socket.callback_target(session_id, source, rpc, tunpack(rpc_datas))
             end

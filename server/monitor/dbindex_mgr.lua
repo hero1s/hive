@@ -76,7 +76,7 @@ function DBIndexMgr:check_dbindexes()
         if self.sharding and conf.sharding then
             only_key = true
         end
-        local index = self:generate_index(conf)
+        local index = self:generate_index(conf, false)
         if not mongo_agent:check_indexes(index, table_name, db_name, only_key) then
             success = false
             tinsert(miss, { db = db_name, co = table_name, index = index })
@@ -103,7 +103,7 @@ function DBIndexMgr:get_key_unique(db_name, table_name, unique)
     return unique
 end
 
-function DBIndexMgr:generate_index(conf)
+function DBIndexMgr:generate_index(conf, build)
     local index      = {}
     index.key        = {}
     index.name       = conf.name
@@ -117,7 +117,12 @@ function DBIndexMgr:generate_index(conf)
         if conf.types and #conf.types >= k then
             v_type = conf.types[k]
         end
-        index.key[v] = v_type
+        if build and #conf.keys > 1 then
+            tinsert(index.key, v)
+            tinsert(index.key, v_type)
+        else
+            index.key[v] = v_type
+        end
     end
     return index
 end
@@ -126,7 +131,7 @@ function DBIndexMgr:build_dbindex(rebuild)
     log_info("[DBIndexMgr][build_dbindex] rebuild:{},sharding:{}", rebuild, self.sharding)
     for _, conf in dbindex_db:iterator() do
         if not self.sharding or not conf.sharding then
-            local index = self:generate_index(conf)
+            local index = self:generate_index(conf, true)
             mongo_agent:rebuild_create_index(index, conf.table_name, conf.db_name, rebuild)
         end
     end

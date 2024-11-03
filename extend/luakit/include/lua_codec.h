@@ -5,6 +5,7 @@
 #endif
 
 #include "lua_buff.h"
+#include <cmath>
 
 namespace luakit {
     const uint8_t type_nil          = 0;
@@ -16,9 +17,10 @@ namespace luakit {
     const uint8_t type_int16        = 6;
     const uint8_t type_int32        = 7;
     const uint8_t type_int64        = 8;
-    const uint8_t type_string       = 9;
-    const uint8_t type_undefine     = 10;
-    const uint8_t type_max          = 11;
+    const uint8_t type_str_short    = 9;
+    const uint8_t type_str_long     = 10;
+    const uint8_t type_undefine     = 11;
+    const uint8_t type_max          = 12;
 
     const uint8_t max_encode_depth  = 16;
     const uint8_t max_uint8         = UCHAR_MAX - type_max;
@@ -52,8 +54,13 @@ namespace luakit {
             luaL_error(L, "encode can't pack too long string");
             return;
         }
-        value_encode(buff, type_string);
-        value_encode<uint16_t>(buff, sz);
+        if (sz > UCHAR_MAX) {
+            value_encode(buff, type_str_long);
+            value_encode<uint16_t>(buff, sz);
+        } else {
+            value_encode(buff, type_str_short);
+            value_encode<uint8_t>(buff, sz);
+        }
         if (sz > 0) {
             value_encode(buff, ptr, sz);
         }
@@ -192,7 +199,10 @@ namespace luakit {
         case type_number:
             lua_pushnumber(L, value_decode<double>(L, slice));
             break;
-        case type_string:
+        case type_str_short:
+            string_decode(L, value_decode<uint8_t>(L, slice), slice);
+            break;
+        case type_str_long:
             string_decode(L, value_decode<uint16_t>(L, slice), slice);
             break;
         case type_tab_head:

@@ -4,10 +4,26 @@ local log_debug  = logger.debug
 
 local thread_mgr = hive.get("thread_mgr")
 
-local a          = { a = 1, c = { a = 2 } }
+local a          = { 1, 2, 0 / 0, 1 / 0 }
 
-local cache      = CacheMap(5)
-local lua_cache  = QueueLRU(500000)
+local ajson      = json.encode(a)
+json.decode(ajson)
+
+log_debug("json test:{},{}", ajson, json.decode(ajson))
+
+local algo = require("lalgo")
+
+for i = 1, 100 do
+    if algo.is_prime(i) then
+        log_debug("%s is_prime", i)
+    end
+    if algo.invalid_number(i / (i % 50)) then
+        log_debug("invalid number %s", i)
+    end
+end
+
+local cache     = CacheMap(5)
+local lua_cache = QueueLRU(500000)
 local function test_gc(cache_type)
     log_debug("test gc %s", cache_type)
     if cache_type == "lua" then

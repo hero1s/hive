@@ -121,6 +121,11 @@ OBJS += $(patsubst $(SRC_DIR)/lcache/%.m, $(INT_DIR)/lcache/%.o, $(filter-out $(
 OBJS += $(patsubst $(SRC_DIR)/lcache/%.cc, $(INT_DIR)/lcache/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcache/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/lcache/%.cpp, $(INT_DIR)/lcache/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcache/*.cpp)))
 #子目录
+OBJS += $(patsubst $(SRC_DIR)/lcjson/%.c, $(INT_DIR)/lcjson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcjson/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/lcjson/%.m, $(INT_DIR)/lcjson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcjson/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/lcjson/%.cc, $(INT_DIR)/lcjson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcjson/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/lcjson/%.cpp, $(INT_DIR)/lcjson/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcjson/*.cpp)))
+#子目录
 OBJS += $(patsubst $(SRC_DIR)/lcodec/%.c, $(INT_DIR)/lcodec/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcodec/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lcodec/%.m, $(INT_DIR)/lcodec/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcodec/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/lcodec/%.cc, $(INT_DIR)/lcodec/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcodec/*.cc)))
@@ -130,6 +135,11 @@ OBJS += $(patsubst $(SRC_DIR)/lcrypt/%.c, $(INT_DIR)/lcrypt/%.o, $(filter-out $(
 OBJS += $(patsubst $(SRC_DIR)/lcrypt/%.m, $(INT_DIR)/lcrypt/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrypt/*.m)))
 OBJS += $(patsubst $(SRC_DIR)/lcrypt/%.cc, $(INT_DIR)/lcrypt/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrypt/*.cc)))
 OBJS += $(patsubst $(SRC_DIR)/lcrypt/%.cpp, $(INT_DIR)/lcrypt/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lcrypt/*.cpp)))
+#子目录
+OBJS += $(patsubst $(SRC_DIR)/lmongo/%.c, $(INT_DIR)/lmongo/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lmongo/*.c)))
+OBJS += $(patsubst $(SRC_DIR)/lmongo/%.m, $(INT_DIR)/lmongo/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lmongo/*.m)))
+OBJS += $(patsubst $(SRC_DIR)/lmongo/%.cc, $(INT_DIR)/lmongo/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lmongo/*.cc)))
+OBJS += $(patsubst $(SRC_DIR)/lmongo/%.cpp, $(INT_DIR)/lmongo/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lmongo/*.cpp)))
 #子目录
 OBJS += $(patsubst $(SRC_DIR)/lrandom/%.c, $(INT_DIR)/lrandom/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lrandom/*.c)))
 OBJS += $(patsubst $(SRC_DIR)/lrandom/%.m, $(INT_DIR)/lrandom/%.o, $(filter-out $(EXCLUDE), $(wildcard $(SRC_DIR)/lrandom/*.m)))
@@ -195,8 +205,10 @@ pre_build:
 	mkdir -p $(INT_DIR)/laoi
 	mkdir -p $(INT_DIR)/lbson
 	mkdir -p $(INT_DIR)/lcache
+	mkdir -p $(INT_DIR)/lcjson
 	mkdir -p $(INT_DIR)/lcodec
 	mkdir -p $(INT_DIR)/lcrypt
+	mkdir -p $(INT_DIR)/lmongo
 	mkdir -p $(INT_DIR)/lrandom
 	mkdir -p $(INT_DIR)/lstdfs
 	mkdir -p $(INT_DIR)/ltimer

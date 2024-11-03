@@ -21,6 +21,14 @@ function SystemAgent:call_shell(cmd, sync)
     self:send("rpc_execute_shell", cmd)
 end
 
+function SystemAgent:open_cpu_info(open)
+    self:send("rpc_open_cpu_info", open)
+end
+
+function SystemAgent:get_cpu_info()
+    return self:call("rpc_get_cpu_info")
+end
+
 hive.system_agent = SystemAgent()
 
 return SystemAgent

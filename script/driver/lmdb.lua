@@ -22,6 +22,7 @@ local prop         = property(Lmdb)
 prop:reader("driver", nil)
 prop:reader("dbname", nil)
 prop:reader("jcodec", nil)
+prop:reader("mapsize", 1024 * 1024 * 1024)--1G
 
 function Lmdb:__init()
     stdfs.mkdir(LMDB_PATH)
@@ -50,6 +51,7 @@ function Lmdb:open(name, dbname)
         local jcodec = json.jsoncodec()
         driver.set_max_dbs(128)
         driver.set_codec(jcodec)
+        driver.set_mapsize(self.mapsize)
         self.driver = driver
         self.jcodec = jcodec
         self.dbname = dbname
@@ -63,7 +65,7 @@ function Lmdb:puts(objects, dbname)
     if ok and res == MDB_SUCCESS then
         return true
     end
-    log_err("[Lmdb][puts] {},{} fail", objects, dbname)
+    log_err("[Lmdb][puts] {},{} fail code:{}", objects, dbname, res)
     return false
 end
 
@@ -72,7 +74,7 @@ function Lmdb:put(key, value, dbname)
     if ok and res == MDB_SUCCESS then
         return true
     end
-    log_err("[Lmdb][put] {},{},{} fail", key, value, dbname)
+    log_err("[Lmdb][put] {},{},{} fail code:{}", key, value, dbname, res)
     return false
 end
 
@@ -81,6 +83,7 @@ function Lmdb:get(key, dbname)
     if ok and (rc == MDB_NOTFOUND or rc == MDB_SUCCESS) then
         return data, true
     end
+    log_err("[Lmdb][get] {},{} fail code:{}", key, dbname, rc)
     return nil, false
 end
 
@@ -89,22 +92,35 @@ function Lmdb:gets(keys, dbname)
     if ok and (rc == MDB_NOTFOUND or rc == MDB_SUCCESS) then
         return res, true
     end
+    log_err("[Lmdb][gets] {},{} fail code:{}", keys, dbname, rc)
     return nil, false
 end
 
 function Lmdb:del(key, dbname)
     local ok, rc = xpcall_ret(self.driver.quick_del, "Lmdb:del:%s", key, dbname or self.dbname)
-    return ok and (rc == MDB_NOTFOUND or rc == MDB_SUCCESS) or false
+    if ok and (rc == MDB_NOTFOUND or rc == MDB_SUCCESS) then
+        return true
+    end
+    log_err("[Lmdb][del] {},{} fail code:{}", key, dbname, rc)
+    return false
 end
 
 function Lmdb:dels(keys, dbname)
     local ok, rc = xpcall_ret(self.driver.batch_del, "Lmdb:dels:%s", keys, dbname or self.dbname)
-    return ok and (rc == MDB_NOTFOUND or rc == MDB_SUCCESS) or false
+    if ok and (rc == MDB_NOTFOUND or rc == MDB_SUCCESS) then
+        return true
+    end
+    log_err("[Lmdb][dels] {},{} fail code:{}", keys, dbname, rc)
+    return false
 end
 
 function Lmdb:drop(dbname)
     local ok, rc = xpcall_ret(self.driver.quick_drop, "Lmdb:drop:%s", dbname or self.dbname)
-    return ok and (rc == MDB_NOTFOUND or rc == MDB_SUCCESS) or false
+    if ok and (rc == MDB_NOTFOUND or rc == MDB_SUCCESS) then
+        return true
+    end
+    log_err("[Lmdb][drop] {} fail code:{}", dbname, rc)
+    return false
 end
 
 --迭代器

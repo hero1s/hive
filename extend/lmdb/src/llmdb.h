@@ -57,8 +57,8 @@ namespace llmdb {
             int rc = begin_txn(name);
             if (rc != MDB_SUCCESS) return rc;
             rc = mdb_drop(_txn, _dbi, del ? 1 : 0);
-            commit_txn();
-            return rc;
+            int tx_rc = commit_txn();
+            return rc == MDB_SUCCESS ? tx_rc : rc;
         }
         int32_t begin_txn(const char* name) {
             int rc = mdb_txn_begin(_env, nullptr, 0, &_txn);
@@ -93,7 +93,7 @@ namespace llmdb {
             rc = mdb_put(_txn, _dbi, &mkey, &mval, 0);
             if (rc != MDB_SUCCESS) goto exit;
         exit:
-            ac.commit();
+            rc = ac.commit(rc);
             lua_pushinteger(L, rc);
             return 1;
         }
@@ -112,7 +112,7 @@ namespace llmdb {
                 if (rc != MDB_SUCCESS) goto exit;
             }
         exit:
-            ac.commit();
+            rc = ac.commit(rc);
             lua_pushinteger(L, rc);
             return 1;
         }
@@ -196,7 +196,7 @@ namespace llmdb {
                 rc = mdb_del(_txn, _dbi, &mkey, &mval);
             }
         exit:
-            ac.commit();
+            rc = ac.commit(rc);
             lua_pushinteger(L, rc);
             return 1;
         }
@@ -214,7 +214,7 @@ namespace llmdb {
                 if ((rc != MDB_SUCCESS && rc != MDB_NOTFOUND)) goto exit;
             }
         exit:
-            ac.commit();
+            rc = ac.commit(rc);
             lua_pushinteger(L, rc);
             return 1;
         }
@@ -346,9 +346,10 @@ namespace llmdb {
                     _host->abort_txn();
                 }
             }
-            void commit() {
-                _host->commit_txn();
+            int32_t commit(int32_t rc) {
                 _commit = true;
+                auto tx_rc = _host->commit_txn();
+                return rc == 0 ? tx_rc : rc;
             }
         private:
             mdb_driver* _host = nullptr;

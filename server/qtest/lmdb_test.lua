@@ -114,3 +114,13 @@ log_debug("dels: {}", ee)
 for _k, _v in db:iter() do
     log_debug("iter: {}-{}", _k, _v)
 end
+
+local db_bbb = LMDB()
+db_bbb:open("bbb", "bbb")
+for i = 1, 100000 do
+    db_bbb:put(i, { a = i, b = 1, c = "abc", d = "dfjaslkdfjadlksjflkadsjfgklasjdglkadsjfklashdfeqwiojfaslkfjaksdjhfadksjjflaskjdfadl;sjgf" })
+    local vv = db_bbb:get(i)
+    if vv and i % 1000 == 0 then
+        log_debug("get: {} -- {}", i, vv)
+    end
+end
