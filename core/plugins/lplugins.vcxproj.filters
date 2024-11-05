@@ -16,12 +16,6 @@
     <ClInclude Include="src\lcache\lrucache.hpp">
       <Filter>lcache</Filter>
     </ClInclude>
-    <ClInclude Include="src\lcjson\fpconv.h">
-      <Filter>lcjson</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lcjson\strbuf.h">
-      <Filter>lcjson</Filter>
-    </ClInclude>
     <ClInclude Include="src\lcodec\bitarray.h">
       <Filter>lcodec</Filter>
     </ClInclude>
@@ -114,15 +108,6 @@
     <ClCompile Include="src\lcache\lcache.cpp">
       <Filter>lcache</Filter>
     </ClCompile>
-    <ClCompile Include="src\lcjson\fpconv.c">
-      <Filter>lcjson</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lcjson\lua_cjson.c">
-      <Filter>lcjson</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lcjson\strbuf.c">
-      <Filter>lcjson</Filter>
-    </ClCompile>
     <ClCompile Include="src\lcodec\lcodec.cpp">
       <Filter>lcodec</Filter>
     </ClCompile>
@@ -155,12 +140,6 @@
     </ClCompile>
     <ClCompile Include="src\lcrypt\xxtea.c">
       <Filter>lcrypt</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lmongo\lua-bson.c">
-      <Filter>lmongo</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lmongo\lua-mongo.c">
-      <Filter>lmongo</Filter>
     </ClCompile>
     <ClCompile Include="src\lrandom\lrandom.cpp">
       <Filter>lrandom</Filter>
@@ -197,17 +176,11 @@
     <Filter Include="lcache">
       <UniqueIdentifier>{C0F7EC70-4C6E-0C26-294D-D6AD96AF4A0B}</UniqueIdentifier>
     </Filter>
-    <Filter Include="lcjson">
-      <UniqueIdentifier>{4ADCD1E9-BF66-35F8-4508-99A5FA07D9D9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="lcodec">
       <UniqueIdentifier>{E24CB1AD-193A-E647-45BE-564E7264711B}</UniqueIdentifier>
     </Filter>
     <Filter Include="lcrypt">
       <UniqueIdentifier>{6779B38A-0EC6-088E-3974-E2A164AE1520}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lmongo">
-      <UniqueIdentifier>{E019DA7E-EC0A-AA36-71A6-A73542E75A70}</UniqueIdentifier>
     </Filter>
     <Filter Include="lrandom">
       <UniqueIdentifier>{3FF84F4B-3548-31CF-586F-ADCF4C5716CF}</UniqueIdentifier>
